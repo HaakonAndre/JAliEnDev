@@ -903,7 +903,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		return jobWrapperListener;
 	}
 
-	private int convertStringUnitToIntegerMB(String unit, String number) {
+	private static int convertStringUnitToIntegerMB(String unit, String number) {
 		switch (unit) {
 		case "KB":
 			return Integer.parseInt(number) / 1024;

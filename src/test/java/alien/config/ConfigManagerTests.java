@@ -53,7 +53,7 @@ class ConfigManagerTests {
 	}
 
 	@Test
-	void testMergeProperties() {
+	static void testMergeProperties() {
 		ExtProperties front = new ExtProperties();
 		ExtProperties back = new ExtProperties();
 		ExtProperties merged;
@@ -69,7 +69,7 @@ class ConfigManagerTests {
 	}
 
 	@Test
-	void testMergePropertiesUpdate() {
+	static void testMergePropertiesUpdate() {
 		ExtProperties front = new ExtProperties();
 		ExtProperties back = new ExtProperties();
 		ExtProperties merged;

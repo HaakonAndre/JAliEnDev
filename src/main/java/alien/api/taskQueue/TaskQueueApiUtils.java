@@ -432,7 +432,7 @@ public class TaskQueueApiUtils {
 	 * @param queueId
 	 * @return
 	 */
-	public AddResultsJDL addResultsJdl(JDL jdl, long queueId) {
+	public static AddResultsJDL addResultsJdl(final JDL jdl, final long queueId) {
 		try {
 			final AddResultsJDL arj = Dispatcher.execute(new AddResultsJDL(jdl, queueId));
 			return arj;

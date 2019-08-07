@@ -728,7 +728,7 @@ public class JobWrapper implements Runnable {
 		return jobAgentListener;
 	}
 
-	private String getTraceFromFile() {
+	private static String getTraceFromFile() {
 		final File traceFile = new File(".alienValidation.trace");
 
 		if (traceFile.exists()) {
