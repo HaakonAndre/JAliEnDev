@@ -34,7 +34,7 @@ cp ${JALIEN_HOME}/trusted_authorities.jks ${BUILDDIR}/
 cp ${JALIEN_HOME}/config/config.properties ${JALIEN_HOME}/config/monitoring.properties ${BUILDDIR}/config/
 
 # always generate alien.jar
-find ${JALIEN_HOME}/src/main -name "*.java" | xargs javac -Xlint:-options -source 8 -target 8 -O -g -d ${BUILDDIR} || { echo "javac of src/*.java failed" ; exit 1; }
+find ${JALIEN_HOME}/src/main -name "*.java" | xargs javac -Xlint:-options -source 11 -target 11 -O -g -d ${BUILDDIR} || { echo "javac of src/*.java failed" ; exit 1; }
 
 # Clean up all previous jar generated files
 rm -rf ${JALIEN_HOME}/alien.jar
