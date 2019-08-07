@@ -466,7 +466,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public List<String> generateLaunchCommand() throws InterruptedException {
 		try {
 			//Main cmd for starting the JobWrapper
-			final List<String> launchCmd = new ArrayList<String>();
+			final List<String> launchCmd = new ArrayList<>();
 
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
@@ -498,7 +498,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			//Check if Singularity is present on site. If yes, add singularity to launchCmd
 			try {                
 				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?	
-				final List<String> singularityCmd = new ArrayList<String>();
+				final List<String> singularityCmd = new ArrayList<>();
 				singularityCmd.add("singularity");
 				singularityCmd.add("exec");
 				singularityCmd.add("-C");

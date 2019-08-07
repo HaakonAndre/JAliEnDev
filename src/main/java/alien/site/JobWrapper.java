@@ -744,7 +744,7 @@ public class JobWrapper implements Runnable {
 	
 	private void createAndAddResultsJDL(ParsedOutput filesTable) {
 		
-		final ArrayList<String> jdlOutput = new ArrayList<String>();
+		final ArrayList<String> jdlOutput = new ArrayList<>();
 		for(final OutputEntry entry : filesTable.getEntries()){
 			
 			String entryString = entry.getName();
