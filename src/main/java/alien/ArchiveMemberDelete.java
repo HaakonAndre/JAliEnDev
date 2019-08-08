@@ -7,14 +7,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.apache.tomcat.util.http.fileupload.FileUtils;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
@@ -47,7 +49,8 @@ public class ArchiveMemberDelete {
 		if (args.length > 0) {
 			try {
 				commander = JAliEnCOMMander.getInstance();
-			} catch (final ExceptionInInitializerError | NullPointerException e) {
+			}
+			catch (final ExceptionInInitializerError | NullPointerException e) {
 				System.err.println("Failed to get a JAliEnCOMMander instance. Abort");
 				e.printStackTrace();
 				return;
@@ -81,9 +84,9 @@ public class ArchiveMemberDelete {
 			System.out.println();
 			System.out.println("All files processed. Exiting");
 
-			final File validation = new File("validation_error.message");
-			if (validation.length() == 0)
-				validation.delete();
+			final Path validation = Path.of("validation_error.message");
+			if (Files.size(validation) == 0)
+				cleanUpLocal(validation);
 		}
 	}
 
@@ -108,7 +111,8 @@ public class ArchiveMemberDelete {
 		LFN remoteLFN = null;
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
-		} catch (final NullPointerException e) {
+		}
+		catch (final NullPointerException e) {
 			// Connection may be refused
 			System.err.println("[" + new Date() + "] Something went wrong. Abort.");
 			e.printStackTrace();
@@ -177,7 +181,8 @@ public class ArchiveMemberDelete {
 		List<PFN> remotePFN = null;
 		try {
 			remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
-		} catch (final ServerException e1) {
+		}
+		catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + xmlEntry + ": Could not get PFN. Abort");
 			e1.printStackTrace();
 			return;
@@ -211,7 +216,8 @@ public class ArchiveMemberDelete {
 					if (!Factory.xrootd.delete(pfn)) {
 						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 					}
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					e.printStackTrace();
 				}
 			}
@@ -226,7 +232,7 @@ public class ArchiveMemberDelete {
 
 		// Main procedure
 		//
-		try (final PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
+		try (PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
 
 			final List<PFN> remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
 			if (remoteArchivePFN.size() == 0) {
@@ -264,7 +270,8 @@ public class ArchiveMemberDelete {
 						if (!Factory.xrootd.delete(pfn)) {
 							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 						}
-					} catch (final IOException e) {
+					}
+					catch (final IOException e) {
 						e.printStackTrace();
 					}
 				}
@@ -283,15 +290,14 @@ public class ArchiveMemberDelete {
 			}
 
 			final File localArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
-			if (localArchive.exists()) {
-				localArchive.delete();
-			}
+			if (Files.exists(localArchive.toPath()))
+				cleanUpLocal(localArchive.toPath());
 
 			// Download the archive from the Grid
 			//
 			System.out.println("[" + new Date() + "] Downloading the archive from the Grid");
 			commander.c_api.downloadFile(remoteArchive, localArchive, "-silent");
-			if (!localArchive.exists()) {
+			if (!Files.exists(localArchive.toPath())) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to download remote archive " + remoteArchive);
 				validation.println("Download failed " + remoteArchive);
 				return;
@@ -306,9 +312,9 @@ public class ArchiveMemberDelete {
 				validation.println("Extraction failed " + remoteArchive);
 				return;
 			}
-			localArchive.delete();
+			cleanUpLocal(localArchive.toPath());
 
-			final ArrayList<String> listOfFiles = getFileListing(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+			final ArrayList<String> listOfFiles = getFileListing(Path.of(System.getProperty("user.dir"), "extracted"));
 
 			System.out.println("[" + new Date() + "] Zipping the new archive");
 			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
@@ -472,15 +478,18 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] " + "Reclaimed " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
 
 			// Clean up local files
-			FileUtils.deleteDirectory(new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted"));
-			newArchive.delete();
-		} catch (final IOException e1) {
+			cleanUpLocal(Path.of(System.getProperty("user.dir"), "extracted"));
+			cleanUpLocal(newArchive.toPath());
+		}
+		catch (final IOException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": I/O exception. Abort");
 			e1.printStackTrace();
-		} catch (final ServerException e1) {
+		}
+		catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN. Abort");
 			e1.printStackTrace();
-		} catch (final OutOfMemoryError e1) {
+		}
+		catch (final OutOfMemoryError e1) {
 			System.err.println("[" + new Date() + "] " + "Out of memory. Abort");
 			e1.printStackTrace();
 		}
@@ -500,22 +509,19 @@ public class ArchiveMemberDelete {
 	 */
 	private static boolean unzip(final String archiveName, final String memberName) throws IOException {
 
-		final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
-		if (!destDir.exists()) {
-			destDir.mkdir();
+		final Path destDir = Path.of(System.getProperty("user.dir"), "extracted");
+		if (!Files.exists(destDir)) {
+			Files.createDirectories(destDir);
 		}
 		else {
 			// Clean up temp directory if there are files in it
-			final String[] destDirEntries = destDir.list();
-			if (destDirEntries != null)
-				for (final String s : destDirEntries) {
-					final File currentFile = new File(destDir.getPath(), s);
-					currentFile.delete();
-				}
+			try (Stream<Path> destDirEntries = Files.list(destDir)) {
+				destDirEntries.forEach(ArchiveMemberDelete::cleanUpLocal);
+			}
 		}
 
 		// Start unpacking the archive
-		try (final ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName))) {
+		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
@@ -532,19 +538,15 @@ public class ArchiveMemberDelete {
 					continue;
 				}
 
-				final String filePath = destDir.getAbsolutePath() + System.getProperty("file.separator") + entry.getName();
+				final Path filePath = Path.of(destDir.toString(), entry.getName());
 				if (!entry.isDirectory()) {
 					// If the entry is a file, extract it
-					String path = filePath.substring(0, filePath.lastIndexOf("/"));
-					final File dir = new File(path);
-					dir.mkdirs();
-
-					extractFile(zipIn, filePath);
+					Files.createDirectories(filePath.getParent());
+					extractFile(zipIn, filePath.toString());
 				}
 				else {
 					// If the entry is a directory, make the directory
-					final File dir = new File(filePath);
-					dir.mkdir();
+					Files.createDirectories(filePath);
 				}
 				System.out.println("[" + new Date() + "] - extracted " + entry.getName());
 				zipIn.closeEntry();
@@ -553,7 +555,8 @@ public class ArchiveMemberDelete {
 
 			zipIn.close();
 			return true;
-		} catch (final FileNotFoundException e) {
+		}
+		catch (final FileNotFoundException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -566,8 +569,8 @@ public class ArchiveMemberDelete {
 	 * @param filePath
 	 * @throws IOException
 	 */
-	private static void extractFile(ZipInputStream zipIn, final String filePath) throws IOException {
-		try (final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+	private static void extractFile(final ZipInputStream zipIn, final String filePath) throws IOException {
+		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
 			byte[] bytesIn = new byte[BUFFER_SIZE];
 			int read = 0;
 			while ((read = zipIn.read(bytesIn)) != -1) {
@@ -583,27 +586,31 @@ public class ArchiveMemberDelete {
 	 * @param folderName
 	 *            folder to look inside
 	 */
-	private static ArrayList<String> getFileListing(final String folderName) {
-		final File folder = new File(folderName);
-		final ArrayList<String> listOfFiles = new ArrayList<>();
-		final File[] listing = folder.listFiles();
-		if (listing == null) {
-			System.err.println("[" + new Date() + "] Failed to get list of files in local folder. Break");
-			return null;
+	private static ArrayList<String> getFileListing(final Path folderName) {
+		try (Stream<Path> paths = Files.walk(folderName)) {
+			if (paths.count() == 0)
+				System.err.println("[" + new Date() + "] Failed to get list of files in local folder: " + folderName);
+
+			return paths.map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
 		}
-		for (final File file : listing) {
-			if (file.isDirectory()) {
-				try {
-					for (final String child : getFileListing(file.getCanonicalPath())) {
-						listOfFiles.add(file.getName() + "/" + child);
-					}
-				} catch (final IOException e) {
-					e.printStackTrace();
-				}
-			}
-			else
-				listOfFiles.add(file.getName());
+		catch (final IOException e) {
+			e.printStackTrace();
 		}
-		return listOfFiles;
+		return null;
+	}
+
+	/**
+	 * Delete local file using <code>java.nio.Files#delete</code>, catch any <code>IOException</code>
+	 * 
+	 * @param path
+	 *            path of the local file or directory to delete
+	 */
+	private static void cleanUpLocal(final Path path) {
+		try {
+			Files.delete(path);
+		}
+		catch (final IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
