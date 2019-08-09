@@ -39,6 +39,9 @@ import joptsimple.OptionSet;
 public class ArchiveMemberDelete {
 
 	private static JAliEnCOMMander commander = null;
+	private final static String dotdeleted = ".deleted";
+	private final static String usrdir = System.getProperty("user.dir");
+	private final static String separator = System.getProperty("file.separator");
 
 	/**
 	 * @param args
@@ -100,10 +103,10 @@ public class ArchiveMemberDelete {
 		// Parse the parent directory from the entry, e.g.:
 		// /alice/sim/2018/LHC18e1a/246053/075/BKG/TrackRefs.root ->
 		// /alice/sim/2018/LHC18e1a/246053/075
-		String parentdir = xmlEntry.substring(0, xmlEntry.lastIndexOf("/"));
-		final String lastStringToken = parentdir.substring(parentdir.lastIndexOf("/") + 1);
+		String parentdir = xmlEntry.substring(0, xmlEntry.lastIndexOf('/'));
+		final String lastStringToken = parentdir.substring(parentdir.lastIndexOf('/') + 1);
 		if (!lastStringToken.matches("^\\d+.\\d+$")) {
-			parentdir = parentdir.substring(0, parentdir.lastIndexOf("/"));
+			parentdir = parentdir.substring(0, parentdir.lastIndexOf('/'));
 		}
 
 		final String registerPath = parentdir + "/registertemp";
@@ -156,7 +159,7 @@ public class ArchiveMemberDelete {
 					commander.c_api.removeLFN(registerPath, true);
 			}
 			else {
-				if (!commander.c_api.find(parentdir, ".deleted", 0).isEmpty()) {
+				if (!commander.c_api.find(parentdir, dotdeleted, 0).isEmpty()) {
 					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
 				}
 				else {
@@ -189,7 +192,7 @@ public class ArchiveMemberDelete {
 		}
 
 		// If not - the file is orphaned
-		if (remotePFN == null || remotePFN.size() == 0) {
+		if (remotePFN == null || remotePFN.isEmpty()) {
 			System.err.println("[" + new Date() + "] " + xmlEntry + ": Can't get PFNs for this file. Abort");
 			return;
 		}
@@ -223,7 +226,7 @@ public class ArchiveMemberDelete {
 			}
 
 			commander.c_api.removeLFN(remoteFile);
-			commander.c_api.touchLFN(parentdir + "/" + ".deleted" + remoteFileSize);
+			commander.c_api.touchLFN(parentdir + "/" + dotdeleted + remoteFileSize);
 
 			System.out.println("[" + new Date() + "] " + remoteFile);
 			System.out.println("[" + new Date() + "] Reclaimed " + remoteFileSize + " bytes of disk space");
@@ -235,7 +238,7 @@ public class ArchiveMemberDelete {
 		try (PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
 
 			final List<PFN> remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
-			if (remoteArchivePFN.size() == 0) {
+			if (remoteArchivePFN.isEmpty()) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Archive is orphaned");
 				validation.println("Orphaned archive " + remoteFile);
 				return;
@@ -280,7 +283,7 @@ public class ArchiveMemberDelete {
 				commander.c_api.removeLFN(remoteArchive);
 
 				// Create file marker to leave trace
-				commander.c_api.touchLFN(parentdir + "/" + ".deleted" + remoteArchiveLFN.getSize());
+				commander.c_api.touchLFN(parentdir + "/" + dotdeleted + remoteArchiveLFN.getSize());
 
 				System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 				System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
@@ -289,7 +292,7 @@ public class ArchiveMemberDelete {
 				return;
 			}
 
-			final File localArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+			final File localArchive = new File(usrdir + separator + archiveName);
 			if (Files.exists(localArchive.toPath()))
 				cleanUpLocal(localArchive.toPath());
 
@@ -308,23 +311,23 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] Unpacking to local directory");
 			if (!unzip(archiveName, memberName)) {
 				System.err.println(
-						"[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+						"[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + usrdir + separator + archiveName);
 				validation.println("Extraction failed " + remoteArchive);
 				return;
 			}
 			cleanUpLocal(localArchive.toPath());
 
-			final ArrayList<String> listOfFiles = getFileListing(Path.of(System.getProperty("user.dir"), "extracted"));
+			final ArrayList<String> listOfFiles = getFileListing(Path.of(usrdir, "extracted"));
 
 			System.out.println("[" + new Date() + "] Zipping the new archive");
 			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
-			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+			entry.createZip(usrdir + separator + "extracted");
 
-			final String newArchiveFullPath = registerPath + "/" + archiveName;
+			final String newArchiveFullPath = registerPath + separator + archiveName;
 
 			// Upload the new archive to the Grid
 			//
-			final File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
+			final File newArchive = new File(usrdir + separator + "extracted" + separator + archiveName);
 
 			while (commander.c_api.getLFN(newArchiveFullPath) != null) {
 				// Delete registertemp/root_archive.zip if there is any
@@ -348,9 +351,9 @@ public class ArchiveMemberDelete {
 			// Create subdirs (like BKG/)
 			for (final String file : listOfFiles) {
 				if (file.contains("/")) {
-					if (commander.c_api.createCatalogueDirectory(registerPath + "/" + file.substring(0, file.lastIndexOf("/")), true) == null) {
-						System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to create new directory " + registerPath + "/" + file.substring(0, file.lastIndexOf("/")));
-						validation.println("Mkdir failed " + registerPath + "/" + file.substring(0, file.lastIndexOf("/")));
+					if (commander.c_api.createCatalogueDirectory(registerPath + "/" + file.substring(0, file.lastIndexOf('/')), true) == null) {
+						System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to create new directory " + registerPath + "/" + file.substring(0, file.lastIndexOf('/')));
+						validation.println("Mkdir failed " + registerPath + "/" + file.substring(0, file.lastIndexOf('/')));
 
 						// Delete all newly created entries and directories
 						if (registerPath.length() > 20) // Safety check
@@ -429,7 +432,7 @@ public class ArchiveMemberDelete {
 			}
 
 			// Create file marker to leave trace
-			if (commander.c_api.touchLFN(parentdir + "/" + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length())) == null) {
+			if (commander.c_api.touchLFN(parentdir + "/" + dotdeleted + (remoteArchiveLFN.getSize() - newArchive.length())) == null) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not create .deleted marker");
 			}
 
@@ -478,7 +481,7 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] " + "Reclaimed " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
 
 			// Clean up local files
-			cleanUpLocal(Path.of(System.getProperty("user.dir"), "extracted"));
+			cleanUpLocal(Path.of(usrdir, "extracted"));
 			cleanUpLocal(newArchive.toPath());
 		}
 		catch (final IOException e1) {
@@ -509,7 +512,7 @@ public class ArchiveMemberDelete {
 	 */
 	private static boolean unzip(final String archiveName, final String memberName) throws IOException {
 
-		final Path destDir = Path.of(System.getProperty("user.dir"), "extracted");
+		final Path destDir = Path.of(usrdir, "extracted");
 		if (!Files.exists(destDir)) {
 			Files.createDirectories(destDir);
 		}
@@ -521,18 +524,12 @@ public class ArchiveMemberDelete {
 		}
 
 		// Start unpacking the archive
-		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName))) {
+		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(usrdir + separator + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
-				if (entry.getName().contains(memberName)) {
-					// Skip this file
-					zipIn.closeEntry();
-					entry = zipIn.getNextEntry();
-					continue;
-				}
-				if (entry.getName().contains("AliESDfriends.root")) {
-					// Also skip AliESDfriends.root
+				if (entry.getName().contains(memberName) || entry.getName().contains("AliESDfriends.root")) {
+					// Skip this file; also skip AliESDfriends.root
 					zipIn.closeEntry();
 					entry = zipIn.getNextEntry();
 					continue;
@@ -553,7 +550,6 @@ public class ArchiveMemberDelete {
 				entry = zipIn.getNextEntry();
 			}
 
-			zipIn.close();
 			return true;
 		}
 		catch (final FileNotFoundException e) {
@@ -576,7 +572,6 @@ public class ArchiveMemberDelete {
 			while ((read = zipIn.read(bytesIn)) != -1) {
 				bos.write(bytesIn, 0, read);
 			}
-			bos.close();
 		}
 	}
 
@@ -587,16 +582,17 @@ public class ArchiveMemberDelete {
 	 *            folder to look inside
 	 */
 	private static ArrayList<String> getFileListing(final Path folderName) {
+		ArrayList<String> result = new ArrayList<>();
 		try (Stream<Path> paths = Files.walk(folderName)) {
 			if (paths.count() == 0)
 				System.err.println("[" + new Date() + "] Failed to get list of files in local folder: " + folderName);
 
-			return paths.map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
+			result = paths.map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
 		}
 		catch (final IOException e) {
 			e.printStackTrace();
 		}
-		return null;
+		return result;
 	}
 
 	/**

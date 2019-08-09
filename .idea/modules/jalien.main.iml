@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module external.linked.project.id="jalien:main" external.linked.project.path="$MODULE_DIR$/../.." external.root.project.path="$MODULE_DIR$/../.." external.system.id="GRADLE" external.system.module.group="" external.system.module.type="sourceSet" external.system.module.version="unspecified" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
+    <output url="file://$MODULE_DIR$/../../build/classes/java/main" />
+    <exclude-output />
+    <content url="file://$MODULE_DIR$/../../src/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../src/main/java" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="Gradle: com.datastax:cassandra-driver-core:3.5.0" level="project" />
+    <orderEntry type="library" name="Gradle: guava:guava:19.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.github.olivierlemasle.ca:java-ca-lib:0.0.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Gradle: jline:jline:2.12.1" level="project" />
+    <orderEntry type="library" name="Gradle: joptsimple:jopt-simple:4.8" level="project" />
+    <orderEntry type="library" name="Gradle: org.bouncycastle:bcpkix-jdk15on:162" level="project" />
+    <orderEntry type="library" name="Gradle: org.bouncycastle:bcprov-jdk15on:162" level="project" />
+    <orderEntry type="library" name="Gradle: org.junit:junit-platform-console-standalone:1.3.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.sqlite:sqlite-jdbc:3.9.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Gradle: org.json:json-simple:1.1.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.nfunk.jep:jep:2.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: :apmon:" level="project" />
+    <orderEntry type="library" name="Gradle: :catalina:" level="project" />
+    <orderEntry type="library" name="Gradle: :FarmMonitor:" level="project" />
+    <orderEntry type="library" name="Gradle: :lazyj:" level="project" />
+    <orderEntry type="library" name="Gradle: :servlet-api:" level="project" />
+    <orderEntry type="library" name="Gradle: :websocket-api:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-api:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-coyote:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-dbcp:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-jasper:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-jni:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-jsp-api:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-juli:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-util:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-util-scan:" level="project" />
+    <orderEntry type="library" name="Gradle: :tomcat-websocket:" level="project" />
+  </component>
+</module>
