@@ -858,7 +858,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * @param stdin Stdin for the subprocess
 	 * @return Returns a jobWrapperListener that listens to updates from a JobWrapper process, each a string in the following format:
 	 * 
-	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
+	 * "JWUpdate"|JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 */
 	private Runnable createJobWrapperListener(Process p, InputStream stdout, OutputStream stdin){
 		final Runnable jobWrapperListener = () -> {
@@ -870,7 +870,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				try {
 					final String receivedString = stdoutReader.readLine();                 
 
-					if(receivedString.contains("|")){
+					if(receivedString.contains("JWUpdate|")){
 						final String[] received = receivedString.split("\\|");
 						final String newStatusString = received[1];
 
@@ -892,11 +892,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 					}
 				} catch (final StreamCorruptedException e) {
 					logger.log(Level.WARNING, "Received something from JobWrapper, but it wasn't a status update (corrupted?). Ignoring");
-				} catch (final EOFException | NullPointerException e1){
+				} catch (final EOFException e1) {
 					logger.log(Level.INFO, "JobWrapper has stopped sending updates");
-					break; 
-				} catch (final Exception e2){
-					logger.log(Level.WARNING, "Exception received: " + e2);
+					break; 	
+				} catch (final NullPointerException e2) {
+					logger.log(Level.WARNING, "A NullPointer has occurred: " + e2);
+				} catch (final Exception e3){
+					logger.log(Level.WARNING, "Exception received: " + e3);
 				}
 			}
 		}; 

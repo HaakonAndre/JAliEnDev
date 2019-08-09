@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import alien.api.TomcatServer;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -648,14 +647,14 @@ public class JobWrapper implements Runnable {
 	/**
 	 * "Sends" a status update to JobAgent as a string in the following format:
 	 * 
-	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
+	 * "JWUpdate"|JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 * 
 	 * @param newStatus
 	 */
 	public void sendStatus(final JobStatus newStatus) {
 		jobStatus = newStatus;
 		
-		String sendString = "|" + jobStatus.name();
+		String sendString = "JWUpdate|" + jobStatus.name();
 		sendString += "|exechost|" + this.ce;
 		
 		// if final status with saved files, we set the path
