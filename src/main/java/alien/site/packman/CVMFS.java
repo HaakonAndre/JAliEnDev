@@ -110,7 +110,7 @@ public class CVMFS extends PackMan {
 				if (str[1].contains("\\"))
 					str[1] = str[1].replace("\\", "");
 
-				environment.put(str[0], str[1]);
+				environment.put(str[0], str[1].trim()); //alienv adds a space at the end of each entry
 			}
 
 		return environment;
