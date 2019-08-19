@@ -93,7 +93,8 @@ public class JSONPrintWriter extends UIPrintWriter {
 			replyObject.put("results", resultArray);
 			os.write(replyObject.toJSONString().getBytes());
 			os.flush();
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 			logger.log(Level.FINE, "Could not write JSON to the client OutputStream", e);
 		}
@@ -112,7 +113,8 @@ public class JSONPrintWriter extends UIPrintWriter {
 	void nextResult() {
 		if (currentResult != null) {
 			// The ROOT client doesn't expect a newline character at the end of a JSON string, remove it
-			currentResult.put("message", currentResult.get("message").replaceAll("\n$", ""));
+			if (currentResult.get("message") != null)
+				currentResult.put("message", currentResult.get("message").replaceAll("\n$", ""));
 
 			resultArray.add(currentResult);
 			currentResult = null;
