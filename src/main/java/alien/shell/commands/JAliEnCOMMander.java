@@ -509,6 +509,8 @@ public class JAliEnCOMMander extends Thread {
 					out.setReturnCode(-6, "No such command or not implemented yet. ");
 				else {
 					if (help) {
+						// Force enable stdout message
+						nomsg = false;
 						jcommand.printHelp();
 					}
 					else
