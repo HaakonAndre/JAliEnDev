@@ -331,7 +331,7 @@ public class JSh {
 	 * }
 	 */
 
-	private static void killJBox() {
+	public static void killJBox() {
 		if (JSh.JBoxRunning()) {
 
 			final ProcessBuilder pBuilder = new ProcessBuilder(new String[] { kill, String.valueOf(pid) });

@@ -501,13 +501,13 @@ public class BusyBox {
 
 	private void shutdown() {
 		try {
-			System.out.print("Shutting down jBox...");
 			if (socketThere(s)) {
-				sendCommand("shutdown");
+				System.out.print("Shutting down jBox...");
+				JSh.killJBox();
 
 				// TODO: How to tell that jBox was killed successfully
 				// if(socketThere(s))
-				System.out.println("DONE.");
+				//System.out.println("DONE.");
 				// else{
 				// System.out.println("ERROR.");
 				// System.out.println("JBox might still be running.");
