@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -111,7 +112,7 @@ public class ArchiveMemberDelete {
 
 		final String registerPath = parentdir + "/registertemp";
 
-		LFN remoteLFN = null;
+		final LFN remoteLFN;
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
 		}
@@ -124,60 +125,8 @@ public class ArchiveMemberDelete {
 
 		// Clean up previous iterations
 		//
-		if (remoteLFN == null || !remoteLFN.exists) {
-			// TrackRefs was deleted, registertemp contains valid files
-			System.err.println("[" + new Date() + "] " + xmlEntry + ": LFN doesn't exist, checking registertemp");
-
-			if (commander.c_api.getLFN(registerPath) != null) {
-				// Move everything from registertemp to parent
-				System.out.println("[" + new Date() + "] " + "registertemp found, moving out its content");
-				for (final LFN file : commander.c_api.getLFNs(registerPath)) {
-					if (file == null || !file.exists) {
-						System.err.println("[" + new Date() + "] " + "Failed to get directory listing for " + registerPath + ". Abort.");
-						return;
-					}
-
-					// Check if there is another copy of the same file in parentdir
-					final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file.getFileName());
-					final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file.getFileName());
-					if (parentMember != null) {
-						if (parentMember.guid.equals(registerMember.guid))
-							commander.c_api.removeLFN(parentMember.getCanonicalName(), false, false);
-						else
-							commander.c_api.removeLFN(parentMember.getCanonicalName());
-					}
-
-					System.out.println("[" + new Date() + "] " + "Moving " + registerPath + "/" + file.getFileName());
-					if (commander.c_api.moveLFN(registerPath + "/" + file.getFileName(), parentdir + "/" + file.getFileName()) == null) {
-						System.err.println("[" + new Date() + "] " + "Failed to move " + file.getFileName() + ". Abort.");
-						return;
-					}
-				}
-
-				// Delete registertemp dir since all files are moved
-				if (registerPath.length() > 20) // Safety check
-					commander.c_api.removeLFN(registerPath, true);
-			}
-			else {
-				if (!commander.c_api.find(parentdir, dotdeleted, 0).isEmpty()) {
-					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
-				}
-				else {
-					System.out.println("[" + new Date() + "] " + "registertemp is not there, but " + parentdir + "/.deleted NOT FOUND. Abort.");
-				}
-			}
+		if (!cleanUpRegistertemp(xmlEntry, registerPath, remoteLFN, parentdir))
 			return;
-		}
-		// Else
-		// TrackRefs was not deleted, remove invalid files from registertemp
-		if (commander.c_api.getLFN(registerPath) != null) {
-			// Delete registertemp dir since it can be corrupted
-			if (registerPath.length() > 20) // Safety check
-				commander.c_api.removeLFN(registerPath, true);
-		}
-		else {
-			System.out.println("[" + new Date() + "] " + "registertemp is not there, continue with the main procedure");
-		}
 
 		// Continue basic checks
 		// Check if we are able to get PFN list
@@ -211,19 +160,7 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] " + remoteFile + " is a real file, we'll simply delete it");
 
 			// Speed up things by calling xrootd delete directly
-			final Iterator<PFN> it = remotePFN.iterator();
-			while (it.hasNext()) {
-				PFN pfn = it.next();
-
-				try {
-					if (!Factory.xrootd.delete(pfn)) {
-						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
-					}
-				}
-				catch (final IOException e) {
-					e.printStackTrace();
-				}
-			}
+			xrdDeleteRemoteFile(remoteFile, remotePFN);
 
 			commander.c_api.removeLFN(remoteFile);
 			commander.c_api.touchLFN(parentdir + "/" + dotdeleted + remoteFileSize);
@@ -265,19 +202,7 @@ public class ArchiveMemberDelete {
 				System.out.println("[" + new Date() + "] Deleting old remote archive");
 
 				// Remove physical replicas of the old archive
-				final Iterator<PFN> it = remoteArchivePFN.iterator();
-				while (it.hasNext()) {
-					final PFN pfn = it.next();
-
-					try {
-						if (!Factory.xrootd.delete(pfn)) {
-							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
-						}
-					}
-					catch (final IOException e) {
-						e.printStackTrace();
-					}
-				}
+				xrdDeleteRemoteFile(remoteFile, remoteArchivePFN);
 
 				// Remove lfn of the old archive
 				commander.c_api.removeLFN(remoteArchive);
@@ -310,8 +235,7 @@ public class ArchiveMemberDelete {
 			//
 			System.out.println("[" + new Date() + "] Unpacking to local directory");
 			if (!unzip(archiveName, memberName)) {
-				System.err.println(
-						"[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + usrdir + separator + archiveName);
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + usrdir + separator + archiveName);
 				validation.println("Extraction failed " + remoteArchive);
 				return;
 			}
@@ -345,132 +269,22 @@ public class ArchiveMemberDelete {
 				return;
 			}
 
-			// Register files in the catalogue
+			// Register archive members in the catalogue
 			//
+			registerFiles(entry, registerPath, remoteFile, validation);
 
-			// Create subdirs (like BKG/)
-			for (final String file : listOfFiles) {
-				if (file.contains("/")) {
-					if (commander.c_api.createCatalogueDirectory(registerPath + "/" + file.substring(0, file.lastIndexOf('/')), true) == null) {
-						System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to create new directory " + registerPath + "/" + file.substring(0, file.lastIndexOf('/')));
-						validation.println("Mkdir failed " + registerPath + "/" + file.substring(0, file.lastIndexOf('/')));
-
-						// Delete all newly created entries and directories
-						if (registerPath.length() > 20) // Safety check
-							commander.c_api.removeLFN(registerPath, true);
-						return;
-					}
-				}
-			}
-
-			System.out.println("[" + new Date() + "] Registering files in the catalogue");
-			CatalogueApiUtils.registerEntry(entry, registerPath + "/", commander.getUser());
-
-			for (final String file : listOfFiles) {
-				final LFN entryLFN = commander.c_api.getLFN(registerPath + "/" + file);
-				if (entryLFN == null || !entryLFN.exists) {
-					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register entry " + registerPath + "/" + file);
-					validation.println("Register failed " + registerPath + "/" + file);
-
-					// Delete all newly created entries and directories
-					if (registerPath.length() > 20) // Safety check
-						commander.c_api.removeLFN(registerPath, true);
-					return;
-				}
-			}
-
-			// Delete the members links of old archive
+			// Delete old files
 			//
-			System.out.println("[" + new Date() + "] Deleting the members links of old archive");
-			for (final LFN member : remoteArchiveMembers) {
-				System.out.println("[" + new Date() + "] Deleting " + member.getCanonicalName());
-				if (!commander.c_api.removeLFN(member.getCanonicalName())) {
-					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to delete old archive member " + member.getCanonicalName());
-					validation.println("Archive member deletion failed " + remoteArchive);
-
-					// Delete all newly created entries and directories
-					if (registerPath.length() > 20) // Safety check
-						commander.c_api.removeLFN(registerPath, true);
-					return;
-				}
-			}
-
-			// Delete old remote archive
-			//
-			System.out.println("[" + new Date() + "] Deleting old remote archive");
-
-			// Remove lfn of the old archive
-			if (!commander.c_api.removeLFN(remoteArchive)) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to delete old archive " + remoteArchive);
-				validation.println("Archive deletion failed " + remoteArchive);
-
-				// Delete all newly created entries and directories
-				if (registerPath.length() > 20) // Safety check
-					commander.c_api.removeLFN(registerPath, true);
-				return;
-			}
-
-			// Remove physical replicas of the old archive
-			final Iterator<PFN> it = remoteArchivePFN.iterator();
-			while (it.hasNext()) {
-				final PFN pfn = it.next();
-
-				if (pfn == null) {
-					System.err.println("One of the PFNs in the removeArchivePFN is null");
-					continue;
-				}
-
-				try {
-					System.out.println("[" + new Date() + "] Deleting pfn: " + pfn.pfn);
-					if (!Factory.xrootd.delete(pfn)) {
-						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
-					}
-				}
-				catch (final IOException e) {
-					e.printStackTrace();
-				}
-			}
+			deleteRemoteArchive(remoteFile, remoteArchive, remoteArchiveMembers, registerPath, remoteArchivePFN, validation);
 
 			// Create file marker to leave trace
 			if (commander.c_api.touchLFN(parentdir + "/" + dotdeleted + (remoteArchiveLFN.getSize() - newArchive.length())) == null) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not create .deleted marker");
 			}
 
-			// Rename uploaded archive
+			// Move new files from registertemp to registerpath
 			//
-			System.out.println("[" + new Date() + "] Renaming uploaded archive");
-			if (commander.c_api.moveLFN(registerPath + "/" + archiveName, remoteArchive) == null) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive " + registerPath + "/" + archiveName);
-
-				// Check if there is another copy of the same file in parentdir
-				final LFN registerArchive = commander.c_api.getLFN(registerPath + "/" + archiveName);
-				final LFN parentArchive = commander.c_api.getLFN(remoteArchive);
-				if (parentArchive != null && parentArchive.guid.equals(registerArchive.guid)) {
-					commander.c_api.removeLFN(registerArchive.getCanonicalName(), false, false);
-				}
-				else {
-					validation.println("Renaming failed " + registerPath + "/" + archiveName);
-					return;
-				}
-			}
-
-			// Rename new archive members
-			for (final String file : listOfFiles) {
-				if (commander.c_api.moveLFN(registerPath + "/" + file, parentdir + "/" + file) == null) {
-					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename archive member " + parentdir + "/" + file);
-
-					// Check if there is another copy of the same file in parentdir
-					final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file);
-					final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file);
-					if (parentMember != null && parentMember.guid.equals(registerMember.guid)) {
-						commander.c_api.removeLFN(registerMember.getCanonicalName(), false, false);
-					}
-					else {
-						validation.println("Renaming failed " + parentdir + "/" + file);
-						return;
-					}
-				}
-			}
+			renameFiles(remoteArchive, listOfFiles, archiveName, registerPath, remoteFile, validation, parentdir);
 
 			if (registerPath.length() > 20) // Safety check
 				commander.c_api.removeLFN(registerPath, true);
@@ -482,7 +296,6 @@ public class ArchiveMemberDelete {
 
 			// Clean up local files
 			cleanUpLocal(Path.of(usrdir, "extracted"));
-			cleanUpLocal(newArchive.toPath());
 		}
 		catch (final IOException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": I/O exception. Abort");
@@ -530,6 +343,7 @@ public class ArchiveMemberDelete {
 			while (entry != null) {
 				if (entry.getName().contains(memberName) || entry.getName().contains("AliESDfriends.root")) {
 					// Skip this file; also skip AliESDfriends.root
+					System.out.println("[" + new Date() + "] " + " - skipped " + entry.getName() + " with size " + entry.getSize());
 					zipIn.closeEntry();
 					entry = zipIn.getNextEntry();
 					continue;
@@ -583,11 +397,13 @@ public class ArchiveMemberDelete {
 	 */
 	private static ArrayList<String> getFileListing(final Path folderName) {
 		ArrayList<String> result = new ArrayList<>();
-		try (Stream<Path> paths = Files.walk(folderName)) {
-			if (paths.count() == 0)
-				System.err.println("[" + new Date() + "] Failed to get list of files in local folder: " + folderName);
+		try {
+			result = Files.walk(folderName).map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
+			// Files.walk always returns parent dir as a first element. After relativize it is transformed to "". Remove it from the result
+			result.remove("");
 
-			result = paths.map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
+			if (result.size() == 0)
+				System.err.println("[" + new Date() + "] Failed to get list of files in local folder: " + folderName.toAbsolutePath());
 		}
 		catch (final IOException e) {
 			e.printStackTrace();
@@ -603,10 +419,221 @@ public class ArchiveMemberDelete {
 	 */
 	private static void cleanUpLocal(final Path path) {
 		try {
-			Files.delete(path);
+			Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 		}
 		catch (final IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Delete any leftovers from the previous iterations. Returns <code>true</code> if it is ok to continue member removal procedure
+	 * 
+	 */
+	private static boolean cleanUpRegistertemp(final String xmlEntry, final String registerPath, final LFN remoteLFN, final String parentdir) {
+		if (remoteLFN == null || !remoteLFN.exists) {
+			// TrackRefs was deleted, registertemp contains valid files
+			System.err.println("[" + new Date() + "] " + xmlEntry + ": LFN doesn't exist, checking registertemp");
+
+			if (commander.c_api.getLFN(registerPath) != null) {
+				// Move everything from registertemp to parent
+				System.out.println("[" + new Date() + "] " + "registertemp found, moving out its content");
+				for (final LFN file : commander.c_api.getLFNs(registerPath)) {
+					if (file == null || !file.exists) {
+						System.err.println("[" + new Date() + "] " + "Failed to get directory listing for " + registerPath + ". Abort.");
+						return false;
+					}
+
+					// Check if there is another copy of the same file in parentdir
+					final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file.getFileName());
+					final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file.getFileName());
+					if (parentMember != null) {
+						if (parentMember.guid.equals(registerMember.guid))
+							commander.c_api.removeLFN(parentMember.getCanonicalName(), false, false);
+						else
+							commander.c_api.removeLFN(parentMember.getCanonicalName());
+					}
+
+					System.out.println("[" + new Date() + "] " + "Moving " + registerPath + "/" + file.getFileName());
+					if (commander.c_api.moveLFN(registerPath + "/" + file.getFileName(), parentdir + "/" + file.getFileName()) == null) {
+						System.err.println("[" + new Date() + "] " + "Failed to move " + file.getFileName() + ". Abort.");
+						return false;
+					}
+				}
+
+				// Delete registertemp dir since all files are moved
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
+			}
+			else {
+				if (!commander.c_api.find(parentdir, dotdeleted, 0).isEmpty()) {
+					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
+				}
+				else {
+					System.out.println("[" + new Date() + "] " + "registertemp is not there, but " + parentdir + "/.deleted NOT FOUND. Abort.");
+				}
+			}
+			return false;
+		}
+		// Else
+		// TrackRefs was not deleted, remove invalid files from registertemp
+		if (commander.c_api.getLFN(registerPath) != null) {
+			// Delete registertemp dir since it can be corrupted
+			if (registerPath.length() > 20) // Safety check
+				commander.c_api.removeLFN(registerPath, true);
+		}
+		else {
+			System.out.println("[" + new Date() + "] " + "registertemp is not there, continue with the main procedure");
+		}
+		return true;
+	}
+
+	/**
+	 * Delete an archive and it's member from the catalogue
+	 * 
+	 */
+	private static void deleteRemoteArchive(final String remoteFile, final String remoteArchive, final List<LFN> remoteArchiveMembers, final String registerPath, final List<PFN> remoteArchivePFN,
+			final PrintWriter validation) {
+		// Delete the members links of old archive
+		//
+		System.out.println("[" + new Date() + "] Deleting the members links of old archive");
+		for (final LFN member : remoteArchiveMembers) {
+			System.out.println("[" + new Date() + "] Deleting " + member.getCanonicalName());
+			if (!commander.c_api.removeLFN(member.getCanonicalName())) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to delete old archive member " + member.getCanonicalName());
+				validation.println("Archive member deletion failed " + remoteArchive);
+
+				// Delete all newly created entries and directories
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
+				return;
+			}
+		}
+
+		// Delete old remote archive
+		//
+		System.out.println("[" + new Date() + "] Deleting old remote archive");
+
+		// Remove lfn of the old archive
+		if (!commander.c_api.removeLFN(remoteArchive)) {
+			System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to delete old archive " + remoteArchive);
+			validation.println("Archive deletion failed " + remoteArchive);
+
+			// Delete all newly created entries and directories
+			if (registerPath.length() > 20) // Safety check
+				commander.c_api.removeLFN(registerPath, true);
+			return;
+		}
+
+		// Remove physical replicas of the old archive
+		xrdDeleteRemoteFile(remoteFile, remoteArchivePFN);
+	}
+
+	/**
+	 * Physically delete the remote file using xrootd utils
+	 * 
+	 */
+	private static void xrdDeleteRemoteFile(final String remoteFile, final List<PFN> remotePFN) {
+		final Iterator<PFN> it = remotePFN.iterator();
+		while (it.hasNext()) {
+			final PFN pfn = it.next();
+
+			if (pfn == null) {
+				System.err.println("One of the PFNs of " + remoteFile + " is null");
+				continue;
+			}
+
+			try {
+				System.out.println("[" + new Date() + "] Deleting pfn: " + pfn.pfn);
+				if (!Factory.xrootd.delete(pfn)) {
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
+				}
+			}
+			catch (final IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Create directory structure and register archive and members in the Catalogue. Returns <code>true</code> if it is ok to continue member removal procedure
+	 * 
+	 */
+	private static boolean registerFiles(final OutputEntry entry, final String registerPath, final String remoteFile, final PrintWriter validation) {
+		// Create subdirs (like BKG/)
+		for (final String file : entry.getFilesIncluded()) {
+			if (file.contains("/")) {
+				if (commander.c_api.createCatalogueDirectory(registerPath + "/" + file.substring(0, file.lastIndexOf('/')), true) == null) {
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to create new directory " + registerPath + "/" + file.substring(0, file.lastIndexOf('/')));
+					validation.println("Mkdir failed " + registerPath + "/" + file.substring(0, file.lastIndexOf('/')));
+
+					// Delete all newly created entries and directories
+					if (registerPath.length() > 20) // Safety check
+						commander.c_api.removeLFN(registerPath, true);
+					return false;
+				}
+			}
+		}
+
+		System.out.println("[" + new Date() + "] Registering files in the catalogue");
+		CatalogueApiUtils.registerEntry(entry, registerPath + "/", commander.getUser());
+
+		for (final String file : entry.getFilesIncluded()) {
+			final LFN entryLFN = commander.c_api.getLFN(registerPath + "/" + file);
+			if (entryLFN == null || !entryLFN.exists) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register entry " + registerPath + "/" + file);
+				validation.println("Register failed " + registerPath + "/" + file);
+
+				// Delete all newly created entries and directories
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Create directory structure and register archive and members in the Catalogue. Returns <code>true</code> if it is ok to continue member removal procedure
+	 * 
+	 */
+	private static boolean renameFiles(final String remoteArchive, final ArrayList<String> listOfFiles, final String archiveName, final String registerPath, final String remoteFile,
+			final PrintWriter validation, final String parentdir) {
+		// Rename uploaded archive
+		//
+		System.out.println("[" + new Date() + "] Renaming uploaded archive");
+		if (commander.c_api.moveLFN(registerPath + "/" + archiveName, remoteArchive) == null) {
+			System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive " + registerPath + "/" + archiveName);
+
+			// Check if there is another copy of the same file in parentdir
+			final LFN registerArchive = commander.c_api.getLFN(registerPath + "/" + archiveName);
+			final LFN parentArchive = commander.c_api.getLFN(remoteArchive);
+			if (parentArchive != null && parentArchive.guid.equals(registerArchive.guid)) {
+				commander.c_api.removeLFN(registerArchive.getCanonicalName(), false, false);
+			}
+			else {
+				validation.println("Renaming failed " + registerPath + "/" + archiveName);
+				return false;
+			}
+		}
+
+		// Rename new archive members
+		for (final String file : listOfFiles) {
+			if (commander.c_api.moveLFN(registerPath + "/" + file, parentdir + "/" + file) == null) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename archive member " + parentdir + "/" + file);
+
+				// Check if there is another copy of the same file in parentdir
+				final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file);
+				final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file);
+				if (parentMember != null && parentMember.guid.equals(registerMember.guid)) {
+					commander.c_api.removeLFN(registerMember.getCanonicalName(), false, false);
+				}
+				else {
+					validation.println("Renaming failed " + parentdir + "/" + file);
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 }
