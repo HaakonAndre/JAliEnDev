@@ -21,7 +21,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 			for (final Package p : packs) {
 				commander.outNextResult();
 				commander.printOut("packages", p.getFullName());
-				commander.printOutln("result" + padSpace(1) + p.getFullName());
+				commander.printOutln(padSpace(1) + p.getFullName());
 			}
 		}
 		else {
