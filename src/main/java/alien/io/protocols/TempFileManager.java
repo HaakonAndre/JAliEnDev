@@ -219,6 +219,9 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 * @return <code>true</code> if this file was indeed released
 	 */
 	public static boolean release(final File f) {
+		if (f == null)
+			return false;
+
 		boolean removed;
 
 		synchronized (lockedLocalFiles) {
