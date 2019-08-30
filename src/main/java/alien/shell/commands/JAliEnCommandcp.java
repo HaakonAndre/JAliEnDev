@@ -103,16 +103,42 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	public void run() {
 		if (bT) {
 			try {
-				final File fTemp = File.createTempFile("jalien.get.", ".temp");
+				final LFN currentDir = commander.getCurrentDir();
 
-				fTemp.delete();
+				final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, source);
 
-				localFile = copyGridToLocal(source, fTemp);
+				final LFN lSource = commander.c_api.getLFN(absolutePath);
 
-				if (localFile != null)
-					TempFileManager.putTemp(GUIDUtils.createGuid(localFile, null), localFile);
+				if (lSource == null) {
+					commander.setReturnCode(1, "File doesn't exist: " + absolutePath);
+				}
+				else
+					if (!lSource.isFile()) {
+						commander.setReturnCode(2, "This entry is not a file: " + absolutePath);
+					}
+					else {
+						final GUID g = commander.c_api.getGUID(lSource.guid.toString());
+
+						if (g == null) {
+							commander.setReturnCode(2, "Cannot get the GUID of " + absolutePath);
+						}
+						else {
+							localFile = TempFileManager.getAny(g);
+
+							if (localFile == null) {
+								final File fTemp = File.createTempFile("jalien.get.", ".temp");
+
+								fTemp.delete();
+
+								localFile = copyGridToLocal(absolutePath, fTemp);
+
+								if (localFile != null)
+									TempFileManager.putTemp(g, localFile);
+							}
+						}
+					}
 			}
-			catch (@SuppressWarnings("unused") IOException ioe) {
+			catch (@SuppressWarnings("unused") final IOException ioe) {
 				commander.printErrln("Cannot create temporary file");
 			}
 		}
