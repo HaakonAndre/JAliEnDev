@@ -1,19 +1,15 @@
 package alien.site;
 
-import java.io.BufferedReader;
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StreamCorruptedException;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -852,17 +848,14 @@ public class JobAgent implements MonitoringObject, Runnable {
 	}
 
 	/**
-	 * @param p A JobWrapper subprocess
-	 * @param stdin Stdin for the subprocess
-	 * @return Returns a jobWrapperListener that listens to updates from a JobWrapper process, each a string in the following format:
+	 * Checks the job status at the JobWrapper by reading the .jobstatus file, which contains a string in the following format:
 	 * 
 	 * JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 */
 	private void checkWrapperStatus() {
-		
+
 		try {
-			
-			String statusString = Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
+			final String statusString = Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
 
 			final String[] statusArr = statusString.split("\\|");
 			final String jobStatusString = statusArr[0];
@@ -880,12 +873,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 				final JobStatus newStatus = JobStatus.getStatus(jobStatusString);
 				changeJobStatus(newStatus, extrafields);
-
 			}
-		} catch(Exception e) {
-			logger.log(Level.WARNING, "Failed to read job status " +  e);
+		} catch(final NoSuchFileException e1) {
+			logger.log(Level.INFO, "Waiting for JobWrapper to create status file: " +  e1);
+		} catch(final Exception e2) {
+			logger.log(Level.WARNING, "Failed to read job status " +  e2.toString());
 		}
-
 	}
 
 	private static int convertStringUnitToIntegerMB(String unit, String number) {
