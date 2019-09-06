@@ -865,7 +865,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			String statusString = Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
 
 			final String[] statusArr = statusString.split("\\|");
-			final String jobStatusString = statusArr[0]
+			final String jobStatusString = statusArr[0];
 
 			if (jobStatus == null || !jobStatus.toString().equals(jobStatusString)) {
 
