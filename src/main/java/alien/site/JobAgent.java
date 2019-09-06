@@ -15,6 +15,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -614,10 +615,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		final Timer t = new Timer();
 		t.schedule(killProcess, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
 
-		//Listen for job updates from the jobwrapper
-		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdout, stdin));
-		jobWrapperListener.start();
-
 		int code = 0;
 
 		logger.log(Level.INFO, "About to enter monitor loop. Is the JobWrapper process alive?: " + p.isAlive());
@@ -629,6 +626,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 				if (monitorJob) {
 					monitor_loops++;
+					checkWrapperStatus();
 					final String error = checkProcessResources();
 					if (error != null) {
 						killProcess.run();
@@ -656,10 +654,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 			return code;
 		}  finally {
 			try{
+				checkWrapperStatus(); //check one final time before exiting
 				t.cancel();
 				stdinObj.close();
 				stdin.close();
-				jobWrapperListener.interrupt();
 			} catch (final Exception e){
 				logger.log(Level.WARNING, "Not all resources from the current job could be cleared: " + e);
 			}
@@ -858,51 +856,36 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * @param stdin Stdin for the subprocess
 	 * @return Returns a jobWrapperListener that listens to updates from a JobWrapper process, each a string in the following format:
 	 * 
-	 * "JWUpdate"|JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
+	 * JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 */
-	private Runnable createJobWrapperListener(Process p, InputStream stdout, OutputStream stdin){
-		final Runnable jobWrapperListener = () -> {
+	private void checkWrapperStatus() {
+		
+		try {
+			
+			String statusString = Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
 
-			final PrintWriter stdinPrinter = new PrintWriter(stdin);
-			final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
+			final String[] statusArr = statusString.split("\\|");
+			final String jobStatusString = statusArr[0]
 
-			while(p.isAlive()){
-				try {
-					final String receivedString = stdoutReader.readLine();                 
+			if (jobStatus == null || !jobStatus.toString().equals(jobStatusString)) {
 
-					if(receivedString.contains("JWUpdate|")){
-						final String[] received = receivedString.split("\\|");
-						final String newStatusString = received[1];
+				logger.log(Level.INFO, "Received new status update from JobWrapper: " + jobStatusString);
 
-						logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
+				final HashMap<String, Object> extrafields = new HashMap<>();
 
-						final HashMap<String, Object> extrafields = new HashMap<>();
-
-						for (int i=2; i<received.length; i+=2){
-							extrafields.put(received[i], received[i+1]);
-							logger.log(Level.INFO, "Putting in extrafields: " + received[i] + " " + received[i+1]);
-						}
-
-						final JobStatus newStatus = JobStatus.getStatus(newStatusString);
-						changeJobStatus(newStatus, extrafields);
-
-						//echo back status to confirm
-						stdinPrinter.println(newStatusString);
-						stdinPrinter.flush();
-					}
-				} catch (final StreamCorruptedException e) {
-					logger.log(Level.WARNING, "Received something from JobWrapper, but it wasn't a status update (corrupted?). Ignoring");
-				} catch (final EOFException e1) {
-					logger.log(Level.INFO, "JobWrapper has stopped sending updates");
-					break; 	
-				} catch (final NullPointerException e2) {
-					logger.log(Level.WARNING, "A NullPointer has occurred: " + e2);
-				} catch (final Exception e3){
-					logger.log(Level.WARNING, "Exception received: " + e3);
+				for (int i=1; i<statusArr.length; i+=2){
+					extrafields.put(statusArr[i], statusArr[i+1]);
+					logger.log(Level.INFO, "Putting in extrafields: " + statusArr[i] + " " + statusArr[i+1]);
 				}
+
+				final JobStatus newStatus = JobStatus.getStatus(jobStatusString);
+				changeJobStatus(newStatus, extrafields);
+
 			}
-		}; 
-		return jobWrapperListener;
+		} catch(Exception e) {
+			logger.log(Level.WARNING, "Failed to read job status " +  e);
+		}
+
 	}
 
 	private static int convertStringUnitToIntegerMB(String unit, String number) {

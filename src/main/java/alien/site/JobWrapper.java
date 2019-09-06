@@ -144,6 +144,8 @@ public class JobWrapper implements Runnable {
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
 
+		new File(currentDir, ".jobstatus");
+		
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
 
@@ -163,19 +165,8 @@ public class JobWrapper implements Runnable {
 
 		logger.log(Level.INFO, "Tomcat started");
 
-		// Start listening for messages from the JobAgent
-		final Thread jobAgentListener = new Thread(createJobAgentListener());
-		jobAgentListener.start();
-
 		// process payload
 		final int runCode = runJob();
-
-		try {
-			jobAgentListener.interrupt();
-			inputFromJobAgent.close();
-		} catch (final Exception e) {
-			logger.log(Level.WARNING, "An exception occurred during cleanup: " + e);
-		}
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
 
@@ -647,14 +638,14 @@ public class JobWrapper implements Runnable {
 	/**
 	 * "Sends" a status update to JobAgent as a string in the following format:
 	 * 
-	 * "JWUpdate"|JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
+	 * "JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 * 
 	 * @param newStatus
 	 */
 	public void sendStatus(final JobStatus newStatus) {
 		jobStatus = newStatus;
 		
-		String sendString = "JWUpdate|" + jobStatus.name();
+		String sendString = jobStatus.name();
 		sendString += "|exechost|" + this.ce;
 		
 		// if final status with saved files, we set the path
@@ -668,14 +659,11 @@ public class JobWrapper implements Runnable {
 
 		try {
 			if (inputFromJobAgent != null){
-				// receivedStatus is updated by a JobAgentListener
-				while(!receivedStatus.contains(jobStatus.name())){
+
 					logger.log(Level.INFO, "SENDING: " + sendString);
 					System.out.printf("%s%n", sendString);
-					System.out.flush();
-
-					Thread.sleep(10*1000); //sleep for 10s, then retry
-				}
+					Files.writeString(Paths.get(currentDir.getAbsolutePath() + "/.jobstatus"), sendString);
+				
 			}
 			else {
 				logger.log(Level.INFO, "SENDING: " + sendString);
@@ -701,30 +689,6 @@ public class JobWrapper implements Runnable {
 				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
-	}
-	/**
-	 * @return a Runnable that will continuously listen for updates written to the system inputstream by the JobAgent
-	 */
-	private Runnable createJobAgentListener(){
-		final Runnable jobAgentListener = () -> {
-			final BufferedReader inputFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
-
-			while(true){
-				try {
-					receivedStatus = inputFromJobAgent.readLine();
-
-					if(receivedStatus != null)
-						logger.log(Level.INFO, "Confirmed from JobAgent: " + receivedStatus);
-					else {
-						logger.log(Level.SEVERE, "Unable to receive message from JobAgent. Stream is closed. Is JobAgent running?");
-						break;
-					}
-				} catch (final Exception e) {
-					logger.log(Level.WARNING, "Received something from JobWrapper, but it could not be read (corrupted?): " + e);
-				}
-			}
-		}; 
-		return jobAgentListener;
 	}
 
 	private static String getTraceFromFile() {
