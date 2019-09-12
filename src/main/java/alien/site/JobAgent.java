@@ -77,6 +77,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private String tokenKey;
 	private String jobAgentId;
 	private String workdir;
+	private String legacyToken;
 	private HashMap<String, Object> matchedJob;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private int workdirMaxSizeMB;
@@ -251,11 +252,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 					username = (String) matchedJob.get("User");
 					tokenCert = (String) matchedJob.get("TokenCertificate");
 					tokenKey = (String) matchedJob.get("TokenKey");
+					legacyToken = (String) matchedJob.get("LegacyToken");
 
 					matchedJob.entrySet().forEach(entry->{
 						System.err.println(entry.getKey() + " " + entry.getValue());  
 					});
-
+					
 					// TODO: commander.setUser(username);
 					// commander.setSite(site);
 
@@ -468,6 +470,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 			//Main cmd for starting the JobWrapper
 			final List<String> launchCmd = new ArrayList<>();
 
+			//Let legacy token be in the wrapper environment
+			launchCmd.add("ALIEN_JOB_TOKEN="+legacyToken);
+			
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
 			Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
