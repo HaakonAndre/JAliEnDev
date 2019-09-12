@@ -471,7 +471,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			final List<String> launchCmd = new ArrayList<>();
 
 			//Let legacy token be in the wrapper environment
-			launchCmd.add("ALIEN_JOB_TOKEN="+legacyToken);
+			launchCmd.add("ALIEN_JOB_TOKEN=\""+legacyToken+"\"");
 			
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
