@@ -41,6 +41,11 @@ public class JobToken implements Comparable<JobToken> {
 	 * Resubmission
 	 */
 	public int resubmission;
+	
+	/**
+	 * Legacy, session-ID like token
+	 */
+	public String legacyToken;
 
 	/**
 	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not. Setting the other fields will only be permitted if this field is false.
@@ -74,6 +79,8 @@ public class JobToken implements Comparable<JobToken> {
 		this.username = username;
 
 		this.exists = false;
+		
+		this.legacyToken = generateToken();
 	}
 
 	private static final Random ran = new Random(System.nanoTime());
@@ -186,6 +193,17 @@ public class JobToken implements Comparable<JobToken> {
 			if (db.getUpdateCount() == 0) {
 				// the entry did not exist in fact, what's going on?
 				logger.log(Level.INFO, "Replace JobToken for: " + queueId + " count 0");
+				return false;
+			}
+
+			if (!db.query("REPLACE INTO JOBTOKEN (jobId, userName, jobToken) VALUES (?, ?, ?);", false, Long.valueOf(queueId), username, legacyToken)) {
+				logger.log(Level.INFO, "Legacy table query failed");
+				return false;
+			}
+			
+			if (db.getUpdateCount() == 0) {
+				// the entry did not exist in fact, what's going on?
+				logger.log(Level.INFO, "Replace legacy JobToken for: " + queueId + " count 0");
 				return false;
 			}
 		} finally {
