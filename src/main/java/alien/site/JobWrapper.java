@@ -62,6 +62,7 @@ public class JobWrapper implements Runnable {
 	private String tokenKey;
 	private HashMap<String, Object> siteMap;
 	private String ce;
+	private String legacyToken;
 	/**
 	 * @uml.property  name="jobStatus"
 	 * @uml.associationEnd  
@@ -116,6 +117,7 @@ public class JobWrapper implements Runnable {
 			ce = (String) inputFromJobAgent.readObject();
 			siteMap = (HashMap<String, Object>) inputFromJobAgent.readObject();
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
+			legacyToken = (String) inputFromJobAgent.readObject();
 
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
@@ -294,6 +296,7 @@ public class JobWrapper implements Runnable {
 
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
+		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); //add legacy token
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(currentDir, "stderr")));
