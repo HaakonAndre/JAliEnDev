@@ -89,7 +89,7 @@ public class ArchiveMemberDelete {
 			System.out.println("All files processed. Exiting");
 
 			final Path validation = Path.of("validation_error.message");
-			if (Files.size(validation) == 0)
+			if (Files.exists(validation) && Files.size(validation) == 0)
 				cleanUpLocal(validation);
 		}
 	}
@@ -279,7 +279,9 @@ public class ArchiveMemberDelete {
 
 			// Create file marker to leave trace
 			if (commander.c_api.touchLFN(parentdir + "/" + dotdeleted + (remoteArchiveLFN.getSize() - newArchive.length())) == null) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not create .deleted marker");
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not create .deleted marker. Abort");
+				validation.println("Failed to touch file in " + parentdir);
+				return;
 			}
 
 			// Move new files from registertemp to registerpath
@@ -470,7 +472,12 @@ public class ArchiveMemberDelete {
 					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
 				}
 				else {
-					System.out.println("[" + new Date() + "] " + "registertemp is not there, but " + parentdir + "/.deleted NOT FOUND. Abort.");
+					if (commander.c_api.find(parentdir, "/" + "root_archive.zip", 0).isEmpty()) {
+						System.out.println("[" + new Date() + "] " + "registertemp is not there, original archive and it's members have been removed by someone else. Nothing to do");
+					}
+					else {
+						System.out.println("[" + new Date() + "] " + "registertemp is not there, but " + parentdir + "/.deleted NOT FOUND. Abort.");
+					}
 				}
 			}
 			return false;
