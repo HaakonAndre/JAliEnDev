@@ -111,7 +111,7 @@ public class JobWrapper implements Runnable {
 			inputFromJobAgent = new ObjectInputStream(System.in);
 			jdl = (JDL) inputFromJobAgent.readObject();
 			username = (String) inputFromJobAgent.readObject();
-			queueId = (long) inputFromJobAgent.readObject();
+			queueId = ((Long) inputFromJobAgent.readObject()).longValue();
 			tokenCert = (String) inputFromJobAgent.readObject();
 			tokenKey = (String) inputFromJobAgent.readObject();
 			ce = (String) inputFromJobAgent.readObject();
@@ -220,10 +220,9 @@ public class JobWrapper implements Runnable {
 				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
 				if (jdl.gets("OutputErrorE") != null)
 					return uploadOutputFiles(true) ? execExitCode : -1;
-				else {
-					sendStatus(jobStatus);
-					return execExitCode;
-				}
+
+				sendStatus(jobStatus);
+				return execExitCode;
 			}
 
 			final int valExitCode = validate();
@@ -297,6 +296,7 @@ public class JobWrapper implements Runnable {
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); //add legacy token
+		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(currentDir, "stderr")));
@@ -576,7 +576,7 @@ public class JobWrapper implements Runnable {
 				}
 
 			} catch (final IOException e) {
-				logger.log(Level.WARNING, "IOException received while attempting to upload files");
+				logger.log(Level.WARNING, "IOException received while attempting to upload files", e);
 				uploadedAllOutFiles = false;
 			}
 		}
@@ -710,11 +710,11 @@ public class JobWrapper implements Runnable {
 	 */
 	private Runnable createJobAgentListener(){
 		final Runnable jobAgentListener = () -> {
-			final BufferedReader inputFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
+			final BufferedReader dataFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
 
 			while(true){
 				try {
-					receivedStatus = inputFromJobAgent.readLine();
+					receivedStatus = dataFromJobAgent.readLine();
 
 					if(receivedStatus != null)
 						logger.log(Level.INFO, "Confirmed from JobAgent: " + receivedStatus);
@@ -783,7 +783,6 @@ public class JobWrapper implements Runnable {
 		}
 		jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput));
 		
-		TaskQueueApiUtils tq_api = new TaskQueueApiUtils(commander);
-		tq_api.addResultsJdl(jdl, queueId);
+		TaskQueueApiUtils.addResultsJdl(jdl, queueId);
 	}
 }
