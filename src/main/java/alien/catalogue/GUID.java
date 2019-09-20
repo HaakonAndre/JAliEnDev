@@ -407,7 +407,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	/**
 	 * Get the PFNs for this GUID
 	 *
-	 * @return set of physical locations
+	 * @return set of physical locations or <code>null</code> if failed to connect to the database
 	 */
 	public Set<PFN> getPFNs() {
 		if (pfnCache != null)
