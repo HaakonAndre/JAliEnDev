@@ -77,7 +77,7 @@ public class PFNforReadOrDel extends Request {
 
 		pfns = new LinkedList<>();
 
-		if (guid.getPFNs() != null) {
+		if (!guid.getPFNs().isEmpty()) {
 			try {
 				for (final PFN pfn : guid.getPFNs()) {
 					final UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
