@@ -472,7 +472,7 @@ public class ArchiveMemberDelete {
 					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
 				}
 				else {
-					if (commander.c_api.find(parentdir, "/" + "root_archive.zip", 0).isEmpty()) {
+					if (commander.c_api.find(parentdir + "/", "root_archive.zip", 0).isEmpty()) {
 						System.out.println("[" + new Date() + "] " + "registertemp is not there, original archive and it's members have been removed by someone else. Nothing to do");
 					}
 					else {
