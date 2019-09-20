@@ -850,9 +850,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 	public void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-
 		jobStatus = newStatus;
-
 		return;
 	}
 
@@ -877,17 +875,19 @@ public class JobAgent implements MonitoringObject, Runnable {
 						final String[] received = receivedString.split("\\|");
 						final String newStatusString = received[1];
 
-						logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
+						if(jobStatus == null || !newStatusString.equals(jobStatus.name())) {
+							logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
 
-						final HashMap<String, Object> extrafields = new HashMap<>();
+							final HashMap<String, Object> extrafields = new HashMap<>();
 
-						for (int i=2; i<received.length; i+=2){
-							extrafields.put(received[i], received[i+1]);
-							logger.log(Level.INFO, "Putting in extrafields: " + received[i] + " " + received[i+1]);
+							for (int i=2; i<received.length; i+=2){
+								extrafields.put(received[i], received[i+1]);
+								logger.log(Level.INFO, "Putting in extrafields: " + received[i] + " " + received[i+1]);
+							}
+
+							final JobStatus newStatus = JobStatus.getStatus(newStatusString);
+							changeJobStatus(newStatus, extrafields);
 						}
-
-						final JobStatus newStatus = JobStatus.getStatus(newStatusString);
-						changeJobStatus(newStatus, extrafields);
 
 						//echo back status to confirm
 						stdinPrinter.println(newStatusString);
