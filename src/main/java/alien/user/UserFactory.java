@@ -131,7 +131,7 @@ public final class UserFactory {
 			final X509Certificate cert[] = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
 
 			if (cert != null && cert.length > 0)
-				getByCertificate(cert);
+				return getByCertificate(cert);
 		}
 
 		return null;
