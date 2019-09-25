@@ -343,8 +343,6 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	private static boolean loadClientKeyStorage() throws Exception {
-		System.out.println("LOADING USER CERT");
-
 		final ExtProperties config = ConfigUtils.getConfig();
 
 		final String user_key = System.getenv("X509_USER_KEY") != null ? System.getenv("X509_USER_KEY")
