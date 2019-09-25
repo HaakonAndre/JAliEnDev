@@ -40,7 +40,6 @@ import joptsimple.OptionSet;
 public class ArchiveMemberDelete {
 
 	private static JAliEnCOMMander commander = null;
-	private final static String dotdeleted = ".deleted";
 	private final static String usrdir = System.getProperty("user.dir");
 	private final static String separator = System.getProperty("file.separator");
 
@@ -163,7 +162,6 @@ public class ArchiveMemberDelete {
 			xrdDeleteRemoteFile(remoteFile, remotePFN);
 
 			commander.c_api.removeLFN(remoteFile);
-			commander.c_api.touchLFN(parentdir + "/" + dotdeleted + remoteFileSize);
 
 			System.out.println("[" + new Date() + "] " + remoteFile);
 			System.out.println("[" + new Date() + "] Reclaimed " + remoteFileSize + " bytes of disk space");
@@ -207,9 +205,6 @@ public class ArchiveMemberDelete {
 				// Remove lfn of the old archive
 				commander.c_api.removeLFN(remoteArchive);
 
-				// Create file marker to leave trace
-				commander.c_api.touchLFN(parentdir + "/" + dotdeleted + remoteArchiveLFN.getSize());
-
 				System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 				System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
 				System.out.println("[" + new Date() + "] " + "Reclaimed " + remoteArchiveLFN.getSize() + " bytes of disk space");
@@ -237,6 +232,7 @@ public class ArchiveMemberDelete {
 			if (!unzip(archiveName, memberName)) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + usrdir + separator + archiveName);
 				validation.println("Extraction failed " + remoteArchive);
+				cleanUpLocal(localArchive.toPath());
 				return;
 			}
 			cleanUpLocal(localArchive.toPath());
@@ -266,27 +262,26 @@ public class ArchiveMemberDelete {
 			if (newArchiveLFN == null || !newArchiveLFN.exists) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
 				validation.println("Upload failed " + newArchiveFullPath);
+				cleanUpLocal(Path.of(usrdir, "extracted"));
 				return;
 			}
 
+			// Clean up local files
+			cleanUpLocal(Path.of(usrdir, "extracted"));
+
 			// Register archive members in the catalogue
 			//
-			registerFiles(entry, registerPath, remoteFile, validation);
+			if (!registerFiles(entry, registerPath, remoteFile, validation))
+				return;
 
 			// Delete old files
 			//
 			deleteRemoteArchive(remoteFile, remoteArchive, remoteArchiveMembers, registerPath, remoteArchivePFN, validation);
 
-			// Create file marker to leave trace
-			if (commander.c_api.touchLFN(parentdir + "/" + dotdeleted + (remoteArchiveLFN.getSize() - newArchive.length())) == null) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not create .deleted marker. Abort");
-				validation.println("Failed to touch file in " + parentdir);
-				return;
-			}
-
-			// Move new files from registertemp to registerpath
+			// Move new files from registertemp to parentdir
 			//
-			renameFiles(remoteArchive, listOfFiles, archiveName, registerPath, remoteFile, validation, parentdir);
+			if (!renameFiles(remoteArchive, listOfFiles, archiveName, registerPath, remoteFile, validation, parentdir))
+				return;
 
 			if (registerPath.length() > 20) // Safety check
 				commander.c_api.removeLFN(registerPath, true);
@@ -295,9 +290,6 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
 			System.out.println("[" + new Date() + "] " + "New archive is " + newArchive.length() + " bytes");
 			System.out.println("[" + new Date() + "] " + "Reclaimed " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
-
-			// Clean up local files
-			cleanUpLocal(Path.of(usrdir, "extracted"));
 		}
 		catch (final IOException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": I/O exception. Abort");
@@ -468,16 +460,11 @@ public class ArchiveMemberDelete {
 					commander.c_api.removeLFN(registerPath, true);
 			}
 			else {
-				if (!commander.c_api.find(parentdir, dotdeleted, 0).isEmpty()) {
-					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
+				if (commander.c_api.find(parentdir + "/", "root_archive.zip", 0).isEmpty()) {
+					System.out.println("[" + new Date() + "] " + "registertemp is not there, original archive and it's members have been removed by someone else. Nothing to do");
 				}
 				else {
-					if (commander.c_api.find(parentdir + "/", "root_archive.zip", 0).isEmpty()) {
-						System.out.println("[" + new Date() + "] " + "registertemp is not there, original archive and it's members have been removed by someone else. Nothing to do");
-					}
-					else {
-						System.out.println("[" + new Date() + "] " + "registertemp is not there, but " + parentdir + "/.deleted NOT FOUND. Abort.");
-					}
+					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
 				}
 			}
 			return false;
@@ -601,7 +588,7 @@ public class ArchiveMemberDelete {
 	}
 
 	/**
-	 * Create directory structure and register archive and members in the Catalogue. Returns <code>true</code> if it is ok to continue member removal procedure
+	 * Move new files to the parent directory. Returns <code>true</code> if it is ok to continue member removal procedure
 	 * 
 	 */
 	private static boolean renameFiles(final String remoteArchive, final ArrayList<String> listOfFiles, final String archiveName, final String registerPath, final String remoteFile,
