@@ -210,6 +210,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					return uploadOutputFiles(true) ? execExitCode : -1;
 
 				changeStatus(jobStatus);
+
 				return execExitCode;
 			}
 

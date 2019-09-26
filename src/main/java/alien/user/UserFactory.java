@@ -7,6 +7,8 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.servlet.ServletRequest;
+
 import alien.config.ConfigUtils;
 import lazyj.commands.SystemCommand;
 
@@ -106,12 +108,30 @@ public final class UserFactory {
 
 			try {
 				Long.parseLong(sDNTransformed.substring(idx + 1));
-			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// try the next certificate in chain only if the last item is a
 				// number, so it might be a proxy
 				// certificate in fact
 				return null;
 			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Try to extract the Principal from the HTTPS request
+	 *
+	 * @param request
+	 * @return account for a given request
+	 */
+	public static AliEnPrincipal get(final ServletRequest request) {
+		if (request.isSecure()) {
+			final X509Certificate cert[] = (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+
+			if (cert != null && cert.length > 0)
+				return getByCertificate(cert);
 		}
 
 		return null;
@@ -184,9 +204,9 @@ public final class UserFactory {
 					// user
 					// /C=ch/O=AliEn/CN=Job/CN=username/OU=role/OU=extension
 
-					int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
-					int jobOU = dn.lastIndexOf("/OU=") != roleOU ? dn.lastIndexOf("/OU=") : dn.length();
-					int nameCN = dn.lastIndexOf("/CN=");
+					final int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
+					final int jobOU = dn.lastIndexOf("/OU=") != roleOU ? dn.lastIndexOf("/OU=") : dn.length();
+					final int nameCN = dn.lastIndexOf("/CN=");
 
 					if (roleOU != dn.length()) // if OU present in DN try to extract role
 						p = getByRole(dn.substring(roleOU + 4, jobOU));
@@ -197,7 +217,7 @@ public final class UserFactory {
 
 						if (p != null) { // if getByUsername or getByRole found credentials
 							if (jobOU != dn.length()) { // if second OU is present in DN
-								String extensions = dn.substring(jobOU + 4);
+								final String extensions = dn.substring(jobOU + 4);
 								final StringTokenizer st = new StringTokenizer(extensions, "/");
 								while (st.hasMoreElements()) {
 									final String spec = st.nextToken();
@@ -215,8 +235,8 @@ public final class UserFactory {
 					if (dn.contains("/CN=Users")) {
 						// /C=ch/O=AliEn/CN=Users/CN=username/OU=role
 
-						int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
-						int nameCN = dn.lastIndexOf("/CN=");
+						final int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
+						final int nameCN = dn.lastIndexOf("/CN=");
 
 						if (roleOU != dn.length()) // if OU present in DN try to extract role
 							p = getByRole(dn.substring(roleOU + 4));
@@ -255,7 +275,7 @@ public final class UserFactory {
 
 		return null;
 	}
-	
+
 	/**
 	 * @return current user's ID, if it can be retrieved from the system
 	 */

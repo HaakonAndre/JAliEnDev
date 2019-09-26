@@ -77,7 +77,7 @@ public class PFNforReadOrDel extends Request {
 
 		pfns = new LinkedList<>();
 
-		if (guid.getPFNs() != null) {
+		if (guid.getPFNs() != null && !guid.getPFNs().isEmpty()) {
 			try {
 				for (final PFN pfn : guid.getPFNs()) {
 					final UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
@@ -92,6 +92,14 @@ public class PFNforReadOrDel extends Request {
 							continue;
 						}
 
+						if (archiveguid.getPFNs() == null) {
+							logger.log(Level.WARNING, "Failed to get DB connection when asked for PFNs");
+							continue;
+						}
+						if (archiveguid.getPFNs().isEmpty()) {
+							logger.log(Level.WARNING, "Failed to get any PFN for the archive");
+							continue;
+						}
 						for (final PFN apfn : archiveguid.getPFNs()) {
 							final String reason = AuthorizationFactory.fillAccess(getEffectiveRequester(), apfn, access);
 

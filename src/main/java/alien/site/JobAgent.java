@@ -248,7 +248,7 @@ public class JobAgent implements Runnable {
 					matchedJob.entrySet().forEach(entry->{
 						System.err.println(entry.getKey() + " " + entry.getValue());  
 					});
-
+					
 					// TODO: commander.setUser(username);
 					// commander.setSite(site);
 
@@ -458,7 +458,7 @@ public class JobAgent implements Runnable {
 		try {
 			//Main cmd for starting the JobWrapper
 			final List<String> launchCmd = new ArrayList<>();
-
+			
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
 			Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());

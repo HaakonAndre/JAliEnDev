@@ -172,6 +172,9 @@ public class JobBroker {
 				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"));
 				if (jobToken != null) {
 					resubmission = jobToken.resubmission;
+
+					if (jobToken.legacyToken != null && jobToken.legacyToken.length() == 32)
+						matchAnswer.put("LegacyToken", jobToken.legacyToken);
 				}
 
 				if (resubmission >= 0) {

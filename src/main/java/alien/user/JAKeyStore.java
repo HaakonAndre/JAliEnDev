@@ -26,6 +26,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -566,9 +567,28 @@ public class JAKeyStore {
 	 * @param ks
 	 * @param filename
 	 * @param password
+	 * @return <code>true</code> if the keystore was successfully saved to the target path, <code>false</code> if not
 	 */
-	public static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
-		try (FileOutputStream fo = new FileOutputStream(filename)) {
+	public static boolean saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
+		if (ks==null) {
+			logger.log(Level.WARNING, "Null key store to write to "+filename);
+			return false;
+		}
+		
+		final File f = new File(filename);
+		
+		try (FileOutputStream fo = new FileOutputStream(f)) {
+            final Set<PosixFilePermission> attrs = new HashSet<>();
+            attrs.add(PosixFilePermission.OWNER_READ);
+            attrs.add(PosixFilePermission.OWNER_WRITE);
+            
+            try {
+            	Files.setPosixFilePermissions(f.toPath(), attrs);
+            }
+            catch (final IOException io2) {
+            	logger.log(Level.WARNING, "Could not protect your keystore "+filename+" with POSIX attributes", io2);
+            }
+			
 			try {
 				ks.store(fo, password);
 			} catch (final KeyStoreException e) {
@@ -580,9 +600,13 @@ public class JAKeyStore {
 			} catch (final IOException e) {
 				e.printStackTrace();
 			}
+			
+			return true;
 		} catch (final IOException e1) {
 			logger.log(Level.WARNING, "Exception saving key store", e1);
 		}
+		
+		return false;
 	}
 
 	/**
