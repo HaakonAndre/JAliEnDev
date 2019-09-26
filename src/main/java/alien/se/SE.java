@@ -5,7 +5,9 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -131,6 +133,11 @@ public class SE implements Serializable, Comparable<SE> {
 	public long size;
 
 	/**
+	 * Other options set for this storage element
+	 */
+	public Map<String, String> options;
+
+	/**
 	 * Build an arbitrary SE from the corresponding fields
 	 *
 	 * @param seName
@@ -203,13 +210,16 @@ public class SE implements Serializable, Comparable<SE> {
 		demoteRead = db.getd("sedemoteread");
 
 		size = getSize();
+
+		options = getOptions();
 	}
 
 	@Override
 	public String toString() {
 		return "SE: seName: " + seName + "\n" + "seNumber\t: " + seNumber + "\n" + "seVersion\t: " + seVersion + "\n" + "qos\t: " + qos + "\n" + "seioDaemons\t: " + seioDaemons + "\n"
 				+ "seStoragePath\t: " + seStoragePath + "\n" + "seSize:\t: " + size + "\n" + "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: " + seNumFiles + "\n" + "seMinSize\t: " + seMinSize
-				+ "\n" + "seType\t: " + seType + "\n" + "exclusiveUsers\t: " + exclusiveUsers + "\n" + "seExclusiveRead\t: " + seExclusiveRead + "\n" + "seExclusiveWrite\t: " + seExclusiveWrite;
+				+ "\n" + "seType\t: " + seType + "\n" + "exclusiveUsers\t: " + exclusiveUsers + "\n" + "seExclusiveRead\t: " + seExclusiveRead + "\n" + "seExclusiveWrite\t: " + seExclusiveWrite
+				+ "\noptions:\t" + options;
 	}
 
 	/**
@@ -370,6 +380,37 @@ public class SE implements Serializable, Comparable<SE> {
 		return allowed;
 	}
 
+	private final Map<String, String> getOptions() {
+		final int idx = seName.indexOf("::");
+
+		if (idx < 0)
+			return Collections.emptyMap();
+
+		final int idx2 = seName.lastIndexOf("::");
+
+		if (idx2 <= idx)
+			return Collections.emptyMap();
+
+		final String site = seName.substring(idx + 2, idx2);
+		final String name = seName.substring(idx2 + 2);
+
+		final Set<String> ldapinfo = LDAPHelper.checkLdapInformation("name=" + name, "ou=SE,ou=Services,ou=" + site + ",ou=Sites,", "options");
+
+		if (ldapinfo == null || ldapinfo.size() == 0)
+			return Collections.emptyMap();
+
+		final Map<String, String> ret = new LinkedHashMap<>(ldapinfo.size());
+
+		for (final String option : ldapinfo) {
+			final StringTokenizer st = new StringTokenizer(option.trim(), "= \r\t\n");
+
+			if (st.countTokens() == 2)
+				ret.put(st.nextToken(), st.nextToken());
+		}
+
+		return Collections.unmodifiableMap(ret);
+	}
+
 	/**
 	 * @return Storage Element declared size, in KB, or <code>-1</code> if the SE is not defined
 	 */
@@ -406,7 +447,8 @@ public class SE implements Serializable, Comparable<SE> {
 			while (st.hasMoreTokens())
 				try {
 					ret += Long.parseLong(st.nextToken());
-				} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				}
+				catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 					// ignore
 				}
 		}
@@ -431,11 +473,32 @@ public class SE implements Serializable, Comparable<SE> {
 
 			if (reason != null)
 				logger.log(Level.WARNING, "Cannot get access tokens to read the space information of " + originalName + " : " + reason);
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Got exception getting access tokens to read the space information of " + originalName, t);
 		}
 
 		return Factory.xrootd.getSpaceInfo(pfn);
+	}
+
+	/**
+	 * Get the HTTP port where the same content can be accessed
+	 * 
+	 * @return the positive value of the HTTP port, or a negative value if this is not supported
+	 */
+	public int getHTTPPort() {
+		final String httpPort = options.get("http_port");
+
+		if (httpPort == null)
+			return -1;
+
+		try {
+			return Integer.parseInt(httpPort);
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			logger.log(Level.WARNING, "HTTP port is defined but not as a number for " + seName);
+			return -2;
+		}
 	}
 
 	/**
@@ -445,11 +508,17 @@ public class SE implements Serializable, Comparable<SE> {
 	 */
 	public static void main(final String[] args) {
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-			db.query("SELECT * FROM SE WHERE sename='ALICE::IHEP::File';");
+			db.query("SELECT * FROM SE WHERE sename like 'ALICE::CERN::%';");
 
-			final SE se = new SE(db);
+			while (db.moveNext()) {
+				final SE se = new SE(db);
 
-			System.err.println(se);
+				System.err.println(se);
+				
+				System.err.println(se.getHTTPPort());
+				
+				System.err.println();
+			}
 		}
 	}
 }
