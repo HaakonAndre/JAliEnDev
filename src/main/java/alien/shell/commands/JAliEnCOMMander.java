@@ -79,10 +79,10 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd",
-			"find", "find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user",
-			"touch", "touch_csd", "type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota",
-			"jquota", "listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep" };
+	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd", "find",
+			"find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user", "touch", "touch_csd",
+			"type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota", "jquota",
+			"listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
@@ -425,6 +425,9 @@ public class JAliEnCOMMander extends Thread {
 
 		args.remove(arg[0]);
 
+		// Set default return code and error message
+		out.setReturnCode(0, "");
+
 		for (int i = 1; i < arg.length; i++)
 			if (arg[i].startsWith("-pwd=")) {
 				curDir = c_api.getLFN(arg[i].substring(arg[i].indexOf('=') + 1));
@@ -515,7 +518,6 @@ public class JAliEnCOMMander extends Thread {
 					}
 					else
 						if (jcommand.areArgumentsOk() && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
-							out.setReturnCode(0, "");
 							jcommand.run();
 						}
 						else {
