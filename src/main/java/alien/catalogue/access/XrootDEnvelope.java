@@ -1,6 +1,7 @@
 package alien.catalogue.access;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -313,10 +314,18 @@ public class XrootDEnvelope implements Serializable {
 
 		String sPFN = pfn.getPFN();
 
-		final int idx = sPFN.indexOf("//");
+		try {
+			final URL url = new URL(sPFN);
+			sPFN = url.getPath().substring(1);
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
+			logger.log(Level.WARNING, "Cannot parse this URL, falling back to the legacy parsing method");
 
-		if (idx >= 0)
-			sPFN = sPFN.substring(sPFN.indexOf("//", idx + 2) + 1);
+			final int idx = sPFN.indexOf("//");
+
+			if (idx >= 0)
+				sPFN = sPFN.substring(sPFN.indexOf("//", idx + 2) + 1);
+		}
 
 		final GUID guid = pfn.getGuid();
 
@@ -528,10 +537,10 @@ public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * set url envelope
-	 * 
+	 *
 	 * @param lfnc
 	 */
-	public void setUnsignedEnvelope(LFN_CSD lfnc) {
+	public void setUnsignedEnvelope(final LFN_CSD lfnc) {
 
 		setTransactionURL(lfnc);
 
@@ -602,7 +611,7 @@ public class XrootDEnvelope implements Serializable {
 	 * @param lfnc
 	 *
 	 */
-	public void setTransactionURL(LFN_CSD lfnc) {
+	public void setTransactionURL(final LFN_CSD lfnc) {
 		final SE se = pfn.getSE();
 
 		if (se == null) {
@@ -640,19 +649,27 @@ public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * set envelope
-	 * 
+	 *
 	 * @param lfnc
 	 */
-	private void setUnEncryptedEnvelope(LFN_CSD lfnc) {
+	private void setUnEncryptedEnvelope(final LFN_CSD lfnc) {
 
 		final String access = type.toString().replace("write", "write-once");
 
 		String sPFN = pfn.getPFN();
 
-		final int idx = sPFN.indexOf("//");
+		try {
+			final URL url = new URL(sPFN);
+			sPFN = url.getPath().substring(1);
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
+			logger.log(Level.WARNING, "Cannot parse this URL, falling back to the legacy parsing method");
 
-		if (idx >= 0)
-			sPFN = sPFN.substring(sPFN.indexOf("//", idx + 2) + 1);
+			final int idx = sPFN.indexOf("//");
+
+			if (idx >= 0)
+				sPFN = sPFN.substring(sPFN.indexOf("//", idx + 2) + 1);
+		}
 
 		// final GUID guid = pfn.getGuid();
 		//
