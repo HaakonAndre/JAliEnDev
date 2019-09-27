@@ -56,7 +56,7 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 					final long gTime = GUIDUtils.epochTime(g.guid);
 
 					commander.printOutln("Created: " + (new Date(gTime)) + " (" + gTime + ") by " + GUIDUtils.getMacAddr(g.guid));
-					commander.printOut("guidctime", String.valueOf(gTime));
+					commander.printOut("mtime", String.valueOf(gTime));
 
 					commander.printOutln("Last change: " + g.ctime + " (" + g.ctime.getTime() + ")");
 					commander.printOut("ctime", String.valueOf(g.ctime.getTime() / 1000));
