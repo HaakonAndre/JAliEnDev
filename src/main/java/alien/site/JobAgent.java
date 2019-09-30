@@ -744,6 +744,8 @@ public class JobAgent implements Runnable {
 			logger.log(Level.WARNING, "Warning: an error occurred reading monitoring data:  " + e.toString());
 		} catch (final NullPointerException e) {
 			logger.log(Level.WARNING, "JobInfo or DiskInfo monitor are now null. Did the JobWrapper terminate?: " + e.toString());
+		} catch (final NumberFormatException e) {
+			logger.log(Level.WARNING, "Unable to continue monitoring: " + e.toString());
 		}
 
 		return error;
