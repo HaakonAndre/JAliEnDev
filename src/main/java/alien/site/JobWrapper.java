@@ -198,7 +198,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			if (!getInputFiles()) {
 				logger.log(Level.SEVERE, "Failed to get inputfiles");
 				changeStatus(JobStatus.ERROR_IB);
-				return -1;
+				return 1;
 			}
 
 			// run payload
@@ -207,7 +207,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				logger.log(Level.SEVERE, "Failed to run payload");
 				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
 				if (jdl.gets("OutputErrorE") != null)
-					return uploadOutputFiles(true) ? execExitCode : -1;
+					return uploadOutputFiles(true) ? execExitCode : 1;
 
 				changeStatus(jobStatus);
 
@@ -229,13 +229,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (!uploadOutputFiles(false)){
 				logger.log(Level.SEVERE, "Failed to upload output files");
-				return -1;
+				return 1;
 			}
 
 			return 0;
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Unable to handle job" + e);
-			return -1;
+			return 1;
 		}
 	}
 
@@ -260,7 +260,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		if (!fExe.exists()){
 			logger.log(Level.SEVERE,"ERROR. Executable was not found");
-			return -1; }
+			return 1; }
 
 		fExe.setExecutable(true);
 
@@ -297,7 +297,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		} catch (final IOException ioe) {
 			logger.log(Level.INFO, "Exception running " + cmd + " : " + ioe.getMessage());
-			return -2;
+			return 1;
 		}
 
 		if(!p.isAlive()){

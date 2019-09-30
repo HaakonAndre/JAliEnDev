@@ -579,7 +579,7 @@ public class JobAgent implements Runnable {
 
 		} catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
-			return -2;
+			return 1;
 		}
 
 		if (monitorJob) {
@@ -621,7 +621,7 @@ public class JobAgent implements Runnable {
 					if (error != null) {
 						killProcess.run();
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
-						return -2;
+						return 1;
 					}
 					if (monitor_loops == 10) {
 						monitor_loops = 0;
@@ -632,7 +632,7 @@ public class JobAgent implements Runnable {
 					Thread.sleep(5 * 1000);
 				} catch (final InterruptedException ie) {
 					logger.log(Level.WARNING, "Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
-					return -2;
+					return 1;
 				}
 			}
 			code = p.exitValue();
