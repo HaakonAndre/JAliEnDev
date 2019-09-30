@@ -879,6 +879,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (guidId == 0)
 			return null;
 
+		if (!ConfigUtils.isCentralService())
+			return null;
+
 		try (DBFunctions db = GUIDUtils.getDBForGUID(guid)) {
 			if (db == null)
 				return null;
