@@ -130,15 +130,12 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 						commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
 					}
 
-					commander.printOut("pfn", pfn.toString());
 					commander.printOut("guid", pfn.getGuid().getName());
 					commander.printOut("se", pfn.getSE().getName());
 					commander.printOut("tags", pfn.getSE().qos.toString());
 					commander.printOut("nSEs", String.valueOf(pfns.size()));
-					commander.printOut("user", commander.user.getName());
 					commander.printOut("md5", lfn.md5);
 					commander.printOut("size", String.valueOf(lfn.getSize()));
-					commander.printOut("exists", String.valueOf(lfn.exists));
 					commander.printOutln();
 				}
 			}
