@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
@@ -120,28 +121,27 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 				return false;
 			}
 		else {
-			final Set<LFN> knownLFNs = guid.getLFNs();
+			final LFN knownLFN = LFNUtils.getLFN(guid);
 
-			if (knownLFNs != null)
-				for (final LFN lfn : knownLFNs)
-					if (isValidMD5(lfn.md5))
-						try {
-							final String fileMD5 = IOUtils.getMD5(f);
+			if (knownLFN != null)
+				if (isValidMD5(knownLFN.md5))
+					try {
+						final String fileMD5 = IOUtils.getMD5(f);
 
-							if (!fileMD5.equalsIgnoreCase(lfn.md5)) {
-								if (logger.isLoggable(Level.FINE))
-									logger.log(Level.FINE, "Local file's checksum: " + fileMD5 + " (" + f.getCanonicalPath() + "), expected from LFN (" + lfn.getCanonicalName() + "): " + lfn.md5);
+						if (!fileMD5.equalsIgnoreCase(knownLFN.md5)) {
+							if (logger.isLoggable(Level.FINE))
+								logger.log(Level.FINE, "Local file's checksum: " + fileMD5 + " (" + f.getCanonicalPath() + "), expected from LFN (" + knownLFN.getCanonicalName() + "): " + knownLFN.md5);
 
-								return false;
-							}
-
-							return true;
-						}
-						catch (final IOException e) {
-							logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
-							logger.log(Level.SEVERE, e.getMessage());
 							return false;
 						}
+
+						return true;
+					}
+					catch (final IOException e) {
+						logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
+						logger.log(Level.SEVERE, e.getMessage());
+						return false;
+					}
 		}
 		// otherwise don't check md5 at all
 
