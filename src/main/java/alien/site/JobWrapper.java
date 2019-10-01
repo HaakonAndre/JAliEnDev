@@ -168,8 +168,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		final int runCode = runJob();
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
-
-		System.exit(runCode);
+		
+		if(runCode > 0)
+			System.exit(0); //Positive runCodes originate from the payload. Ignore. All OK here as far as we're concerned.
+		else
+			System.exit(Math.abs(runCode));
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
@@ -198,26 +201,34 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			if (!getInputFiles()) {
 				logger.log(Level.SEVERE, "Failed to get inputfiles");
 				changeStatus(JobStatus.ERROR_IB);
-				return 1;
+				return -1;
 			}
 
 			// run payload
 			final int execExitCode = execute();
 			if (execExitCode != 0){
 				logger.log(Level.SEVERE, "Failed to run payload");
-				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
+
+				if(execExitCode < 0) 
+					commander.q_api.putJobLog(queueId, "trace", "Failed to start execution of payload. Exit code: " + Math.abs(execExitCode));				
+				else 
+					commander.q_api.putJobLog(queueId, "trace", "Job started, but did not execute correctly: " + execExitCode);
+				
 				if (jdl.gets("OutputErrorE") != null)
-					return uploadOutputFiles(true) ? execExitCode : 1;
+					return uploadOutputFiles(true) ? execExitCode : -1;
 
 				changeStatus(jobStatus);
-
 				return execExitCode;
 			}
 
 			final int valExitCode = validate();
 			if (valExitCode != 0){
 				logger.log(Level.SEVERE, "Validation failed");
-				commander.q_api.putJobLog(queueId, "trace", "Validation failed. Exit code: " + valExitCode);
+				
+				if(valExitCode < 0)
+					commander.q_api.putJobLog(queueId, "trace", "Failed to start validation. Exit code: " + Math.abs(valExitCode));
+				else 	
+					commander.q_api.putJobLog(queueId, "trace", "Validation failed. Exit code: " + valExitCode);
 
 				final String fileTrace = getTraceFromFile();
 				if(fileTrace != null)
@@ -229,13 +240,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (!uploadOutputFiles(false)){
 				logger.log(Level.SEVERE, "Failed to upload output files");
-				return 1;
+				return -1;
 			}
 
 			return 0;
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Unable to handle job" + e);
-			return 1;
+			return -1;
 		}
 	}
 
@@ -260,7 +271,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		if (!fExe.exists()){
 			logger.log(Level.SEVERE,"ERROR. Executable was not found");
-			return 1; }
+			return -2; }
 
 		fExe.setExecutable(true);
 
@@ -297,7 +308,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		} catch (final IOException ioe) {
 			logger.log(Level.INFO, "Exception running " + cmd + " : " + ioe.getMessage());
-			return 1;
+			return -5;
 		}
 
 		if(!p.isAlive()){
