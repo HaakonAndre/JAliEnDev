@@ -235,7 +235,7 @@ public class JAKeyStore {
 			logger.severe("User Id empty! Could not get the token file name");
 			return false;
 		}
-		
+
 		final String proxyLocation = "/tmp/x509up_u" + sUserId;
 
 		// load pair
@@ -399,21 +399,21 @@ public class JAKeyStore {
 		final ExtProperties config = ConfigUtils.getConfig();
 		final String sUserId = UserFactory.getUserID();
 
-		if (sUserId == null) {
-			logger.log(Level.SEVERE, "Cannot get the current user's ID");
-			return false;
-		}
-
-		final int iUserId = Integer.parseInt(sUserId.trim());
-
 		final String token_key;
 		if (tokenKeyString != null)
 			token_key = tokenKeyString;
 		else
 			if (System.getenv("JALIEN_TOKEN_KEY") != null)
 				token_key = System.getenv("JALIEN_TOKEN_KEY");
-			else
+			else {
+				if (sUserId == null) {
+					logger.log(Level.SEVERE, "Cannot get the current user's ID");
+					return false;
+				}
+
+				final int iUserId = Integer.parseInt(sUserId.trim());
 				token_key = config.gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + iUserId + ".pem");
+			}
 
 		final String token_cert;
 		if (tokenCertString != null)
@@ -421,8 +421,15 @@ public class JAKeyStore {
 		else
 			if (System.getenv("JALIEN_TOKEN_CERT") != null)
 				token_cert = System.getenv("JALIEN_TOKEN_CERT");
-			else
+			else {
+				if (sUserId == null) {
+					logger.log(Level.SEVERE, "Cannot get the current user's ID");
+					return false;
+				}
+
+				final int iUserId = Integer.parseInt(sUserId.trim());
 				token_cert = config.gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + iUserId + ".pem");
+			}
 
 		tokenCert = KeyStore.getInstance("JKS");
 
