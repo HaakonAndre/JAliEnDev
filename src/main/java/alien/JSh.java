@@ -19,6 +19,7 @@ import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
+import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
@@ -233,21 +234,7 @@ public class JSh {
 			return false;
 		}
 
-		try (BufferedReader out = new BufferedReader(new InputStreamReader(p.getInputStream())); PrintWriter pw = new PrintWriter(p.getOutputStream())) {
-			Console cons;
-
-			if ((cons = System.console()) != null) {
-				pw.println(new String(cons.readPassword("[%s]", "Grid certificate password: ")));
-				pw.flush();
-			}
-			else
-				System.err.println("Error getting console.");
-
-		} catch (final Exception e) {
-			System.err.println("Error asking for password : " + e.getMessage());
-			p.destroy();
-			return false;
-		}
+		JAKeyStore.loadKeyStore();
 
 		String sLine;
 
