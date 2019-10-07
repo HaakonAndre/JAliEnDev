@@ -25,6 +25,7 @@ import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.user.JAKeyStore;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -53,13 +54,13 @@ public class XrootDEnvelopeSigner {
 	static {
 		Security.addProvider(new BouncyCastleProvider());
 
-		JAuthZPrivLocation = ConfigUtils.getConfig().gets("jAuthZ.priv.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien"
+		JAuthZPrivLocation = ConfigUtils.getConfig().gets("jAuthZ.priv.key.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien"
 				+ System.getProperty("file.separator") + "authen" + System.getProperty("file.separator") + "lpriv.pem");
-		JAuthZPubLocation = ConfigUtils.getConfig().gets("jAuthZ.pub.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien"
+		JAuthZPubLocation = ConfigUtils.getConfig().gets("jAuthZ.pub.key.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien"
 				+ System.getProperty("file.separator") + "authen" + System.getProperty("file.separator") + "lpub.pem");
-		SEPrivLocation = ConfigUtils.getConfig().gets("SE.priv.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator")
+		SEPrivLocation = ConfigUtils.getConfig().gets("SE.priv.key.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator")
 				+ "authen" + System.getProperty("file.separator") + "rpriv.pem");
-		SEPubLocation = ConfigUtils.getConfig().gets("SE.pub.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator")
+		SEPubLocation = ConfigUtils.getConfig().gets("SE.pub.key.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator")
 				+ "authen" + System.getProperty("file.separator") + "rpub.pem");
 
 		// System.out.println("Using private JAuthZ Key: " + JAuthZPrivLocation

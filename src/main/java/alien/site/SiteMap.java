@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import alien.config.ConfigUtils;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
+import alien.user.UserFactory;
 
 /**
  * @author mmmartin
@@ -122,7 +123,7 @@ public class SiteMap {
 		}
 
 		// Workdir
-		String workdir = System.getProperty("user.home");
+		String workdir = UserFactory.getUserHome();
 		if (env.containsKey("WORKDIR"))
 			workdir = env.get("WORKDIR");
 		if (env.containsKey("TMPBATCH"))

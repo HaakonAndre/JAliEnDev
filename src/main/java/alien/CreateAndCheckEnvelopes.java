@@ -9,6 +9,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.io.xrootd.envelopes.EncryptedAuthzToken;
 import alien.user.JAKeyStore;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -25,13 +26,13 @@ public class CreateAndCheckEnvelopes {
 
 		Security.addProvider(new BouncyCastleProvider());
 
-		final String AuthenPrivLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
+		final String AuthenPrivLocation = UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
 				+ System.getProperty("file.separator") + "lpriv.pem";
-		final String AuthenPubLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
+		final String AuthenPubLocation = UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
 				+ System.getProperty("file.separator") + "lpub.pem";
-		final String SEPrivLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
+		final String SEPrivLocation = UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
 				+ System.getProperty("file.separator") + "rpriv.pem";
-		final String SEPubLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
+		final String SEPubLocation = UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen"
 				+ System.getProperty("file.separator") + "rpub.pem";
 
 		RSAPrivateKey authenPrivKey = null;

@@ -14,6 +14,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.se.SE;
+import alien.user.UserFactory;
 import lia.util.process.ExternalProcess.ExitStatus;
 import utils.ExternalCalls;
 import utils.ProcessWithTimeout;
@@ -47,7 +48,7 @@ public class Xrd3cp extends Xrootd {
 
 		cachedPath = true;
 
-		for (final String path : new String[] { xrootd_default_path, ConfigUtils.getConfig().gets("xrd3cp.location", null), System.getProperty("user.home") + "/alien/api", "/opt/alien/api" })
+		for (final String path : new String[] { xrootd_default_path, ConfigUtils.getConfig().gets("xrd3cp.location", null), UserFactory.getUserHome() + "/alien/api", "/opt/alien/api" })
 			if (path != null) {
 				final File test = new File(path + "/bin/xrd3cp");
 

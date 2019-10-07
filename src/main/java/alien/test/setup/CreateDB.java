@@ -10,6 +10,7 @@ import alien.test.TestConfig;
 import alien.test.utils.Functions;
 import alien.test.utils.TestCommand;
 import alien.test.utils.TestException;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -244,10 +245,10 @@ public class CreateDB {
 
 	private final static String my_cnf_content =
 
-			"[mysqld]\n" + "user=" + System.getProperty("user.name") + "\n" + "datadir=" + TestConfig.sql_home + "\n" + "port=" + TestConfig.sql_port + "\n" + "socket=" + sql_socket + "\n" + "\n"
+			"[mysqld]\n" + "user=" + UserFactory.getUserName() + "\n" + "datadir=" + TestConfig.sql_home + "\n" + "port=" + TestConfig.sql_port + "\n" + "socket=" + sql_socket + "\n" + "\n"
 					+ "[mysqld_safe]\n" + "log-error=" + sql_log + "\n" + "pid-file=" + sql_pid_file + "\n" + "\n" + "[client]\n" + "port=" + TestConfig.sql_port + "\n" + "user="
-					+ System.getProperty("user.name") + "\n" + "socket=" + sql_socket + "\n" + "\n" + "[mysqladmin]\n" + "user=root\n" + "port=" + TestConfig.sql_port + "\n" + "socket=" + sql_socket
-					+ "\n" + "\n" + "[mysql]\n" + "port=" + TestConfig.sql_port + "\n" + "socket=" + sql_socket + "\n" + "\n" + "[mysql_install_db]\n" + "user=" + System.getProperty("user.name")
+					+ UserFactory.getUserName() + "\n" + "socket=" + sql_socket + "\n" + "\n" + "[mysqladmin]\n" + "user=root\n" + "port=" + TestConfig.sql_port + "\n" + "socket=" + sql_socket
+					+ "\n" + "\n" + "[mysql]\n" + "port=" + TestConfig.sql_port + "\n" + "socket=" + sql_socket + "\n" + "\n" + "[mysql_install_db]\n" + "user=" + UserFactory.getUserName()
 					+ "\n" + "port=" + TestConfig.sql_port + "\n" + "datadir=" + TestConfig.sql_home + "\n" + "socket=" + sql_socket + "\n" + "\n" + "\n";
 
 	private static void createCatalogueDB(String catDB) throws Exception {

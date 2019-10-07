@@ -16,6 +16,7 @@ import alien.api.Request;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 import io.github.olivierlemasle.ca.CA;
 import io.github.olivierlemasle.ca.Certificate;
 import io.github.olivierlemasle.ca.CsrWithPrivateKey;
@@ -42,7 +43,7 @@ public class GetTokenCertificate extends Request {
 	static {
 		if (ConfigUtils.isCentralService()) {
 			final String caFile = ConfigUtils.getConfig().gets("ca.file",
-					System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "alien.p12");
+					UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "alien.p12");
 
 			final String caAlias = ConfigUtils.getConfig().gets("ca.alias", "alien");
 

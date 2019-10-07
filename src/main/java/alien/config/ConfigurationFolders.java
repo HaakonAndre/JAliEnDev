@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import alien.user.UserFactory;
 import lazyj.ExtProperties;
 
 class ConfigurationFolders implements ConfigSource {
@@ -26,7 +27,7 @@ class ConfigurationFolders implements ConfigSource {
 		// configuration files in the indicated config folder overwrite the defaults from classpath
 		// TODO: extract into a method, return a map, merge with the otheronfigFiles
 		// NOTE: this method extends previously found properties!
-		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
+		final String defaultConfigLocation = UserFactory.getUserHome() + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
 		final String configOption = System.getProperty("AliEnConfig", "config");
 
 		final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);

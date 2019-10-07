@@ -26,6 +26,7 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
+import alien.user.UserFactory;
 import lia.util.process.ExternalProcess.ExitStatus;
 import utils.ExternalCalls;
 import utils.ProcessWithTimeout;
@@ -67,12 +68,14 @@ public class XrootdCsd extends Protocol {
 	static {
 		try {
 			org.apache.catalina.webresources.TomcatURLStreamHandlerFactory.getInstance().addUserFactory(new ROOTURLStreamHandlerFactory());
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Tomcat URL handler is not available", t);
 
 			try {
 				URL.setURLStreamHandlerFactory(new ROOTURLStreamHandlerFactory());
-			} catch (final Throwable t2) {
+			}
+			catch (final Throwable t2) {
 				logger.log(Level.WARNING, "Cannot set ROOT URL stream handler factory", t2);
 			}
 		}
@@ -99,7 +102,7 @@ public class XrootdCsd extends Protocol {
 
 		if (xrdcpPath == null)
 			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
-				xrdcpPath = ExternalCalls.programExistsInFolders(command, System.getProperty("user.home") + "/bin", System.getProperty("user.home") + "/xrootd/bin", "/opt/xrootd/bin");
+				xrdcpPath = ExternalCalls.programExistsInFolders(command, UserFactory.getUserHome() + "/bin", UserFactory.getUserHome() + "/xrootd/bin", "/opt/xrootd/bin");
 
 				if (xrdcpPath != null)
 					break;
@@ -140,7 +143,8 @@ public class XrootdCsd extends Protocol {
 				}
 				else
 					logger.log(Level.WARNING, "Cannot execute " + xrdcpPath);
-			} catch (final IOException | InterruptedException ie) {
+			}
+			catch (final IOException | InterruptedException ie) {
 				if (p != null)
 					p.destroy();
 
@@ -371,10 +375,12 @@ public class XrootdCsd extends Protocol {
 				exitStatus = ptimeout.getExitStatus();
 
 				setLastExitStatus(exitStatus);
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
-			} finally {
+			}
+			finally {
 				if (fAuthz != null)
 					if (!fAuthz.delete())
 						logger.log(Level.WARNING, "Could not delete temporary auth token file: " + fAuthz.getAbsolutePath());
@@ -405,9 +411,11 @@ public class XrootdCsd extends Protocol {
 				logger.log(Level.FINEST, "Exit code was zero and the output was:\n" + exitStatus.getStdOut());
 
 			return true;
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("delete aborted because " + t);
@@ -469,9 +477,11 @@ public class XrootdCsd extends Protocol {
 						}
 
 						logger.log(Level.WARNING, "Could not rename " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath());
-					} catch (final Throwable t) {
+					}
+					catch (final Throwable t) {
 						logger.log(Level.WARNING, "Exception renaming " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath(), t);
-					} finally {
+					}
+					finally {
 						TempFileManager.release(existingFile);
 					}
 
@@ -481,7 +491,8 @@ public class XrootdCsd extends Protocol {
 						logger.log(Level.WARNING, "Could not copy " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath());
 					else
 						return target;
-				} catch (final Throwable t) {
+				}
+				catch (final Throwable t) {
 					logger.log(Level.WARNING, "Exception copying " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath(), t);
 				}
 			}
@@ -551,7 +562,8 @@ public class XrootdCsd extends Protocol {
 				}
 				else
 					throw new SourceException("Cannot start the process");
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 
 				p.destroy();
@@ -593,7 +605,8 @@ public class XrootdCsd extends Protocol {
 
 				throw new SourceException(message);
 			}
-		} catch (final SourceException ioe) {
+		}
+		catch (final SourceException ioe) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 			else {
@@ -603,7 +616,8 @@ public class XrootdCsd extends Protocol {
 			}
 
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
 			else {
@@ -726,7 +740,8 @@ public class XrootdCsd extends Protocol {
 				}
 				else
 					throw new TargetException("Cannot start the process");
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -756,11 +771,14 @@ public class XrootdCsd extends Protocol {
 				return xrdstat(pfn, false);
 
 			return xrdstat(pfn, true);
-		} catch (final TargetException ioe) {
+		}
+		catch (final TargetException ioe) {
 			throw ioe;
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw new TargetException(ioe.getMessage());
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new TargetException("Put aborted because " + t);
@@ -827,7 +845,8 @@ public class XrootdCsd extends Protocol {
 			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-		} catch (@SuppressWarnings("unused") final IOException ioe) {
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -949,7 +968,8 @@ public class XrootdCsd extends Protocol {
 			}
 			else
 				throw new IOException("Cannot start process " + command.toString());
-		} catch (final InterruptedException ie) {
+		}
+		catch (final InterruptedException ie) {
 			setLastExitStatus(null);
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
@@ -1036,7 +1056,8 @@ public class XrootdCsd extends Protocol {
 					}
 					else
 						throw new IOException("Cannot execute command: " + command);
-				} catch (final InterruptedException ie) {
+				}
+				catch (final InterruptedException ie) {
 					setLastExitStatus(null);
 					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 				}
@@ -1065,9 +1086,11 @@ public class XrootdCsd extends Protocol {
 				Thread.sleep(sleep * 1000);
 				continue;
 
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				throw ioe;
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				logger.log(Level.WARNING, "Caught exception", t);
 
 				final IOException ioe = new IOException("xrdstat internal failure " + t);
@@ -1094,7 +1117,8 @@ public class XrootdCsd extends Protocol {
 
 		try {
 			return put(target, temp, "transfer");
-		} finally {
+		}
+		finally {
 			TempFileManager.release(temp);
 		}
 	}
@@ -1221,7 +1245,8 @@ public class XrootdCsd extends Protocol {
 				}
 				else
 					throw new IOException("Cannot execute command: " + command);
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -1254,7 +1279,8 @@ public class XrootdCsd extends Protocol {
 
 							return ret;
 						}
-					} catch (final IOException ioe) {
+					}
+					catch (final IOException ioe) {
 						logger.log(Level.WARNING, "xrdstat throwed exception", ioe);
 					}
 				}
@@ -1270,9 +1296,11 @@ public class XrootdCsd extends Protocol {
 			}
 
 			return xrdstat(target, (target.ticket.envelope.getSignedEnvelope() == null));
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("Transfer aborted because " + t);
@@ -1304,7 +1332,8 @@ public class XrootdCsd extends Protocol {
 							break;
 						}
 					}
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 
@@ -1355,7 +1384,8 @@ public class XrootdCsd extends Protocol {
 
 		try {
 			spaceInfo = getXrdfsSpaceInfo(pfn);
-		} catch (@SuppressWarnings("unused") final IOException ioe) {
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, we'll try the next command
 		}
 
@@ -1372,7 +1402,8 @@ public class XrootdCsd extends Protocol {
 				if (querySpace.versionInfoSet && !spaceInfo.versionInfoSet)
 					spaceInfo.setVersion(querySpace.vendor, querySpace.version);
 
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				if (spaceInfo != null)
 					return spaceInfo;
 
@@ -1472,21 +1503,21 @@ public class XrootdCsd extends Protocol {
 								final String value = tok.substring(idx + 1).trim();
 
 								switch (key) {
-								case "oss.space":
-								case "oss.quota":
-									total = Long.parseLong(value);
-									break;
-								case "oss.free":
-									free = Long.parseLong(value);
-									break;
-								case "oss.maxf":
-									largest = Long.parseLong(value);
-									break;
-								case "oss.used":
-									used = Long.parseLong(value);
-									break;
-								default:
-									break;
+									case "oss.space":
+									case "oss.quota":
+										total = Long.parseLong(value);
+										break;
+									case "oss.free":
+										free = Long.parseLong(value);
+										break;
+									case "oss.maxf":
+										largest = Long.parseLong(value);
+										break;
+									case "oss.used":
+										used = Long.parseLong(value);
+										break;
+									default:
+										break;
 								}
 							}
 						}
@@ -1495,7 +1526,8 @@ public class XrootdCsd extends Protocol {
 					if (total > 0 && free <= total && free >= 0 && used <= total && used >= 0 && largest <= total && largest >= 0)
 						ret.setSpaceInfo(path, total, free, used, largest);
 				}
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -1596,27 +1628,28 @@ public class XrootdCsd extends Protocol {
 							lastToken = st.nextToken();
 
 						switch (firstToken) {
-						case "Total:":
-							total = Long.parseLong(lastToken);
-							break;
-						case "Free:":
-							free = Long.parseLong(lastToken);
-							break;
-						case "Used:":
-							used = Long.parseLong(lastToken);
-							break;
-						case "Largest":
-							largest = Long.parseLong(lastToken);
-							break;
-						default:
-							break;
+							case "Total:":
+								total = Long.parseLong(lastToken);
+								break;
+							case "Free:":
+								free = Long.parseLong(lastToken);
+								break;
+							case "Used:":
+								used = Long.parseLong(lastToken);
+								break;
+							case "Largest":
+								largest = Long.parseLong(lastToken);
+								break;
+							default:
+								break;
 						}
 					}
 
 					if (total > 0 && free <= total && free >= 0 && used <= total && used >= 0 && largest <= total && largest >= 0)
 						ret.setSpaceInfo(path, total, free, used, largest);
 				}
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -1670,7 +1703,8 @@ public class XrootdCsd extends Protocol {
 								ret.setVersion(null, line);
 				}
 			}
-		} catch (final InterruptedException ie) {
+		}
+		catch (final InterruptedException ie) {
 			setLastExitStatus(null);
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}

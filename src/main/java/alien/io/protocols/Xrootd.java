@@ -29,6 +29,7 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
+import alien.user.UserFactory;
 import lia.util.process.ExternalProcess.ExitStatus;
 import utils.ExternalCalls;
 import utils.ProcessWithTimeout;
@@ -104,7 +105,7 @@ public class Xrootd extends Protocol {
 
 		if (xrdcpPath == null)
 			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
-				xrdcpPath = ExternalCalls.programExistsInFolders(command, System.getProperty("user.home") + "/bin", System.getProperty("user.home") + "/xrootd/bin", "/opt/xrootd/bin");
+				xrdcpPath = ExternalCalls.programExistsInFolders(command, UserFactory.getUserHome() + "/bin", UserFactory.getUserHome() + "/xrootd/bin", "/opt/xrootd/bin");
 
 				if (xrdcpPath != null)
 					break;

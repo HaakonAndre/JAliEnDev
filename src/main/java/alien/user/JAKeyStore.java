@@ -59,7 +59,6 @@ import org.bouncycastle.pkcs.PKCSException;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 import lazyj.ExtProperties;
-import lazyj.commands.SystemCommand;
 
 /**
  *
@@ -129,7 +128,7 @@ public class JAKeyStore {
 
 	private static void loadTrusts(final KeyStore keystore) {
 		final String trustsDirSet = ConfigUtils.getConfig().gets("trusted.certificates.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".j" + System.getProperty("file.separator") + "trusts");
+				UserFactory.getUserHome() + System.getProperty("file.separator") + ".j" + System.getProperty("file.separator") + "trusts");
 
 		try {
 			final StringTokenizer st = new StringTokenizer(trustsDirSet, ":");
@@ -230,17 +229,13 @@ public class JAKeyStore {
 	 */
 	@SuppressWarnings("unused")
 	private static boolean loadProxy() throws Exception {
-		String sUserId = System.getProperty("userid");
-		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
-
-			if (sUserId != null && sUserId.length() > 0)
-				System.setProperty("userid", sUserId);
-			else {
-				logger.severe("User Id empty! Could not get the token file name");
-				return false;
-			}
+		final String sUserId = UserFactory.getUserID();
+		
+		if (sUserId == null) {
+			logger.severe("User Id empty! Could not get the token file name");
+			return false;
 		}
+		
 		final String proxyLocation = "/tmp/x509up_u" + sUserId;
 
 		// load pair
@@ -346,10 +341,10 @@ public class JAKeyStore {
 		final ExtProperties config = ConfigUtils.getConfig();
 
 		final String user_key = System.getenv("X509_USER_KEY") != null ? System.getenv("X509_USER_KEY")
-				: config.gets("user.cert.priv.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
+				: config.gets("user.cert.priv.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
 
 		final String user_cert = System.getenv("X509_USER_CERT") != null ? System.getenv("X509_USER_CERT")
-				: config.gets("user.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
+				: config.gets("user.cert.pub.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
 
 		if (!checkKeyPermissions(user_key)) {
 			logger.log(Level.WARNING, "Permissions on usercert.pem or userkey.pem are not OK");
@@ -461,8 +456,8 @@ public class JAKeyStore {
 	 * loadTrusts();
 	 *
 	 * addKeyPairToKeyStore(clientCert, "User.cert",
-	 * config.gets("host.cert.priv.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostkey.pem"),
-	 * config.gets("host.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostcert.pem"),
+	 * config.gets("host.cert.priv.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostkey.pem"),
+	 * config.gets("host.cert.pub.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostcert.pem"),
 	 * new JPasswordFinder(new char[] {}));
 	 *
 	 * } catch (final NoSuchAlgorithmException e) {
@@ -484,10 +479,10 @@ public class JAKeyStore {
 		// pass = getRandomString();
 
 		final String hostkey = config.gets("host.cert.priv.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostkey.pem");
+				UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostkey.pem");
 
 		final String hostcert = config.gets("host.cert.pub.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostcert.pem");
+				UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostcert.pem");
 
 		hostCert = KeyStore.getInstance("JKS");
 

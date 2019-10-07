@@ -229,17 +229,11 @@ public class TomcatServer {
 	 *            the debug level received from the command line
 	 */
 	private static boolean writeJClientTokenFile(final int iWSPort) {
-		String sUserId = System.getProperty("userid");
+		final String sUserId = UserFactory.getUserID();
 
-		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
-
-			if (sUserId != null && sUserId.length() > 0)
-				System.setProperty("userid", sUserId);
-			else {
-				logger.severe("User Id empty! Could not get the token file name");
-				return false;
-			}
+		if (sUserId == null) {
+			logger.severe("User Id empty! Could not get the token file name");
+			return false;
 		}
 
 		try {

@@ -8,6 +8,7 @@ import java.util.Date;
 import alien.config.JAliEnIAm;
 import alien.test.utils.Functions;
 import alien.test.utils.TestException;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -18,7 +19,7 @@ public class TestConfig {
 	/**
 	 * default home of j
 	 */
-	public static final String j_home = System.getProperty("user.home") + "/.j";
+	public static final String j_home = UserFactory.getUserHome() + "/.j";
 
 	/**
 	 * default home of the testVO

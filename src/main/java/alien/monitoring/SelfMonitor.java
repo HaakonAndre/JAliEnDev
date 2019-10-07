@@ -5,6 +5,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 
+import alien.user.UserFactory;
+
 /**
  * @author costing
  * @since 2010-11-12
@@ -22,7 +24,6 @@ public class SelfMonitor implements MonitoringObject {
 
 		temp.add("java.vm.vendor");
 		temp.add("java.version");
-		temp.add("user.name");
 		temp.add("user.dir");
 
 		systemProperties = Collections.unmodifiableSet(temp);
@@ -39,6 +40,9 @@ public class SelfMonitor implements MonitoringObject {
 			}
 		}
 
+		paramNames.add("user.name");
+		paramValues.add(UserFactory.getUserName());
+		
 		final int selfPid = MonitorFactory.getSelfProcessID();
 
 		if (selfPid > 0) {
