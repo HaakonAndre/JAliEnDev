@@ -122,9 +122,9 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			bV = options.has("v");
 
 			alPaths = optionToString(options.nonOptionArguments());
-		} catch (@SuppressWarnings("unused") final OptionException e) {
+		} catch (final OptionException e) {
 			printHelp();
-			// throw e;
+			throw e;
 		}
 	}
 }
