@@ -309,7 +309,7 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		// Does it check a previous one is already running?
 		try {
 			System.out.println("Trying to start JBox");
-			JBoxServer.startJBoxService(0);
+			JBoxServer.startJBoxService();
 		}
 		catch (final Exception e) {
 			System.err.println("Unable to start JBox.");

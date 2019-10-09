@@ -411,8 +411,7 @@ public class JAKeyStore {
 					return false;
 				}
 
-				final int iUserId = Integer.parseInt(sUserId.trim());
-				token_key = config.gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + iUserId + ".pem");
+				token_key = config.gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + sUserId + ".pem");
 			}
 
 		final String token_cert;
@@ -427,8 +426,7 @@ public class JAKeyStore {
 					return false;
 				}
 
-				final int iUserId = Integer.parseInt(sUserId.trim());
-				token_cert = config.gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + iUserId + ".pem");
+				token_cert = config.gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + sUserId + ".pem");
 			}
 
 		tokenCert = KeyStore.getInstance("JKS");

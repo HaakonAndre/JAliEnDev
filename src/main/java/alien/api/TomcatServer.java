@@ -2,7 +2,6 @@ package alien.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.BindException;
@@ -30,7 +29,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -78,11 +76,10 @@ public class TomcatServer {
 		final Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
 		service.addConnector(createSslConnector(tomcatPort));
-		tomcat.getEngine().setRealm(new LdapCertificateRealm());
+		final LdapCertificateRealm ldapRealm = new LdapCertificateRealm();
+		tomcat.getEngine().setRealm(ldapRealm);
 
 		// Configure websocket webapplication
-		// String webappDirLocation = "src/alien/websockets";
-		// Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
 
 		// Add a dummy ROOT context
 		final StandardContext ctx = (StandardContext) tomcat.addWebapp("", new File(System.getProperty("java.io.tmpdir")).getAbsolutePath());
@@ -95,40 +92,51 @@ public class TomcatServer {
 		securityCollection.addPattern("/*");
 		final SecurityConstraint securityConstraint = new SecurityConstraint();
 		securityConstraint.addCollection(securityCollection);
+		securityConstraint.setAuthConstraint(true);
 		securityConstraint.setUserConstraint("CONFIDENTIAL");
+		securityConstraint.addAuthRole("users");
+		// ctx.addSecurityRole("users123");
+		ctx.addConstraint(securityConstraint);
 
 		final LoginConfig loginConfig = new LoginConfig();
 		loginConfig.setAuthMethod("CLIENT-CERT");
-		loginConfig.setRealmName("alien.user.LdapCertificateRealm");
+		loginConfig.setRealmName(LdapCertificateRealm.class.getCanonicalName());
 		ctx.setLoginConfig(loginConfig);
+		ctx.setRealm(ldapRealm);
 
-		securityConstraint.addAuthRole("users");
-		ctx.addSecurityRole("users");
-		ctx.addConstraint(securityConstraint);
+		// ctx.getPipeline().addValve(new SSLAuthenticator());
 
 		// Tell Jar Scanner not to look inside jar manifests
 		// otherwise it will produce useless warnings
 		final StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
 		jarScanner.setScanManifest(false);
 
+		// // Add a dummy ROOT context
+		// final StandardContext ctx = (StandardContext) tomcat.addContext("", null);
+		//
+		// // Configure websocket application
+		// ctx.addApplicationListener(TesterEndpointConfig.class.getName());
+		//
+		//
+		// // Set security constraints in order to use AlienUserPrincipal later
+		// final SecurityCollection securityCollection = new SecurityCollection();
+		// securityCollection.addPattern("/*");
+		// final SecurityConstraint securityConstraint = new SecurityConstraint();
+		// securityConstraint.addCollection(securityCollection);
+		// securityConstraint.setUserConstraint("CONFIDENTIAL");
+		//
+		// final LoginConfig loginConfig = new LoginConfig();
+		// loginConfig.setAuthMethod("CLIENT-CERT");
+		// loginConfig.setRealmName(LdapCertificateRealm.class.getCanonicalName());
+		// ctx.setLoginConfig(loginConfig);
+		//
+		// securityConstraint.addAuthRole("users");
+		// ctx.addSecurityRole("users");
+		// ctx.addConstraint(securityConstraint);
+
 		tomcat.start();
 		if (tomcat.getService().findConnectors()[0].getState() == LifecycleState.FAILED)
 			throw new BindException();
-
-		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
-
-		if (alUser == null || alUser.getName() == null)
-			throw new Exception("Could not get your username. FATAL!");
-
-		if (!writeJClientTokenFile(websocketPort)) {
-			tomcat.stop();
-			throw new Exception("Could not write the token file! No application can connect to JBox");
-		}
-
-		if (!writeJClientEnvFile(tomcat.getHost().getName(), websocketPort, alUser.getName())) {
-			tomcat.stop();
-			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
-		}
 
 		final Executor executor = tomcat.getConnector().getProtocolHandler().getExecutor();
 
@@ -166,7 +174,6 @@ public class TomcatServer {
 						}
 					}
 					catch (final InterruptedException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -211,133 +218,6 @@ public class TomcatServer {
 		connector.setAttribute("maxThreads", "200");
 		connector.setAttribute("connectionTimeout", "20000");
 		return connector;
-	}
-
-	/**
-	 * Write down connection-related information to file
-	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
-	 *
-	 * @param sHost
-	 *            hostname to connect to, by default localhost
-	 * @param iWSPort
-	 *            websocket port number for listening
-	 * @param sPassword
-	 *            the password used by other application to connect to the JBoxServer
-	 * @param sUser
-	 *            the user from the certificate
-	 * @param iDebug
-	 *            the debug level received from the command line
-	 */
-	private static boolean writeJClientTokenFile(final int iWSPort) {
-		final String sUserId = UserFactory.getUserID();
-
-		if (sUserId == null) {
-			logger.severe("User Id empty! Could not get the token file name");
-			return false;
-		}
-
-		try {
-			final int iUserId = Integer.parseInt(sUserId.trim());
-
-			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-
-			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
-
-			try (FileWriter fw = new FileWriter(tokenFile, true)) {
-				// fw.write("Host=" + sHost + "\n");
-				// logger.fine("Host = " + sHost);
-
-				fw.write("WSPort=" + iWSPort + "\n");
-				logger.fine("WSPort = " + iWSPort);
-
-				// fw.write("User=" + sUser + "\n");
-				// logger.fine("User = " + sUser);
-
-				// fw.write("Home=" + sHomeUser + "\n");
-				// logger.fine("Home = " + sHomeUser);
-
-				// fw.write("Debug=" + iDebug + "\n");
-				// logger.fine("Debug = " + iDebug);
-
-				// fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
-				// logger.fine("PID = " + MonitorFactory.getSelfProcessID());
-
-				fw.flush();
-				fw.close();
-
-				return true;
-
-			}
-			catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e1);
-				return false;
-			}
-		}
-		catch (final Throwable e) {
-			logger.log(Level.SEVERE, "Could not get user id! The token file could not be created ", e);
-
-			return false;
-		}
-	}
-
-	/**
-	 * Writes the environment file used by ROOT <br />
-	 * It needs to be named jclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
-	 * <ol>
-	 * <li>alien_API_HOST</li>
-	 * <li>alien_API_PORT</li>
-	 * <li>alien_API_USER</li>
-	 * <li>LD/DYLD_LIBRARY_PATH</li>
-	 * </ol>
-	 *
-	 * @param iPort
-	 * @param sPassword
-	 * @param sUser
-	 * @return <code>true</code> if everything went fine, <code>false</code> if there was an error writing the env file
-	 */
-	private static boolean writeJClientEnvFile(final String sHost, final int iPort, final String sUser) {
-		final String sUserId = System.getProperty("userid");
-
-		if (sUserId == null || sUserId.length() == 0) {
-			logger.severe("User Id empty! Could not get the env file name");
-			return false;
-		}
-
-		try {
-			final int iUserId = Integer.parseInt(sUserId.trim());
-
-			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-
-			final File envFile = new File(tmpDir, "jclient_env_" + iUserId);
-
-			try (FileWriter fw = new FileWriter(envFile)) {
-				fw.write("export alien_API_HOST=" + sHost + "\n");
-				logger.fine("export alien_API_HOST=" + sHost);
-
-				fw.write("export alien_API_PORT=" + iPort + "\n");
-				logger.fine("export alien_API_PORT=" + iPort);
-
-				fw.write("export alien_API_USER=" + sUser + "\n");
-				logger.fine("export alien_API_USER=" + sUser);
-
-				fw.write("export JROOT=1\n");
-				logger.fine("export JROOT=1");
-
-				fw.flush();
-				fw.close();
-
-				return true;
-
-			}
-			catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + envFile.getAbsolutePath() + " to write", e1);
-				return false;
-			}
-		}
-		catch (final Exception e) {
-			logger.log(Level.SEVERE, "Could not get user id! The env file could not be created ", e);
-			return false;
-		}
 	}
 
 	/**
@@ -396,12 +276,10 @@ public class TomcatServer {
 			return false;
 		}
 
-		final int iUserId = Integer.parseInt(sUserId.trim());
-
 		// Two files will be the result of this command
 		// Check if their location is set by env variables or in config, otherwise put default location in $TMPDIR/
-		final String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + iUserId + ".pem");
-		final String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + iUserId + ".pem");
+		final String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + sUserId + ".pem");
+		final String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + sUserId + ".pem");
 
 		final File tokencertfile = new File(tokencertpath);
 		final File tokenkeyfile = new File(tokenkeypath);
@@ -411,11 +289,11 @@ public class TomcatServer {
 		changeMod(tokenkeyfile, 777);
 
 		try ( // Open files for writing
-				PrintWriter pwritercert = new PrintWriter(tokencertfile);
-				PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
+				final PrintWriter pwritercert = new PrintWriter(tokencertfile);
+				final PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
 
 				// We will read all data into temp output stream and then parse it and split into 2 files
-				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			final UIPrintWriter out = new JSONPrintWriter(baos);
 
 			// Create Commander instance just to execute one command
@@ -542,7 +420,7 @@ public class TomcatServer {
 				logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
 			}
 	}
-	
+
 	/**
 	 *
 	 * Get the port used by tomcatServer
@@ -551,7 +429,7 @@ public class TomcatServer {
 	 *
 	 */
 	public static int getPort() {
-		return tomcatServer != null ? tomcatServer.websocketPort: -1;
+		return tomcatServer != null ? tomcatServer.websocketPort : -1;
 	}
-	
+
 }

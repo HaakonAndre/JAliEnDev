@@ -81,7 +81,7 @@ public class ComputingElement extends Thread {
 		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
 		try {
 			logger.info("Trying to start JBox");
-			JBoxServer.startJBoxService(0);
+			JBoxServer.startJBoxService();
 			port = JBoxServer.getPort();
 		} catch (final Exception e) {
 			logger.severe("Unable to start JBox: " + e.toString());

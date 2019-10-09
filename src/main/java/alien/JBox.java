@@ -44,10 +44,9 @@ public class JBox {
 			final OptionSet options = parser.parse(args);
 
 			if (options.has("debug"))
-				// iDebug = Integer.parseInt((String) options.valueOf("debug"));
 				iDebug = ((Integer) options.valueOf("debug")).intValue();
-
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			// nothing, we just let it 0, nothing to debug
 			e.printStackTrace();
 		}
@@ -55,7 +54,10 @@ public class JBox {
 		// First, load user certificate (or token) and create keystore
 		JAKeyStore.loadKeyStore();
 
-		JBoxServer.startJBoxService(iDebug);
+		JBoxServer.startJBoxService();
 		TomcatServer.startTomcatServer();
+
+		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
+			logger.log(Level.INFO, "Failed to export JBox variables");
 	}
 }

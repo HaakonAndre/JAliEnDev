@@ -283,7 +283,6 @@ public class CatalogueApiUtils {
 	 */
 	public List<PFN> getPFNsToRead(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		try {
-
 			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.READ, entity, ses, exses)).getPFNs();
 		}
 		catch (final ServerException e) {

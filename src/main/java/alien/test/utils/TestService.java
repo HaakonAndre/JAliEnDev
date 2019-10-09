@@ -74,7 +74,7 @@ public class TestService extends Thread{
 		
 		try {
 			JAKeyStore.loadKeyStore();
-			JBoxServer.startJBoxServer(0);
+			JBoxServer.startJBoxServer();
 		}
 		
 		catch (Exception e) {

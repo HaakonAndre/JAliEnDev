@@ -8,6 +8,7 @@ import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -32,7 +33,14 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import alien.api.JBoxServer;
+import alien.api.TomcatServer;
+import alien.catalogue.access.AuthorizationFactory;
+import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
+import alien.user.UserFactory;
+import alien.user.UsersHelper;
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import lazyj.Utils;
@@ -131,7 +139,8 @@ public class ConfigUtils {
 	 *
 	 * This method is usually used only for testing.
 	 *
-	 * @param m ConfigManager to be used for initialization.
+	 * @param m
+	 *            ConfigManager to be used for initialization.
 	 */
 	public static void init(final ConfigManager m) {
 		cfgManager = m;
@@ -469,7 +478,8 @@ public class ConfigUtils {
 	/**
 	 * Connect to an external service and see which address is visible
 	 *
-	 * @param hostname <code>true</code> to return the FQDN (if known), or <code>false</code> to return the IP
+	 * @param hostname
+	 *            <code>true</code> to return the FQDN (if known), or <code>false</code> to return the IP
 	 * @return the IP or FQDN (if known)
 	 */
 	public static String getExternalVisibleAddress(final boolean hostname) {
@@ -671,5 +681,74 @@ public class ConfigUtils {
 			return configKey;
 
 		return "CERN";
+	}
+
+	/**
+	 * Write the configuration file and export variable that are used by JAliEn-ROOT and JSh
+	 *
+	 * @param iDebug
+	 *            the debug level received from the command line
+	 * @throws Exception
+	 */
+	public static HashMap<String, String> exportJBoxVariables(final int iDebug) {
+		final HashMap<String, String> vars = new HashMap<>();
+		final String sHost = "127.0.0.1";
+
+		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
+
+		if (alUser != null && alUser.getName() != null) {
+			vars.put("JALIEN_USER", alUser.getName());
+			vars.put("JALIEN_HOME", UsersHelper.getHomeDir(alUser.getName()));
+		}
+
+		vars.put("JALIEN_HOST", sHost);
+		vars.put("JALIEN_PORT", Integer.toString(JBoxServer.getPort()));
+		vars.put("JALIEN_WSPORT", Integer.toString(TomcatServer.getPort()));
+		vars.put("JALIEN_DEBUG", Integer.toString(iDebug));
+		vars.put("JALIEN_PID", Integer.toString(MonitorFactory.getSelfProcessID()));
+		vars.put("JALIEN_PASSWORD", JBoxServer.getPassword());
+
+		return vars;
+	}
+
+	/**
+	 * Write the configuration file that is used by JAliEn-ROOT and JSh <br />
+	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
+	 *
+	 * @return true if the file was written, false if not
+	 */
+	public static boolean writeJClientFile(final HashMap<String, String> vars) {
+		try {
+			final String sUserId = UserFactory.getUserID();
+
+			if (sUserId == null) {
+				logger.log(Level.SEVERE, "Cannot get the current user's ID");
+				return false;
+			}
+
+			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+
+			final File tokenFile = new File(tmpDir, "jclient_token_" + sUserId);
+
+			try (FileWriter fw = new FileWriter(tokenFile)) {
+				vars.forEach((key, value) -> {
+					try {
+						fw.write(key + "=" + value + "\n");
+					}
+					catch (IOException e) {
+						logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e);
+					}
+				});
+
+				fw.flush();
+				fw.close();
+
+				return true;
+			}
+		}
+		catch (final Throwable e) {
+			logger.log(Level.SEVERE, "Could not get user id! The token file could not be created ", e);
+			return false;
+		}
 	}
 }

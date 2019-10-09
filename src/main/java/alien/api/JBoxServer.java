@@ -1,8 +1,6 @@
 package alien.api;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,17 +23,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
-import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
-import alien.user.AliEnPrincipal;
-import alien.user.UserFactory;
-import alien.user.UsersHelper;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -71,12 +64,7 @@ public class JBoxServer extends Thread {
 	/**
 	 * The password
 	 */
-	final String password;
-
-	/**
-	 * Debug level received from the user
-	 */
-	final int iDebugLevel;
+	private static String password;
 
 	/**
 	 * Number of currently established client connections to this instance
@@ -141,175 +129,15 @@ public class JBoxServer extends Thread {
 	 * @param listeningPort
 	 * @throws IOException
 	 */
-	private JBoxServer(final int listeningPort, final int iDebug) throws Exception {
-		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
-
-		if (alUser == null || alUser.getName() == null)
-			throw new Exception("Could not get your username. FATAL!");
+	private JBoxServer(final int listeningPort) throws Exception {
 
 		final InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
 		ssocket = new ServerSocket(listeningPort, 10, localhost);
 		this.port = ssocket.getLocalPort();
-		this.iDebugLevel = iDebug;
-
-		password = UUID.randomUUID().toString();
-
-		// here we should get home directory
-		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
-
-		// should check if the file was written and if not then exit.
-		if (!writeTokenFile("127.0.0.1", this.port, password, alUser.getName(), sHomeUser, this.iDebugLevel)) {
-			ssocket.close();
-			throw new Exception("Could not write the token file! No application can connect to JBox");
-		}
-
-		if (!writeEnvFile("127.0.0.1", this.port, alUser.getName())) {
-			ssocket.close();
-			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
-		}
+		setPassword(UUID.randomUUID().toString());
 
 		startShutdownThread();
-	}
-
-	/**
-	 * write the configuration file that is used by gapi <br />
-	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
-	 *
-	 * @param sHost
-	 *            hostname to connect to, by default localhost
-	 * @param iPort
-	 *            port number for listening
-	 * @param sPassword
-	 *            the password used by other application to connect to the JBoxServer
-	 * @param sUser
-	 *            the user from the certificate
-	 * @param iDebug
-	 *            the debug level received from the command line
-	 * @return true if the file was written, false if not
-	 * @author Alina Grigoras
-	 */
-	private static boolean writeTokenFile(final String sHost, final int iPort, final String sPassword, final String sUser, final String sHomeUser, final int iDebug) {
-
-		try {
-			final String sUserId = UserFactory.getUserID();
-
-			if (sUserId == null) {
-				logger.log(Level.SEVERE, "Cannot get the current user's ID");
-				return false;
-			}
-
-			final int iUserId = Integer.parseInt(sUserId.trim());
-
-			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-
-			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
-
-			try (FileWriter fw = new FileWriter(tokenFile)) {
-				fw.write("Host=" + sHost + "\n");
-				logger.fine("Host = " + sHost);
-
-				fw.write("Port=" + iPort + "\n");
-				logger.fine("Port = " + iPort);
-
-				fw.write("User=" + sUser + "\n");
-				logger.fine("User = " + sUser);
-
-				fw.write("Home=" + sHomeUser + "\n");
-				logger.fine("Home = " + sHomeUser);
-
-				fw.write("Passwd=" + sPassword + "\n");
-				logger.fine("Passwd = " + sPassword);
-
-				fw.write("Debug=" + iDebug + "\n");
-				logger.fine("Debug = " + iDebug);
-
-				fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
-				logger.fine("PID = " + MonitorFactory.getSelfProcessID());
-
-				fw.flush();
-				fw.close();
-
-				return true;
-
-			}
-			catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e1);
-				return false;
-			}
-		}
-		catch (final Throwable e) {
-			logger.log(Level.SEVERE, "Could not get user id! The token file could not be created ", e);
-
-			return false;
-		}
-	}
-
-	/**
-	 * Writes the environment file used by ROOT <br />
-	 * It needs to be named jclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
-	 * <ol>
-	 * <li>alien_API_HOST</li>
-	 * <li>alien_API_PORT</li>
-	 * <li>alien_API_USER</li>
-	 * <li>LD/DYLD_LIBRARY_PATH</li>
-	 * </ol>
-	 *
-	 * @param iPort
-	 * @param sPassword
-	 * @param sUser
-	 * @return <code>true</code> if everything went fine, <code>false</code> if there was an error writing the env file
-	 */
-	private static boolean writeEnvFile(final String sHost, final int iPort, final String sUser) {
-		final String sUserId = System.getProperty("userid");
-
-		if (sUserId == null || sUserId.length() == 0) {
-			logger.severe("User Id empty! Could not get the env file name");
-			return false;
-		}
-
-		// String sAlienRoot = System.getenv("ALIEN_ROOT");
-		//
-		// if(sAlienRoot == null || sAlienRoot.length() ==0 ){
-		// logger.severe("No ALIEN_ROOT found. Please set ALIEN_ROOT environment variable");
-		// System.out.println("You don't have $ALIEN_ROOT set. You will not be able to copy files.");
-		// }
-
-		try {
-			final int iUserId = Integer.parseInt(sUserId.trim());
-
-			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
-
-			final File envFile = new File(tmpDir, "jclient_env_" + iUserId);
-
-			try (FileWriter fw = new FileWriter(envFile)) {
-				fw.write("export alien_API_HOST=" + sHost + "\n");
-				logger.fine("export alien_API_HOST=" + sHost);
-
-				fw.write("export alien_API_PORT=" + iPort + "\n");
-				logger.fine("export alien_API_PORT=" + iPort);
-
-				fw.write("export alien_API_USER=" + sUser + "\n");
-				logger.fine("export alien_API_USER=" + sUser);
-
-				fw.write("export JROOT=1\n");
-				logger.fine("export JROOT=1");
-
-				fw.flush();
-				fw.close();
-
-				return true;
-
-			}
-			catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + envFile.getAbsolutePath() + " to write", e1);
-				return false;
-			}
-		}
-		catch (final Exception e) {
-			logger.log(Level.SEVERE, "Could not get user id! The env file could not be created ", e);
-			return false;
-		}
 	}
 
 	/**
@@ -621,7 +449,7 @@ public class JBoxServer extends Thread {
 	 *
 	 * @param iDebugLevel
 	 */
-	public static synchronized void startJBoxServer(final int iDebugLevel) {
+	public static synchronized void startJBoxServer() {
 
 		logger.log(Level.INFO, "JBox starting ...");
 
@@ -638,7 +466,7 @@ public class JBoxServer extends Thread {
 
 		for (int port = portMin; port < portMax; port++)
 			try {
-				server = new JBoxServer(portAny ? 0 : port, iDebugLevel);
+				server = new JBoxServer(portAny ? 0 : port);
 				server.start();
 
 				logger.log(Level.INFO, "JBox listening on port " + server.port);
@@ -659,10 +487,10 @@ public class JBoxServer extends Thread {
 	 *
 	 * @param iDebug
 	 */
-	public static void startJBoxService(final int iDebug) {
+	public static void startJBoxService() {
 		logger.log(Level.INFO, "Starting JBox");
 		System.err.println(passACK);
-		JBoxServer.startJBoxServer(iDebug);
+		JBoxServer.startJBoxServer();
 	}
 
 	/**
@@ -676,4 +504,11 @@ public class JBoxServer extends Thread {
 		return server != null ? server.port : -1;
 	}
 
+	public static String getPassword() {
+		return password;
+	}
+
+	public static void setPassword(final String password2set) {
+		password = password2set;
+	}
 }
