@@ -289,11 +289,11 @@ public class TomcatServer {
 		changeMod(tokenkeyfile, 777);
 
 		try ( // Open files for writing
-				final PrintWriter pwritercert = new PrintWriter(tokencertfile);
-				final PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
+				PrintWriter pwritercert = new PrintWriter(tokencertfile);
+				PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
 
 				// We will read all data into temp output stream and then parse it and split into 2 files
-				final ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			final UIPrintWriter out = new JSONPrintWriter(baos);
 
 			// Create Commander instance just to execute one command
@@ -382,7 +382,7 @@ public class TomcatServer {
 		}
 		// Set dynamic port range for Tomcat server
 		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
+		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10700"));
 		int port = 8097;
 
 		// Try to launch Tomcat on default port

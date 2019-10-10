@@ -462,7 +462,7 @@ public class JBoxServer extends Thread {
 		final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
 
 		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", portAny ? String.valueOf(portMin + 1) : "10200"));
+		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", portAny ? String.valueOf(portMin + 1) : "10700"));
 
 		for (int port = portMin; port < portMax; port++)
 			try {
