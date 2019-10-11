@@ -297,6 +297,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 		processEnv.putAll(jBoxEnv);
+		processEnv.put("JALIEN_TOKEN_CERT", tokenCert);
+		processEnv.put("JALIEN_TOKEN_KEY", tokenKey);
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); //add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
 
