@@ -117,7 +117,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			siteMap = (HashMap<String, Object>) inputFromJobAgent.readObject();
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 			legacyToken = (String) inputFromJobAgent.readObject();
-
+			
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
@@ -292,9 +292,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
-
+		final HashMap<String, String> jBoxEnv = ConfigUtils.exportJBoxVariables(0);
+		
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
+		processEnv.putAll(jBoxEnv);
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); //add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
 
