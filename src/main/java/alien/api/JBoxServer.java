@@ -505,7 +505,7 @@ public class JBoxServer extends Thread {
 	}
 
 	public static String getPassword() {
-		return password;
+		return password != null ? password : "";
 	}
 
 	public static void setPassword(final String password2set) {
