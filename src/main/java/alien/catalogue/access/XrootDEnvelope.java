@@ -18,6 +18,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.io.protocols.Xrootd;
 import alien.se.SE;
 import alien.se.SEUtils;
 import lazyj.Format;
@@ -84,6 +85,11 @@ public class XrootDEnvelope implements Serializable {
 	 */
 	protected String encryptedEnvelope;
 
+	static {
+		// call the static initialization of Xrootd, to set up the URL handler in particular
+		Xrootd.getXrootdDefaultPath();
+	}
+	
 	/**
 	 * @param type
 	 * @param pfn
