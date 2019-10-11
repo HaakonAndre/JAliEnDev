@@ -2,10 +2,12 @@ package alien;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -329,6 +331,9 @@ public class JSh {
 	 * }
 	 */
 
+	/**
+	 * Kill the background JBox process
+	 */
 	public static void killJBox() {
 		if (JSh.JBoxRunning()) {
 
