@@ -1,6 +1,5 @@
 package alien;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
@@ -20,6 +19,7 @@ import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
 import alien.user.UserFactory;
+import lazyj.Utils;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 import lia.util.process.ExternalProcess.ExitStatus;
@@ -85,7 +85,8 @@ public class JSh {
 						boombox.callJBoxGetString("SIGINT");
 				}
 			});
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore if not on a SUN VM
 		}
 
@@ -119,7 +120,8 @@ public class JSh {
 									break;
 								a = a * 2;
 							}
-						} catch (@SuppressWarnings("unused") final InterruptedException e) {
+						}
+						catch (@SuppressWarnings("unused") final InterruptedException e) {
 							// ignore
 						}
 
@@ -228,7 +230,8 @@ public class JSh {
 
 			p = Runtime.getRuntime().exec(jboxCmdLine.toArray(new String[0]));
 
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			System.err.println("Error starting jBox : " + ioe.getMessage());
 			return false;
 		}
@@ -243,7 +246,8 @@ public class JSh {
 			else
 				System.err.println("Error getting console.");
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Error asking for password : " + e.getMessage());
 			p.destroy();
 			return false;
@@ -263,23 +267,28 @@ public class JSh {
 
 			System.err.println("JBox agent could not be started, it is likely that the password you have provided is not correct");
 			return false;
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			System.err.println("Error starting jBox: " + ioe.getMessage());
 			return false;
-		} finally {
+		}
+		finally {
 			try {
 				p.getOutputStream().close();
-			} catch (@SuppressWarnings("unused") final IOException e) {
+			}
+			catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 			try {
 				p.getInputStream().close();
-			} catch (@SuppressWarnings("unused") final IOException e) {
+			}
+			catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 			try {
 				p.getErrorStream().close();
-			} catch (@SuppressWarnings("unused") final IOException e) {
+			}
+			catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 		}
@@ -352,7 +361,8 @@ public class JSh {
 				else
 					System.err.println("Could not kill the JBox, PID:" + pid);
 
-			} catch (final Throwable e) {
+			}
+			catch (final Throwable e) {
 				System.err.println("Could not kill the JBox, PID:" + pid + " : " + e.getMessage());
 			}
 		}
@@ -375,7 +385,8 @@ public class JSh {
 					String buffer = "";
 					try (BufferedReader fi = new BufferedReader(new InputStreamReader(new FileInputStream(f)))) {
 						buffer = fi.readLine();
-					} catch (@SuppressWarnings("unused") final IOException e) {
+					}
+					catch (@SuppressWarnings("unused") final IOException e) {
 						return false;
 					}
 
@@ -390,49 +401,59 @@ public class JSh {
 	}
 
 	private static boolean getJBoxPID() {
-
 		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "jclient_token_" + UserFactory.getUserID());
 
+		port = pid = 0;
+		addr = user = password = null;
+
 		if (f.exists()) {
-			final byte[] buffer = new byte[(int) f.length()];
-			try (BufferedInputStream fi = new BufferedInputStream(new FileInputStream(f))) {
-				fi.read(buffer);
-			} catch (@SuppressWarnings("unused") final IOException e) {
-				port = 0;
-				return false;
-			}
+			try {
+				for (final String spec : Utils.getFileLines(f.getAbsolutePath())) {
+					final int idx = spec.indexOf('=');
 
-			final String[] specs = new String(buffer).split("\n");
+					if (idx < 0)
+						continue;
 
-			for (final String spec : specs) {
-				final String[] kval = spec.split("=");
+					final String key = spec.substring(0, idx).trim();
+					final String value = spec.substring(idx + 1).trim();
 
-				if (("Host").equals(kval[0].trim()))
-					addr = kval[1].trim();
-				else
-					if (("Port").equals(kval[0].trim()))
-						try {
-							port = Integer.parseInt(kval[1].trim());
-						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-							port = 0;
-						}
-					else
-						if (("PID").equals(kval[0].trim()))
+					switch (key) {
+						case "JALIEN_HOST":
+							addr = value;
+							break;
+						case "JALIEN_PORT":
 							try {
-								pid = Integer.parseInt(kval[1].trim());
-							} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-								pid = 0;
+								port = Integer.parseInt(value);
 							}
-						else
-							if (("Passwd").equals(kval[0].trim()))
-								password = kval[1].trim();
-							else
-								if (("User").equals(kval[0].trim()))
-									user = kval[1].trim();
+							catch (@SuppressWarnings("unused") final NumberFormatException e) {
+								System.err.println("Invalid port number: " + value);
+							}
+							break;
+						case "JALIEN_PID":
+							try {
+								pid = Integer.parseInt(value);
+							}
+							catch (@SuppressWarnings("unused") final NumberFormatException e) {
+								System.err.println("Invalid process ID: " + pid);
+							}
+							break;
+						case "JALIEN_PASSWORD":
+							password = value;
+							break;
+						case "JALIEN_USER":
+							user = value;
+							break;
+						default:
+					}
+				}
 			}
+			catch (@SuppressWarnings("unused") IOException e) {
+				System.err.println("Cannot read token configuration file " + f.getAbsolutePath());
+			}
+
 			return true;
 		}
-		// else
+
 		// System.err.println("Token file does not exists.");
 
 		return false;
