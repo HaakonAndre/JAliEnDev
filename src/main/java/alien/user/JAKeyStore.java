@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.Paths;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -226,134 +227,29 @@ public class JAKeyStore {
 		return false;
 	}
 
-	/**
-	 * EXPERIMENTAL
-	 *
-	 * @return <code>true</code> if the default proxy could be loaded.
-	 * @throws Exception
-	 */
-	@SuppressWarnings("unused")
-	private static boolean loadProxy() throws Exception {
-		final String sUserId = UserFactory.getUserID();
+  private static boolean isEncrypted(String path) {
+    try (Scanner scanner = new Scanner(new File(path))) {
+      while (scanner.hasNext()) {
+        final String nextToken = scanner.next();
+        if (nextToken.contains("ENCRYPTED")) {
+          return true;
+        }
+      }
+    } finally {
+      return false;
+    }
+  }
 
-		if (sUserId == null) {
-			logger.severe("User Id empty! Could not get the token file name");
-			return false;
-		}
-
-		final String proxyLocation = "/tmp/x509up_u" + sUserId;
-
-		// load pair
-		// =================
-		class PkiUtils {
-			// public static List<?> readPemObjects(InputStream is, final String pphrase)
-			public List<Object> readPemObjects(final InputStream is, final String pphrase) throws IOException {
-				final List<Object> list = new LinkedList<>();
-				try (PEMParser pr2 = new PEMParser(new InputStreamReader(is))) {
-					final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-					final JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
-
-					while (true) {
-						final Object o = pr2.readObject();
-						if (null == o)
-							break; // done
-
-						list.add(parsePemObject(o, pphrase, converter, certconv));
-					}
-				}
-				return list;
-			}
-
-			private Object parsePemObject(final Object param, final String pphrase, final JcaPEMKeyConverter converter, final JcaX509CertificateConverter certconv) {
-				Object o = param;
-
-				try {
-					if (o instanceof PEMEncryptedKeyPair) {
-						o = ((PEMEncryptedKeyPair) o).decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(pphrase.toCharArray()));
-					}
-					else if (o instanceof PKCS8EncryptedPrivateKeyInfo) {
-						final InputDecryptorProvider pkcs8decoder = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(pphrase.toCharArray());
-						o = converter.getPrivateKey(((PKCS8EncryptedPrivateKeyInfo) o).decryptPrivateKeyInfo(pkcs8decoder));
-					}
-				}
-				catch (final Throwable t) {
-					throw new RuntimeException("Failed to decode private key", t);
-				}
-
-				if (o instanceof PEMKeyPair) {
-					try {
-						return converter.getKeyPair((PEMKeyPair) o);
-					}
-					catch (final PEMException e) {
-						throw new RuntimeException("Failed to construct public/private key pair", e);
-					}
-				}
-				/*
-				 * else if(o instanceof RSAPrivateCrtKey){ RSAPrivateCrtKey pk =
-				 * (RSAPrivateCrtKey) o;
-				 * System.err.println("=========== private key cert =========="); //return
-				 * makeKeyPair(pk); return null; }
-				 */
-				else if (o instanceof X509CertificateHolder) {
-					try {
-						return certconv.getCertificate((X509CertificateHolder) o);
-					}
-					catch (final Exception e) {
-						throw new RuntimeException("Failed to read X509 certificate", e);
-					}
-				}
-				else {
-					// catchsink, should check for certs and reject rest?
-					System.out.println("generic case  type " + o.getClass().getName());
-					return o;
-				}
-			}
-		}
-		// =================
-		clientCert = KeyStore.getInstance("JKS");
-		try {
-			clientCert.load(null, pass);
-		}
-		catch (final Exception e) {
-			// ignore
-		}
-
-		try (FileInputStream proxyIS = new FileInputStream(proxyLocation)) {
-			final List<Object> l = (new PkiUtils()).readPemObjects(proxyIS, "");
-			final KeyPair kp = (KeyPair) l.get(1);
-			final ArrayList<X509Certificate> x509l = new ArrayList<>();
-			for (final Object o : l) {
-				// System.out.println(o);
-				if (!(o instanceof KeyPair)) {
-					x509l.add((X509Certificate) o);
-				}
-			}
-			addKeyPairToKeyStore(clientCert, "User.cert", kp, x509l);
-		}
-		catch (final FileNotFoundException e) {
-			System.err.println("Proxy file not found");
-		}
-		catch (final IOException e) {
-			System.err.println("Error while reading proxy file: " + e);
-		}
-		// get pair
-		// call overloaded add
-		return true;
-	}
-
-	/**
-	 * @param noUserPass
-	 * @return true if ok
-	 * @throws Exception
-	 */
 	private static boolean loadClientKeyStorage() throws Exception {
-		final ExtProperties config = ConfigUtils.getConfig();
+    String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
+    final String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
 
-		final String user_key = System.getenv("X509_USER_KEY") != null ? System.getenv("X509_USER_KEY")
-				: config.gets("user.cert.priv.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
+    String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
+    final String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
 
-		final String user_cert = System.getenv("X509_USER_CERT") != null ? System.getenv("X509_USER_CERT")
-				: config.gets("user.cert.pub.location", UserFactory.getUserHome() + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
+    if(user_key == null || user_cert == null) {
+      return false;
+    }
 
 		if (!checkKeyPermissions(user_key)) {
 			logger.log(Level.WARNING, "Permissions on usercert.pem or userkey.pem are not OK");
@@ -361,29 +257,10 @@ public class JAKeyStore {
 		}
 
 		clientCert = KeyStore.getInstance("JKS");
-		boolean noUserPass = true;
-
-		try (Scanner scanner = new Scanner(new File(user_key))) {
-			while (scanner.hasNext()) {
-				final String nextToken = scanner.next();
-				if (nextToken.contains("ENCRYPTED")) {
-					noUserPass = false;
-					break;
-				}
-			}
-		}
-
-		JPasswordFinder jpf;
-
-		if (noUserPass)
-			jpf = new JPasswordFinder(new char[] {});
-		else
-			jpf = getPassword();
-
 		clientCert.load(null, pass);
 		loadTrusts(clientCert);
 
-		addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
+		addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, null);
 
 		return true;
 	}
@@ -404,50 +281,55 @@ public class JAKeyStore {
 	 * @return true if ok
 	 * @throws Exception
 	 */
-	public static boolean loadTokenKeyStorage() throws Exception {
+public static String selectPath(String var, String key, String fsPath) throws Exception {
 		final ExtProperties config = ConfigUtils.getConfig();
 		final String sUserId = UserFactory.getUserID();
 
-		final String token_key;
-		if (tokenKeyString != null)
-			token_key = tokenKeyString;
-		else if (System.getenv("JALIEN_TOKEN_KEY") != null)
-			token_key = System.getenv("JALIEN_TOKEN_KEY");
-		else {
-			if (sUserId == null) {
-				logger.log(Level.SEVERE, "Cannot get the current user's ID");
-				return false;
-			}
+    if (var != null && System.getenv(var) != null) {
+      return System.getenv(var);
+    } else if (key != null && config.gets(key) != null && config.gets(key) != "") {
+      return config.gets(key);
+    } else if (fsPath != null && !fsPath.equals("")) {
+      return fsPath;
+    } else {
+      return null;
+    }
+  }
 
-			token_key = config.gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + sUserId + ".pem");
-		}
+	public static boolean loadTokenKeyStorage() throws Exception {
+		final String sUserId = UserFactory.getUserID();
+    String tmpDir = System.getProperty("java.io.tmpdir");
+
+		final String token_key;
+		if (tokenKeyString != null) {
+			token_key = tokenKeyString;
+    }
+		else {
+      String filename = String.join("" , "tokenkey_", sUserId, ".pem");
+      String fsPath = Paths.get(tmpDir, filename).toString();
+      token_key = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", fsPath);
+    }
 
 		final String token_cert;
-		if (tokenCertString != null)
+		if (tokenCertString != null) {
 			token_cert = tokenCertString;
-		else if (System.getenv("JALIEN_TOKEN_CERT") != null)
-			token_cert = System.getenv("JALIEN_TOKEN_CERT");
+    }
 		else {
-			if (sUserId == null) {
-				logger.log(Level.SEVERE, "Cannot get the current user's ID");
-				return false;
-			}
+      String filename = String.join("" , "tokencert_", sUserId, ".pem");
+      String fsPath = Paths.get(tmpDir, filename).toString();
+      token_cert = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", fsPath);
+    }
 
-			token_cert = config.gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + sUserId + ".pem");
-		}
+    if(token_key == null || token_cert == null) {
+      return false;
+    }
 
 		tokenCert = KeyStore.getInstance("JKS");
+    tokenCert.load(null, pass);
+    loadTrusts(tokenCert);
 
-		try {
-			tokenCert.load(null, pass);
-			loadTrusts(tokenCert);
+    addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
 
-			addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
-		}
-		catch (final Exception e) {
-			e.printStackTrace();
-			return false;
-		}
 		return true;
 
 	}
