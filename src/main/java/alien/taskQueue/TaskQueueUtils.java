@@ -2035,7 +2035,7 @@ public class TaskQueueUtils {
 
 				final int expires = (int) (System.currentTimeMillis() / 1000) + 300;
 
-				insertMessage(target, "ClusterMonitor", "killProcess", j.queueId + "", expires);
+				insertMessage(queueId, target, "ClusterMonitor", "killProcess", j.queueId + "", expires);
 
 			}
 
@@ -2168,17 +2168,16 @@ public class TaskQueueUtils {
 		return success;
 	}
 
-	private static boolean insertMessage(final String target, final String service, final String message, final String messageArgs, final int expires) {
+	private static boolean insertMessage(final long queueId, final String target, final String service, final String message, final String messageArgs, final int expires) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
 
-			final String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('" + Format.escSQL(target) + "','" + Format.escSQL(service) + "','" + Format.escSQL(message)
-					+ "','" + Format.escSQL(messageArgs) + "'," + Format.escSQL(expires + "") + ");";
+			final String q = "INSERT INTO MESSAGES ( ID, TargetHost, TargetService, Message, MessageArgs, Expires)  VALUES (?, ?, ?, ?, ?, ?);";
 
 			db.setQueryTimeout(60);
 
-			if (db.query(q)) {
+			if (db.query(q, false, Long.valueOf(queueId), target, service, message, messageArgs, Integer.valueOf(expires))) {
 				if (monitor != null)
 					monitor.incrementCounter("Message_db_insert");
 
@@ -3058,7 +3057,7 @@ public class TaskQueueUtils {
 					final String target = j.node + "-" + queueId + "-" + j.resubmission;
 					final int expires = (int) (System.currentTimeMillis() / 1000) + 3600 * 3; // now + 3h
 
-					if (!insertMessage(target, "JobAgent", "killProcess", j.queueId + "", expires))
+					if (!insertMessage(queueId, target, "JobAgent", "killProcess", j.queueId + "", expires))
 						logger.severe("Resubmit: could not insert kill message: " + queueId);
 				}
 
@@ -3377,7 +3376,7 @@ public class TaskQueueUtils {
 			return db.getUpdateCount() != 0;
 		}
 	}
-	
+
 	public static boolean addResultsJdl(final JDL jdl, final Long queueId) {
 
 		logger.log(Level.INFO, "Going to add the following resultsJdl: " + jdl);
