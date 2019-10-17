@@ -12,6 +12,7 @@ import alien.catalogue.LFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import lazyj.Format;
 import lazyj.Log;
 
 /**
@@ -52,6 +53,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * marker for -b argument : print in GUID format
 	 */
 	private boolean bB = false;
+
+	/**
+	 * marker for -h argument : human readable sizes
+	 */
+	private boolean bH = false;
 
 	private List<String> alPaths = null;
 
@@ -123,7 +129,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 								commander.printOut("size", String.valueOf(localLFN.size));
 								commander.printOut("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
 								ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
-										+ padLeft(String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
+										+ padLeft(bH ? Format.size(localLFN.size) : String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
 							}
 							else {
 								ret += localLFN.getFileName();
@@ -183,6 +189,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-F", "add trailing / to directory names"));
 		commander.printOutln(helpOption("-b", "print in guid format"));
 		commander.printOutln(helpOption("-c", "print canonical paths"));
+		commander.printOutln(helpOption("-h", "human readable file sizes (1024-based)"));
 		commander.printOutln();
 	}
 
@@ -217,6 +224,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			parser.accepts("a");
 			parser.accepts("F");
 			parser.accepts("c");
+			parser.accepts("h");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -228,7 +236,9 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			bA = options.has("a");
 			bF = options.has("F");
 			bC = options.has("c");
-		} catch (final OptionException e) {
+			bH = options.has("h");
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}
