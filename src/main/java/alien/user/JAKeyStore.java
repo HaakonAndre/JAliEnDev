@@ -256,25 +256,8 @@ public class JAKeyStore {
 			return false;
 		}
 
-    boolean success = false;
-    String password = "";
-
-    try {
-      logger.log(Level.SEVERE, "Trying to load USER CERT");
-      clientCert = KeyStore.getInstance("JKS");
-      clientCert.load(null, pass);
-      loadTrusts(clientCert);
-
-      addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, password);
-      logger.log(Level.SEVERE, "Loaded USER CERT");
-      success = true;
-    } catch (final Exception e) {
-      logger.log(Level.SEVERE, "Error loading UESR CERT", e);
-      System.err.println("Error loading USER CERT");
-      success = false;
-    }
-
-		return success;
+    clientCert = makeKeyStore(user_key, user_cert, "USER CERT", null);
+    return clientCert != null;
 	}
 
 	/**
@@ -308,10 +291,30 @@ public static String selectPath(String var, String key, String fsPath) {
     }
   }
 
+  private static KeyStore makeKeyStore(String key, String cert, String message, String passwd) {
+    KeyStore ks = null;
+    logger.log(Level.SEVERE, "Trying to load " + message);
+
+    try {
+      ks = KeyStore.getInstance("JKS");
+      ks.load(null, pass);
+      loadTrusts(ks);
+
+      addKeyPairToKeyStore(ks, "User.cert", key, cert, "");
+      logger.log(Level.SEVERE, "Loaded " + message);
+    } catch (final Exception e) {
+      logger.log(Level.SEVERE, "Error loading " + message, e);
+      System.err.println("Error loading " + message);
+      ks = null;
+    }
+
+    return ks;
+  }
+
 	public static boolean loadTokenKeyStorage() {
 		final String sUserId = UserFactory.getUserID();
 		final String tmpDir  = System.getProperty("java.io.tmpdir");
-    	boolean success = false;
+    boolean success = false;
 
     final String tokenKeyFilename  = "tokenkey_"  + sUserId + ".pem";
     final String defaultTokenKeyPath = Paths.get(tmpDir, tokenKeyFilename).toString();
@@ -319,8 +322,7 @@ public static String selectPath(String var, String key, String fsPath) {
 
 		if (tokenKeyString != null) {
 			token_key = tokenKeyString;
-    }
-    else {
+    } else {
       token_key = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
     }
 
@@ -330,30 +332,12 @@ public static String selectPath(String var, String key, String fsPath) {
 
 		if (tokenCertString != null) {
 			token_cert = tokenCertString;
-    }
-    else {
+    } else {
       token_cert = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
     }
 
-    try {
-      logger.log(Level.SEVERE, "Trying to load TOKEN CERT");
-
-      tokenCert = KeyStore.getInstance("JKS");
-      tokenCert.load(null, pass);
-      loadTrusts(tokenCert);
-
-      addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
-      logger.log(Level.SEVERE, "Loaded TOKEN CERT");
-
-      success = true;
-    } catch (final Exception e) {
-      logger.log(Level.SEVERE, "Error loading TOKEN CERT", e);
-      System.err.println("Error loading TOKEN CERT");
-
-      success = false;
-    }
-
-		return success;
+    tokenCert = makeKeyStore(token_key, token_cert, "TOKEN CERT", null);
+		return tokenCert != null;
 	}
 
 
@@ -368,24 +352,8 @@ public static String selectPath(String var, String key, String fsPath) {
     String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostcert.pem").toString();
     final String host_cert = selectPath(null, "host.cert.pub.location", defaultCertPath);
 
-    boolean success = false;
-    try {
-      logger.log(Level.SEVERE, "Trying to load HOST CERT");
-
-      hostCert = KeyStore.getInstance("JKS");
-      hostCert.load(null, pass);
-      loadTrusts(hostCert);
-
-      addKeyPairToKeyStore(hostCert, "User.cert", host_key, host_cert, null);
-      logger.log(Level.SEVERE, "Loaded HOST CERT");
-      success = true;
-    } catch (final Exception e) {
-      logger.log(Level.SEVERE, "Error loading HOST CERT", e);
-      System.err.println("Error loading HOST CERT");
-      success = false;
-    }
-
-		return success;
+    hostCert = makeKeyStore(host_key, host_cert, "HOST CERT", null);
+		return hostCert != null;
 	}
 
 	private static JPasswordFinder getPassword() {
