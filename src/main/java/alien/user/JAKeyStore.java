@@ -248,12 +248,21 @@ public class JAKeyStore {
     return encrypted;
   }
 
-	private static boolean loadClientKeyStorage() {
+  public static String getClientKeyPath() {
     String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
-    final String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
+    String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
+    return user_key;
+  }
 
+  public static String getClientCertPath() {
     String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
-    final String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
+    String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
+    return user_cert;
+  }
+
+	private static boolean loadClientKeyStorage() {
+    String user_key = getClientKeyPath();
+    String user_cert = getClientCertPath();
 
     String password = null;
 
@@ -275,9 +284,11 @@ public class JAKeyStore {
 	 * @param keyString
 	 * @throws Exception
 	 */
-  private static char[] requestPassword(String keypath) {
+  public static char[] requestPassword(String keypath) {
     PrivateKey key = null;
     char[] passwd = null;
+
+    if(!isEncrypted(keypath)) return "".toCharArray();
 
     for(int i = 0; i < MAX_PASSWORD_RETRIES; i++) {
       try {
@@ -395,13 +406,7 @@ public static String selectPath(String var, String key, String fsPath) {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation) throws Exception {
-    char[] passwd = null;
-    if(isEncrypted(privKeyLocation)) {
-      passwd = requestPassword(privKeyLocation);
-    } else {
-      System.out.println("not encrypted");
-    }
-
+    char[] passwd = requestPassword(privKeyLocation);
     if(passwd == null) throw new Exception("Failed to read password for key " + privKeyLocation);
 
     PrivateKey key = loadPrivX509(privKeyLocation, passwd);
