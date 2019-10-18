@@ -346,6 +346,14 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						return;
 					}
 
+					// Filter out cp commands
+					if (jsonObject.get("command").toString().equals("cp")) {
+						synchronized (remoteEndpointBasic) {
+							remoteEndpointBasic.sendText("'cp' grid command is not implemented. Please use native client's Cp() method", true);
+						}
+						return;
+					}
+
 					// Split JSONObject into strings
 					final ArrayList<String> fullCmd = new ArrayList<>();
 					fullCmd.add(jsonObject.get("command").toString());
