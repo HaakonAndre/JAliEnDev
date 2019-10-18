@@ -16,6 +16,8 @@ import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.Paths;
 import java.security.KeyPair;
+import java.security.KeyStore.PasswordProtection;
+import java.security.KeyStore.PrivateKeyEntry;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -44,6 +46,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.EncryptionException;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMException;
@@ -67,7 +70,6 @@ import lazyj.ExtProperties;
  * @since Jun 22, 2011
  */
 public class JAKeyStore {
-
 	/**
 	 * Logger
 	 */
@@ -113,6 +115,8 @@ public class JAKeyStore {
 	 *
 	 */
 	public static TrustManager trusts[];
+
+  private static final int MAX_PASSWORD_RETRIES = 3;
 
 	static {
 		Security.addProvider(new BouncyCastleProvider());
@@ -228,16 +232,20 @@ public class JAKeyStore {
 	}
 
   private static boolean isEncrypted(String path) {
+    boolean encrypted = false;
     try (Scanner scanner = new Scanner(new File(path))) {
       while (scanner.hasNext()) {
         final String nextToken = scanner.next();
         if (nextToken.contains("ENCRYPTED")) {
-          return true;
+          encrypted = true;
+          break;
         }
       }
-    } finally {
-      return false;
+    } catch(Exception e) {
+      encrypted = false;
     }
+
+    return encrypted;
   }
 
 	private static boolean loadClientKeyStorage() {
@@ -246,6 +254,8 @@ public class JAKeyStore {
 
     String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
     final String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
+
+    String password = null;
 
     if(user_key == null || user_cert == null) {
       return false;
@@ -256,7 +266,7 @@ public class JAKeyStore {
 			return false;
 		}
 
-    clientCert = makeKeyStore(user_key, user_cert, "USER CERT", null);
+    clientCert = makeKeyStore(user_key, user_cert, "USER CERT");
     return clientCert != null;
 	}
 
@@ -265,6 +275,34 @@ public class JAKeyStore {
 	 * @param keyString
 	 * @throws Exception
 	 */
+  private static char[] requestPassword(String keypath) {
+    PrivateKey key = null;
+    char[] passwd = null;
+
+    for(int i = 0; i < MAX_PASSWORD_RETRIES; i++) {
+      try {
+        passwd = System.console().readPassword("Enter the password for " + keypath + ": ");
+      } catch (Exception e) {
+        passwd = new Scanner(System.in).nextLine().toCharArray();
+      }
+
+      try {
+        key = loadPrivX509(keypath, passwd);
+      } catch (EncryptionException e) {
+        logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
+        System.out.println("Wrong password! Try again");
+      } catch (Exception e) {
+        logger.log(Level.WARNING, "Failed to load key " + keypath);
+        System.out.println("Failed to load key");
+        break;
+      }
+
+      if(key != null) break;
+    }
+
+    return passwd;
+  }
+
 	public static void createTokenFromString(final String certString, final String keyString) throws Exception {
 		tokenCertString = certString;
 		tokenKeyString = keyString;
@@ -291,7 +329,7 @@ public static String selectPath(String var, String key, String fsPath) {
     }
   }
 
-  private static KeyStore makeKeyStore(String key, String cert, String message, String passwd) {
+  private static KeyStore makeKeyStore(String key, String cert, String message) {
     KeyStore ks = null;
     logger.log(Level.SEVERE, "Trying to load " + message);
 
@@ -300,7 +338,7 @@ public static String selectPath(String var, String key, String fsPath) {
       ks.load(null, pass);
       loadTrusts(ks);
 
-      addKeyPairToKeyStore(ks, "User.cert", key, cert, "");
+      addKeyPairToKeyStore(ks, "User.cert", key, cert);
       logger.log(Level.SEVERE, "Loaded " + message);
     } catch (final Exception e) {
       logger.log(Level.SEVERE, "Error loading " + message, e);
@@ -336,7 +374,7 @@ public static String selectPath(String var, String key, String fsPath) {
       token_cert = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
     }
 
-    tokenCert = makeKeyStore(token_key, token_cert, "TOKEN CERT", null);
+    tokenCert = makeKeyStore(token_key, token_cert, "TOKEN CERT");
 		return tokenCert != null;
 	}
 
@@ -352,35 +390,25 @@ public static String selectPath(String var, String key, String fsPath) {
     String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostcert.pem").toString();
     final String host_cert = selectPath(null, "host.cert.pub.location", defaultCertPath);
 
-    hostCert = makeKeyStore(host_key, host_cert, "HOST CERT", null);
+    hostCert = makeKeyStore(host_key, host_cert, "HOST CERT");
 		return hostCert != null;
 	}
 
-	private static JPasswordFinder getPassword() {
+	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation) throws Exception {
+    char[] passwd = null;
+    if(isEncrypted(privKeyLocation)) {
+      passwd = requestPassword(privKeyLocation);
+    } else {
+      System.out.println("not encrypted");
+    }
 
-		final Console cons = System.console();
-		Reader isr = null;
-		if (cons == null)
-			isr = new InputStreamReader(System.in);
-		else {
-			final char[] passwd = cons.readPassword("Grid certificate password: ");
-			final String password = String.valueOf(passwd);
-			isr = new StringReader(password);
-		}
+    if(passwd == null) throw new Exception("Failed to read password for key " + privKeyLocation);
 
-		final BufferedReader in = new BufferedReader(isr);
+    PrivateKey key = loadPrivX509(privKeyLocation, passwd);
+    X509Certificate[] certChain = loadPubX509(pubKeyLocation, true);
+    PrivateKeyEntry entry = new PrivateKeyEntry(key, certChain);
 
-		try {
-			final String line = in.readLine();
-
-			if (line != null && line.length() > 0)
-				return new JPasswordFinder(line.toCharArray());
-		}
-		catch (final IOException e) {
-			logger.log(Level.WARNING, "Could not read passwd from System.in .", e);
-		}
-
-		return new JPasswordFinder("".toCharArray());
+		ks.setEntry(entryBaseName, entry, new PasswordProtection(pass));
 	}
 
 	@SuppressWarnings("unused")
@@ -598,18 +626,6 @@ public static String selectPath(String var, String key, String fsPath) {
 		return null;
 	}
 
-	private static class JPasswordFinder {
-
-		private final char[] password;
-
-		JPasswordFinder(final char[] password) {
-			this.password = password;
-		}
-
-		public char[] getPassword() {
-			return Arrays.copyOf(password, password.length);
-		}
-	}
 
 	private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
 
