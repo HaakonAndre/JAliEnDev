@@ -296,7 +296,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			parser.accepts("c");
 			parser.accepts("i");
 			parser.accepts("v");
-			parser.accepts("p").withRequiredArg().withValuesSeparatedBy(",").describedAs("Comma-separated list of job IDs to check the input data of");
+			parser.accepts("p").withRequiredArg().withValuesSeparatedBy(',').describedAs("Comma-separated list of job IDs to check the input data of");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 			bDownload = options.has("d");
