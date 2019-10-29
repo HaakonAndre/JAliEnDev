@@ -147,7 +147,8 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			commander.printOut("tokencert", tokenreq.getCertificateAsString());
 			commander.printOut("tokenkey", tokenreq.getPrivateKeyAsString());
 
-			commander.printOutln(UserFactory.transformDN(tokenreq.getCertificate().getSubjectX500Principal().getName()));
+			commander.printOutln("DN: " + UserFactory.transformDN(tokenreq.getCertificate().getSubjectX500Principal().getName()));
+			commander.printOutln("Expires: " + tokenreq.getCertificate().getNotAfter());
 			commander.printOutln();
 			commander.printOut(tokenreq.getCertificateAsString());
 			commander.printOutln();
