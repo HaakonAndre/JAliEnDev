@@ -574,7 +574,21 @@ public class ConfigUtils {
 				return null;
 			}
 
+			final Set<String> partitions = LDAPHelper.checkLdapInformation("(&(CEname=ALICE::" + site + "::" + hostConfig.get("host_ce") + "))", "ou=Partitions,", "name");
+
+			final StringBuilder sb = new StringBuilder(",");
+
+			for (final String s : partitions)
+				sb.append(s).append(",");
+
+			if (sb.length() == 1)
+				sb.append(",");
+
+			ceConfig.put("ce_partition", sb.toString());
+
 			configuration.putAll(ceConfig);
+
+			// TODO: check to which partitions it belongs
 		}
 		// We put the config together
 		configuration.putAll(voConfig);
@@ -722,6 +736,7 @@ public class ConfigUtils {
 	/**
 	 * Write the configuration file that is used by JAliEn-ROOT and JSh <br />
 	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
+	 * @param vars key-value map to dump to the file
 	 *
 	 * @return true if the file was written, false if not
 	 */
