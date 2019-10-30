@@ -45,6 +45,6 @@ public class GetMatchJob extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked for a matching job, reply is: " + this.match;
+		return "Asked for a matching job with constraints: " + this.matchRequest + " and reply is: " + this.match;
 	}
 }
