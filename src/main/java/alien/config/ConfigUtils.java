@@ -673,12 +673,20 @@ public class ConfigUtils {
 		if (envSite.length() > 0)
 			return envSite;
 
-		// TODO: actual mapping of the client to a site, no default configuration key for end users
-
 		final String configKey = ConfigUtils.getConfig().gets("alice_close_site");
 
 		if (configKey.length() > 0)
 			return configKey;
+
+		try {
+			final String closeSiteByML = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
+
+			if (closeSiteByML != null && closeSiteByML.length() > 0)
+				return closeSiteByML;
+		}
+		catch (final IOException ioe) {
+			logger.log(Level.WARNING, "Cannot contact alimonitor to map you to the closest site", ioe);
+		}
 
 		return "CERN";
 	}
@@ -688,7 +696,7 @@ public class ConfigUtils {
 	 *
 	 * @param iDebug
 	 *            the debug level received from the command line
-	 * @throws Exception
+	 * @return the environment variables to export to the job (as actual env variables or config file)
 	 */
 	public static HashMap<String, String> exportJBoxVariables(final int iDebug) {
 		final HashMap<String, String> vars = new HashMap<>();
