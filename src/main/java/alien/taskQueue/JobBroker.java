@@ -70,6 +70,9 @@ public class JobBroker {
 
 			matchRequest.put("Remote", Integer.valueOf(0));
 			matchRequest.put("Return", "entryId"); // skipping ,filebroker
+			
+			if (!matchRequest.containsKey("Partition"))
+				matchRequest.put("Partition", ",,");
 
 			// TODO: to fully test, print output to JobBroker/host file
 			if (!TaskQueueUtils.updateHostStatus((String) matchRequest.get("Host"), "ACTIVE")) {
@@ -398,7 +401,7 @@ public class JobBroker {
 					bindValues.add(matchRequest.get("Packages"));
 				}
 
-			if (matchRequest.containsKey("Partition")) {
+			if (matchRequest.containsKey("Partition")) { 
 				where += "and ? like concat('%,',`partition`, '%,') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}
