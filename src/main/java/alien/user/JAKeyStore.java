@@ -116,7 +116,7 @@ public class JAKeyStore {
 	 */
 	public static TrustManager trusts[];
 
-  private static final int MAX_PASSWORD_RETRIES = 3;
+	private static final int MAX_PASSWORD_RETRIES = 3;
 
 	static {
 		Security.addProvider(new BouncyCastleProvider());
@@ -231,52 +231,52 @@ public class JAKeyStore {
 		return false;
 	}
 
-  private static boolean isEncrypted(String path) {
-    boolean encrypted = false;
-    try (Scanner scanner = new Scanner(new File(path))) {
-      while (scanner.hasNext()) {
-        final String nextToken = scanner.next();
-        if (nextToken.contains("ENCRYPTED")) {
-          encrypted = true;
-          break;
-        }
-      }
-    } catch(Exception e) {
-      encrypted = false;
-    }
+	private static boolean isEncrypted(String path) {
+		boolean encrypted = false;
+		try (Scanner scanner = new Scanner(new File(path))) {
+			while (scanner.hasNext()) {
+				final String nextToken = scanner.next();
+				if (nextToken.contains("ENCRYPTED")) {
+					encrypted = true;
+					break;
+				}
+			}
+		} catch (Exception e) {
+			encrypted = false;
+		}
 
-    return encrypted;
-  }
+		return encrypted;
+	}
 
-  public static String getClientKeyPath() {
-    String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
-    String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
-    return user_key;
-  }
+	public static String getClientKeyPath() {
+		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
+		String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
+		return user_key;
+	}
 
-  public static String getClientCertPath() {
-    String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
-    String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
-    return user_cert;
-  }
+	public static String getClientCertPath() {
+		String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
+		String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
+		return user_cert;
+	}
 
 	private static boolean loadClientKeyStorage() {
-    String user_key = getClientKeyPath();
-    String user_cert = getClientCertPath();
+		String user_key = getClientKeyPath();
+		String user_cert = getClientCertPath();
 
-    String password = null;
+		String password = null;
 
-    if(user_key == null || user_cert == null) {
-      return false;
-    }
+		if (user_key == null || user_cert == null) {
+			return false;
+		}
 
 		if (!checkKeyPermissions(user_key)) {
 			logger.log(Level.WARNING, "Permissions on usercert.pem or userkey.pem are not OK");
 			return false;
 		}
 
-    clientCert = makeKeyStore(user_key, user_cert, "USER CERT");
-    return clientCert != null;
+		clientCert = makeKeyStore(user_key, user_cert, "USER CERT");
+		return clientCert != null;
 	}
 
 	/**
@@ -284,35 +284,37 @@ public class JAKeyStore {
 	 * @param keyString
 	 * @throws Exception
 	 */
-  public static char[] requestPassword(String keypath) {
-    PrivateKey key = null;
-    char[] passwd = null;
+	public static char[] requestPassword(String keypath) {
+		PrivateKey key = null;
+		char[] passwd = null;
 
-    if(!isEncrypted(keypath)) return "".toCharArray();
+		if (!isEncrypted(keypath))
+			return "".toCharArray();
 
-    for(int i = 0; i < MAX_PASSWORD_RETRIES; i++) {
-      try {
-        passwd = System.console().readPassword("Enter the password for " + keypath + ": ");
-      } catch (Exception e) {
-        passwd = new Scanner(System.in).nextLine().toCharArray();
-      }
+		for (int i = 0; i < MAX_PASSWORD_RETRIES; i++) {
+			try {
+				passwd = System.console().readPassword("Enter the password for " + keypath + ": ");
+			} catch (Exception e) {
+				passwd = new Scanner(System.in).nextLine().toCharArray();
+			}
 
-      try {
-        key = loadPrivX509(keypath, passwd);
-      } catch (EncryptionException e) {
-        logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
-        System.out.println("Wrong password! Try again");
-      } catch (Exception e) {
-        logger.log(Level.WARNING, "Failed to load key " + keypath);
-        System.out.println("Failed to load key");
-        break;
-      }
+			try {
+				key = loadPrivX509(keypath, passwd);
+			} catch (EncryptionException e) {
+				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
+				System.out.println("Wrong password! Try again");
+			} catch (Exception e) {
+				logger.log(Level.WARNING, "Failed to load key " + keypath);
+				System.out.println("Failed to load key");
+				break;
+			}
 
-      if(key != null) break;
-    }
+			if (key != null)
+				break;
+		}
 
-    return passwd;
-  }
+		return passwd;
+	}
 
 	public static void createTokenFromString(final String certString, final String keyString) throws Exception {
 		tokenCertString = certString;
@@ -325,93 +327,93 @@ public class JAKeyStore {
 	 * @return true if ok
 	 * @throws Exception
 	 */
-public static String selectPath(String var, String key, String fsPath) {
+	public static String selectPath(String var, String key, String fsPath) {
 		final ExtProperties config = ConfigUtils.getConfig();
 		final String sUserId = UserFactory.getUserID();
 
-    if (var != null && System.getenv(var) != null) {
-      return System.getenv(var);
-    } else if (key != null && config.gets(key) != null && config.gets(key) != "") {
-      return config.gets(key);
-    } else if (fsPath != null && !fsPath.equals("")) {
-      return fsPath;
-    } else {
-      return null;
-    }
-  }
+		if (var != null && System.getenv(var) != null) {
+			return System.getenv(var);
+		} else if (key != null && config.gets(key) != null && config.gets(key) != "") {
+			return config.gets(key);
+		} else if (fsPath != null && !fsPath.equals("")) {
+			return fsPath;
+		} else {
+			return null;
+		}
+	}
 
-  private static KeyStore makeKeyStore(String key, String cert, String message) {
-    KeyStore ks = null;
-    logger.log(Level.SEVERE, "Trying to load " + message);
+	private static KeyStore makeKeyStore(String key, String cert, String message) {
+		KeyStore ks = null;
+		logger.log(Level.SEVERE, "Trying to load " + message);
 
-    try {
-      ks = KeyStore.getInstance("JKS");
-      ks.load(null, pass);
-      loadTrusts(ks);
+		try {
+			ks = KeyStore.getInstance("JKS");
+			ks.load(null, pass);
+			loadTrusts(ks);
 
-      addKeyPairToKeyStore(ks, "User.cert", key, cert);
-      logger.log(Level.SEVERE, "Loaded " + message);
-    } catch (final Exception e) {
-      logger.log(Level.SEVERE, "Error loading " + message, e);
-      System.err.println("Error loading " + message);
-      ks = null;
-    }
+			addKeyPairToKeyStore(ks, "User.cert", key, cert);
+			logger.log(Level.SEVERE, "Loaded " + message);
+		} catch (final Exception e) {
+			logger.log(Level.SEVERE, "Error loading " + message, e);
+			System.err.println("Error loading " + message);
+			ks = null;
+		}
 
-    return ks;
-  }
+		return ks;
+	}
 
 	public static boolean loadTokenKeyStorage() {
 		final String sUserId = UserFactory.getUserID();
-		final String tmpDir  = System.getProperty("java.io.tmpdir");
-    boolean success = false;
+		final String tmpDir = System.getProperty("java.io.tmpdir");
+		boolean success = false;
 
-    final String tokenKeyFilename  = "tokenkey_"  + sUserId + ".pem";
-    final String defaultTokenKeyPath = Paths.get(tmpDir, tokenKeyFilename).toString();
+		final String tokenKeyFilename = "tokenkey_" + sUserId + ".pem";
+		final String defaultTokenKeyPath = Paths.get(tmpDir, tokenKeyFilename).toString();
 		final String token_key;
 
 		if (tokenKeyString != null) {
 			token_key = tokenKeyString;
-    } else {
-      token_key = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
-    }
+		} else {
+			token_key = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
+		}
 
-    final String tokenCertFilename = "tokencert_" + sUserId + ".pem";
-    final String defaultTokenCertPath = Paths.get(tmpDir, tokenCertFilename).toString();
+		final String tokenCertFilename = "tokencert_" + sUserId + ".pem";
+		final String defaultTokenCertPath = Paths.get(tmpDir, tokenCertFilename).toString();
 		final String token_cert;
 
 		if (tokenCertString != null) {
 			token_cert = tokenCertString;
-    } else {
-      token_cert = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
-    }
+		} else {
+			token_cert = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
+		}
 
-    tokenCert = makeKeyStore(token_key, token_cert, "TOKEN CERT");
+		tokenCert = makeKeyStore(token_key, token_cert, "TOKEN CERT");
 		return tokenCert != null;
 	}
-
 
 	/**
 	 * @return true if keystore is loaded successfully
 	 * @throws Exception
 	 */
 	private static boolean loadServerKeyStorage() {
-  	String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostkey.pem").toString();
-  	final String host_key = selectPath(null, "host.cert.priv.location", defaultKeyPath);
+		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostkey.pem").toString();
+		final String host_key = selectPath(null, "host.cert.priv.location", defaultKeyPath);
 
-    String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostcert.pem").toString();
-    final String host_cert = selectPath(null, "host.cert.pub.location", defaultCertPath);
+		String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostcert.pem").toString();
+		final String host_cert = selectPath(null, "host.cert.pub.location", defaultCertPath);
 
-    hostCert = makeKeyStore(host_key, host_cert, "HOST CERT");
+		hostCert = makeKeyStore(host_key, host_cert, "HOST CERT");
 		return hostCert != null;
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation) throws Exception {
-    char[] passwd = requestPassword(privKeyLocation);
-    if(passwd == null) throw new Exception("Failed to read password for key " + privKeyLocation);
+		char[] passwd = requestPassword(privKeyLocation);
+		if (passwd == null)
+			throw new Exception("Failed to read password for key " + privKeyLocation);
 
-    PrivateKey key = loadPrivX509(privKeyLocation, passwd);
-    X509Certificate[] certChain = loadPubX509(pubKeyLocation, true);
-    PrivateKeyEntry entry = new PrivateKeyEntry(key, certChain);
+		PrivateKey key = loadPrivX509(privKeyLocation, passwd);
+		X509Certificate[] certChain = loadPubX509(pubKeyLocation, true);
+		PrivateKeyEntry entry = new PrivateKeyEntry(key, certChain);
 
 		ks.setEntry(entryBaseName, entry, new PasswordProtection(pass));
 	}
@@ -441,7 +443,7 @@ public static String selectPath(String var, String key, String fsPath) {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final String password) throws Exception {
-  	ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, password.toCharArray()), loadPubX509(pubKeyLocation, true)), new KeyStore.PasswordProtection(pass));
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, password.toCharArray()), loadPubX509(pubKeyLocation, true)), new KeyStore.PasswordProtection(pass));
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final KeyPair pair, final ArrayList<X509Certificate> chain) throws Exception {
@@ -472,8 +474,7 @@ public static String selectPath(String var, String key, String fsPath) {
 
 			try {
 				Files.setPosixFilePermissions(f.toPath(), attrs);
-			}
-			catch (final IOException io2) {
+			} catch (final IOException io2) {
 				logger.log(Level.WARNING, "Could not protect your keystore " + filename + " with POSIX attributes", io2);
 			}
 
@@ -600,8 +601,7 @@ public static String selectPath(String var, String key, String fsPath) {
 						return null;
 					}
 					chain.add((X509Certificate) obj);
-				}
-				else if (obj instanceof X509CertificateHolder) {
+				} else if (obj instanceof X509CertificateHolder) {
 					final X509CertificateHolder ch = (X509CertificateHolder) obj;
 
 					try {
@@ -611,12 +611,10 @@ public static String selectPath(String var, String key, String fsPath) {
 							c.checkValidity();
 
 						chain.add(c);
-					}
-					catch (final CertificateException ce) {
+					} catch (final CertificateException ce) {
 						logger.log(Level.SEVERE, "Exception loading certificate", ce);
 					}
-				}
-				else
+				} else
 					System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
 
 			if (chain.size() > 0)
@@ -630,7 +628,6 @@ public static String selectPath(String var, String key, String fsPath) {
 
 		return null;
 	}
-
 
 	private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
 
@@ -658,15 +655,18 @@ public static String selectPath(String var, String key, String fsPath) {
 
 		// If JALIEN_TOKEN_CERT env var is set, token is in highest priority
 		if (System.getenv("JALIEN_TOKEN_CERT") != null || tokenCertString != null) {
-      keystore_loaded = loadTokenKeyStorage();
-      return keystore_loaded;
-    }
+			keystore_loaded = loadTokenKeyStorage();
+			return keystore_loaded;
+		}
 
-    if(!keystore_loaded) keystore_loaded = loadClientKeyStorage();
-    if(!keystore_loaded) keystore_loaded = loadServerKeyStorage();
-    if(!keystore_loaded) keystore_loaded = loadTokenKeyStorage();
+		if (!keystore_loaded)
+			keystore_loaded = loadClientKeyStorage();
+		if (!keystore_loaded)
+			keystore_loaded = loadServerKeyStorage();
+		if (!keystore_loaded)
+			keystore_loaded = loadTokenKeyStorage();
 
-    return keystore_loaded;
+		return keystore_loaded;
 	}
 
 	/**
@@ -693,24 +693,20 @@ public static String selectPath(String var, String key, String fsPath) {
 				e.printStackTrace();
 			}
 			return JAKeyStore.clientCert;
-		}
-		else if (JAKeyStore.hostCert != null) {
+		} else if (JAKeyStore.hostCert != null) {
 			try {
 				if (hostCert.getCertificateChain("User.cert") == null)
 					loadKeyStore();
-			}
-			catch (final KeyStoreException e) {
+			} catch (final KeyStoreException e) {
 				logger.log(Level.SEVERE, "Exception during loading host cert");
 				e.printStackTrace();
 			}
 			return JAKeyStore.hostCert;
-		}
-		else if (JAKeyStore.tokenCert != null) {
+		} else if (JAKeyStore.tokenCert != null) {
 			try {
 				if (tokenCert.getCertificateChain("User.cert") == null)
 					loadKeyStore();
-			}
-			catch (final KeyStoreException e) {
+			} catch (final KeyStoreException e) {
 				logger.log(Level.SEVERE, "Exception during loading token cert");
 				e.printStackTrace();
 			}
