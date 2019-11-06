@@ -365,7 +365,6 @@ public class JAKeyStore {
 	public static boolean loadTokenKeyStorage() {
 		final String sUserId = UserFactory.getUserID();
 		final String tmpDir = System.getProperty("java.io.tmpdir");
-		boolean success = false;
 
 		final String tokenKeyFilename = "tokenkey_" + sUserId + ".pem";
 		final String defaultTokenKeyPath = Paths.get(tmpDir, tokenKeyFilename).toString();
