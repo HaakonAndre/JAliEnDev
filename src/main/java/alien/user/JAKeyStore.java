@@ -624,7 +624,6 @@ public class JAKeyStore {
 		// If JALIEN_TOKEN_CERT env var is set, token is in highest priority
 		if (System.getenv("JALIEN_TOKEN_CERT") != null || tokenCertString != null) {
 			keystore_loaded = loadTokenKeyStorage();
-			return keystore_loaded;
 		}
 
 		if (!keystore_loaded)
