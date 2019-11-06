@@ -104,8 +104,9 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 		commander.printOutln();
 		commander.printOutln(helpUsage("whois", "[account name]"));
 		commander.printOutln(helpStartOptions());
-		commander.printOutln(helpOption("-g", "use the lfn as guid"));
-		commander.printOutln(helpOption("-r", "resolve links (do not give back pointers to zip archives)"));
+		commander.printOutln(helpOption("-s", "search for the given string(s) in usernames"));
+		commander.printOutln(helpOption("-f", "also search in full names"));
+
 		commander.printOutln();
 	}
 
@@ -152,7 +153,8 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 			if (searchFor.size() == 0)
 				throw new IllegalArgumentException();
 
-		} catch (final OptionException | IllegalArgumentException e) {
+		}
+		catch (final OptionException | IllegalArgumentException e) {
 			printHelp();
 			throw e;
 		}
