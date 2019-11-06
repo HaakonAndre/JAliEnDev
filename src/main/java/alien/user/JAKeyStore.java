@@ -282,7 +282,6 @@ public class JAKeyStore {
 	/**
 	 * @param certString
 	 * @param keyString
-	 * @throws Exception
 	 */
 	public static char[] requestPassword(String keypath) {
 		PrivateKey key = null;
@@ -300,7 +299,7 @@ public class JAKeyStore {
 
 			try {
 				key = loadPrivX509(keypath, passwd);
-			} catch (EncryptionException e) {
+			} catch (final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException | javax.crypto.BadPaddingException e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
 				System.out.println("Wrong password! Try again");
 			} catch (Exception e) {
