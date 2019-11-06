@@ -323,8 +323,7 @@ public class JAKeyStore {
 	}
 
 	/**
-	 * @return true if ok
-	 * @throws Exception
+	 * @return path selected from one of the three provided locations
 	 */
 	public static String selectPath(String var, String key, String fsPath) {
 		final ExtProperties config = ConfigUtils.getConfig();
@@ -395,7 +394,6 @@ public class JAKeyStore {
 
 	/**
 	 * @return true if keystore is loaded successfully
-	 * @throws Exception
 	 */
 	private static boolean loadServerKeyStorage() {
 		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostkey.pem").toString();
