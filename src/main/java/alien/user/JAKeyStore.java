@@ -329,7 +329,6 @@ public class JAKeyStore {
 	 */
 	public static String selectPath(String var, String key, String fsPath) {
 		final ExtProperties config = ConfigUtils.getConfig();
-		final String sUserId = UserFactory.getUserID();
 
 		if (var != null && System.getenv(var) != null) {
 			return System.getenv(var);
@@ -365,6 +364,11 @@ public class JAKeyStore {
 	public static boolean loadTokenKeyStorage() {
 		final String sUserId = UserFactory.getUserID();
 		final String tmpDir = System.getProperty("java.io.tmpdir");
+
+		if(sUserId == null && (tokenKeyString == null || tokenCertString == null)) {
+			logger.log(Level.SEVERE, "Cannot get the current user's ID");
+			return false;
+		}
 
 		final String tokenKeyFilename = "tokenkey_" + sUserId + ".pem";
 		final String defaultTokenKeyPath = Paths.get(tmpDir, tokenKeyFilename).toString();
