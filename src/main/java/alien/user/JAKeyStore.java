@@ -1,24 +1,21 @@
 package alien.user;
 
 import java.io.BufferedReader;
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.security.KeyPair;
+import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
 import java.security.KeyStore.PrivateKeyEntry;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -27,11 +24,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -46,7 +40,6 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.EncryptionException;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMException;
@@ -241,19 +234,25 @@ public class JAKeyStore {
 					break;
 				}
 			}
-		} catch (Exception e) {
+		} catch (@SuppressWarnings("unused") Exception e) {
 			encrypted = false;
 		}
 
 		return encrypted;
 	}
 
+	/**
+	 * @return initialize the client key storage (the full grid certificate)
+	 */
 	public static String getClientKeyPath() {
 		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
 		String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
 		return user_key;
 	}
 
+	/**
+	 * @return get the default location of the client certificate
+	 */
 	public static String getClientCertPath() {
 		String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
 		String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
@@ -263,8 +262,6 @@ public class JAKeyStore {
 	private static boolean loadClientKeyStorage() {
 		String user_key = getClientKeyPath();
 		String user_cert = getClientCertPath();
-
-		String password = null;
 
 		if (user_key == null || user_cert == null) {
 			return false;
@@ -279,9 +276,10 @@ public class JAKeyStore {
 		return clientCert != null;
 	}
 
+
 	/**
-	 * @param certString
-	 * @param keyString
+	 * @param keypath to the private key in order to test if the password is vaid
+	 * @return char[] containing the correct password or empty string if the key is not encrypted
 	 */
 	public static char[] requestPassword(String keypath) {
 		PrivateKey key = null;
@@ -293,16 +291,18 @@ public class JAKeyStore {
 		for (int i = 0; i < MAX_PASSWORD_RETRIES; i++) {
 			try {
 				passwd = System.console().readPassword("Enter the password for " + keypath + ": ");
-			} catch (Exception e) {
-				passwd = new Scanner(System.in).nextLine().toCharArray();
+			} catch(@SuppressWarnings("unused") Exception e) {
+				try(Scanner scanner = new Scanner(System.in)) {
+					passwd = scanner.nextLine().toCharArray();
+				}
 			}
 
 			try {
 				key = loadPrivX509(keypath, passwd);
-			} catch (final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException | javax.crypto.BadPaddingException e) {
+			} catch (@SuppressWarnings("unused") final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
 				System.out.println("Wrong password! Try again");
-			} catch (Exception e) {
+			} catch (@SuppressWarnings("unused") Exception e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath);
 				System.out.println("Failed to load key");
 				break;
@@ -315,6 +315,11 @@ public class JAKeyStore {
 		return passwd;
 	}
 
+	/**
+	 * @param certString programatically set the token certificate
+	 * @param keyString programatically set the token key
+	 * @throws Exception if something goes wrong
+	 */
 	public static void createTokenFromString(final String certString, final String keyString) throws Exception {
 		tokenCertString = certString;
 		tokenKeyString = keyString;
@@ -323,6 +328,9 @@ public class JAKeyStore {
 	}
 
 	/**
+	 * @param var environment variable to be checked
+	 * @param key in configuration to be checked
+	 * @param fsPath the filesystem path, usually the fallback/default location
 	 * @return path selected from one of the three provided locations
 	 */
 	public static String selectPath(String var, String key, String fsPath) {
@@ -359,6 +367,11 @@ public class JAKeyStore {
 		return ks;
 	}
 
+	/**
+	 * Load the token credentials (required for running Tomcat / WebSockets)
+	 *
+	 * @return true if token has been successfully loaded
+	 */
 	public static boolean loadTokenKeyStorage() {
 		final String sUserId = UserFactory.getUserID();
 		final String tmpDir = System.getProperty("java.io.tmpdir");
