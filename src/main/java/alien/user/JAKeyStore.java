@@ -421,41 +421,6 @@ public class JAKeyStore {
 		ks.setEntry(entryBaseName, entry, new PasswordProtection(pass));
 	}
 
-	@SuppressWarnings("unused")
-	private static void createKeyStore(final KeyStore ks, final String keyStoreName) {
-
-		// pass = getRandomString();
-
-		try (FileInputStream f = new FileInputStream(keyStoreName)) {
-			try {
-				ks.load(null, pass);
-			}
-			catch (final NoSuchAlgorithmException e) {
-				e.printStackTrace();
-			}
-			catch (final CertificateException e) {
-				e.printStackTrace();
-			}
-			catch (final IOException e) {
-				e.printStackTrace();
-			}
-		}
-		catch (final IOException e) {
-			logger.log(Level.WARNING, "Exception creating key store", e);
-		}
-	}
-
-	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final String password) throws Exception {
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, password.toCharArray()), loadPubX509(pubKeyLocation, true)), new KeyStore.PasswordProtection(pass));
-	}
-
-	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final KeyPair pair, final ArrayList<X509Certificate> chain) throws Exception {
-
-		X509Certificate[] certArray = new X509Certificate[chain.size()];
-		certArray = chain.toArray(certArray);
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(pair.getPrivate(), certArray), new KeyStore.PasswordProtection(pass));
-	}
-
 	/**
 	 * @param ks
 	 * @param filename
