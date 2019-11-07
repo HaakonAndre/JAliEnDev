@@ -420,32 +420,32 @@ public class JSh {
 					final String value = spec.substring(idx + 1).trim();
 
 					switch (key) {
-					case "JALIEN_HOST":
-						addr = value;
-						break;
-					case "JALIEN_PORT":
-						try {
-							port = Integer.parseInt(value);
-						}
-						catch (@SuppressWarnings("unused") final NumberFormatException e) {
-							System.err.println("Invalid port number: " + value);
-						}
-						break;
-					case "JALIEN_PID":
-						try {
-							pid = Integer.parseInt(value);
-						}
-						catch (@SuppressWarnings("unused") final NumberFormatException e) {
-							System.err.println("Invalid process ID: " + pid);
-						}
-						break;
-					case "JALIEN_PASSWORD":
-						password = value;
-						break;
-					case "JALIEN_USER":
-						user = value;
-						break;
-					default:
+						case "JALIEN_HOST":
+							addr = value;
+							break;
+						case "JALIEN_PORT":
+							try {
+								port = Integer.parseInt(value);
+							}
+							catch (@SuppressWarnings("unused") final NumberFormatException e) {
+								System.err.println("Invalid port number: " + value);
+							}
+							break;
+						case "JALIEN_PID":
+							try {
+								pid = Integer.parseInt(value);
+							}
+							catch (@SuppressWarnings("unused") final NumberFormatException e) {
+								System.err.println("Invalid process ID: " + pid);
+							}
+							break;
+						case "JALIEN_PASSWORD":
+							password = value;
+							break;
+						case "JALIEN_USER":
+							user = value;
+							break;
+						default:
 					}
 				}
 			}

@@ -673,11 +673,11 @@ public class JAKeyStore {
 		if (!keystore_loaded)
 			keystore_loaded = loadTokenKeyStorage();
 
-    if(!keystore_loaded) {
-      String msg = "Failed to load any certificate, tried: user, host and token";
-      logger.log(Level.SEVERE, msg);
-      System.err.println("ERROR: " + msg);
-    }
+		if (!keystore_loaded) {
+			String msg = "Failed to load any certificate, tried: user, host and token";
+			logger.log(Level.SEVERE, msg);
+			System.err.println("ERROR: " + msg);
+		}
 
 		return keystore_loaded;
 	}
