@@ -30,7 +30,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -829,7 +828,6 @@ public class JAKeyStore {
 			// Execution finished - kill commander
 			commander.kill = true;
 			return true;
-
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Token request failed", e);
@@ -837,6 +835,10 @@ public class JAKeyStore {
 		}
 	}
 
+	/**
+	 * @param ksName which keystore to check
+	 * @return true if the requested certificate has been successfully loaded
+	 */
 	public static boolean isLoaded(String ksName) {
 		KeyStore ks = null;
 
@@ -865,6 +867,9 @@ public class JAKeyStore {
 		return status;
 	}
 
+	/**
+	 * Starts a thread in the background that will update the token every two hours
+	 */
 	public static void startTokenUpdater() {
 		// Refresh token cert every two hours
 		new Thread() {
@@ -883,6 +888,11 @@ public class JAKeyStore {
 		}.start();
 	}
 
+	/**
+	 * Fetch and load the first token that will be used for Tomcat
+	 *
+	 * @return true if the token is fetched and loaded successfully
+	 */
 	public static boolean bootstrapFirstToken() {
 		if (!JAKeyStore.requestTokenCert()) {
 			return false;

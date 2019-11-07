@@ -22,11 +22,7 @@ public class JBox {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
-	public static void logLoud(String msg) {
-		logLoud(Level.INFO, msg);
-	}
-
-	public static void logLoud(Level l, String msg) {
+	private static void logLoud(Level l, String msg) {
 		logger.log(l, msg);
 		System.err.println(msg);
 	}
