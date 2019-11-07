@@ -72,7 +72,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 				}
 
 				// if recursive and we have links, resolve them
-				if (bR && wi.size() == 1 && se == Integer.valueOf(0)) {
+				if (bR && wi.size() == 1 && se.intValue() == 0) {
 
 					if (LFNCSDUtils.isValidLFN(pfn)) {
 						lfnOrGuid = pfn;
@@ -87,7 +87,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 					// PFNs for physical files with senumber-pfn map
 					for (Integer senumber : wi.keySet()) {
 						String seName = "no_se (link or zip member)";
-						if (senumber != Integer.valueOf(0))
+						if (senumber.intValue() != 0)
 							seName = commander.c_api.getSE(senumber.intValue()).seName;
 						commander.printOutln("\t The entry is in SE: " + seName + "\t with PFN: " + wi.get(senumber));
 					}
