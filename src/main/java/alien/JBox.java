@@ -52,12 +52,16 @@ public class JBox {
 		}
 
 		// First, load user certificate (or token) and create keystore
-		JAKeyStore.loadKeyStore();
+		if (JAKeyStore.loadKeyStore()) {
+			JBoxServer.startJBoxService();
+			TomcatServer.startTomcatServer();
 
-		JBoxServer.startJBoxService();
-		TomcatServer.startTomcatServer();
-
-		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
-			logger.log(Level.INFO, "Failed to export JBox variables");
+			if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
+				logger.log(Level.INFO, "Failed to export JBox variables");
+		}
+		else {
+			logger.log(Level.INFO, "JBox failed to load any credentials");
+			System.err.println("JBox failed to load any credentials");
+		}
 	}
 }
