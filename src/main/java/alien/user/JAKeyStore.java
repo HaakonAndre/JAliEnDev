@@ -299,7 +299,7 @@ public class JAKeyStore {
 
 			try {
 				key = loadPrivX509(keypath, passwd);
-			} catch (@SuppressWarnings("unused") final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException e) {
+			} catch (@SuppressWarnings("unused") final org.bouncycastle.openssl.PEMException | org.bouncycastle.pkcs.PKCSException e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
 				System.out.println("Wrong password! Try again");
 			} catch (@SuppressWarnings("unused") Exception e) {
