@@ -312,7 +312,8 @@ public class JAKeyStore {
 
 			try {
 				key = loadPrivX509(keypath, passwd);
-			} catch (@SuppressWarnings("unused") final org.bouncycastle.openssl.PEMException | org.bouncycastle.pkcs.PKCSException e) {
+			}
+			catch (@SuppressWarnings("unused") final org.bouncycastle.openssl.PEMException | org.bouncycastle.pkcs.PKCSException e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
 				System.out.println("Wrong password! Try again");
 			}
@@ -358,11 +359,14 @@ public class JAKeyStore {
 
 		if (var != null && System.getenv(var) != null) {
 			return System.getenv(var);
-		} else if (key != null && config.gets(key) != null && config.gets(key) != "") {
+		}
+		else if (key != null && config.gets(key) != null && config.gets(key) != "") {
 			return config.gets(key);
-		} else if (fsPath != null && !fsPath.equals("")) {
+		}
+		else if (fsPath != null && !fsPath.equals("")) {
 			return fsPath;
-		} else {
+		}
+		else {
 			return null;
 		}
 	}
@@ -604,24 +608,23 @@ public class JAKeyStore {
 					}
 					chain.add((X509Certificate) obj);
 				}
-				else
-					if (obj instanceof X509CertificateHolder) {
-						final X509CertificateHolder ch = (X509CertificateHolder) obj;
+				else if (obj instanceof X509CertificateHolder) {
+					final X509CertificateHolder ch = (X509CertificateHolder) obj;
 
-						try {
-							final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
+					try {
+						final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
 
-							if (checkValidity)
-								c.checkValidity();
+						if (checkValidity)
+							c.checkValidity();
 
-							chain.add(c);
-						}
-						catch (final CertificateException ce) {
-							logger.log(Level.SEVERE, "Exception loading certificate", ce);
-						}
+						chain.add(c);
 					}
-					else
-						System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
+					catch (final CertificateException ce) {
+						logger.log(Level.SEVERE, "Exception loading certificate", ce);
+					}
+				}
+				else
+					System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
 
 			if (chain.size() > 0)
 				return chain.toArray(new X509Certificate[0]);
@@ -699,30 +702,28 @@ public class JAKeyStore {
 			}
 			return JAKeyStore.clientCert;
 		}
-		else
-			if (JAKeyStore.hostCert != null) {
-				try {
-					if (hostCert.getCertificateChain("User.cert") == null)
-						loadKeyStore();
-				}
-				catch (final KeyStoreException e) {
-					logger.log(Level.SEVERE, "Exception during loading host cert");
-					e.printStackTrace();
-				}
-				return JAKeyStore.hostCert;
+		else if (JAKeyStore.hostCert != null) {
+			try {
+				if (hostCert.getCertificateChain("User.cert") == null)
+					loadKeyStore();
 			}
-			else
-				if (JAKeyStore.tokenCert != null) {
-					try {
-						if (tokenCert.getCertificateChain("User.cert") == null)
-							loadKeyStore();
-					}
-					catch (final KeyStoreException e) {
-						logger.log(Level.SEVERE, "Exception during loading token cert");
-						e.printStackTrace();
-					}
-					return JAKeyStore.tokenCert;
-				}
+			catch (final KeyStoreException e) {
+				logger.log(Level.SEVERE, "Exception during loading host cert");
+				e.printStackTrace();
+			}
+			return JAKeyStore.hostCert;
+		}
+		else if (JAKeyStore.tokenCert != null) {
+			try {
+				if (tokenCert.getCertificateChain("User.cert") == null)
+					loadKeyStore();
+			}
+			catch (final KeyStoreException e) {
+				logger.log(Level.SEVERE, "Exception during loading token cert");
+				e.printStackTrace();
+			}
+			return JAKeyStore.tokenCert;
+		}
 
 		return null;
 	}
@@ -836,9 +837,11 @@ public class JAKeyStore {
 
 		if (ksName == "user") {
 			ks = clientCert;
-		} else if (ksName == "host") {
+		}
+		else if (ksName == "host") {
 			ks = hostCert;
-		} else if (ksName == "token") {
+		}
+		else if (ksName == "token") {
 			ks = tokenCert;
 		}
 
@@ -850,7 +853,8 @@ public class JAKeyStore {
 		if (ks != null) {
 			try {
 				status = ks.getCertificateChain("User.cert") != null;
-			} catch (@SuppressWarnings("unused") Exception e) {
+			}
+			catch (@SuppressWarnings("unused") Exception e) {
 			}
 		}
 		return status;
