@@ -1,17 +1,20 @@
 package alien.user;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
@@ -20,6 +23,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -52,9 +56,15 @@ import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
+import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JSONPrintWriter;
+import alien.shell.commands.UIPrintWriter;
 import lazyj.ExtProperties;
 
 /**
@@ -234,7 +244,8 @@ public class JAKeyStore {
 					break;
 				}
 			}
-		} catch (@SuppressWarnings("unused") Exception e) {
+		}
+		catch (@SuppressWarnings("unused") Exception e) {
 			encrypted = false;
 		}
 
@@ -276,9 +287,9 @@ public class JAKeyStore {
 		return clientCert != null;
 	}
 
-
 	/**
-	 * @param keypath to the private key in order to test if the password is vaid
+	 * @param keypath
+	 *            to the private key in order to test if the password is vaid
 	 * @return char[] containing the correct password or empty string if the key is not encrypted
 	 */
 	public static char[] requestPassword(String keypath) {
@@ -291,8 +302,9 @@ public class JAKeyStore {
 		for (int i = 0; i < MAX_PASSWORD_RETRIES; i++) {
 			try {
 				passwd = System.console().readPassword("Enter the password for " + keypath + ": ");
-			} catch(@SuppressWarnings("unused") Exception e) {
-				try(Scanner scanner = new Scanner(System.in)) {
+			}
+			catch (@SuppressWarnings("unused") Exception e) {
+				try (Scanner scanner = new Scanner(System.in)) {
 					passwd = scanner.nextLine().toCharArray();
 				}
 			}
@@ -302,7 +314,8 @@ public class JAKeyStore {
 			} catch (@SuppressWarnings("unused") final org.bouncycastle.openssl.PEMException | org.bouncycastle.pkcs.PKCSException e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
 				System.out.println("Wrong password! Try again");
-			} catch (@SuppressWarnings("unused") Exception e) {
+			}
+			catch (@SuppressWarnings("unused") Exception e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath);
 				System.out.println("Failed to load key");
 				break;
@@ -316,9 +329,12 @@ public class JAKeyStore {
 	}
 
 	/**
-	 * @param certString programatically set the token certificate
-	 * @param keyString programatically set the token key
-	 * @throws Exception if something goes wrong
+	 * @param certString
+	 *            programatically set the token certificate
+	 * @param keyString
+	 *            programatically set the token key
+	 * @throws Exception
+	 *             if something goes wrong
 	 */
 	public static void createTokenFromString(final String certString, final String keyString) throws Exception {
 		tokenCertString = certString;
@@ -328,9 +344,12 @@ public class JAKeyStore {
 	}
 
 	/**
-	 * @param var environment variable to be checked
-	 * @param key in configuration to be checked
-	 * @param fsPath the filesystem path, usually the fallback/default location
+	 * @param var
+	 *            environment variable to be checked
+	 * @param key
+	 *            in configuration to be checked
+	 * @param fsPath
+	 *            the filesystem path, usually the fallback/default location
 	 * @return path selected from one of the three provided locations
 	 */
 	public static String selectPath(String var, String key, String fsPath) {
@@ -358,7 +377,8 @@ public class JAKeyStore {
 
 			addKeyPairToKeyStore(ks, "User.cert", key, cert);
 			logger.log(Level.SEVERE, "Loaded " + message);
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Error loading " + message, e);
 			System.err.println("Error loading " + message);
 			ks = null;
@@ -376,7 +396,7 @@ public class JAKeyStore {
 		final String sUserId = UserFactory.getUserID();
 		final String tmpDir = System.getProperty("java.io.tmpdir");
 
-		if(sUserId == null && (tokenKeyString == null || tokenCertString == null)) {
+		if (sUserId == null && (tokenKeyString == null || tokenCertString == null)) {
 			logger.log(Level.SEVERE, "Cannot get the current user's ID");
 			return false;
 		}
@@ -387,7 +407,8 @@ public class JAKeyStore {
 
 		if (tokenKeyString != null) {
 			token_key = tokenKeyString;
-		} else {
+		}
+		else {
 			token_key = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
 		}
 
@@ -397,7 +418,8 @@ public class JAKeyStore {
 
 		if (tokenCertString != null) {
 			token_cert = tokenCertString;
-		} else {
+		}
+		else {
 			token_cert = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
 		}
 
@@ -452,7 +474,8 @@ public class JAKeyStore {
 
 			try {
 				Files.setPosixFilePermissions(f.toPath(), attrs);
-			} catch (final IOException io2) {
+			}
+			catch (final IOException io2) {
 				logger.log(Level.WARNING, "Could not protect your keystore " + filename + " with POSIX attributes", io2);
 			}
 
@@ -579,21 +602,25 @@ public class JAKeyStore {
 						return null;
 					}
 					chain.add((X509Certificate) obj);
-				} else if (obj instanceof X509CertificateHolder) {
-					final X509CertificateHolder ch = (X509CertificateHolder) obj;
+				}
+				else
+					if (obj instanceof X509CertificateHolder) {
+						final X509CertificateHolder ch = (X509CertificateHolder) obj;
 
-					try {
-						final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
+						try {
+							final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
 
-						if (checkValidity)
-							c.checkValidity();
+							if (checkValidity)
+								c.checkValidity();
 
-						chain.add(c);
-					} catch (final CertificateException ce) {
-						logger.log(Level.SEVERE, "Exception loading certificate", ce);
+							chain.add(c);
+						}
+						catch (final CertificateException ce) {
+							logger.log(Level.SEVERE, "Exception loading certificate", ce);
+						}
 					}
-				} else
-					System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
+					else
+						System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
 
 			if (chain.size() > 0)
 				return chain.toArray(new X509Certificate[0]);
@@ -670,26 +697,136 @@ public class JAKeyStore {
 				e.printStackTrace();
 			}
 			return JAKeyStore.clientCert;
-		} else if (JAKeyStore.hostCert != null) {
-			try {
-				if (hostCert.getCertificateChain("User.cert") == null)
-					loadKeyStore();
-			} catch (final KeyStoreException e) {
-				logger.log(Level.SEVERE, "Exception during loading host cert");
-				e.printStackTrace();
-			}
-			return JAKeyStore.hostCert;
-		} else if (JAKeyStore.tokenCert != null) {
-			try {
-				if (tokenCert.getCertificateChain("User.cert") == null)
-					loadKeyStore();
-			} catch (final KeyStoreException e) {
-				logger.log(Level.SEVERE, "Exception during loading token cert");
-				e.printStackTrace();
-			}
-			return JAKeyStore.tokenCert;
 		}
+		else
+			if (JAKeyStore.hostCert != null) {
+				try {
+					if (hostCert.getCertificateChain("User.cert") == null)
+						loadKeyStore();
+				}
+				catch (final KeyStoreException e) {
+					logger.log(Level.SEVERE, "Exception during loading host cert");
+					e.printStackTrace();
+				}
+				return JAKeyStore.hostCert;
+			}
+			else
+				if (JAKeyStore.tokenCert != null) {
+					try {
+						if (tokenCert.getCertificateChain("User.cert") == null)
+							loadKeyStore();
+					}
+					catch (final KeyStoreException e) {
+						logger.log(Level.SEVERE, "Exception during loading token cert");
+						e.printStackTrace();
+					}
+					return JAKeyStore.tokenCert;
+				}
 
 		return null;
+	}
+
+	/**
+	 * Request token certificate from JCentral
+	 *
+	 * @return true if tokencert was successfully received
+	 */
+	public static boolean requestTokenCert() {
+		// Get user certificate to connect to JCentral
+		Certificate[] cert = null;
+		AliEnPrincipal userIdentity = null;
+		try {
+			cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
+			if (cert == null) {
+				logger.log(Level.SEVERE, "Failed to load certificate");
+				return false;
+			}
+		}
+		catch (final KeyStoreException e) {
+			e.printStackTrace();
+		}
+
+		if (cert instanceof X509Certificate[]) {
+			final X509Certificate[] x509cert = (X509Certificate[]) cert;
+			userIdentity = UserFactory.getByCertificate(x509cert);
+		}
+		if (userIdentity == null) {
+			logger.log(Level.SEVERE, "Failed to get user identity");
+			return false;
+		}
+
+		final String sUserId = UserFactory.getUserID();
+
+		if (sUserId == null) {
+			logger.log(Level.SEVERE, "Cannot get the current user's ID");
+			return false;
+		}
+
+		// Two files will be the result of this command
+		// Check if their location is set by env variables or in config, otherwise put default location in $TMPDIR/
+		final String tmpDir = System.getProperty("java.io.tmpdir");
+		final String defaultTokenKeyPath = Paths.get(tmpDir, "tokenkey_" + sUserId + ".pem").toString();
+		final String defaultTokenCertPath = Paths.get(tmpDir, "tokencert_" + sUserId + ".pem").toString();
+
+		final String tokencertpath = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
+		final String tokenkeypath = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
+
+		try ( // Open files for writing
+				PrintWriter pwritercert = new PrintWriter(new File(tokencertpath));
+				PrintWriter pwriterkey = new PrintWriter(new File(tokenkeypath));
+
+				// We will read all data into temp output stream and then parse it and split into 2 files
+				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+			final UIPrintWriter out = new JSONPrintWriter(baos);
+
+			// Create Commander instance just to execute one command
+			final JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
+			commander.start();
+
+			// Command to be sent (yes, we need it to be an array, even if it is one word)
+			final ArrayList<String> fullCmd = new ArrayList<>();
+			fullCmd.add("token");
+
+			synchronized (commander) {
+				commander.status.set(1);
+				commander.setLine(out, fullCmd.toArray(new String[0]));
+				commander.notifyAll();
+			}
+
+			while (commander.status.get() == 1)
+				try {
+					synchronized (commander.status) {
+						commander.status.wait(1000);
+					}
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					// ignore
+				}
+
+			// Now parse the reply from JCentral
+			final JSONParser jsonParser = new JSONParser();
+			final JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
+			final JSONArray jsonArray = (JSONArray) readf.get("results");
+			for (final Object object : jsonArray) {
+				final JSONObject aJson = (JSONObject) object;
+				pwritercert.print(aJson.get("tokencert"));
+				pwriterkey.print(aJson.get("tokenkey"));
+				pwritercert.flush();
+				pwriterkey.flush();
+			}
+
+			// Set correct permissions
+			Files.setPosixFilePermissions(Paths.get(tokencertpath), PosixFilePermissions.fromString("rw-rw----"));
+			Files.setPosixFilePermissions(Paths.get(tokenkeypath), PosixFilePermissions.fromString("rw-------"));
+
+			// Execution finished - kill commander
+			commander.kill = true;
+			return true;
+
+		}
+		catch (final Exception e) {
+			logger.log(Level.SEVERE, "Token request failed", e);
+			return false;
+		}
 	}
 }

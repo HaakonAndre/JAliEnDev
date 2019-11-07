@@ -1,16 +1,9 @@
 package alien.api;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.security.KeyStoreException;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
@@ -25,22 +18,13 @@ import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.apache.tomcat.util.scan.StandardJarScanner;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
-import alien.shell.commands.JAliEnCOMMander;
-import alien.shell.commands.JSONPrintWriter;
-import alien.shell.commands.UIPrintWriter;
-import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.LdapCertificateRealm;
 import alien.user.UserFactory;
-import lazyj.commands.CommandOutput;
-import lazyj.commands.SystemCommand;
 
 /**
  * @author yuw
@@ -161,23 +145,6 @@ public class TomcatServer {
 				tomcat.getServer().await();
 			}
 		}.start();
-
-		if (!ConfigUtils.isCentralService())
-			// Refresh token cert every two hours
-			new Thread() {
-				@Override
-				public void run() {
-					try {
-						while (true) {
-							sleep(2 * 60 * 60 * 1000);
-							requestTokenCert();
-						}
-					}
-					catch (final InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}.start();
 	}
 
 	/**
@@ -221,133 +188,6 @@ public class TomcatServer {
 	}
 
 	/**
-	 * Change permissions of the file
-	 */
-	private static boolean changeMod(final File file, final int chmod) {
-		if (file.exists())
-			try {
-				final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
-
-				if (co.exitCode != 0)
-					System.err.println("Could not change permissions: " + co.stderr);
-
-				return co.exitCode == 0;
-
-			}
-			catch (@SuppressWarnings("unused") final IOException e) {
-				// ignore
-			}
-		return false;
-	}
-
-	/**
-	 * Request token certificate from JCentral
-	 *
-	 * @return true if tokencert was successfully received
-	 */
-	static boolean requestTokenCert() {
-		// Get user certificate to connect to JCentral
-		Certificate[] cert = null;
-		AliEnPrincipal userIdentity = null;
-		try {
-			cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
-			if (cert == null) {
-				logger.log(Level.SEVERE, "Failed to load certificate");
-				return false;
-			}
-		}
-		catch (final KeyStoreException e) {
-			e.printStackTrace();
-		}
-
-		if (cert instanceof X509Certificate[]) {
-			final X509Certificate[] x509cert = (X509Certificate[]) cert;
-			userIdentity = UserFactory.getByCertificate(x509cert);
-		}
-		if (userIdentity == null) {
-			logger.log(Level.SEVERE, "Failed to get user identity");
-			return false;
-		}
-
-		final String sUserId = UserFactory.getUserID();
-
-		if (sUserId == null) {
-			logger.log(Level.SEVERE, "Cannot get the current user's ID");
-			return false;
-		}
-
-		// Two files will be the result of this command
-		// Check if their location is set by env variables or in config, otherwise put default location in $TMPDIR/
-		final String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert_" + sUserId + ".pem");
-		final String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey_" + sUserId + ".pem");
-
-		final File tokencertfile = new File(tokencertpath);
-		final File tokenkeyfile = new File(tokenkeypath);
-
-		// Allow to modify those files if they already exist
-		changeMod(tokencertfile, 777);
-		changeMod(tokenkeyfile, 777);
-
-		try ( // Open files for writing
-				PrintWriter pwritercert = new PrintWriter(tokencertfile);
-				PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
-
-				// We will read all data into temp output stream and then parse it and split into 2 files
-				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-			final UIPrintWriter out = new JSONPrintWriter(baos);
-
-			// Create Commander instance just to execute one command
-			final JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
-			commander.start();
-
-			// Command to be sent (yes, we need it to be an array, even if it is one word)
-			final ArrayList<String> fullCmd = new ArrayList<>();
-			fullCmd.add("token");
-
-			synchronized (commander) {
-				commander.status.set(1);
-				commander.setLine(out, fullCmd.toArray(new String[0]));
-				commander.notifyAll();
-			}
-
-			while (commander.status.get() == 1)
-				try {
-					synchronized (commander.status) {
-						commander.status.wait(1000);
-					}
-				}
-				catch (@SuppressWarnings("unused") final InterruptedException ie) {
-					// ignore
-				}
-
-			// Now parse the reply from JCentral
-			final JSONParser jsonParser = new JSONParser();
-			final JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
-			final JSONArray jsonArray = (JSONArray) readf.get("results");
-			for (final Object object : jsonArray) {
-				final JSONObject aJson = (JSONObject) object;
-				pwritercert.print(aJson.get("tokencert"));
-				pwriterkey.print(aJson.get("tokenkey"));
-				pwritercert.flush();
-				pwriterkey.flush();
-			}
-
-			// Set correct permissions
-			changeMod(tokencertfile, 440);
-			changeMod(tokenkeyfile, 400);
-
-			// Execution finished - kill commander
-			commander.kill = true;
-			return true;
-
-		}
-		catch (final Exception e) {
-			logger.log(Level.SEVERE, "Token request failed", e);
-			return false;
-		}
-	}
-
-	/**
 	 * Singleton
 	 */
 	static TomcatServer tomcatServer = null;
@@ -362,24 +202,6 @@ public class TomcatServer {
 
 		logger.log(Level.INFO, "Tomcat starting ...");
 
-		// Request token certificate from JCentral
-		if (!ConfigUtils.isCentralService()) {
-			if (!requestTokenCert())
-				return;
-			// Create keystore for token certificate
-			try {
-				if (!JAKeyStore.loadTokenKeyStorage()) {
-					System.err.println("Token Certificate could not be loaded.");
-					System.err.println("Exiting...");
-					return;
-				}
-			}
-			catch (final Exception e) {
-				logger.log(Level.SEVERE, "Error loading token", e);
-				System.err.println("Error loading token");
-				return;
-			}
-		}
 		// Set dynamic port range for Tomcat server
 		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
 		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10700"));

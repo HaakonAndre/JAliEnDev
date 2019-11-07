@@ -1,7 +1,6 @@
 package alien;
 
 import java.io.BufferedReader;
-import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,8 +17,8 @@ import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
-import alien.user.UserFactory;
 import alien.user.JAKeyStore;
+import alien.user.UserFactory;
 import lazyj.Utils;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
@@ -237,16 +236,17 @@ public class JSh {
 		}
 
 		try (BufferedReader out = new BufferedReader(new InputStreamReader(p.getInputStream())); PrintWriter pw = new PrintWriter(p.getOutputStream())) {
-      String user_key = JAKeyStore.getClientKeyPath();
-      char[] password = JAKeyStore.requestPassword(user_key);
-      if(password != null) {
-        pw.println(password);
-        pw.flush();
-      } else {
-        System.err.println("Error asking for password : ");
-        p.destroy();
-        return false;
-      }
+			String user_key = JAKeyStore.getClientKeyPath();
+			char[] certificate_password = JAKeyStore.requestPassword(user_key);
+			if (certificate_password != null) {
+				pw.println(certificate_password);
+				pw.flush();
+			}
+			else {
+				System.err.println("Error asking for password : ");
+				p.destroy();
+				return false;
+			}
 
 		}
 		catch (final Exception e) {
@@ -420,32 +420,32 @@ public class JSh {
 					final String value = spec.substring(idx + 1).trim();
 
 					switch (key) {
-						case "JALIEN_HOST":
-							addr = value;
-							break;
-						case "JALIEN_PORT":
-							try {
-								port = Integer.parseInt(value);
-							}
-							catch (@SuppressWarnings("unused") final NumberFormatException e) {
-								System.err.println("Invalid port number: " + value);
-							}
-							break;
-						case "JALIEN_PID":
-							try {
-								pid = Integer.parseInt(value);
-							}
-							catch (@SuppressWarnings("unused") final NumberFormatException e) {
-								System.err.println("Invalid process ID: " + pid);
-							}
-							break;
-						case "JALIEN_PASSWORD":
-							password = value;
-							break;
-						case "JALIEN_USER":
-							user = value;
-							break;
-						default:
+					case "JALIEN_HOST":
+						addr = value;
+						break;
+					case "JALIEN_PORT":
+						try {
+							port = Integer.parseInt(value);
+						}
+						catch (@SuppressWarnings("unused") final NumberFormatException e) {
+							System.err.println("Invalid port number: " + value);
+						}
+						break;
+					case "JALIEN_PID":
+						try {
+							pid = Integer.parseInt(value);
+						}
+						catch (@SuppressWarnings("unused") final NumberFormatException e) {
+							System.err.println("Invalid process ID: " + pid);
+						}
+						break;
+					case "JALIEN_PASSWORD":
+						password = value;
+						break;
+					case "JALIEN_USER":
+						user = value;
+						break;
+					default:
 					}
 				}
 			}
