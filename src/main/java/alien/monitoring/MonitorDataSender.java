@@ -27,7 +27,7 @@ public class MonitorDataSender extends ArrayList<MonitorDataCallback> {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(MonitorDataSender.class.getCanonicalName());
 
-	private final ApMon apmon;
+	private transient final ApMon apmon;
 
 	/**
 	 * @param apmon one special target, the ApMon sender. More can be {@link #add(MonitorDataCallback)}-ed and the rest of the management through the List interface works as expected.
