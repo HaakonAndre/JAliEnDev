@@ -23,14 +23,14 @@ public class JBox {
 	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
 	public static void logLoud(String msg) {
-		logger.log(Level.INFO, msg);
-		System.err.println(msg);
+    logLoud(Level.INFO, msg);
 	}
 
-  public static void logLoud(String msg, Exception e) {
-    logger.log(Level.INFO, msg, e);
+  public static void logLoud(Level l, String msg) {
+    logger.log(l, msg);
     System.err.println(msg);
   }
+
 
 	/**
 	 * Debugging method
@@ -62,18 +62,18 @@ public class JBox {
 		}
 
 		if(!JAKeyStore.loadKeyStore()) {
-			logLoud("JBox failed to load any credentials");
+      logLoud(Level.SEVERE, "ERROR: JBox failed to load any credentials");
 			return;
 		}
 
     if(!JAKeyStore.bootstrapFirstToken()) {
-      logLoud("JBox failed to get a token");
+      logLoud(Level.SEVERE, "ERROR: JBox failed to get a token");
       return;
     }
 
     if(JAKeyStore.isLoaded("token") && !JAKeyStore.isLoaded("user") && !JAKeyStore.isLoaded("host")) {
-      logLoud("WARNING: JBox is connected to central esrvices with a token that cannot be used to update itself.");
-      logLoud("Please use a user or host certificate to refresh tokens automatically.");
+      logLoud(Level.INFO, "WARNING: JBox is connected to central esrvices with a token that cannot be used to update itself.");
+      logLoud(Level.INFO, "Please use a user or host certificate to refresh tokens automatically.");
     }
 
     JBoxServer.startJBoxService();
