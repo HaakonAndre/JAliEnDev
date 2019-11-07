@@ -233,7 +233,7 @@ public final class AuthorizationFactory {
 	 */
 	public static String fillAccessCsd(final AliEnPrincipal user, final LFN_CSD lfnc, final PFN pfn, final AccessType access, final boolean skipSanityChecks) {
 		if (logger.isLoggable(Level.FINE))
-			logger.log(Level.FINE, pfn + ", user: " + user + ", access: " + access);
+			logger.log(Level.FINE, pfn + ", user: " + user + ", access: " + access+", skip sanity checks: "+skipSanityChecks);
 
 		// final GUID guid = pfn.getGuid();
 		//
