@@ -59,16 +59,20 @@ public class TitanBatchController {
 						tmpBatchesInfo.put(line, bi);
 					dbcount++;
 					System.out.println("Now controlling batch: " + line);
-				} catch (@SuppressWarnings("unused") final InvalidParameterException e) {
+				}
+				catch (@SuppressWarnings("unused") final InvalidParameterException e) {
 					System.err.println("Not a batch folder at " + globalWorkdir + "/" + line + " , skipping....");
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					System.err.println(e.getMessage());
 					System.err.println("Unable to initialize batch folder at " + globalWorkdir + "/" + line + " , skipping....");
 				}
 			batchesInfo = tmpBatchesInfo;
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			System.err.println("Error running batch info reader process: " + e.getMessage());
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Exception at database list update: " + e.getMessage());
 		}
 		System.out.println(String.format("Now controlling %d batches", Integer.valueOf(dbcount)));
@@ -94,7 +98,8 @@ public class TitanBatchController {
 			}
 			try {
 				idleRanks.addAll(bi.getIdleRanks());
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				System.err.println("Exception caught in queryDatabases: " + e.getMessage());
 				continue;
 			}
@@ -114,7 +119,8 @@ public class TitanBatchController {
 				continue;
 			try {
 				runningRanks.addAll(bi.getRunningRanks());
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			}
+			catch (@SuppressWarnings("unused") final Exception e) {
 				continue;
 			}
 		}
@@ -165,7 +171,8 @@ public class TitanBatchController {
 		for (final Thread t : upload_threads)
 			try {
 				t.join();
-			} catch (@SuppressWarnings("unused") final InterruptedException e) {
+			}
+			catch (@SuppressWarnings("unused") final InterruptedException e) {
 				System.err.println("Join for upload thread has been interrupted");
 			}
 
@@ -207,7 +214,8 @@ public class TitanBatchController {
 			try {
 				t.join();
 				System.out.println("Joined downloader " + ++cnt);
-			} catch (@SuppressWarnings("unused") final InterruptedException e) {
+			}
+			catch (@SuppressWarnings("unused") final InterruptedException e) {
 				System.err.println("Join for upload thread has been interrupted");
 			}
 		idleRanks.clear();

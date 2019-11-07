@@ -23,12 +23,11 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 		if (commander.user.canBecome(user)) {
 			if ((switchUser = UserFactory.getByUsername(user)) != null)
 				commander.user = switchUser;
-			else
-				if ((switchUser = UserFactory.getByRole(user)) != null)
-					commander.user = switchUser;
-				else {
-					commander.setReturnCode(1, "User " + user + " cannot be found. Abort");
-				}
+			else if ((switchUser = UserFactory.getByRole(user)) != null)
+				commander.user = switchUser;
+			else {
+				commander.setReturnCode(1, "User " + user + " cannot be found. Abort");
+			}
 
 			commander.user.setUserCert(cert);
 			commander.user.setDefaultUser(defaultuser);

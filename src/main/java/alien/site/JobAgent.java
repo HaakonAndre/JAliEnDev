@@ -49,7 +49,6 @@ import lazyj.ExtProperties;
  */
 public class JobAgent implements Runnable {
 
-
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
 	private final String ce;
@@ -96,18 +95,13 @@ public class JobAgent implements Runnable {
 	private String jarName;
 	private int wrapperPID;
 
-	private enum jaStatus{
-		REQUESTING_JOB(1),
-		INSTALLING_PKGS(2),
-		JOB_STARTED(3),
-		RUNNING_JOB(4),
-		DONE(5),
-		ERROR_HC(-1), //error in getting host
-		ERROR_IP(-2), //error installing packages
-		ERROR_GET_JDL(-3), //error getting jdl
-		ERROR_JDL(-4), //incorrect jdl
-		ERROR_DIRS(-5), //error creating directories, not enough free space in workdir
-		ERROR_START(-6); //error forking to start job
+	private enum jaStatus {
+		REQUESTING_JOB(1), INSTALLING_PKGS(2), JOB_STARTED(3), RUNNING_JOB(4), DONE(5), ERROR_HC(-1), // error in getting host
+		ERROR_IP(-2), // error installing packages
+		ERROR_GET_JDL(-3), // error getting jdl
+		ERROR_JDL(-4), // incorrect jdl
+		ERROR_DIRS(-5), // error creating directories, not enough free space in workdir
+		ERROR_START(-6); // error forking to start job
 
 		private final int value;
 
@@ -178,7 +172,8 @@ public class JobAgent implements Runnable {
 
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
-		else jobAgentId = Request.getVMID().toString();
+		else
+			jobAgentId = Request.getVMID().toString();
 
 		workdir = (String) siteMap.get("workdir");
 
@@ -195,9 +190,11 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, "CPUFAMILY: " + RES_CPUFAMILY);
 			logger.log(Level.INFO, "CPUMHZ: " + RES_CPUMHZ);
 			logger.log(Level.INFO, "NOCPUS: " + RES_NOCPUS);
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			logger.log(Level.WARNING, "Problem with the monitoring objects IO Exception: " + e.toString());
-		} catch (final ApMonException e) {
+		}
+		catch (final ApMonException e) {
 			logger.log(Level.WARNING, "Problem with the monitoring objects ApMon Exception: " + e.toString());
 		}
 
@@ -206,8 +203,8 @@ public class JobAgent implements Runnable {
 			jarName = filepath.getName();
 			jarPath = filepath.toString().replace(jarName, "");
 
-
-		} catch (final URISyntaxException e) {
+		}
+		catch (final URISyntaxException e) {
 			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
 		}
 	}
@@ -245,10 +242,10 @@ public class JobAgent implements Runnable {
 					tokenKey = (String) matchedJob.get("TokenKey");
 					legacyToken = (String) matchedJob.get("LegacyToken");
 
-					matchedJob.entrySet().forEach(entry->{
-						System.err.println(entry.getKey() + " " + entry.getValue());  
+					matchedJob.entrySet().forEach(entry -> {
+						System.err.println(entry.getKey() + " " + entry.getValue());
 					});
-					
+
 					// TODO: commander.setUser(username);
 					// commander.setSite(site);
 
@@ -261,19 +258,21 @@ public class JobAgent implements Runnable {
 
 					cleanup();
 				}
-				else { //TODO: Handle matchedJob.containsKey("Error") after all?
+				else { // TODO: Handle matchedJob.containsKey("Error") after all?
 					logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now.");
 				}
-			} catch (final Exception e) {
-				logger.log(Level.INFO, "Error getting a matching job: ",e);
+			}
+			catch (final Exception e) {
+				logger.log(Level.INFO, "Error getting a matching job: ", e);
 			}
 			count--;
-			if (count!=0) {
+			if (count != 0) {
 				logger.log(Level.INFO, "Idling 20secs zZz...");
 				try {
 					// TODO?: monitor.sendBgMonitoring
-					Thread.sleep(20*1000);
-				} catch (final InterruptedException e) {
+					Thread.sleep(20 * 1000);
+				}
+				catch (final InterruptedException e) {
 					logger.log(Level.WARNING, "Interrupt received", e);
 				}
 			}
@@ -289,7 +288,7 @@ public class JobAgent implements Runnable {
 		try {
 
 			if (!createWorkDir()) {
-				//changeStatus(JobStatus.ERROR_IB);
+				// changeStatus(JobStatus.ERROR_IB);
 				logger.log(Level.INFO, "Error. Workdir for job could not be created");
 				return;
 			}
@@ -309,8 +308,9 @@ public class JobAgent implements Runnable {
 
 			launchJobWrapper(launchCommand, true);
 
-		} catch (final Exception e) {
-			logger.log(Level.SEVERE, "Unable to handle job",e);
+		}
+		catch (final Exception e) {
+			logger.log(Level.SEVERE, "Unable to handle job", e);
 		}
 	}
 
@@ -324,10 +324,11 @@ public class JobAgent implements Runnable {
 
 		try {
 			Files.walk(tempDir.toPath())
-			.map(Path::toFile)
-			.sorted(Comparator.reverseOrder()) //or else dir will appear before its contents
-			.forEach(File::delete);
-		} catch (IOException e) {
+					.map(Path::toFile)
+					.sorted(Comparator.reverseOrder()) // or else dir will appear before its contents
+					.forEach(File::delete);
+		}
+		catch (IOException e) {
 			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
 		}
 
@@ -359,7 +360,7 @@ public class JobAgent implements Runnable {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = System.currentTimeMillis();
-		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime)/1000; //convert to seconds
+		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
 		int timeleft = origTtl - time_subs;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
@@ -397,7 +398,7 @@ public class JobAgent implements Runnable {
 	 * @return the time in seconds that proxy is still valid for
 	 */
 	private int getRemainingProxyTime() {
-		return (int)TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - System.currentTimeMillis());
+		return (int) TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - System.currentTimeMillis());
 	}
 
 	private void getMemoryRequirements() {
@@ -451,13 +452,13 @@ public class JobAgent implements Runnable {
 
 	/**
 	 * @return Command w/arguments for starting the JobWrapper, based on the command used for the JobAgent
-	 * @throws InterruptedException 
+	 * @throws InterruptedException
 	 */
 	public List<String> generateLaunchCommand() throws InterruptedException {
 		try {
-			//Main cmd for starting the JobWrapper
+			// Main cmd for starting the JobWrapper
 			final List<String> launchCmd = new ArrayList<>();
-			
+
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
 			try (Scanner cmdScanner = new Scanner(cmdChecker.getInputStream())) {
@@ -481,13 +482,13 @@ public class JobAgent implements Runnable {
 			}
 
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
-			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
-				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
+			if (containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
+				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " + DEFAULT_JOB_CONTAINER_PATH);
 			}
 
-			//Check if Singularity is present on site. If yes, add singularity to launchCmd
-			try {                
-				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?
+			// Check if Singularity is present on site. If yes, add singularity to launchCmd
+			try {
+				// TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?
 				final List<String> singularityCmd = new ArrayList<>();
 				singularityCmd.add("singularity");
 				singularityCmd.add("exec");
@@ -522,12 +523,14 @@ public class JobAgent implements Runnable {
 						}
 					}
 				}
-			}catch (final Exception e2) {
+			}
+			catch (final Exception e2) {
 				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
 			}
 
 			return launchCmd;
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			logger.log(Level.SEVERE, "Could not generate JobWrapper launch command: " + e.toString());
 			return null;
 		}
@@ -568,18 +571,19 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, "JDL info sent to JobWrapper");
 			commander.q_api.putJobLog(queueId, "trace", "JobWrapper started");
 
-			//Wait for JobWrapper to start
-			try (InputStream stdout = p.getInputStream()){
+			// Wait for JobWrapper to start
+			try (InputStream stdout = p.getInputStream()) {
 				stdout.read();
 			}
 
-		} catch (final Exception ioe) {
+		}
+		catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
 			return 1;
 		}
 
 		if (monitorJob) {
-			wrapperPID = (int)p.pid();
+			wrapperPID = (int) p.pid();
 
 			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
 			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce, hostName);
@@ -593,7 +597,7 @@ public class JobAgent implements Runnable {
 			@Override
 			public void run() {
 				p.destroy();
-				if(p.isAlive()){
+				if (p.isAlive()) {
 					p.destroyForcibly();
 				}
 			}
@@ -626,7 +630,8 @@ public class JobAgent implements Runnable {
 				}
 				try {
 					Thread.sleep(5 * 1000);
-				} catch (final InterruptedException ie) {
+				}
+				catch (final InterruptedException ie) {
 					logger.log(Level.WARNING, "Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
 					return 1;
 				}
@@ -634,25 +639,27 @@ public class JobAgent implements Runnable {
 			code = p.exitValue();
 
 			logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
-			if(code!=0)
+			if (code != 0)
 				logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log " + " for more details");
 
 			return code;
-		}  finally {
-			try{
+		}
+		finally {
+			try {
 				t.cancel();
 				stdin.close();
-			} catch (final Exception e){
+			}
+			catch (final Exception e) {
 				logger.log(Level.WARNING, "Not all resources from the current job could be cleared: " + e);
 			}
 			apmon.removeJobToMonitor(wrapperPID);
-			if(code != 0) {
-				//Looks like something went wrong. Let's check the last reported status
+			if (code != 0) {
+				// Looks like something went wrong. Let's check the last reported status
 				final String lastStatus = readWrapperStatus();
-				if(lastStatus.equals("STARTED") || lastStatus.equals("RUNNING"))
-					changeJobStatus(JobStatus.ERROR_E, null); //JobWrapper was killed before the job could be completed
-				else if (lastStatus.equals("SAVING")){
-					changeJobStatus(JobStatus.ERROR_SV, null); //JobWrapper was killed during saving
+				if (lastStatus.equals("STARTED") || lastStatus.equals("RUNNING"))
+					changeJobStatus(JobStatus.ERROR_E, null); // JobWrapper was killed before the job could be completed
+				else if (lastStatus.equals("SAVING")) {
+					changeJobStatus(JobStatus.ERROR_SV, null); // JobWrapper was killed during saving
 				}
 			}
 		}
@@ -682,13 +689,13 @@ public class JobAgent implements Runnable {
 			if (jobinfo == null || diskinfo == null) {
 
 				logger.log(Level.WARNING, "JobInfo or DiskInfo monitor null");
-				//                      return "Not available"; TODO: Adjust and put back again
+				// return "Not available"; TODO: Adjust and put back again
 			}
 
 			// getting cpu, memory and runtime info
 			if (diskinfo != null)
 				RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
-			
+
 			if (jobinfo != null) {
 				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
 				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
@@ -697,7 +704,7 @@ public class JobAgent implements Runnable {
 				RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
 				RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
 			}
-			
+
 			// RES_RESOURCEUSAGE =
 			// Format.showDottedDouble(RES_CPUTIME.doubleValue() *
 			// Double.parseDouble(RES_CPUMHZ) / 1000, 2);
@@ -713,12 +720,11 @@ public class JobAgent implements Runnable {
 			// formatted runtime
 			if (RES_RUNTIME.longValue() < 60)
 				RES_FRUNTIME = String.format("00:00:%02d", Long.valueOf(RES_RUNTIME.longValue()));
+			else if (RES_RUNTIME.longValue() < 3600)
+				RES_FRUNTIME = String.format("00:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 60), Long.valueOf(RES_RUNTIME.longValue() % 60));
 			else
-				if (RES_RUNTIME.longValue() < 3600)
-					RES_FRUNTIME = String.format("00:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 60), Long.valueOf(RES_RUNTIME.longValue() % 60));
-				else
-					RES_FRUNTIME = String.format("%02d:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 3600), Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) / 60),
-							Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) % 60));
+				RES_FRUNTIME = String.format("%02d:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 3600), Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) / 60),
+						Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) % 60));
 
 			// check disk usage
 			if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
@@ -738,13 +744,17 @@ public class JobAgent implements Runnable {
 				prevTime = time;
 			}
 
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			logger.log(Level.WARNING, "Problem with the monitoring objects: " + e.toString());
-		} catch (final NoSuchElementException e) {
+		}
+		catch (final NoSuchElementException e) {
 			logger.log(Level.WARNING, "Warning: an error occurred reading monitoring data:  " + e.toString());
-		} catch (final NullPointerException e) {
+		}
+		catch (final NullPointerException e) {
 			logger.log(Level.WARNING, "JobInfo or DiskInfo monitor are now null. Did the JobWrapper terminate?: " + e.toString());
-		} catch (final NumberFormatException e) {
+		}
+		catch (final NumberFormatException e) {
 			logger.log(Level.WARNING, "Unable to continue monitoring: " + e.toString());
 		}
 
@@ -789,8 +799,7 @@ public class JobAgent implements Runnable {
 		return true;
 	}
 
-
-	void setupJobWrapperLogging(){
+	void setupJobWrapperLogging() {
 		Properties props = new Properties();
 		try {
 			ExtProperties ep = ConfigUtils.getConfiguration("logging");
@@ -800,7 +809,8 @@ public class JobAgent implements Runnable {
 			props.setProperty("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
 
 			logger.log(Level.INFO, "Logging properties loaded for the JobWrapper");
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		}
+		catch (@SuppressWarnings("unused") final Exception e) {
 
 			logger.log(Level.INFO, "Logging properties for JobWrapper not found.");
 			logger.log(Level.INFO, "Using fallback logging configurations for JobWrapper");
@@ -817,14 +827,15 @@ public class JobAgent implements Runnable {
 			props.put("apmon.level", "WARNING");
 			props.put("alien.level", "FINEST");
 			props.put("alien.monitoring.Monitor.level", "WARNING");
-			props.put("use_java_logger", "true");       
+			props.put("use_java_logger", "true");
 		}
 
-		try (FileOutputStream str = new FileOutputStream(jobWorkdir+"/logging.properties")){
+		try (FileOutputStream str = new FileOutputStream(jobWorkdir + "/logging.properties")) {
 			props.store(str, null);
-		} catch (IOException e1) {
+		}
+		catch (IOException e1) {
 			logger.log(Level.WARNING, "Failed to configure JobWrapper logging", e1);
-		} 
+		}
 	}
 
 	private void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
@@ -835,7 +846,8 @@ public class JobAgent implements Runnable {
 	private String readWrapperStatus() {
 		try {
 			return Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			logger.log(Level.WARNING, "Attempt to read job status failed. Ignoring: " + e.toString());
 			return "";
 		}
@@ -843,12 +855,12 @@ public class JobAgent implements Runnable {
 
 	private static int convertStringUnitToIntegerMB(String unit, String number) {
 		switch (unit) {
-		case "KB":
-			return Integer.parseInt(number) / 1024;
-		case "GB":
-			return Integer.parseInt(number) * 1024;
-		default: // MB
-			return Integer.parseInt(number);
+			case "KB":
+				return Integer.parseInt(number) / 1024;
+			case "GB":
+				return Integer.parseInt(number) * 1024;
+			default: // MB
+				return Integer.parseInt(number);
 		}
 	}
 }

@@ -139,15 +139,14 @@ public class CatalogueTestsWhereis {
 				tPool.submit(new RecurseLFN(LFNUtils.getLFN(s)));
 			}
 		}
-		else
-			if (type == 1) {
-				System.out.println("Running as Cassandra LFN");
-				final String[] folders = args[0].split(",");
-				for (final String s : folders) {
-					System.out.println("Recursing: " + s);
-					tPool.submit(new RecurseLFNCassandra(LFNUtils.getLFN(s)));
-				}
+		else if (type == 1) {
+			System.out.println("Running as Cassandra LFN");
+			final String[] folders = args[0].split(",");
+			for (final String s : folders) {
+				System.out.println("Recursing: " + s);
+				tPool.submit(new RecurseLFNCassandra(LFNUtils.getLFN(s)));
 			}
+		}
 
 		try {
 			while (!tPool.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -263,19 +262,18 @@ public class CatalogueTestsWhereis {
 						}
 					}
 				}
-				else
-					if (l.isDirectory())
-						try {
-							if (!limit_reached)
-								tPool.submit(new RecurseLFN(l));
-						}
-						catch (final RejectedExecutionException ree) {
-							final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
-							System.err.println(msg);
-							failed_folders.println(msg);
-							failed_folders.flush();
-							return;
-						}
+				else if (l.isDirectory())
+					try {
+						if (!limit_reached)
+							tPool.submit(new RecurseLFN(l));
+					}
+					catch (final RejectedExecutionException ree) {
+						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
+						System.err.println(msg);
+						failed_folders.println(msg);
+						failed_folders.flush();
+						return;
+					}
 			}
 		}
 	}
@@ -342,19 +340,18 @@ public class CatalogueTestsWhereis {
 					}
 
 				}
-				else
-					if (lfnc.isDirectory())
-						try {
-							if (!limit_reached)
-								tPool.submit(new RecurseLFNCassandra(l));
-						}
-						catch (final RejectedExecutionException ree) {
-							final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
-							System.err.println(msg);
-							failed_folders.println(msg);
-							failed_folders.flush();
-							return;
-						}
+				else if (lfnc.isDirectory())
+					try {
+						if (!limit_reached)
+							tPool.submit(new RecurseLFNCassandra(l));
+					}
+					catch (final RejectedExecutionException ree) {
+						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
+						System.err.println(msg);
+						failed_folders.println(msg);
+						failed_folders.flush();
+						return;
+					}
 			}
 		}
 	}

@@ -164,23 +164,21 @@ public class JobDownloader extends Thread {
 				// process payload
 				handleJob();
 			}
-			else
-				if (matchedJob != null && matchedJob.containsKey("Error")) {
-					logger.log(Level.INFO, (String) matchedJob.get("Error"));
+			else if (matchedJob != null && matchedJob.containsKey("Error")) {
+				logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
-					if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
-						@SuppressWarnings("unchecked")
-						final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
-						// monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
-						installPackages(packToInstall);
-					}
-					else
-						if (Integer.valueOf(-2).equals(matchedJob.get("Code"))) {
-							noMoreJobs = true;
-							logger.log(Level.INFO, "Nothing to run for now, idling for a while");
-							// count = 1; // breaking the loop
-						}
+				if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+					@SuppressWarnings("unchecked")
+					final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
+					// monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
+					installPackages(packToInstall);
 				}
+				else if (Integer.valueOf(-2).equals(matchedJob.get("Code"))) {
+					noMoreJobs = true;
+					logger.log(Level.INFO, "Nothing to run for now, idling for a while");
+					// count = 1; // breaking the loop
+				}
+			}
 			/*
 			 * else{
 			 * // EXPERIMENTAL
@@ -861,15 +859,14 @@ public class JobDownloader extends Thread {
 
 			TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus, extrafields);
 		}
-		else
-			if (newStatus == JobStatus.RUNNING) {
-				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-				extrafields.put("node", hostName);
+		else if (newStatus == JobStatus.RUNNING) {
+			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+			extrafields.put("node", hostName);
 
-				TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus, extrafields);
-			}
-			else
-				TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus);
+			TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus, extrafields);
+		}
+		else
+			TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus);
 
 		// jobStatus = newStatus;
 

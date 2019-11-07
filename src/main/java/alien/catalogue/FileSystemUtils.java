@@ -205,7 +205,8 @@ public final class FileSystemUtils {
 			// }
 			// }
 
-		} catch (final ServerException se) {
+		}
+		catch (final ServerException se) {
 			return null;
 		}
 		return result;

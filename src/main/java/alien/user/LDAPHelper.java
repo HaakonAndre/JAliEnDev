@@ -177,14 +177,16 @@ public class LDAPHelper {
 						}
 
 					}
-				} finally {
+				}
+				finally {
 					context.close();
 				}
 
 				cache.put(sCacheKey, tsResult, 1000 * 60 * 15);
 
 				break;
-			} catch (final NamingException ne) {
+			}
+			catch (final NamingException ne) {
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.WARNING, "Exception executing the LDAP query ('" + sParam + "', '" + sRootExt + "', '" + sKey + "')", ne);
 				else
@@ -278,14 +280,16 @@ public class LDAPHelper {
 								result.put(prepend + attr.getID().toLowerCase(), e.next());
 						}
 					}
-				} finally {
+				}
+				finally {
 					context.close();
 				}
 
 				cacheTree.put(sCacheKey, result, 1000 * 60 * 15);
 
 				break;
-			} catch (final NamingException ne) {
+			}
+			catch (final NamingException ne) {
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.WARNING, "Exception executing the LDAP query for tree ('" + sParam + "', '" + sRootExt + "')", ne);
 				else
@@ -326,7 +330,8 @@ public class LDAPHelper {
 							hosts.add(0, "[" + ia.getHostAddress() + "]:" + thisLDAPPort);
 						else
 							hosts.add(ia.getHostAddress() + ":" + thisLDAPPort);
-			} catch (@SuppressWarnings("unused") final UnknownHostException uhe) {
+			}
+			catch (@SuppressWarnings("unused") final UnknownHostException uhe) {
 				hosts.add(host + ":" + thisLDAPPort);
 			}
 		}
@@ -362,21 +367,24 @@ public class LDAPHelper {
 
 		try {
 			Thread.sleep(1000);
-		} catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
+		}
+		catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
 		}
 
 		System.out.println(" 2 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
 
 		try {
 			Thread.sleep(1000);
-		} catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
+		}
+		catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
 		}
 
 		System.out.println(" 3 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
 
 		try {
 			Thread.sleep(1000);
-		} catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
+		}
+		catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
 		}
 
 		System.out.println(" 4 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));

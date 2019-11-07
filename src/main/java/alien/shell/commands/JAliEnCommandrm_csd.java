@@ -47,7 +47,8 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 
 				if (!a.wasRemoved())
 					commander.setReturnCode(1, "Failed to remove: " + sPath);
-			} catch (final ServerException e) {
+			}
+			catch (final ServerException e) {
 				e.getCause().printStackTrace();
 				commander.setReturnCode(1, "Failed to remove: " + sPath);
 			}
@@ -99,7 +100,8 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 			bV = options.has("v");
 
 			alPaths = optionToString(options.nonOptionArguments());
-		} catch (@SuppressWarnings("unused") final OptionException e) {
+		}
+		catch (@SuppressWarnings("unused") final OptionException e) {
 			printHelp();
 			// throw e;
 		}

@@ -38,7 +38,8 @@ public class LFNCSDfromUUIDString extends Request {
 		try {
 			UUID id = UUID.fromString(uuid);
 			this.lfnc = LFNCSDUtils.guid2lfn(id);
-		} catch (@SuppressWarnings("unused") Exception e) {
+		}
+		catch (@SuppressWarnings("unused") Exception e) {
 			this.lfnc = null;
 		}
 	}

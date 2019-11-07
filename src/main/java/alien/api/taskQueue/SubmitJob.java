@@ -37,7 +37,8 @@ public class SubmitJob extends Request {
 	public void run() {
 		try {
 			jobID = TaskQueueUtils.submit(jdl, getEffectiveRequester());
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			// System.out.println("ex: " + ioe.getMessage());
 			setException(new ServerException(ioe.getMessage(), ioe));
 		}

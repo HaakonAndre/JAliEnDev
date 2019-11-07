@@ -86,13 +86,12 @@ public class OutputEntry implements Serializable {
 					final String[] qosparts = o.split("=");
 					qos.put(qosparts[0], Integer.valueOf(qosparts[1]));
 				}
+				else if (o.contains("!"))
+					// de-prioritized se
+					exses.add(o.substring(1));
 				else
-					if (o.contains("!"))
-						// de-prioritized se
-						exses.add(o.substring(1));
-					else
-						// prioritized se
-						ses.add(o);
+					// prioritized se
+					ses.add(o);
 		}
 	}
 
@@ -200,7 +199,8 @@ public class OutputEntry implements Serializable {
 				String md5 = null;
 				try {
 					md5 = IOUtils.getMD5(f);
-				} catch (final Exception e1) {
+				}
+				catch (final Exception e1) {
 					System.err.println("Error calculating md5 of: " + file + ": " + e1.getMessage());
 					// filesIncluded.remove(file);
 					continue;
@@ -231,16 +231,18 @@ public class OutputEntry implements Serializable {
 						out.write(b, 0, count);
 				}
 			}
-			
+
 			// Only keep files with md5
 			filesIncluded.retainAll(md5members.keySet());
 
 			if (!hasPhysicalFiles)
 				Files.delete(Paths.get(path + this.name));
 
-		} catch (final FileNotFoundException e) {
+		}
+		catch (final FileNotFoundException e) {
 			e.printStackTrace();
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 

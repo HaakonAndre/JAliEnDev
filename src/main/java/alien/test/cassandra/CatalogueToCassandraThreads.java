@@ -156,13 +156,12 @@ public class CatalogueToCassandraThreads {
 
 		if (args[0].equals("real"))
 			main_real(newargs);
-		else
-			if (args[0].equals("auto"))
-				main_auto(newargs);
-			else {
-				System.err.println("Usage: CatalogueToCassandraThreads real|auto ");
-				System.exit(-3);
-			}
+		else if (args[0].equals("auto"))
+			main_auto(newargs);
+		else {
+			System.err.println("Usage: CatalogueToCassandraThreads real|auto ");
+			System.exit(-3);
+		}
 	}
 
 	/**
@@ -673,78 +672,76 @@ public class CatalogueToCassandraThreads {
 						return;
 					}
 				}
-				else
-					if (l.isCollection()) {
-						final LFN_CSD lfnc = new LFN_CSD(l, false, true);
-						final long start = System.nanoTime();
+				else if (l.isCollection()) {
+					final LFN_CSD lfnc = new LFN_CSD(l, false, true);
+					final long start = System.nanoTime();
+					if (!lfnc.insert(null, clevel)) {
+						final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+						failed_collections.println(msg);
+						failed_collections.flush();
+					}
+					else {
+						final long duration_ns = System.nanoTime() - start;
+						ns_count.addAndGet(duration_ns);
+						timing_count.incrementAndGet();
+					}
+				}
+				else if (l.isFile()) {
+					if (members_of_archives.contains(l))
+						continue;
+
+					final List<LFN> zip_members = getZipMembers(whereis, l);
+					final boolean isArchive = zip_members != null && !zip_members.isEmpty();
+					final boolean isMember = zip_members != null && zip_members.contains(l);
+
+					// create json file in the hierarchy
+					final LFN_CSD lfnc = new LFN_CSD(l, false, true);
+
+					if (isArchive)
+						lfnc.type = 'a';
+
+					Set<PFN> pfns = null;
+					// we have the pfns in the map
+					for (final GUID guidmap : whereis.keySet())
+						if (whereis.get(guidmap).equals(l))
+							pfns = guidmap.getPFNs();
+
+					if (pfns != null) {
+						final HashMap<Integer, String> pfnset = new HashMap<>();
+						if (isMember) {
+							lfnc.type = 'm';
+							pfnset.put(Integer.valueOf(0), l.getCanonicalName());
+						}
+						else
+							for (final PFN p : pfns) {
+								final int se = p.seNumber;
+								if (se <= 0) {
+									failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
+									failed_ses.flush();
+									continue;
+								}
+								pfnset.put(Integer.valueOf(se), p.getPFN());
+							}
+						lfnc.pfns = pfnset;
+					}
+
+					try (Timing timing = new Timing(monitor, "ms_insert_cassandra")) {
 						if (!lfnc.insert(null, clevel)) {
-							final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
+							final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
 							System.err.println(msg);
-							failed_collections.println(msg);
-							failed_collections.flush();
+							failed_files.println(msg);
+							failed_files.flush();
 						}
 						else {
-							final long duration_ns = System.nanoTime() - start;
+							timing.endTiming();
+
+							final long duration_ns = timing.getNanos();
 							ns_count.addAndGet(duration_ns);
 							timing_count.incrementAndGet();
 						}
 					}
-					else
-						if (l.isFile()) {
-							if (members_of_archives.contains(l))
-								continue;
-
-							final List<LFN> zip_members = getZipMembers(whereis, l);
-							final boolean isArchive = zip_members != null && !zip_members.isEmpty();
-							final boolean isMember = zip_members != null && zip_members.contains(l);
-
-							// create json file in the hierarchy
-							final LFN_CSD lfnc = new LFN_CSD(l, false, true);
-
-							if (isArchive)
-								lfnc.type = 'a';
-
-							Set<PFN> pfns = null;
-							// we have the pfns in the map
-							for (final GUID guidmap : whereis.keySet())
-								if (whereis.get(guidmap).equals(l))
-									pfns = guidmap.getPFNs();
-
-							if (pfns != null) {
-								final HashMap<Integer, String> pfnset = new HashMap<>();
-								if (isMember) {
-									lfnc.type = 'm';
-									pfnset.put(Integer.valueOf(0), l.getCanonicalName());
-								}
-								else
-									for (final PFN p : pfns) {
-										final int se = p.seNumber;
-										if (se <= 0) {
-											failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
-											failed_ses.flush();
-											continue;
-										}
-										pfnset.put(Integer.valueOf(se), p.getPFN());
-									}
-								lfnc.pfns = pfnset;
-							}
-
-							try (Timing timing = new Timing(monitor, "ms_insert_cassandra")) {
-								if (!lfnc.insert(null, clevel)) {
-									final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
-									System.err.println(msg);
-									failed_files.println(msg);
-									failed_files.flush();
-								}
-								else {
-									timing.endTiming();
-
-									final long duration_ns = timing.getNanos();
-									ns_count.addAndGet(duration_ns);
-									timing_count.incrementAndGet();
-								}
-							}
-						}
+				}
 			}
 			// Remove from list
 			activeThreadFolders.remove(Long.valueOf(threadId));

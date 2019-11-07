@@ -126,21 +126,19 @@ public class CatalogueTestsLs {
 			System.out.println("Running as LFN_JSON");
 			tPool.submit(new RecurseLFNJSON(new LFN_JSON(args[0])));
 		}
-		else
-			if (type == 1) {
-				System.out.println("Running as DB LFN");
-				tPool.submit(new RecurseLFN(LFNUtils.getLFN(args[0])));
-			}
-			else
-				if (type == 2) {
-					System.out.println("Running as CVMFS LFN");
-					tPool.submit(new RecurseLFNCVMFS(new LFN_CVMFS(args[0])));
-				}
-				else {
-					System.out.println("Running as Cassandra LFN");
-					System.out.println("Not implemented yet");
-					System.exit(0);
-				}
+		else if (type == 1) {
+			System.out.println("Running as DB LFN");
+			tPool.submit(new RecurseLFN(LFNUtils.getLFN(args[0])));
+		}
+		else if (type == 2) {
+			System.out.println("Running as CVMFS LFN");
+			tPool.submit(new RecurseLFNCVMFS(new LFN_CVMFS(args[0])));
+		}
+		else {
+			System.out.println("Running as Cassandra LFN");
+			System.out.println("Not implemented yet");
+			System.exit(0);
+		}
 
 		try {
 			while (!tPool.awaitTermination(10, TimeUnit.SECONDS)) {

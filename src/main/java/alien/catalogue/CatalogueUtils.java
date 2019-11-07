@@ -158,12 +158,14 @@ public final class CatalogueUtils {
 								logger.log(Level.WARNING, "Cannot get a DB connection to update GUID Index cache");
 						}
 					}
-				} finally {
+				}
+				finally {
 					guidIndexWriteLock.unlock();
 					guidIndexReadLock.lock();
 				}
 			}
-		} finally {
+		}
+		finally {
 			guidIndexReadLock.unlock();
 		}
 	}
@@ -263,13 +265,15 @@ public final class CatalogueUtils {
 								logger.log(Level.WARNING, "Could not get a DB connection to update INDEXTABLE cache");
 						}
 					}
-				} finally {
+				}
+				finally {
 					indextableWriteLock.unlock();
 				}
 
 				indextableReadLock.lock();
 			}
-		} finally {
+		}
+		finally {
 			indextableReadLock.unlock();
 		}
 	}
@@ -478,7 +482,8 @@ public final class CatalogueUtils {
 								}
 								else
 									invalid++;
-							} catch (@SuppressWarnings("unused") final Exception e) {
+							}
+							catch (@SuppressWarnings("unused") final Exception e) {
 								invalid++;
 							}
 
@@ -553,7 +558,8 @@ public final class CatalogueUtils {
 								if (uuid != null)
 									guids.remove(uuid);
 							}
-						} catch (@SuppressWarnings("unused") final Exception e) {
+						}
+						catch (@SuppressWarnings("unused") final Exception e) {
 							// ignore
 						}
 					}
@@ -575,7 +581,7 @@ public final class CatalogueUtils {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Mark LFN_BOOKED entries as delete for a job
 	 *

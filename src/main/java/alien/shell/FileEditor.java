@@ -63,7 +63,7 @@ public class FileEditor {
 	public static boolean isEditorCommand(final String editorname) {
 		return editorCommands.containsKey(editorname);
 	}
-	
+
 	/**
 	 * @param filename
 	 * @return exit code from the executed application
@@ -83,7 +83,8 @@ public class FileEditor {
 			final int code = p.exitValue();
 
 			return code;
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
 			return -1;
 		}
 	}
@@ -100,7 +101,8 @@ public class FileEditor {
 			if (exitStatus.getExtProcExitStatus() == 0)
 				return exitStatus.getStdOut().trim();
 
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		}
+		catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 

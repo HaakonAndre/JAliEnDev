@@ -457,9 +457,8 @@ public class ConfigUtils {
 					// no good idea on which one to choose, pick one of them ...
 					hostName = hostNameCandidates.iterator().next();
 			}
-			else
-				if (hostNameCandidates.size() == 1)
-					hostName = hostNameCandidates.iterator().next();
+			else if (hostNameCandidates.size() == 1)
+				hostName = hostNameCandidates.iterator().next();
 		}
 
 		if (hostName == null || hostName.length() == 0)
@@ -612,21 +611,18 @@ public class ConfigUtils {
 
 		if (configuration.containsKey("host_tmpdir"))
 			folders_config.put("tmpdir", (String) configuration.get("host_tmpdir"));
-		else
-			if (configuration.containsKey("site_tmpdir"))
-				folders_config.put("tmpdir", (String) configuration.get("site_tmpdir"));
+		else if (configuration.containsKey("site_tmpdir"))
+			folders_config.put("tmpdir", (String) configuration.get("site_tmpdir"));
 
 		if (configuration.containsKey("host_cachedir"))
 			folders_config.put("cachedir", (String) configuration.get("host_cachedir"));
-		else
-			if (configuration.containsKey("site_cachedir"))
-				folders_config.put("cachedir", (String) configuration.get("site_cachedir"));
+		else if (configuration.containsKey("site_cachedir"))
+			folders_config.put("cachedir", (String) configuration.get("site_cachedir"));
 
 		if (configuration.containsKey("host_logdir"))
 			folders_config.put("logdir", (String) configuration.get("host_logdir"));
-		else
-			if (configuration.containsKey("site_logdir"))
-				folders_config.put("logdir", (String) configuration.get("site_logdir"));
+		else if (configuration.containsKey("site_logdir"))
+			folders_config.put("logdir", (String) configuration.get("site_logdir"));
 
 		for (final String folder : folders_config.keySet()) {
 			final String folderpath = folders_config.get(folder);
@@ -736,6 +732,7 @@ public class ConfigUtils {
 	/**
 	 * Write the configuration file that is used by JAliEn-ROOT and JSh <br />
 	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
+	 * 
 	 * @param vars key-value map to dump to the file
 	 *
 	 * @return true if the file was written, false if not

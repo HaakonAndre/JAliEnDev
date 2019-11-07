@@ -237,122 +237,120 @@ public class JBoxServer extends Thread {
 				while ((sLine = br.readLine()) != null)
 					if (sLine.startsWith("<document>"))
 						sCommand = sLine;
-					else
-						if (sLine.endsWith("</document>")) {
-							sCommand += sLine;
-							final ArrayList<String> cmdOptions = new ArrayList<>();
-							final ArrayList<String> fullCmd = new ArrayList<>();
-							try {
+					else if (sLine.endsWith("</document>")) {
+						sCommand += sLine;
+						final ArrayList<String> cmdOptions = new ArrayList<>();
+						final ArrayList<String> fullCmd = new ArrayList<>();
+						try {
 
-								// <document>
-								// <ls>
-								// <o>-l</o>
-								// <o>-a</o>
-								// <o>/alice/cern.ch/user/t/ttothova</o>
-								// </ls>
-								// </document>
-								logger.info("XML =\"" + sCommand + "\"");
-								final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
+							// <document>
+							// <ls>
+							// <o>-l</o>
+							// <o>-a</o>
+							// <o>/alice/cern.ch/user/t/ttothova</o>
+							// </ls>
+							// </document>
+							logger.info("XML =\"" + sCommand + "\"");
+							final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
 
-								final NodeList commandNodeList = document.getElementsByTagName("command");
+							final NodeList commandNodeList = document.getElementsByTagName("command");
 
-								if (commandNodeList != null && commandNodeList.getLength() == 1) {
-									final Node commandNode = commandNodeList.item(0);
-									sCmdValue = commandNode.getTextContent();
-									fullCmd.add(sCmdValue);
-									logger.info("Received command " + sCmdValue);
+							if (commandNodeList != null && commandNodeList.getLength() == 1) {
+								final Node commandNode = commandNodeList.item(0);
+								sCmdValue = commandNode.getTextContent();
+								fullCmd.add(sCmdValue);
+								logger.info("Received command " + sCmdValue);
 
-									final NodeList optionsNodeList = document.getElementsByTagName("o");
+								final NodeList optionsNodeList = document.getElementsByTagName("o");
 
-									for (int i = 0; i < optionsNodeList.getLength(); i++) {
-										final Node optionNode = optionsNodeList.item(i);
-										cmdOptions.add(optionNode.getTextContent());
-										fullCmd.add(optionNode.getTextContent());
-										logger.info("Command options = " + optionNode.getTextContent());
-									}
+								for (int i = 0; i < optionsNodeList.getLength(); i++) {
+									final Node optionNode = optionsNodeList.item(i);
+									cmdOptions.add(optionNode.getTextContent());
+									fullCmd.add(optionNode.getTextContent());
+									logger.info("Command options = " + optionNode.getTextContent());
+								}
 
-									if (sCmdValue != null && sCmdValue.equals("password")) {
+								if (sCmdValue != null && sCmdValue.equals("password")) {
 
-										if (cmdOptions.get(0).equals(password)) {
-											os.write(passACK.getBytes());
-											os.flush();
-										}
-										else {
-											os.write(passNOACK.getBytes());
-											os.flush();
-											return;
-										}
-									}
-									else {
-										logger.log(Level.INFO, "JSh connected.");
-
-										if (commander == null) {
-											commander = new JAliEnCOMMander();
-											commander.start();
-										}
-
-										notifyActivity();
-
-										if ("SIGINT".equals(sLine)) {
-											logger.log(Level.INFO, "Received [SIGINT] from JSh.");
-
-											try {
-												commander.interrupt();
-												commander.kill = true;
-											}
-											catch (@SuppressWarnings("unused") final Throwable t) {
-												// ignore
-											}
-											finally {
-												System.out.println("SIGINT reset commander");
-
-												// kill the active command and start a new instance
-												final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
-												commander = comm;
-
-												commander.start();
-
-												commander.flush();
-											}
-										}
-										else
-											if ("shutdown".equals(sLine))
-												shutdown();
-											else {
-												waitCommandFinish();
-
-												synchronized (commander) {
-													if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
-														setShellPrintWriter(os, cmdOptions.get(0));
-														logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
-
-														os.write((JShPrintWriter.streamend + "\n").getBytes());
-														os.flush();
-														continue;
-													}
-
-													if (out == null)
-														out = new XMLPrintWriter(os);
-
-													commander.setLine(out, fullCmd.toArray(new String[0]));
-
-													commander.notifyAll();
-												}
-											}
+									if (cmdOptions.get(0).equals(password)) {
+										os.write(passACK.getBytes());
 										os.flush();
 									}
+									else {
+										os.write(passNOACK.getBytes());
+										os.flush();
+										return;
+									}
 								}
-								else
-									logger.severe("Received more than one command");
-								// some error, there was more than one command
-								// attached to the document
+								else {
+									logger.log(Level.INFO, "JSh connected.");
+
+									if (commander == null) {
+										commander = new JAliEnCOMMander();
+										commander.start();
+									}
+
+									notifyActivity();
+
+									if ("SIGINT".equals(sLine)) {
+										logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+
+										try {
+											commander.interrupt();
+											commander.kill = true;
+										}
+										catch (@SuppressWarnings("unused") final Throwable t) {
+											// ignore
+										}
+										finally {
+											System.out.println("SIGINT reset commander");
+
+											// kill the active command and start a new instance
+											final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
+											commander = comm;
+
+											commander.start();
+
+											commander.flush();
+										}
+									}
+									else if ("shutdown".equals(sLine))
+										shutdown();
+									else {
+										waitCommandFinish();
+
+										synchronized (commander) {
+											if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
+												setShellPrintWriter(os, cmdOptions.get(0));
+												logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
+
+												os.write((JShPrintWriter.streamend + "\n").getBytes());
+												os.flush();
+												continue;
+											}
+
+											if (out == null)
+												out = new XMLPrintWriter(os);
+
+											commander.setLine(out, fullCmd.toArray(new String[0]));
+
+											commander.notifyAll();
+										}
+									}
+									os.flush();
+								}
 							}
-							catch (final Exception e) {
-								logger.severe("Parse error " + e.getMessage());
-							}
+							else
+								logger.severe("Received more than one command");
+							// some error, there was more than one command
+							// attached to the document
 						}
-						else
-							sCommand += "\n" + sLine;
+						catch (final Exception e) {
+							logger.severe("Parse error " + e.getMessage());
+						}
+					}
+					else
+						sCommand += "\n" + sLine;
 
 			}
 			catch (final Throwable e) {

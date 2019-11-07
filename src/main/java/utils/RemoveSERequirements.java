@@ -45,7 +45,8 @@ public class RemoveSERequirements {
 
 						if (db.moveNext())
 							cleanupRequirements(db.geti(1), db.gets(2));
-					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*" + Format.escSQL(arg) + ".*';")) {
 							System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");
 							return;

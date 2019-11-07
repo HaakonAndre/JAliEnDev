@@ -72,18 +72,18 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 				len += q.length();
 
 				switch (q) {
-				case "disk":
-					qos += ShellColor.jobStateGreen() + q + ShellColor.reset();
-					break;
-				case "tape":
-					qos += ShellColor.jobStateBlue() + q + ShellColor.reset();
-					break;
-				case "legooutput":
-				case "legoinput":
-					qos += ShellColor.jobStateYellow() + q + ShellColor.reset();
-					break;
-				default:
-					qos += ShellColor.jobStateRed() + q + ShellColor.reset();
+					case "disk":
+						qos += ShellColor.jobStateGreen() + q + ShellColor.reset();
+						break;
+					case "tape":
+						qos += ShellColor.jobStateBlue() + q + ShellColor.reset();
+						break;
+					case "legooutput":
+					case "legoinput":
+						qos += ShellColor.jobStateYellow() + q + ShellColor.reset();
+						break;
+					default:
+						qos += ShellColor.jobStateRed() + q + ShellColor.reset();
 				}
 			}
 

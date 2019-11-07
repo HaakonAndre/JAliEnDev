@@ -187,17 +187,15 @@ public class TaskQueueUtils {
 					else
 						q = "SELECT * FROM QUEUE WHERE queueId=?";
 				}
+				else if (loadJDL)
+					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 				else
-					if (loadJDL)
-						q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
-					else
-						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 			}
+			else if (archiveYear < 2000)
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
 			else
-				if (archiveYear < 2000)
-					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
-				else
-					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 
 			db.setReadOnly(true);
 
@@ -267,19 +265,17 @@ public class TaskQueueUtils {
 					else
 						q = "SELECT * FROM QUEUE ";
 				}
+				else if (loadJDL)
+					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
 				else
-					if (loadJDL)
-						q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
-					else
-						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
+					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
 
 				q += "WHERE split=0 AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ";
 			}
+			else if (archiveYear < 2000)
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
 			else
-				if (archiveYear < 2000)
-					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
-				else
-					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
 
 			if (account != null && account.length() > 0)
 				if (dbStructure2_20)
@@ -466,19 +462,17 @@ public class TaskQueueUtils {
 					else
 						q = "SELECT * FROM QUEUE";
 				}
+				else if (loadJDL)
+					q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
 				else
-					if (loadJDL)
-						q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
-					else
-						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
+					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
 
 				q += " WHERE split=? AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ORDER BY queueId ASC";
 			}
+			else if (archiveYear < 2000)
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
 			else
-				if (archiveYear < 2000)
-					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
-				else
-					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(300);
@@ -2110,31 +2104,25 @@ public class TaskQueueUtils {
 
 		if (newStatus == JobStatus.WAITING)
 			jdltags.put("exechost", arg);
-		else
-			if (newStatus == JobStatus.RUNNING)
-				jdltags.put("started", time);
-			else
-				if (newStatus == JobStatus.STARTED) {
-					jdltags.put("started", time);
-					jdltags.put("batchid", arg);
-				}
-				else
-					if (newStatus == JobStatus.SAVING)
-						jdltags.put("error", arg);
-					else
-						if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
-							jdltags.put("jdl", arg);
-						else
-							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN)
-								jdltags.put("finished", time);
-							else
-								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
+		else if (newStatus == JobStatus.RUNNING)
+			jdltags.put("started", time);
+		else if (newStatus == JobStatus.STARTED) {
+			jdltags.put("started", time);
+			jdltags.put("batchid", arg);
+		}
+		else if (newStatus == JobStatus.SAVING)
+			jdltags.put("error", arg);
+		else if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
+			jdltags.put("jdl", arg);
+		else if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN)
+			jdltags.put("finished", time);
+		else if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
 
-									jdltags.put("spyurl", "");
-									jdltags.put("finished", time);
-									deleteJobToken(j.queueId);
+			jdltags.put("spyurl", "");
+			jdltags.put("finished", time);
+			deleteJobToken(j.queueId);
 
-								}
+		}
 		// put the JobLog message
 
 		final HashMap<String, String> joblogtags = new HashMap<>(jdltags);
@@ -3069,17 +3057,16 @@ public class TaskQueueUtils {
 						logger.severe("Resubmit: could not update jobagent: " + queueId);
 						return new AbstractMap.SimpleEntry<>(Integer.valueOf(6), "Resubmit: cannot updateOrInsert jobagent: " + queueId);
 					}
-					else
-						if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
-							db.setReadOnly(false);
-							db.setQueryTimeout(60);
-							logger.info("Resubmit: update agentId and statusId in QUEUE");
-							if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
-									|| db.getUpdateCount() == 0) {
-								logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
-								return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
-							}
+					else if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
+						db.setReadOnly(false);
+						db.setQueryTimeout(60);
+						logger.info("Resubmit: update agentId and statusId in QUEUE");
+						if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
+								|| db.getUpdateCount() == 0) {
+							logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
 						}
+					}
 
 					// if is a subjob, the master goes to SPLIT
 					if (j.split > 0) {

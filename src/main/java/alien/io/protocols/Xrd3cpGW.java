@@ -64,7 +64,8 @@ public class Xrd3cpGW extends Xrootd {
 					if (addresses != null)
 						for (final InetAddress addr : addresses)
 							transferServers.add(addr.getHostAddress());
-				} catch (final UnknownHostException uhe) {
+				}
+				catch (final UnknownHostException uhe) {
 					logger.log(Level.WARNING, "Cannot resolve address of " + server, uhe);
 				}
 			}
@@ -140,16 +141,14 @@ public class Xrd3cpGW extends Xrootd {
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					sourcePath = addURLParameter(sourcePath, "authz=" + source.ticket.envelope.getEncryptedEnvelope());
-				else
-					if (source.ticket.envelope.getSignedEnvelope() != null)
-						sourcePath = addURLParameter(sourcePath, source.ticket.envelope.getSignedEnvelope());
+				else if (source.ticket.envelope.getSignedEnvelope() != null)
+					sourcePath = addURLParameter(sourcePath, source.ticket.envelope.getSignedEnvelope());
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					targetPath = addURLParameter(targetPath, "authz=" + target.ticket.envelope.getEncryptedEnvelope());
-				else
-					if (target.ticket.envelope.getSignedEnvelope() != null)
-						targetPath = addURLParameter(targetPath, target.ticket.envelope.getSignedEnvelope());
+				else if (target.ticket.envelope.getSignedEnvelope() != null)
+					targetPath = addURLParameter(targetPath, target.ticket.envelope.getSignedEnvelope());
 
 			command.add(sourcePath);
 			command.add(targetPath);
@@ -180,7 +179,8 @@ public class Xrd3cpGW extends Xrootd {
 				}
 				else
 					throw new IOException("Cannot execute command: " + command);
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -206,7 +206,8 @@ public class Xrd3cpGW extends Xrootd {
 
 							return ret;
 						}
-					} catch (final IOException ioe) {
+					}
+					catch (final IOException ioe) {
 						logger.log(Level.WARNING, "xrdstat throwed exception", ioe);
 					}
 				}
@@ -222,9 +223,11 @@ public class Xrd3cpGW extends Xrootd {
 			}
 
 			return xrdstat(target, (target.ticket.envelope.getSignedEnvelope() == null));
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("Transfer aborted because " + t);

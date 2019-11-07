@@ -301,9 +301,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 				if (!db.query(q, false, sSearch, sSearch + "/"))
 					return null;
 			}
-			else
-				if (!db.query(q, false, sSearch))
-					return null;
+			else if (!db.query(q, false, sSearch))
+				return null;
 
 			if (!db.moveNext()) {
 				if (logger.isLoggable(Level.FINE))

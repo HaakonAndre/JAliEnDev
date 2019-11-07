@@ -230,34 +230,33 @@ public class DispatchSSLClient {
 					fallbackProtocol = null;
 				}
 			}
-			else
-				if (ConfigUtils.getConfig().getb("alien.api.DispatchSSLClient.PreferIPv4", false)) {
-					if (ipv4.size() > 0) {
-						mainProtocol = ipv4;
-						fallbackProtocol = ipv6;
-					}
-					else {
-						mainProtocol = ipv6;
-						fallbackProtocol = null;
-					}
+			else if (ConfigUtils.getConfig().getb("alien.api.DispatchSSLClient.PreferIPv4", false)) {
+				if (ipv4.size() > 0) {
+					mainProtocol = ipv4;
+					fallbackProtocol = ipv6;
 				}
 				else {
-					mainProtocol = new ArrayList<>();
-
-					// inspired by rfc8305, interleave the protocols, giving a slight preference to IPv6
-					final Iterator<InetAddress> it6 = ipv6.iterator();
-					final Iterator<InetAddress> it4 = ipv4.iterator();
-
-					while (it6.hasNext() || it4.hasNext()) {
-						if (it6.hasNext())
-							mainProtocol.add(it6.next());
-
-						if (it4.hasNext())
-							mainProtocol.add(it4.next());
-					}
-
+					mainProtocol = ipv6;
 					fallbackProtocol = null;
 				}
+			}
+			else {
+				mainProtocol = new ArrayList<>();
+
+				// inspired by rfc8305, interleave the protocols, giving a slight preference to IPv6
+				final Iterator<InetAddress> it6 = ipv6.iterator();
+				final Iterator<InetAddress> it4 = ipv4.iterator();
+
+				while (it6.hasNext() || it4.hasNext()) {
+					if (it6.hasNext())
+						mainProtocol.add(it6.next());
+
+					if (it4.hasNext())
+						mainProtocol.add(it4.next());
+				}
+
+				fallbackProtocol = null;
+			}
 
 			if (logger.isLoggable(Level.FINER))
 				logger.log(Level.FINER, "Will try to connect to the central services in the following order: " + mainProtocol + " then " + fallbackProtocol);

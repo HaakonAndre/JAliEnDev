@@ -147,7 +147,8 @@ public class CatalogueToJsonThreads {
 			// }
 			// }
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -218,11 +219,10 @@ public class CatalogueToJsonThreads {
 					System.exit(-1);
 				}
 			}
-			else
-				if (!f.mkdirs()) {
-					System.err.println("Error creating base directory");
-					System.exit(-1);
-				}
+			else if (!f.mkdirs()) {
+				System.err.println("Error creating base directory");
+				System.exit(-1);
+			}
 		}
 
 		// Control-C catch
@@ -234,7 +234,8 @@ public class CatalogueToJsonThreads {
 				try {
 					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
 						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Something went wrong in shutdown!: " + e);
 				}
 
@@ -252,7 +253,8 @@ public class CatalogueToJsonThreads {
 						for (final LFN l : activeThreadFolders.values())
 							pendingTasks.println(l.lfn);
 					}
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					System.err.println("Something went wrong dumping tasks!: " + e.toString() + " - " + tQueue.toString());
 				}
 			}
@@ -270,7 +272,8 @@ public class CatalogueToJsonThreads {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -410,7 +413,8 @@ public class CatalogueToJsonThreads {
 
 					try {
 						tPool.submit(new Recurse(l));
-					} catch (final RejectedExecutionException ree) {
+					}
+					catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -418,105 +422,105 @@ public class CatalogueToJsonThreads {
 						return;
 					}
 				}
-				else
-					if (l.isCollection()) {
-						final JSONObject lfnfile = new JSONObject();
-						lfnfile.put("size", String.valueOf(l.size));
-						lfnfile.put("owner", l.getOwner());
-						lfnfile.put("gowner", l.getGroup());
-						lfnfile.put("perm", l.getPermissions());
-						lfnfile.put("ctime", df.format(l.ctime));
-						lfnfile.put("jobid", String.valueOf(l.jobid));
-						lfnfile.put("guid", l.guid.toString());
+				else if (l.isCollection()) {
+					final JSONObject lfnfile = new JSONObject();
+					lfnfile.put("size", String.valueOf(l.size));
+					lfnfile.put("owner", l.getOwner());
+					lfnfile.put("gowner", l.getGroup());
+					lfnfile.put("perm", l.getPermissions());
+					lfnfile.put("ctime", df.format(l.ctime));
+					lfnfile.put("jobid", String.valueOf(l.jobid));
+					lfnfile.put("guid", l.guid.toString());
 
-						final JSONArray filesjson = new JSONArray();
-						for (final String s : l.listCollection())
-							filesjson.add(s);
-						lfnfile.put("lfns", filesjson);
+					final JSONArray filesjson = new JSONArray();
+					for (final String s : l.listCollection())
+						filesjson.add(s);
+					lfnfile.put("lfns", filesjson);
 
-						try (FileWriter file = new FileWriter(suffix + l.getCanonicalName())) {
-							String myJsonString = lfnfile.toJSONString();
-							myJsonString = myJsonString.replaceAll("\\\\", "");
-							myJsonString = myJsonString.replaceAll(",", ",\n");
-							file.write(myJsonString);
-						} catch (final IOException e) {
-							final String msg = "Can't create LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Message: " + e.getMessage();
-							failed_collections.println(msg);
-							failed_collections.flush();
-						}
+					try (FileWriter file = new FileWriter(suffix + l.getCanonicalName())) {
+						String myJsonString = lfnfile.toJSONString();
+						myJsonString = myJsonString.replaceAll("\\\\", "");
+						myJsonString = myJsonString.replaceAll(",", ",\n");
+						file.write(myJsonString);
 					}
-					else
-						if (l.isFile()) {
+					catch (final IOException e) {
+						final String msg = "Can't create LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Message: " + e.getMessage();
+						failed_collections.println(msg);
+						failed_collections.flush();
+					}
+				}
+				else if (l.isFile()) {
 
-							if (members_of_archives.contains(l))
+					if (members_of_archives.contains(l))
+						continue;
+
+					final List<LFN> zip_members = getZipMembers(whereis, l);
+					final boolean isArchive = zip_members != null && !zip_members.isEmpty();
+
+					// create json file in the hierarchy
+					final JSONObject lfnfile = new JSONObject();
+					lfnfile.put("size", String.valueOf(l.size));
+					lfnfile.put("owner", l.getOwner());
+					lfnfile.put("gowner", l.getGroup());
+					lfnfile.put("perm", String.valueOf(l.getPermissions()));
+					lfnfile.put("ctime", df.format(l.ctime));
+					lfnfile.put("jobid", String.valueOf(l.jobid));
+					lfnfile.put("guid", String.valueOf(l.guid));
+					lfnfile.put("md5", l.md5);
+
+					Set<PFN> pfns = null;
+					// we have the pfns in the map
+					for (final GUID guidmap : whereis.keySet())
+						if (whereis.get(guidmap).equals(l))
+							pfns = guidmap.getPFNs();
+
+					if (pfns != null) {
+						final JSONArray pfnsjson = new JSONArray();
+						for (final PFN p : pfns) {
+							final JSONObject pfn = new JSONObject();
+							final String se = p.getSE().getName();
+							if (se == null) {
+								failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
+								failed_ses.flush();
 								continue;
-
-							final List<LFN> zip_members = getZipMembers(whereis, l);
-							final boolean isArchive = zip_members != null && !zip_members.isEmpty();
-
-							// create json file in the hierarchy
-							final JSONObject lfnfile = new JSONObject();
-							lfnfile.put("size", String.valueOf(l.size));
-							lfnfile.put("owner", l.getOwner());
-							lfnfile.put("gowner", l.getGroup());
-							lfnfile.put("perm", String.valueOf(l.getPermissions()));
-							lfnfile.put("ctime", df.format(l.ctime));
-							lfnfile.put("jobid", String.valueOf(l.jobid));
-							lfnfile.put("guid", String.valueOf(l.guid));
-							lfnfile.put("md5", l.md5);
-
-							Set<PFN> pfns = null;
-							// we have the pfns in the map
-							for (final GUID guidmap : whereis.keySet())
-								if (whereis.get(guidmap).equals(l))
-									pfns = guidmap.getPFNs();
-
-							if (pfns != null) {
-								final JSONArray pfnsjson = new JSONArray();
-								for (final PFN p : pfns) {
-									final JSONObject pfn = new JSONObject();
-									final String se = p.getSE().getName();
-									if (se == null) {
-										failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
-										failed_ses.flush();
-										continue;
-									}
-									pfn.put("se", se);
-									pfn.put("pfn", p.pfn);
-									pfnsjson.add(pfn);
-								}
-								lfnfile.put("pfns", pfnsjson);
 							}
-
-							if (isArchive) {
-								final JSONArray members = new JSONArray();
-								// we have an archive, we create ln per member
-								for (final LFN lfn_in_zip : zip_members) {
-									members_of_archives.add(lfn_in_zip);
-									final JSONObject entry = new JSONObject();
-									entry.put("lfn", lfn_in_zip.getFileName());
-									entry.put("size", String.valueOf(lfn_in_zip.size));
-									entry.put("md5", lfn_in_zip.md5);
-									members.add(entry);
-								}
-								lfnfile.put("zip_members", members);
-							}
-
-							try (FileWriter file = new FileWriter(suffix + l.getCanonicalName())) {
-								String myJsonString = lfnfile.toJSONString();
-								myJsonString = myJsonString.replaceAll("\\\\", "");
-								myJsonString = myJsonString.replaceAll(",", ",\n");
-								file.write(myJsonString);
-
-								if (isArchive)
-									for (final LFN lfn_in_zip : zip_members)
-										Files.createSymbolicLink(Paths.get(suffix + lfn_in_zip.getCanonicalName()), Paths.get(l.getFileName()));
-							} catch (final IOException e) {
-								final String msg = "Can't create LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
-								failed_files.println(msg);
-								failed_files.flush();
-							}
+							pfn.put("se", se);
+							pfn.put("pfn", p.pfn);
+							pfnsjson.add(pfn);
 						}
+						lfnfile.put("pfns", pfnsjson);
+					}
+
+					if (isArchive) {
+						final JSONArray members = new JSONArray();
+						// we have an archive, we create ln per member
+						for (final LFN lfn_in_zip : zip_members) {
+							members_of_archives.add(lfn_in_zip);
+							final JSONObject entry = new JSONObject();
+							entry.put("lfn", lfn_in_zip.getFileName());
+							entry.put("size", String.valueOf(lfn_in_zip.size));
+							entry.put("md5", lfn_in_zip.md5);
+							members.add(entry);
+						}
+						lfnfile.put("zip_members", members);
+					}
+
+					try (FileWriter file = new FileWriter(suffix + l.getCanonicalName())) {
+						String myJsonString = lfnfile.toJSONString();
+						myJsonString = myJsonString.replaceAll("\\\\", "");
+						myJsonString = myJsonString.replaceAll(",", ",\n");
+						file.write(myJsonString);
+
+						if (isArchive)
+							for (final LFN lfn_in_zip : zip_members)
+								Files.createSymbolicLink(Paths.get(suffix + lfn_in_zip.getCanonicalName()), Paths.get(l.getFileName()));
+					}
+					catch (final IOException e) {
+						final String msg = "Can't create LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
+						failed_files.println(msg);
+						failed_files.flush();
+					}
+				}
 			}
 			// Remove from list
 			activeThreadFolders.remove(Long.valueOf(threadId));

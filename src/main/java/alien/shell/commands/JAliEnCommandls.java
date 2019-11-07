@@ -118,29 +118,28 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
 						}
 					}
-					else
-						if (bC)
-							ret += localLFN.getCanonicalName();
-						else {
-							if (bL) {
-								commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
-								commander.printOut("user", localLFN.owner);
-								commander.printOut("group", localLFN.gowner);
-								commander.printOut("size", String.valueOf(localLFN.size));
-								commander.printOut("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
-								ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
-										+ padLeft(bH ? Format.size(localLFN.size) : String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
-							}
-							else {
-								ret += localLFN.getFileName();
-							}
-
-							if (bF && (localLFN.type == 'd'))
-								ret += "/";
-
-							commander.printOut("name", localLFN.getFileName() + (bF && localLFN.isDirectory() ? "/" : ""));
-							commander.printOut("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
+					else if (bC)
+						ret += localLFN.getCanonicalName();
+					else {
+						if (bL) {
+							commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
+							commander.printOut("user", localLFN.owner);
+							commander.printOut("group", localLFN.gowner);
+							commander.printOut("size", String.valueOf(localLFN.size));
+							commander.printOut("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
+							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
+									+ padLeft(bH ? Format.size(localLFN.size) : String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
 						}
+						else {
+							ret += localLFN.getFileName();
+						}
+
+						if (bF && (localLFN.type == 'd'))
+							ret += "/";
+
+						commander.printOut("name", localLFN.getFileName() + (bF && localLFN.isDirectory() ? "/" : ""));
+						commander.printOut("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
+					}
 
 					logger.info("LS line : " + ret);
 

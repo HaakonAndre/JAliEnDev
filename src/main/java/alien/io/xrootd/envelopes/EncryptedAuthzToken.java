@@ -411,7 +411,8 @@ public class EncryptedAuthzToken {
 					continue;
 				}
 			}
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			throw new GeneralSecurityException("error reading from token string", e);
 		}
 	}

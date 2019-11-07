@@ -63,7 +63,8 @@ public class GridLocalFileCompletor extends FileNameCompleter {
 		try {
 			return gridMatchFiles(buffer, translated, entries, candidates);
 
-		} finally {
+		}
+		finally {
 			// we want to output a sorted list of files
 			// sortFileNames(candidates);
 		}
@@ -87,7 +88,8 @@ public class GridLocalFileCompletor extends FileNameCompleter {
 				if (lfn.endsWith("/")) {
 					lfn = lfn.substring(0, lfn.length() - 1);
 					name = lfn.substring(lfn.lastIndexOf('/') + 1) + ((matches == 1) ? "/" : "");
-				} else
+				}
+				else
 					name = lfn.substring(lfn.lastIndexOf('/') + 1) + ((matches == 1) ? " " : "");
 
 				candidates.add(name);

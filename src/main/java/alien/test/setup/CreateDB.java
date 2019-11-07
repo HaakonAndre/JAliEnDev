@@ -171,7 +171,8 @@ public class CreateDB {
 				try (Statement s = cn.createStatement()) {
 					s.execute(queries[a]);
 				}
-			} else
+			}
+			else
 				System.err.println("Query entry [" + a + "] null!");
 	}
 
@@ -181,7 +182,8 @@ public class CreateDB {
 				while (r.next())
 					return r.getString(column);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.out.println("Error in SQL query: " + query);
 			e.printStackTrace();
 		}

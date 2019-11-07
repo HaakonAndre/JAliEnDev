@@ -164,10 +164,10 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		int idx = lfn.lastIndexOf('/');
 
 		if (idx == lfn.length() - 1)
-			idx = lfn.lastIndexOf('/', idx-1);
+			idx = lfn.lastIndexOf('/', idx - 1);
 
 		if (idx >= 0 && ConfigUtils.isCentralService()) {
-			final String sDir = lfn.substring(0, idx+1);
+			final String sDir = lfn.substring(0, idx + 1);
 
 			parentDir = LFNUtils.getLFN(sDir, true);
 
@@ -343,11 +343,10 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		if (bEnds && bStarts)
 			canonicalName = sLFN.substring(0, sLFN.length() - 1) + lfn;
+		else if (!bEnds && !bStarts)
+			canonicalName = sLFN + "/" + lfn;
 		else
-			if (!bEnds && !bStarts)
-				canonicalName = sLFN + "/" + lfn;
-			else
-				canonicalName = sLFN + lfn;
+			canonicalName = sLFN + lfn;
 
 		canonicalName = StringFactory.get(canonicalName);
 

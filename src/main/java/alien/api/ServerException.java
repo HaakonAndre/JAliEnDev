@@ -17,8 +17,8 @@ public class ServerException extends Exception {
 	 * @param message
 	 * @param cause underlying cause of the exception
 	 */
-	public ServerException(final String message, final Throwable cause){
+	public ServerException(final String message, final Throwable cause) {
 		super(message, cause);
 	}
-	
+
 }

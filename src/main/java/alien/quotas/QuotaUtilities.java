@@ -80,13 +80,15 @@ public final class QuotaUtilities {
 								jobQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
-				} finally {
+				}
+				finally {
 					jobQuotaWriteLock.unlock();
 				}
 
 				jobQuotaReadLock.lock();
 			}
-		} finally {
+		}
+		finally {
 			jobQuotaReadLock.unlock();
 		}
 	}
@@ -134,13 +136,15 @@ public final class QuotaUtilities {
 								fileQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
-				} finally {
+				}
+				finally {
 					fileQuotaWriteLock.unlock();
 				}
 
 				fileQuotaReadLock.lock();
 			}
-		} finally {
+		}
+		finally {
 			fileQuotaReadLock.unlock();
 		}
 	}

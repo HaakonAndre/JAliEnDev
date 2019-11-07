@@ -14,23 +14,23 @@ public class SystemProcess {
 	 * @return the exit code
 	 */
 	private native int systemCall(String cmd);
-	
-	private final String command; 
-	
+
+	private final String command;
+
 	/**
 	 * Prepare to run some system command
 	 * 
 	 * @param command
 	 */
-	public SystemProcess(final String command){
+	public SystemProcess(final String command) {
 		this.command = command;
 	}
-	
+
 	/**
 	 * @return the exit code
 	 */
-	public int execute() { 
-		return systemCall(command); 
+	public int execute() {
+		return systemCall(command);
 	}
 
 	static {

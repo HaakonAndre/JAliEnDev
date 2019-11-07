@@ -52,12 +52,11 @@ public class JAliEnCommandcat_csd extends JAliEnBaseCommand {
 								commander.printOut("count", count + "");
 								commander.printOut(++count + "  ");
 							}
-							else
-								if (bB)
-									if (line.trim().length() > 0) {
-										commander.printOut("count", count + "");
-										commander.printOut(++count + "  ");
-									}
+							else if (bB)
+								if (line.trim().length() > 0) {
+									commander.printOut("count", count + "");
+									commander.printOut(++count + "  ");
+								}
 							if (bT)
 								line = Format.replace(line, "\t", "^I");
 
@@ -71,7 +70,8 @@ public class JAliEnCommandcat_csd extends JAliEnBaseCommand {
 							commander.printOutln();
 						}
 
-					} catch (@SuppressWarnings("unused") final IOException ioe) {
+					}
+					catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, cannot happen
 					}
 				}
@@ -96,7 +96,8 @@ public class JAliEnCommandcat_csd extends JAliEnBaseCommand {
 		JAliEnCommandcp_csd cp;
 		try {
 			cp = (JAliEnCommandcp_csd) JAliEnCOMMander.getCommand("cp_csd", new Object[] { commander, args });
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
@@ -110,7 +111,8 @@ public class JAliEnCommandcat_csd extends JAliEnBaseCommand {
 				Thread.sleep(500);
 				commander.pending();
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
@@ -179,7 +181,8 @@ public class JAliEnCommandcat_csd extends JAliEnBaseCommand {
 			bE = options.has("E");
 			bT = options.has("T");
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

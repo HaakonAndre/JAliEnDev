@@ -87,7 +87,8 @@ public class JAliEnCommandmkdir_csd extends JAliEnBaseCommand {
 			if (options.has("s"))
 				silent();
 			bP = options.has("p");
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

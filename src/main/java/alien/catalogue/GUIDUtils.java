@@ -192,7 +192,8 @@ public final class GUIDUtils {
 			do
 				try {
 					ret.add(new GUID(db, host, tableName));
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					logger.log(Level.WARNING, "Exception instantiating guid " + guid + " from " + tableName, e);
 
 					return null;
@@ -294,7 +295,8 @@ public final class GUIDUtils {
 						while (db.moveNext())
 							try {
 								ret.add(new GUID(db, h.hostIndex, tableName.intValue()));
-							} catch (final Exception e) {
+							}
+							catch (final Exception e) {
 								logger.log(Level.WARNING, "Exception instantiating some guid from " + tableName, e);
 							}
 					}
@@ -352,7 +354,8 @@ public final class GUIDUtils {
 
 			try {
 				return new GUID(db, host, tableName);
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				logger.log(Level.WARNING, "Exception instantiating guid " + guid + " from " + tableName, e);
 
 				return null;
@@ -371,7 +374,8 @@ public final class GUIDUtils {
 		try {
 			UUID.fromString(guid);
 			return true;
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		}
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return false;
 		}
 	}
@@ -521,7 +525,8 @@ public final class GUIDUtils {
 						if (sMac != null)
 							break;
 					}
-				} catch (@SuppressWarnings("unused") final Throwable t) {
+				}
+				catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 
@@ -531,7 +536,8 @@ public final class GUIDUtils {
 				for (int i = 0; i < 6; i++)
 					try {
 						MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
-					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						// ignore
 					}
 			}
@@ -677,11 +683,13 @@ public final class GUIDUtils {
 						return false;
 
 					return true;
-				} catch (final IOException ioe) {
+				}
+				catch (final IOException ioe) {
 					logger.log(Level.WARNING, "Unable to compute the MD5 sum of " + lfn.getCanonicalName(), ioe);
 
 					return false;
-				} finally {
+				}
+				finally {
 					temp.delete();
 				}
 			logger.log(Level.WARNING, "Could not download " + g.guid);

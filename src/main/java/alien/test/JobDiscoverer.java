@@ -26,7 +26,8 @@ public class JobDiscoverer {
 			}).getClass();
 			runnableInAdapter = adapterClass.getDeclaredField("task");
 			runnableInAdapter.setAccessible(true);
-		} catch (final NoSuchFieldException e) {
+		}
+		catch (final NoSuchFieldException e) {
 			throw new ExceptionInInitializerError(e);
 		}
 	}
@@ -42,7 +43,8 @@ public class JobDiscoverer {
 				if (adapterClass.isInstance(callable))
 					return runnableInAdapter.get(callable);
 				return callable;
-			} catch (final IllegalAccessException e) {
+			}
+			catch (final IllegalAccessException e) {
 				throw new IllegalStateException(e);
 			}
 		throw new ClassCastException("Not a FutureTask");

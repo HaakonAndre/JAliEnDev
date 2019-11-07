@@ -182,53 +182,38 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 
 						if (tok.equals("ctime="))
 							time = value(st);
+						else if (tok.equals("gowner="))
+							group = value(st);
+						else if (tok.equals("owner="))
+							lowner = value(st);
+						else if (tok.equals("lfn="))
+							lfn = value(st);
+						else if (tok.equals("size="))
+							size = value(st);
+						else if (tok.equals("md5="))
+							md5 = value(st);
+						else if (tok.equals("guid="))
+							guid = value(st);
+						else if (tok.equals("perm="))
+							perm = value(st);
+						else if (tok.equals("entryId="))
+							entryId = value(st);
+						else if (tok.equals("dir="))
+							dir = value(st);
+						else if (tok.equals("jobId="))
+							jobId = value(st);
+						else if (tok.equals("broken="))
+							broken = value(st);
+						else if (tok.equals("expiretime="))
+							expires = value(st);
+						else if (tok.equals("type="))
+							type = value(st);
+						else if (tok.equals("guidtime="))
+							guidtime = value(st);
+						else if (tok.equals("replicated="))
+							replicated = value(st);
 						else
-							if (tok.equals("gowner="))
-								group = value(st);
-							else
-								if (tok.equals("owner="))
-									lowner = value(st);
-								else
-									if (tok.equals("lfn="))
-										lfn = value(st);
-									else
-										if (tok.equals("size="))
-											size = value(st);
-										else
-											if (tok.equals("md5="))
-												md5 = value(st);
-											else
-												if (tok.equals("guid="))
-													guid = value(st);
-												else
-													if (tok.equals("perm="))
-														perm = value(st);
-													else
-														if (tok.equals("entryId="))
-															entryId = value(st);
-														else
-															if (tok.equals("dir="))
-																dir = value(st);
-															else
-																if (tok.equals("jobId="))
-																	jobId = value(st);
-																else
-																	if (tok.equals("broken="))
-																		broken = value(st);
-																	else
-																		if (tok.equals("expiretime="))
-																			expires = value(st);
-																		else
-																			if (tok.equals("type="))
-																				type = value(st);
-																			else
-																				if (tok.equals("guidtime="))
-																					guidtime = value(st);
-																				else
-																					if (tok.equals("replicated="))
-																						replicated = value(st);
-																					else
-																						value(st);
+							value(st);
 					}
 
 					final LFN l = new LFN(lfn);
@@ -271,7 +256,8 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 						logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
 				}
 
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				throw new IOException("Exception parsing XML", t);
 			}
 		}

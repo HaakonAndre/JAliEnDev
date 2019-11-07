@@ -29,7 +29,8 @@ public class BuiltinConfiguration implements ConfigSource {
 						tmpProperties.put(key, prop);
 					}
 				}
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
 			// cannot load the default configuration files for any reason
 		}
 

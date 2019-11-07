@@ -108,7 +108,8 @@ public class PFNforWrite extends Request {
 				else
 					try {
 						count = Integer.valueOf(defQos.substring(idx + 1).trim());
-					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						count = Integer.valueOf(1);
 					}
 
@@ -147,7 +148,8 @@ public class PFNforWrite extends Request {
 			try {
 				this.pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), this.lfn, this.guid, null, se));
 				errorMessage = null;
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				errorMessage = e.getMessage();
 
 				if (logger.isLoggable(Level.FINE))

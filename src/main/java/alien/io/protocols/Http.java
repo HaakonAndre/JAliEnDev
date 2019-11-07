@@ -72,7 +72,8 @@ public class Http extends Protocol {
 				TempFileManager.putTemp(pfn.getGuid(), target);
 			else
 				TempFileManager.putPersistent(pfn.getGuid(), target);
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			if (!target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on exception : " + target);
 

@@ -46,7 +46,8 @@ public class FORK extends BatchQueue {
 			while ((output_str = reader.readLine()) != null) {
 				proc_output.add(output_str);
 			}
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.info("[FORK] Exception executing command '" + cmd + "':" + t.toString());
 		}
 		logger.info(String.format("[FORK] Command output: %s", proc_output));

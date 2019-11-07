@@ -18,7 +18,8 @@ public class TestBuggy {
 
 		try {
 			Functions.unzip(new File("testsys/ldap_schema.zip"), new File("/tmp/"));
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 			System.err.println("error unzipping ldap schema");
 		}

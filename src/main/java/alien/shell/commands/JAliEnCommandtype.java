@@ -41,16 +41,14 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 			ret += "file";
 			commander.printOut("type", "file");
 		}
-		else
-			if (lfn.isDirectory()) {
-				ret += "directory";
-				commander.printOut("type", "directory");
-			}
-			else
-				if (lfn.isCollection()) {
-					ret += "collection";
-					commander.printOut("type", "collection");
-				}
+		else if (lfn.isDirectory()) {
+			ret += "directory";
+			commander.printOut("type", "directory");
+		}
+		else if (lfn.isCollection()) {
+			ret += "collection";
+			commander.printOut("type", "collection");
+		}
 		logger.info("Type line : " + ret);
 		commander.printOutln(ret);
 	}

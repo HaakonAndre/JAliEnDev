@@ -115,7 +115,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		if (lfns != null) {
 			if (offset >= lfns.size())
 				return;
-			
+
 			if (bX) {
 				return;
 			}

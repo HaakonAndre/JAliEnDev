@@ -133,48 +133,46 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 					}
 				}
 			}
-			else
-				if (localFileSpec(source) && !localFileSpec(target)) {
+			else if (localFileSpec(source) && !localFileSpec(target)) {
 
-					final File sourceFile = new File(getLocalFileSpec(source));
-					if (!targetLFNExists(target))
-						if (sourceFile.exists())
-							copyLocalToGrid(sourceFile, target);
-						else {
-							commander.setReturnCode(2, "A local file with this name does not exists.");
-							if (isSilent()) {
-								final IOException ex = new IOException("Local file " + target + " doesn't exist");
+				final File sourceFile = new File(getLocalFileSpec(source));
+				if (!targetLFNExists(target))
+					if (sourceFile.exists())
+						copyLocalToGrid(sourceFile, target);
+					else {
+						commander.setReturnCode(2, "A local file with this name does not exists.");
+						if (isSilent()) {
+							final IOException ex = new IOException("Local file " + target + " doesn't exist");
 
-								throw new IOError(ex);
-							}
-						}
-				}
-				else
-					if (!targetLFNExists(target)) {
-
-						localFile = copyGridToLocal(source, null);
-						if (localFile != null && localFile.exists() && localFile.length() > 0) {
-							if (copyLocalToGrid(localFile, target)) {
-								commander.printOutln("Copy successful.");
-							}
-							else {
-								commander.setReturnCode(3, "Could not copy to the target.");
-								if (isSilent()) {
-									final IOException ex = new IOException("Could not copy to the target: " + target);
-
-									throw new IOError(ex);
-								}
-							}
-						}
-						else {
-							commander.setReturnCode(4, "Could not get the source.");
-							if (isSilent()) {
-								final IOException ex = new IOException("Could not get the source: " + source);
-
-								throw new IOError(ex);
-							}
+							throw new IOError(ex);
 						}
 					}
+			}
+			else if (!targetLFNExists(target)) {
+
+				localFile = copyGridToLocal(source, null);
+				if (localFile != null && localFile.exists() && localFile.length() > 0) {
+					if (copyLocalToGrid(localFile, target)) {
+						commander.printOutln("Copy successful.");
+					}
+					else {
+						commander.setReturnCode(3, "Could not copy to the target.");
+						if (isSilent()) {
+							final IOException ex = new IOException("Could not copy to the target: " + target);
+
+							throw new IOError(ex);
+						}
+					}
+				}
+				else {
+					commander.setReturnCode(4, "Could not get the source.");
+					if (isSilent()) {
+						final IOException ex = new IOException("Could not get the source: " + source);
+
+						throw new IOError(ex);
+					}
+				}
+			}
 		}
 	}
 
@@ -326,11 +324,10 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 							return;
 						}
 					}
-					else
-						if (!fDir.mkdirs()) {
-							commander.setReturnCode(103, "Could not create the directory: " + fDir.getAbsolutePath());
-							return;
-						}
+					else if (!fDir.mkdirs()) {
+						commander.setReturnCode(103, "Could not create the directory: " + fDir.getAbsolutePath());
+						return;
+					}
 				}
 
 				writeToLocalFile = new File(targetLocalFile, fileName);
@@ -444,16 +441,15 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 			if (l != null)
 				if (l.isFile())
 					sources.add(expandedPath);
-				else
-					if (l.isDirectory()) {
-						final Collection<LFN_CSD> findresult = commander.c_api.find_csd(expandedPath, "*", null, 0, null, null);
+				else if (l.isDirectory()) {
+					final Collection<LFN_CSD> findresult = commander.c_api.find_csd(expandedPath, "*", null, 0, null, null);
 
-						logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
+					logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
 
-						for (final LFN_CSD file : findresult)
-							if (file.isFile())
-								sources.add(file.getCanonicalName());
-					}
+					for (final LFN_CSD file : findresult)
+						if (file.isFile())
+							sources.add(file.getCanonicalName());
+				}
 			// else
 			// if (l.isCollection())
 			// sources.addAll(l.listCollection());
@@ -475,11 +471,10 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 					return null;
 				}
 			}
-			else
-				if (!targetLocalFile.mkdirs()) {
-					commander.setReturnCode(110, "Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
-					return null;
-				}
+			else if (!targetLocalFile.mkdirs()) {
+				commander.setReturnCode(110, "Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
+				return null;
+			}
 		}
 
 		// String longestMatchingPath = currentDir != null ?
@@ -678,7 +673,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 				final String err = pfw.getErrorMessage();
 
 				commander.setReturnCode(205, err != null ? err : "Could not get any write access tickets for " + lfn.getCanonicalName());
-				
+
 				if (isSilent())
 					throw new IOError(new IOException(err != null ? err : "No write access tickets were returned for " + lfn.getCanonicalName()));
 
@@ -843,7 +838,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 						}
 					}
 				}
-				
+
 				if (futures.size() > 0) {
 					if (anyChange)
 						setName("alien.shell.commands.JAliEnCommandcp.BackgroundUpload (" + futures.size() + " / " + originalNoOfCopies + " x " + guid.guid + ")");
@@ -879,7 +874,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, BOOKING_STATE.COMMITED);
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
-				commander.setReturnCode(301, "From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
+				commander.setReturnCode(301,
+						"From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
 		}
 
 		int registeredPFNsCount = 0;
@@ -902,22 +898,20 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 			return true;
 		}
-		else
-			if (envelopes.size() + registeredPFNsCount > 0) {
-				if (report)
-					commander.printOutln("Only " + (envelopes.size() + registeredPFNsCount) + " out of " + desiredCount + " requested replicas could be uploaded");
+		else if (envelopes.size() + registeredPFNsCount > 0) {
+			if (report)
+				commander.printOutln("Only " + (envelopes.size() + registeredPFNsCount) + " out of " + desiredCount + " requested replicas could be uploaded");
 
-				return true;
+			return true;
+		}
+		else if (report) {
+			commander.setReturnCode(302, "Upload failed, sorry!");
+			if (isSilent()) {
+				final IOException ex = new IOException("Upload failed");
+
+				throw new IOError(ex);
 			}
-			else
-				if (report) {
-					commander.setReturnCode(302, "Upload failed, sorry!");
-					if (isSilent()) {
-						final IOException ex = new IOException("Upload failed");
-
-						throw new IOError(ex);
-					}
-				}
+		}
 
 		return false;
 	}
@@ -978,12 +972,12 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 							// give back to the central services the signed envelopes
 							returnEnvelope = pfn.ticket.envelope.getSignedEnvelope();
 					else
-						// no signed envelopes, return the encrypted one, if any
-						if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-							returnEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
-						else
-							// what kind of ticket was this?
-							returnEnvelope = targetPFNResult;
+					// no signed envelopes, return the encrypted one, if any
+					if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
+						returnEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
+					else
+						// what kind of ticket was this?
+						returnEnvelope = targetPFNResult;
 				else
 					// if no ticket at all...
 					returnEnvelope = targetPFNResult;
@@ -1135,24 +1129,22 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 									referenceCount++;
 								}
 						}
-						else
-							if (spec.contains(":"))
-								try {
-									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-									if (c > 0) {
-										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-										referenceCount = referenceCount + c;
-									}
-									else
-										throw new JAliEnCommandException("Number of replicas has to be stricly positive, in " + spec);
+						else if (spec.contains(":"))
+							try {
+								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+								if (c > 0) {
+									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+									referenceCount = referenceCount + c;
+								}
+								else
+									throw new JAliEnCommandException("Number of replicas has to be stricly positive, in " + spec);
 
-								}
-								catch (final Exception e) {
-									throw new JAliEnCommandException("Could not parse the QoS string " + spec, e);
-								}
-							else
-								if (!spec.equals(""))
-									throw new JAliEnCommandException();
+							}
+							catch (final Exception e) {
+								throw new JAliEnCommandException("Could not parse the QoS string " + spec, e);
+							}
+						else if (!spec.equals(""))
+							throw new JAliEnCommandException();
 					}
 				}
 

@@ -35,9 +35,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), true) == null)
 					commander.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
 			}
-			else
-				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path)) == null)
-					commander.setReturnCode(2, "Could not create directory: " + path);
+			else if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path)) == null)
+				commander.setReturnCode(2, "Could not create directory: " + path);
 		}
 	}
 
@@ -89,7 +88,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			if (options.has("s"))
 				silent();
 			bP = options.has("p");
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

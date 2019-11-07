@@ -82,7 +82,8 @@ public class TaskQueueFakeUtils {
 				try {
 					System.out.println("creating JDL with String:" + jdl);
 					ojdl = new JDL(jdl);
-				} catch (final IOException e1) {
+				}
+				catch (final IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
@@ -98,16 +99,20 @@ public class TaskQueueFakeUtils {
 
 				return jobcounter.intValue();
 			}
-		} catch (final InvalidKeyException e) {
+		}
+		catch (final InvalidKeyException e) {
 			e.printStackTrace();
 			System.out.println("InvalidKeyException");
-		} catch (final NoSuchAlgorithmException e) {
+		}
+		catch (final NoSuchAlgorithmException e) {
 			e.printStackTrace();
 			System.out.println("NoSuchAlgorithmException");
-		} catch (final SignatureException e) {
+		}
+		catch (final SignatureException e) {
 			e.printStackTrace();
 			System.out.println("SignatureException");
-		} catch (final KeyStoreException e) {
+		}
+		catch (final KeyStoreException e) {
 			e.printStackTrace();
 			System.out.println("KeyStoreException");
 		}

@@ -24,7 +24,7 @@ public class LTables extends Optimizer {
 	 * At which point to send a warning by mail
 	 */
 	final static int maxCount = 50000000; // 50M
-	
+
 	/**
 	 * Number of rows in the last table
 	 */
@@ -99,7 +99,8 @@ public class LTables extends Optimizer {
 				try {
 					logger.log(Level.INFO, "LTables sleeps " + this.getSleepPeriod());
 					sleep(this.getSleepPeriod());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
 			}

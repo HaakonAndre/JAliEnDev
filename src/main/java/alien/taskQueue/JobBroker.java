@@ -70,7 +70,7 @@ public class JobBroker {
 
 			matchRequest.put("Remote", Integer.valueOf(0));
 			matchRequest.put("Return", "entryId"); // skipping ,filebroker
-			
+
 			if (!matchRequest.containsKey("Partition"))
 				matchRequest.put("Partition", ",,");
 
@@ -187,7 +187,8 @@ public class JobBroker {
 						gtc = Dispatcher.execute(gtc);
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						logger.info("Getting TokenCertificate for job " + queueId + " failed: " + e);
 					}
 				}
@@ -209,12 +210,11 @@ public class JobBroker {
 				}
 			} // nothing back, something went wrong while obtaining queueId
 				// from the positive cases
-			else
-				if (!matchAnswer.containsKey("Code")) {
-					matchAnswer.put("Error", "Nothing to run :-( (no waiting jobs?) ");
-					matchAnswer.put("Code", Integer.valueOf(-2));
-					TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-no-match");
-				}
+			else if (!matchAnswer.containsKey("Code")) {
+				matchAnswer.put("Error", "Nothing to run :-( (no waiting jobs?) ");
+				matchAnswer.put("Code", Integer.valueOf(-2));
+				TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-no-match");
+			}
 
 			return matchAnswer;
 		}
@@ -385,9 +385,8 @@ public class JobBroker {
 				}
 				where += ") ";
 			}
-			else
-				if (matchRequest.containsKey("Site"))
-					where += ") ";
+			else if (matchRequest.containsKey("Site"))
+				where += ") ";
 
 			// skipping extrasites: used ?
 
@@ -401,7 +400,7 @@ public class JobBroker {
 					bindValues.add(matchRequest.get("Packages"));
 				}
 
-			if (matchRequest.containsKey("Partition")) { 
+			if (matchRequest.containsKey("Partition")) {
 				where += "and ? like concat('%,',`partition`, '%,') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}

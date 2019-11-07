@@ -433,36 +433,31 @@ public class JAliEnCOMMander extends Thread {
 				curDir = c_api.getLFN(arg[i].substring(arg[i].indexOf('=') + 1));
 				args.remove(arg[i]);
 			}
-			else
-				if (arg[i].startsWith("-debug=")) {
-					try {
-						debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
-					}
-					catch (@SuppressWarnings("unused") final NumberFormatException n) {
-						// ignore
-					}
-					args.remove(arg[i]);
+			else if (arg[i].startsWith("-debug=")) {
+				try {
+					debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
 				}
-				else
-					if ("-silent".equals(arg[i])) {
-						jcommand.silent();
-						args.remove(arg[i]);
-					}
-					else
-						if ("-nomsg".equals(arg[i])) {
-							nomsg = true;
-							args.remove(arg[i]);
-						}
-						else
-							if ("-nokeys".equals(arg[i])) {
-								nokeys = true;
-								args.remove(arg[i]);
-							}
-							else
-								if (("-h".equals(arg[i]) && !comm.equals("du")) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
-									help = true;
-									args.remove(arg[i]);
-								}
+				catch (@SuppressWarnings("unused") final NumberFormatException n) {
+					// ignore
+				}
+				args.remove(arg[i]);
+			}
+			else if ("-silent".equals(arg[i])) {
+				jcommand.silent();
+				args.remove(arg[i]);
+			}
+			else if ("-nomsg".equals(arg[i])) {
+				nomsg = true;
+				args.remove(arg[i]);
+			}
+			else if ("-nokeys".equals(arg[i])) {
+				nokeys = true;
+				args.remove(arg[i]);
+			}
+			else if (("-h".equals(arg[i]) && !comm.equals("du")) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
+				help = true;
+				args.remove(arg[i]);
+			}
 
 		if (!Arrays.asList(jAliEnCommandList).contains(comm) &&
 		// ( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) &&
@@ -470,15 +465,12 @@ public class JAliEnCOMMander extends Thread {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
 				if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
-				else
-					if ("whoami".equals(comm))
-						out.printOutln(getUsername());
-					else
-						if ("blackwhite".equals(comm))
-							out.blackwhitemode();
-						else
-							if ("color".equals(comm))
-								out.colourmode();
+				else if ("whoami".equals(comm))
+					out.printOutln(getUsername());
+				else if ("blackwhite".equals(comm))
+					out.blackwhitemode();
+				else if ("color".equals(comm))
+					out.colourmode();
 				// else if ("shutdown".equals(comm))
 				// jbox.shutdown();
 				// } else if (!"setshell".equals(comm)) {
@@ -516,14 +508,13 @@ public class JAliEnCOMMander extends Thread {
 						nomsg = false;
 						jcommand.printHelp();
 					}
-					else
-						if (jcommand.areArgumentsOk() && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
-							jcommand.run();
-						}
-						else {
-							out.setReturnCode(-4, "Command requires an argument");
-							jcommand.printHelp();
-						}
+					else if (jcommand.areArgumentsOk() && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
+						jcommand.run();
+					}
+					else {
+						out.setReturnCode(-4, "Command requires an argument");
+						jcommand.printHelp();
+					}
 				}
 			}
 			catch (final Exception e) {

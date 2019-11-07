@@ -43,11 +43,10 @@ public class Register {
 				TaskQueueUtils.putJobLog(entry.getQueueId().longValue(), "error", "File " + member + ": doesn't exist or has 0 size. Skip.", null);
 				continue;
 			}
-			else
-				if (!md5s.containsKey(member)) {
-					TaskQueueUtils.putJobLog(entry.getQueueId().longValue(), "error", "File " + member + ": unable to calculate MD5. Skip.", null);
-					continue;
-				}
+			else if (!md5s.containsKey(member)) {
+				TaskQueueUtils.putJobLog(entry.getQueueId().longValue(), "error", "File " + member + ": unable to calculate MD5. Skip.", null);
+				continue;
+			}
 
 			// we have size and md5!
 			boolean r = register(outputDir + member, base_pfn + member, null, md5s.get(member), sizes.get(member).longValue(), "no_se", user, entry.getQueueId().longValue());
@@ -151,9 +150,8 @@ public class Register {
 				// throw new
 				// IOException("You are trying to associate the wrong entries here ("+g.size+", "+g.md5+") != ("+size+", "+md5+")");
 			}
-			else
-				if (!AuthorizationChecker.canWrite(g, user))
-					throw new IOException("User " + user.getName() + " cannot update GUID " + uuid);
+			else if (!AuthorizationChecker.canWrite(g, user))
+				throw new IOException("User " + user.getName() + " cannot update GUID " + uuid);
 		}
 
 		if (!g.exists()) {

@@ -19,37 +19,40 @@ public class ManageSysEntities {
 	 * @param username
 	 * @param uid
 	 * @param role
-	 * @param certSubject 
+	 * @param certSubject
 	 * @return status of the user add
 	 */
 	public static boolean addUser(final String username, final String uid,
 			final String role, final String certSubject) {
 
 		try {
-			CreateLDAP.addUserToLDAP(username, uid, role,certSubject);
-			//CreateLDAP.addRoleToLDAP(username, username);
+			CreateLDAP.addUserToLDAP(username, uid, role, certSubject);
+			// CreateLDAP.addRoleToLDAP(username, username);
 			CreateLDAP.addRoleToLDAP(role, username);
-						
-		} catch (Exception e) {
+
+		}
+		catch (Exception e) {
 			System.out.println("LDAP Exception...");
 			e.printStackTrace();
 			return false;
 		}
 
 		try {
-			
+
 			CreateDB.addUserToDB(username, uid);
 
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			System.out.println("DB Syntax Exception: ");
 			e.printStackTrace();
 			return false;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.out.println("DB Exception...");
 			e.printStackTrace();
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -67,7 +70,8 @@ public class ManageSysEntities {
 		try {
 			CreateLDAP
 					.addSiteToLDAP(sitename, domain, logdir, cachedir, tmpdir);
-		} catch (NamingException ne) {
+		}
+		catch (NamingException ne) {
 			ne.printStackTrace();
 			return false;
 		}
@@ -77,10 +81,10 @@ public class ManageSysEntities {
 
 	/**
 	 * @param seName
-	 * @param seNumber 
-	 * @param site 
+	 * @param seNumber
+	 * @param site
 	 * @param iodeamon
-	 * @param qos 
+	 * @param qos
 	 * @return status of the SE add
 	 */
 	public static boolean addSE(final String seName, final String seNumber, final String site,
@@ -91,15 +95,16 @@ public class ManageSysEntities {
 			final String storedir = TestConfig.se_home + "/" + seName;
 
 			CreateLDAP
-				.addSEToLDAP(seName,site,iodeamon,storedir,qos);
-			
+					.addSEToLDAP(seName, site, iodeamon, storedir, qos);
+
 			File se = new File(storedir);
 			if (!se.mkdir())
 				throw new TestException("Could not create SE directory: "
 						+ storedir);
 
 			CreateDB.addSEtoDB(seName, seNumber, site, iodeamon, storedir, qos, freespace);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}

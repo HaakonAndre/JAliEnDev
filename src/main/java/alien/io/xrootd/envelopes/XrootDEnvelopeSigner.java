@@ -80,7 +80,8 @@ public class XrootDEnvelopeSigner {
 
 			if (certChain != null)
 				jAuthZPubKey = (RSAPublicKey) certChain[0].getPublicKey();
-		} catch (final IOException | PKCSException | OperatorCreationException e) {
+		}
+		catch (final IOException | PKCSException | OperatorCreationException e) {
 			logger.log(Level.WARNING, "Authen keys could not be loaded from " + JAuthZPrivLocation + "/" + JAuthZPubLocation, e);
 		}
 
@@ -92,7 +93,8 @@ public class XrootDEnvelopeSigner {
 			if (certChain != null)
 				sePubKey = (RSAPublicKey) certChain[0].getPublicKey();
 
-		} catch (final IOException | PKCSException | OperatorCreationException e) {
+		}
+		catch (final IOException | PKCSException | OperatorCreationException e) {
 			logger.log(Level.WARNING, "SE keys could not be loaded from " + SEPrivLocation + "/" + SEPubLocation, e);
 		}
 
@@ -113,7 +115,8 @@ public class XrootDEnvelopeSigner {
 		final long issued = System.currentTimeMillis() / 1000L;
 		final long expires = issued + 60 * 60 * 24;
 
-		final String toBeSigned = envelope.getUnsignedEnvelope() + "-issuer-issued-expires&issuer=" + JAliEnIAm.whatsMyName() + "_" + ConfigUtils.getLocalHostname() + "&issued=" + issued + "&expires=" + expires;
+		final String toBeSigned = envelope.getUnsignedEnvelope() + "-issuer-issued-expires&issuer=" + JAliEnIAm.whatsMyName() + "_" + ConfigUtils.getLocalHostname() + "&issued=" + issued + "&expires="
+				+ expires;
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 

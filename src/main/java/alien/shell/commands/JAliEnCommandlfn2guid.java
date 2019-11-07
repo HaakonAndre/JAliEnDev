@@ -26,14 +26,12 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 
 		if (lfn == null)
 			commander.setReturnCode(1, "Could not get the LFN [" + lfnName + "].");
+		else if (lfn.isDirectory())
+			commander.setReturnCode(2, "The LFN is a directory [" + lfn.getCanonicalName() + "].");
+		else if (lfn.guid != null)
+			commander.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
 		else
-			if (lfn.isDirectory())
-				commander.setReturnCode(2, "The LFN is a directory [" + lfn.getCanonicalName() + "].");
-			else
-				if (lfn.guid != null)
-					commander.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
-				else
-					commander.setReturnCode(3, "Could not get the GUID for [" + lfn.getCanonicalName() + "].");
+			commander.setReturnCode(3, "Could not get the GUID for [" + lfn.getCanonicalName() + "].");
 
 		commander.outNextResult();
 	}

@@ -111,7 +111,8 @@ public class FSMessageDequeue {
 					it.remove();
 
 					return (Request) o;
-				} catch (ClassNotFoundException | IOException e) {
+				}
+				catch (ClassNotFoundException | IOException e) {
 					logger.log(Level.WARNING, "Exception processing " + f.getAbsolutePath(), e);
 				}
 			}
@@ -119,7 +120,8 @@ public class FSMessageDequeue {
 			if (timeout != 0)
 				try {
 					Thread.sleep(sleepTime);
-				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					return null;
 				}
 		} while (timeout < 0 || (timeout > 0 && (System.currentTimeMillis() - lStart < timeout)));
@@ -170,7 +172,8 @@ public class FSMessageDequeue {
 					final Request reply = q.dispatchRequest(r);
 
 					System.err.println("And got back:\n" + reply);
-				} catch (final Throwable t) {
+				}
+				catch (final Throwable t) {
 					System.err.println(t);
 					t.printStackTrace();
 				}
@@ -189,7 +192,8 @@ public class FSMessageDequeue {
 
 					q.enqueueReply(reply);
 
-				} catch (final Throwable t) {
+				}
+				catch (final Throwable t) {
 					System.err.println(t);
 					t.printStackTrace();
 				}

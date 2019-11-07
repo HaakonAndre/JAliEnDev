@@ -146,7 +146,8 @@ public class Functions {
 			if (exitStatus.getExtProcExitStatus() == 0)
 				return exitStatus.getStdOut().trim();
 
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		}
+		catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 		System.err.println("Command [" + command + "] not found.");
@@ -163,12 +164,12 @@ public class Functions {
 		String path_resolved = "";
 		for (String dir : path_splitted) {
 			path_resolved += '/';
-			if( dir.startsWith("$") ) {		//it's an env variable
+			if (dir.startsWith("$")) { // it's an env variable
 				dir = System.getenv(dir.substring(1));
 			}
 			path_resolved += dir;
 		}
-		if( path_resolved.startsWith("//") ) {
+		if (path_resolved.startsWith("//")) {
 			path_resolved = path_resolved.substring(1);
 		}
 		return path_resolved;
@@ -189,14 +190,16 @@ public class Functions {
 				if (entry.isDirectory() && !file.exists()) {
 					if (!file.mkdirs())
 						System.err.println("Cannot create base directory: " + file);
-				} else {
+				}
+				else {
 					if (!file.getParentFile().exists()) {
 						final File f = file.getParentFile();
 
 						if (f.exists()) {
 							if (!f.isDirectory())
 								System.err.println("File exists but is not a directory: " + f);
-						} else if (!f.mkdirs())
+						}
+						else if (!f.mkdirs())
 							System.err.println("Cannot create directory: " + f);
 					}
 

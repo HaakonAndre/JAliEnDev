@@ -94,9 +94,11 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.jdl = options.has("jdl");
 			this.sort_desc = options.has("desc");
 			this.toSE = (String) options.valueOf("destination");
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			throw e;
-		} catch (final NumberFormatException e) {
+		}
+		catch (final NumberFormatException e) {
 			commander.printErrln("Please provide a valid number for -list argument");
 			throw e;
 		}

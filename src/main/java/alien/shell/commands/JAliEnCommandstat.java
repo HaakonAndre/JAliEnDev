@@ -157,7 +157,8 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 
 			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(optionToString(options.nonOptionArguments()));
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

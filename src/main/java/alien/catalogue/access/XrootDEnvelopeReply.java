@@ -82,8 +82,8 @@ public class XrootDEnvelopeReply implements Serializable {
 			spfn = rSE.seioDaemons + "/" + spfn;
 
 		System.out.println("pfn: " + spfn + " guid: " + guid + " size: " + size + " md5: " + md5);
-		
-		System.out.println(" se: " + (rSE!=null ? rSE.seName : "null"));
+
+		System.out.println(" se: " + (rSE != null ? rSE.seName : "null"));
 
 		this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
 

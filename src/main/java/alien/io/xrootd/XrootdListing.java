@@ -117,7 +117,8 @@ public class XrootdListing {
 					XrootDEnvelopeSigner.signEnvelope(env);
 					envelope = "?" + env.getSignedEnvelope();
 				}
-			} catch (final GeneralSecurityException e) {
+			}
+			catch (final GeneralSecurityException e) {
 				e.printStackTrace();
 				return;
 			}
@@ -150,7 +151,8 @@ public class XrootdListing {
 			}
 			else
 				throw new IOException("Cannot execute command: " + command);
-		} catch (final InterruptedException ie) {
+		}
+		catch (final InterruptedException ie) {
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
 
@@ -188,12 +190,12 @@ public class XrootdListing {
 			if (sLine.startsWith("-") || sLine.startsWith("d"))
 				try {
 					entries.add(new XrootdFile(sLine.trim()));
-				} catch (final IllegalArgumentException iae) {
+				}
+				catch (final IllegalArgumentException iae) {
 					logger.log(Level.WARNING, "Exception parsing response of " + command + ", line was:\n" + sLine, iae);
 				}
-			else
-				if (sLine.length() > 0 && sLine.trim().length() > 0)
-					logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
+			else if (sLine.length() > 0 && sLine.trim().length() > 0)
+				logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
 	}
 
 	/**

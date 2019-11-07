@@ -44,7 +44,8 @@ public class CreateAndCheckEnvelopes {
 			authenPrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(AuthenPrivLocation, null);
 
 			authenPubKey = (RSAPublicKey) JAKeyStore.loadPubX509(AuthenPubLocation, false)[0].getPublicKey();
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -52,7 +53,8 @@ public class CreateAndCheckEnvelopes {
 			sePrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(SEPrivLocation, null);
 
 			sePubKey = (RSAPublicKey) JAKeyStore.loadPubX509(SEPubLocation, false)[0].getPublicKey();
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		}
+		catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -139,7 +141,8 @@ public class CreateAndCheckEnvelopes {
 
 			System.out.println("We decrypted: " + deticket5);
 
-		} catch (final GeneralSecurityException e) {
+		}
+		catch (final GeneralSecurityException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

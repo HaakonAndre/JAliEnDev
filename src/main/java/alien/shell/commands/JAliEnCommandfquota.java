@@ -42,12 +42,11 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 				commander.setReturnCode(2, "Error in parameter name");
 				return;
 			}
-			else
-				if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
-					commander.setReturnCode(3, "Error in value");
-					printHelp();
-					return;
-				}
+			else if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
+				commander.setReturnCode(3, "Error in value");
+				printHelp();
+				return;
+			}
 			// run the update
 			if (commander.q_api.setFileQuota(this.param_to_set, this.value_to_set.toString()))
 				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
@@ -97,7 +96,8 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			this.param_to_set = param;
 			try {
 				this.value_to_set = Long.valueOf(alArguments.get(3));
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			}
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// FIXME ignoring invalid numeric arguments
 			}
 		}

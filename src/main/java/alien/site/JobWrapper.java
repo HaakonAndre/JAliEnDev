@@ -52,8 +52,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	// Job variables
 	/**
-	 * @uml.property  name="jdl"
-	 * @uml.associationEnd  
+	 * @uml.property name="jdl"
+	 * @uml.associationEnd
 	 */
 	private JDL jdl;
 	private long queueId;
@@ -64,28 +64,28 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private String ce;
 	private String legacyToken;
 	/**
-	 * @uml.property  name="jobStatus"
-	 * @uml.associationEnd  
+	 * @uml.property name="jobStatus"
+	 * @uml.associationEnd
 	 */
 	private JobStatus jobStatus;
 
 	// Other
 	/**
-	 * @uml.property  name="packMan"
-	 * @uml.associationEnd  
+	 * @uml.property name="packMan"
+	 * @uml.associationEnd
 	 */
 	private PackMan packMan;
 	private String hostName;
 	private final int pid;
 	/**
-	 * @uml.property  name="commander"
-	 * @uml.associationEnd  
+	 * @uml.property name="commander"
+	 * @uml.associationEnd
 	 */
 	private final JAliEnCOMMander commander;
 
 	/**
-	 * @uml.property  name="c_api"
-	 * @uml.associationEnd  
+	 * @uml.property name="c_api"
+	 * @uml.associationEnd
 	 */
 	private final CatalogueApiUtils c_api;
 
@@ -117,21 +117,23 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			siteMap = (HashMap<String, Object>) inputFromJobAgent.readObject();
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 			legacyToken = (String) inputFromJobAgent.readObject();
-			
+
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
-			logger.log(Level.INFO, "We received the following CE "+ ce);
-		} catch (final IOException | ClassNotFoundException e) {
+			logger.log(Level.INFO, "We received the following CE " + ce);
+		}
+		catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
 		}
 
-		if((tokenCert != null) && (tokenKey != null)){
+		if ((tokenCert != null) && (tokenKey != null)) {
 			try {
 				JAKeyStore.createTokenFromString(tokenCert, tokenKey);
 				logger.log(Level.INFO, "Token successfully created");
 				JAKeyStore.loadKeyStore();
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				logger.log(Level.SEVERE, "Error. Could not load tokenCert and/or tokenKey" + e);
 			}
 		}
@@ -139,7 +141,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		hostName = (String) siteMap.get("Host");
 		packMan = (PackMan) siteMap.get("PackMan");
 
-		if(packMan == null)
+		if (packMan == null)
 			packMan = new CVMFS("");
 
 		commander = JAliEnCOMMander.getInstance();
@@ -149,7 +151,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	}
 
 	@Override
-	public void run(){
+	public void run() {
 
 		logger.log(Level.INFO, "Starting JobWrapper in " + hostName);
 
@@ -158,7 +160,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		try {
 			logger.log(Level.INFO, "Trying to start Tomcat");
 			TomcatServer.startTomcatServer();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "Unable to start Tomcat." + e);
 		}
 
@@ -168,17 +171,17 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		final int runCode = runJob();
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
-		
-		if(runCode > 0)
-			System.exit(0); //Positive runCodes originate from the payload. Ignore. All OK here as far as we're concerned.
+
+		if (runCode > 0)
+			System.exit(0); // Positive runCodes originate from the payload. Ignore. All OK here as far as we're concerned.
 		else
 			System.exit(Math.abs(runCode));
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
 		Map<String, String> ok = null;
-		
-		if(packMan == null) {
+
+		if (packMan == null) {
 			logger.log(Level.WARNING, "Packman is null!");
 			return ok;
 		}
@@ -187,12 +190,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			ok = packMan.installPackage(username, pack, null);
 			if (ok == null) {
 				logger.log(Level.INFO, "Error installing the package " + pack);
-				//monitor.sendParameter("ja_status", "ERROR_IP");
+				// monitor.sendParameter("ja_status", "ERROR_IP");
 				logger.log(Level.SEVERE, "Error installing " + pack);
 				System.exit(1);
 			}
 		}
-		
+
 		return ok;
 	}
 
@@ -210,14 +213,14 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			// run payload
 			final int execExitCode = execute();
-			if (execExitCode != 0){
+			if (execExitCode != 0) {
 				logger.log(Level.SEVERE, "Failed to run payload");
 
-				if(execExitCode < 0) 
-					commander.q_api.putJobLog(queueId, "trace", "Failed to start execution of payload. Exit code: " + Math.abs(execExitCode));				
-				else 
+				if (execExitCode < 0)
+					commander.q_api.putJobLog(queueId, "trace", "Failed to start execution of payload. Exit code: " + Math.abs(execExitCode));
+				else
 					commander.q_api.putJobLog(queueId, "trace", "Job started, but did not execute correctly: " + execExitCode);
-				
+
 				if (jdl.gets("OutputErrorE") != null)
 					return uploadOutputFiles(true) ? execExitCode : -1;
 
@@ -226,29 +229,30 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			}
 
 			final int valExitCode = validate();
-			if (valExitCode != 0){
+			if (valExitCode != 0) {
 				logger.log(Level.SEVERE, "Validation failed");
-				
-				if(valExitCode < 0)
+
+				if (valExitCode < 0)
 					commander.q_api.putJobLog(queueId, "trace", "Failed to start validation. Exit code: " + Math.abs(valExitCode));
-				else 	
+				else
 					commander.q_api.putJobLog(queueId, "trace", "Validation failed. Exit code: " + valExitCode);
 
 				final String fileTrace = getTraceFromFile();
-				if(fileTrace != null)
+				if (fileTrace != null)
 					commander.q_api.putJobLog(queueId, "trace", fileTrace);
 
 				changeStatus(JobStatus.ERROR_V);
 				return valExitCode;
 			}
 
-			if (!uploadOutputFiles(false)){
+			if (!uploadOutputFiles(false)) {
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
 
 			return 0;
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Unable to handle job" + e);
 			return -1;
 		}
@@ -273,9 +277,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		final File fExe = new File(currentDir, cmdStrip);
 
-		if (!fExe.exists()){
-			logger.log(Level.SEVERE,"ERROR. Executable was not found");
-			return -2; }
+		if (!fExe.exists()) {
+			logger.log(Level.SEVERE, "ERROR. Executable was not found");
+			return -2;
+		}
 
 		fExe.setExecutable(true);
 
@@ -297,13 +302,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
 		final HashMap<String, String> jBoxEnv = ConfigUtils.exportJBoxVariables(0);
-		
+
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 		processEnv.putAll(jBoxEnv);
 		processEnv.put("JALIEN_TOKEN_CERT", tokenCert);
 		processEnv.put("JALIEN_TOKEN_KEY", tokenKey);
-		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); //add legacy token
+		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); // add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
@@ -314,19 +319,21 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		try {
 			p = pBuilder.start();
 
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			logger.log(Level.INFO, "Exception running " + cmd + " : " + ioe.getMessage());
 			return -5;
 		}
 
-		if(!p.isAlive()){
+		if (!p.isAlive()) {
 			logger.log(Level.INFO, "The process for: " + cmd + " has terminated. Failed to execute?");
 			return p.exitValue();
 		}
 
 		try {
 			p.waitFor();
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			logger.log(Level.INFO, "Interrupted while waiting for process to finish execution" + e);
 		}
 
@@ -456,7 +463,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			c.setName("jobinputdata");
 			final List<String> datalist = jdl.getInputData(true);
 
-			//TODO: Change
+			// TODO: Change
 			for (final String s : datalist) {
 				final LFN l = c_api.getLFN(s);
 				if (l == null)
@@ -468,7 +475,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			Files.write(Paths.get(currentDir.getAbsolutePath() + "/" + list), content.getBytes());
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "Problem dumping XML: " + e.toString());
 		}
 
@@ -479,7 +487,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		String packagestring = "";
 		final HashMap<String, String> packs = (HashMap<String, String>) jdl.getPackages();
 		HashMap<String, String> envmap = new HashMap<>();
-
 
 		logger.log(Level.INFO, "Preparing to install packages");
 		if (packs != null) {
@@ -520,7 +527,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		logger.log(Level.INFO, "queueId: " + queueId);
 		logger.log(Level.INFO, "outputDir: " + outputDir);
-		logger.log(Level.INFO, "We are the current user: "  + commander.getUser().getName());
+		logger.log(Level.INFO, "We are the current user: " + commander.getUser().getName());
 
 		if (c_api.getLFN(outputDir) == null) {
 			final LFN outDir = c_api.createCatalogueDirectory(outputDir);
@@ -546,11 +553,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					// Use upload instead
 					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName());
 
-					String args = "-w,-S," + 
-							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") + 
+					String args = "-w,-S," +
+							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") +
 							",-j," + String.valueOf(queueId) + "";
 
-					//Don't commit in case of ERROR_E
+					// Don't commit in case of ERROR_E
 					if (ERROR_E)
 						args += ",-nc";
 
@@ -566,12 +573,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
 						break;
 					}
-					else
-						if (lower_output.contains("failed")) {
-							uploadedAllOutFiles = false;
-							commander.q_api.putJobLog(queueId, "trace", output_upload);
-							break;
-						}
+					else if (lower_output.contains("failed")) {
+						uploadedAllOutFiles = false;
+						commander.q_api.putJobLog(queueId, "trace", output_upload);
+						break;
+					}
 
 					if (!ERROR_E) {
 						// Register lfn links to archive
@@ -583,7 +589,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					commander.q_api.putJobLog(queueId, "trace", "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 				}
 
-			} catch (final IOException e) {
+			}
+			catch (final IOException e) {
 				logger.log(Level.WARNING, "IOException received while attempting to upload files", e);
 				uploadedAllOutFiles = false;
 			}
@@ -592,17 +599,18 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		createAndAddResultsJDL(filesTable);
 
 		if (!uploadedAllOutFiles) {
-			changeStatus(JobStatus.ERROR_SV); 
+			changeStatus(JobStatus.ERROR_SV);
 			return false;
-		}//else 
-			//changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
+		} // else
+			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
 		if (!ERROR_E) {
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
 			else
 				changeStatus(JobStatus.DONE);
-		} else 
+		}
+		else
 			changeStatus(JobStatus.ERROR_E);
 
 		return uploadedAllOutFiles;
@@ -639,7 +647,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
 				}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "There was a problem getting JDLVariables: " + e);
 		}
 
@@ -667,22 +676,23 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		extrafields.put("exechost", this.ce);
 
 		// if final status with saved files, we set the path
-		if (jobStatus == JobStatus.DONE || jobStatus == JobStatus.DONE_WARN || jobStatus == JobStatus.ERROR_E || jobStatus == JobStatus.ERROR_V) 
+		if (jobStatus == JobStatus.DONE || jobStatus == JobStatus.DONE_WARN || jobStatus == JobStatus.ERROR_E || jobStatus == JobStatus.ERROR_V)
 			extrafields.put("path", getJobOutputDir());
-		else
-			if (jobStatus == JobStatus.RUNNING) {
-				extrafields.put("spyurl", hostName + ":" + TomcatServer.getPort());
-				extrafields.put("node",  hostName);
-			} try {
-				//Set the updated status
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+		else if (jobStatus == JobStatus.RUNNING) {
+			extrafields.put("spyurl", hostName + ":" + TomcatServer.getPort());
+			extrafields.put("node", hostName);
+		}
+		try {
+			// Set the updated status
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 
-				//Also write status to file for the JobAgent to see
-				Files.writeString(Paths.get(currentDir.getAbsolutePath() + "/.jobstatus"), newStatus.name());
-			} catch (final Exception e) {
-				logger.log(Level.WARNING, "An error occurred when attempting to change current job status: " + e);
-			}
-			return;
+			// Also write status to file for the JobAgent to see
+			Files.writeString(Paths.get(currentDir.getAbsolutePath() + "/.jobstatus"), newStatus.name());
+		}
+		catch (final Exception e) {
+			logger.log(Level.WARNING, "An error occurred when attempting to change current job status: " + e);
+		}
+		return;
 	}
 
 	/**
@@ -693,9 +703,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
-		else
-			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		else if (outputDir == null)
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
 	}
@@ -706,7 +715,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		if (traceFile.exists()) {
 			try {
 				return new String(Files.readAllBytes(traceFile.toPath()));
-			}catch (final Exception e){
+			}
+			catch (final Exception e) {
 				logger.log(Level.WARNING, "An error occurred when reading .alienValidation.trace: " + e);
 			}
 		}
@@ -717,7 +727,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private void createAndAddResultsJDL(ParsedOutput filesTable) {
 
 		final ArrayList<String> jdlOutput = new ArrayList<>();
-		for(final OutputEntry entry : filesTable.getEntries()){
+		for (final OutputEntry entry : filesTable.getEntries()) {
 
 			String entryString = entry.getName();
 			File entryFile = new File(currentDir.getAbsolutePath() + "/" + entryString);
@@ -726,25 +736,26 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			try {
 				entryString += ";" + IOUtils.getMD5(entryFile);
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				logger.log(Level.WARNING, "Could not generate MD5 for a file: " + e);
 			}
 
 			jdlOutput.add(entryString);
 
-			//Also add the archive files to outputlist
+			// Also add the archive files to outputlist
 			if (entry.isArchive()) {
 
 				final ArrayList<String> archiveFiles = entry.getFilesIncluded();
 				final HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
 				final HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
-				for(final String archiveEntry : archiveFiles) {
+				for (final String archiveEntry : archiveFiles) {
 
 					String archiveEntryString = archiveEntry;
 
 					archiveEntryString += ";" + archiveSizes.get(archiveEntry);
 					archiveEntryString += ";" + archiveMd5s.get(archiveEntry);
-					archiveEntryString += ";" + entry.getName(); //name of its archive
+					archiveEntryString += ";" + entry.getName(); // name of its archive
 
 					jdlOutput.add(archiveEntryString);
 				}

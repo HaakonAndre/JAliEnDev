@@ -220,7 +220,8 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 			bD = options.has("d");
 			bH = options.has("h");
 			bY = options.has("y");
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

@@ -17,17 +17,17 @@ public class AccessTicket implements Serializable {
 	 * Access type
 	 */
 	public final AccessType type;
-	
+
 	/**
 	 * XrootD envelope
 	 */
 	public final XrootDEnvelope envelope;
-	
+
 	/**
 	 * @param type
-	 * @param envelope 
+	 * @param envelope
 	 */
-	public AccessTicket(final AccessType type, final XrootDEnvelope envelope){
+	public AccessTicket(final AccessType type, final XrootDEnvelope envelope) {
 		this.type = type;
 		this.envelope = envelope;
 	}
@@ -35,7 +35,7 @@ public class AccessTicket implements Serializable {
 	/**
 	 * @return access type, see the constants of this class
 	 */
-	public AccessType getAccessType(){
+	public AccessType getAccessType() {
 		return type;
 	}
 }

@@ -149,7 +149,8 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 				lfnOrGuid = options.nonOptionArguments().iterator().next().toString();
 			else
 				printHelp();
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

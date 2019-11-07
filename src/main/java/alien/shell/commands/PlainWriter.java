@@ -90,7 +90,8 @@ public class PlainWriter extends UIPrintWriter {
 		try {
 			os.write(line.getBytes());
 			os.flush();
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 			logger.log(Level.FINE, "Could not write to OutputStream" + line, e);
 		}

@@ -131,10 +131,12 @@ public class HTCONDOR extends BatchQueue {
 		ArrayList<String> proxy_renewal_output = null;
 		try {
 			proxy_renewal_output = executeCommand(proxy_renewal_cmd);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			this.logger.info(String.format("[HTCONDOR] Prolem while executing command: %s", proxy_renewal_cmd));
 			e.printStackTrace();
-		} finally {
+		}
+		finally {
 			if (proxy_renewal_output != null) {
 				this.logger.info("Proxy renewal output:\n");
 				for (String line : proxy_renewal_output) {
@@ -161,7 +163,8 @@ public class HTCONDOR extends BatchQueue {
 		if (!(log_folder.exists()) || !(log_folder.isDirectory())) {
 			try {
 				log_folder.mkdir();
-			} catch (SecurityException e) {
+			}
+			catch (SecurityException e) {
 				this.logger.info(String.format("[HTCONDOR] Couldn't create log folder: %s", log_folder_path));
 				e.printStackTrace();
 			}
@@ -257,10 +260,12 @@ public class HTCONDOR extends BatchQueue {
 			List<String> temp_file_lines = null;
 			try {
 				temp_file_lines = Files.readAllLines(Paths.get(this.temp_file.getAbsolutePath()), StandardCharsets.UTF_8);
-			} catch (IOException e1) {
+			}
+			catch (IOException e1) {
 				this.logger.info("Error reading old temp file");
 				e1.printStackTrace();
-			} finally {
+			}
+			finally {
 				if (temp_file_lines != null) {
 					String temp_file_lines_str = "";
 					for (String line : temp_file_lines) {
@@ -272,7 +277,8 @@ public class HTCONDOR extends BatchQueue {
 						}
 						try {
 							this.temp_file = File.createTempFile("htc-submit.", ".jdl");
-						} catch (IOException e) {
+						}
+						catch (IOException e) {
 							this.logger.info("Error creating temp file");
 							e.printStackTrace();
 							return;
@@ -284,7 +290,8 @@ public class HTCONDOR extends BatchQueue {
 		else {
 			try {
 				this.temp_file = File.createTempFile("htc-submit.", ".jdl");
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				this.logger.info("Error creating temp file");
 				e.printStackTrace();
 				return;
@@ -297,7 +304,8 @@ public class HTCONDOR extends BatchQueue {
 		try (PrintWriter out = new PrintWriter(this.temp_file.getAbsolutePath())) {
 			out.println(submit_cmd);
 			out.close();
-		} catch (FileNotFoundException e) {
+		}
+		catch (FileNotFoundException e) {
 			this.logger.info("Error writing to temp file");
 			e.printStackTrace();
 		}
@@ -335,11 +343,13 @@ public class HTCONDOR extends BatchQueue {
 			}
 
 			this.logger.info(String.format("Custom attributes added from file: %s.", path));
-		} catch (FileNotFoundException e) {
+		}
+		catch (FileNotFoundException e) {
 			this.logger.info(String.format("Could not find file: %s.\n", path));
 			e.printStackTrace();
 			return "";
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			this.logger.info(String.format("Error while working with file: %s.\n", path));
 			e.printStackTrace();
 			return file_contents;
@@ -389,11 +399,13 @@ public class HTCONDOR extends BatchQueue {
 		ArrayList<String> kill_cmd_output = null;
 		try {
 			kill_cmd_output = executeCommand(this.killCmd);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			this.logger.info(String.format("[HTCONDOR] Prolem while executing command: %s", this.killCmd));
 			e.printStackTrace();
 			return -1;
-		} finally {
+		}
+		finally {
 			if (kill_cmd_output != null) {
 				this.logger.info("Kill cmd output:\n");
 				for (String line : kill_cmd_output) {
@@ -452,7 +464,8 @@ public class HTCONDOR extends BatchQueue {
 				while ((output_str = reader.readLine()) != null)
 					proc_output.add(output_str.trim());
 			}
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Exception executing command: " + cmd, t);
 		}
 		this.logger.info("[HTCONDOR] Command output: " + proc_output);

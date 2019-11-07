@@ -347,10 +347,10 @@ public class ArchiveMemberDelete {
 				if (!entry.isDirectory()) {
 					// If the entry is a file, extract it
 					final Path parentFolder = filePath.getParent();
-					
-					if (parentFolder!=null)
+
+					if (parentFolder != null)
 						Files.createDirectories(parentFolder);
-					
+
 					extractFile(zipIn, filePath.toString());
 				}
 				else {

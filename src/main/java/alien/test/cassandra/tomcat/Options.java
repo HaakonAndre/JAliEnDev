@@ -43,7 +43,8 @@ public class Options {
 		if (value != null)
 			try {
 				return Integer.parseInt(value);
-			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 

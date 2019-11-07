@@ -7,7 +7,7 @@ import lazyj.ExtProperties;
 /**
  * @author nhardi
  *
- * Get a collection of properties files from arbitrary source.
+ *         Get a collection of properties files from arbitrary source.
  * @see ConfigManager
  *
  */

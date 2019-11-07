@@ -23,7 +23,8 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		try {
 			times = Integer.parseInt(alArguments.get(0));
 			args.remove(alArguments.get(0));
-		} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException e) {
 			printHelp();
 		}
 
@@ -33,7 +34,8 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		JAliEnBaseCommand comm = null;
 		try {
 			comm = JAliEnCOMMander.getCommand(command.toString(), new Object[] { commander, args });
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return;
 		}
@@ -55,7 +57,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 		for (final String s : args)
 			command.append(' ').append(s);
-		
+
 		commander.printOutln("\"" + command + "\" with #" + times + " tries,\tavr/total msec:\t\t" + (total / times) + "/" + total);
 	}
 

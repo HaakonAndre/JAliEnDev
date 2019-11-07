@@ -177,7 +177,8 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 
 				ResultSet results = session.execute(boundStatement);
 				init(results.one());
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				System.err.println("Exception trying to create LFN_CSD: " + e);
 				return;
 			}
@@ -215,7 +216,8 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 			canonicalName = path + child;
 			if (type == 'd')
 				canonicalName += "/";
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
 		}
 	}
@@ -394,7 +396,8 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 			for (Row row : results) {
 				ret.add(new LFN_CSD_OLD(row));
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.err.println("Exception trying to whereis: " + e);
 			return null;
 		}
@@ -489,7 +492,8 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 			for (Row row : results) {
 				pfns = (HashMap<Integer, String>) row.getMap("pfns", Integer.class, String.class);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.err.println("Exception trying to whereis: " + e);
 			return null;
 		}
@@ -541,17 +545,16 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 				boundStatement = new BoundStatement(statement);
 				boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata, guid);
 			}
-			else
-				if (type == 'm' || type == 'l') {
-					statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
-					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata);
-				}
-				else { // 'd'
-					statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?,?)");
-					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, Long.valueOf(size), String.valueOf(type));
-				}
+			else if (type == 'm' || type == 'l') {
+				statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+				boundStatement = new BoundStatement(statement);
+				boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata);
+			}
+			else { // 'd'
+				statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?,?)");
+				boundStatement = new BoundStatement(statement);
+				boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, Long.valueOf(size), String.valueOf(type));
+			}
 
 			boundStatement.setConsistencyLevel(cl);
 			session.execute(boundStatement);
@@ -567,7 +570,8 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 					session.execute(boundStatement);
 				}
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.err.println("Exception trying to insert: " + e);
 			return false;
 		}
@@ -640,7 +644,8 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 
 			ResultSet results = session.execute(boundStatement);
 			return results.getAvailableWithoutFetching() > 0;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			System.err.println("Exception trying to check existsLfn: " + e);
 			return false;
 		}

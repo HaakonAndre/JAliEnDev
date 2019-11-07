@@ -10,10 +10,10 @@ import java.util.logging.Logger;
  */
 public abstract class BatchQueue {
 	/**
-	 * Logging mechanism shared with the implementing code 
+	 * Logging mechanism shared with the implementing code
 	 */
 	protected Logger logger = null;
-	
+
 	/**
 	 * Common configuration mechanism with the BQ implementations
 	 */
@@ -40,5 +40,5 @@ public abstract class BatchQueue {
 	 * @return how many jobs were killed
 	 */
 	public abstract int kill();
-	
+
 }

@@ -125,7 +125,8 @@ public class PFNforReadOrDel extends Request {
 					}
 				}
 
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				logger.log(Level.SEVERE, "WE HAVE AN Exception", e);
 			}
 
@@ -136,9 +137,8 @@ public class PFNforReadOrDel extends Request {
 					for (final PFN pfn : pfns)
 						if (pfn.ticket.envelope == null)
 							logger.log(Level.WARNING, "Can't set archive anchor on " + pfn.pfn + " since the envelope is null");
-						else
-							if (entity instanceof LFN)
-								pfn.ticket.envelope.setArchiveAnchor((LFN) entity);
+						else if (entity instanceof LFN)
+							pfn.ticket.envelope.setArchiveAnchor((LFN) entity);
 			}
 			else
 				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");

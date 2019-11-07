@@ -158,7 +158,8 @@ public class RootPrintWriter extends UIPrintWriter {
 			stdout.clear();
 			stderr.clear();
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			logger.log(Level.SEVERE, "Could not write to OutputStream", e);
 		}

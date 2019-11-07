@@ -73,7 +73,7 @@ public class RealLFN extends Request {
 	}
 
 	/**
-	 * @return requested file name, if the request was started from a String 
+	 * @return requested file name, if the request was started from a String
 	 */
 	public String getRequestedName() {
 		return this.sLFN;

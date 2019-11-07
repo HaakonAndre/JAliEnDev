@@ -79,7 +79,8 @@ public class CpForTest extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
@@ -92,9 +93,11 @@ public class CpForTest extends Protocol {
 			// System.err.println(exitStatus.getStdOut());
 
 			return true;
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("delete aborted because " + t);
@@ -150,7 +153,8 @@ public class CpForTest extends Protocol {
 					exitStatus = p.waitFor();
 				else
 					throw new IOException("Cannot start the process");
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
@@ -169,12 +173,14 @@ public class CpForTest extends Protocol {
 
 			if (!checkDownloadedFile(target, pfn))
 				throw new IOException("Local file doesn't match catalogue details");
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			if (!target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			if (!target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
 
@@ -223,7 +229,8 @@ public class CpForTest extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
@@ -240,9 +247,11 @@ public class CpForTest extends Protocol {
 				throw new IOException(sMessage);
 			}
 			return pfn.ticket.envelope.getSignedEnvelope();
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("Get aborted because " + t);
@@ -260,7 +269,8 @@ public class CpForTest extends Protocol {
 
 		try {
 			return put(target, temp);
-		} finally {
+		}
+		finally {
 			TempFileManager.release(temp);
 		}
 	}

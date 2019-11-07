@@ -126,7 +126,8 @@ public class FSMessageEnqueue {
 		while ((System.currentTimeMillis() - lStart < timeout) && (!fIn.exists() || !fIn.canRead()))
 			try {
 				Thread.sleep(sleepTime);
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				throw new IOException("Interrupted wait", ie);
 			}
 
@@ -136,9 +137,11 @@ public class FSMessageEnqueue {
 		Object o;
 		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fIn))) {
 			o = ois.readObject();
-		} catch (final ClassNotFoundException e) {
+		}
+		catch (final ClassNotFoundException e) {
 			throw new IOException(e.getMessage());
-		} finally {
+		}
+		finally {
 			fIn.delete();
 		}
 

@@ -169,7 +169,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 			return "[LFN: " + lfnName + " - Size: " + fileSize + " - md5: " + md5Sum + "]";
 		}
 	}
-	
+
 	/**
 	 * Auxiliary class to store pfns we don't need to load senumbers, guids, caches...
 	 */
@@ -209,8 +209,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 	 */
 	public LFN_CVMFS(final String canonicalLFN) {
 		this.canonicalName = canonicalLFN;
-		
-		
+
 		if (canonicalLFN == null || canonicalLFN.length() == 0) {
 			exists = false;
 			return;
@@ -221,23 +220,22 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 			this.type = 'd';
 		else {
 			lfn = canonicalLFN.substring(canonicalLFN.lastIndexOf("/") + 1, canonicalLFN.length());
-			
+
 			Path path = Paths.get(canonicalLFN);
 			UserDefinedFileAttributeView view = Files.getFileAttributeView(path,
 					UserDefinedFileAttributeView.class);
-			
+
 			try {
 				// read xattrs
 				String[] fields = { "lfn", "size", "owner", "gowner", "perm", "ctime", "jobid", "guid" };
 				String[] values = new String[10];
-				
-				for (int i=0; i<fields.length; i++) {
+
+				for (int i = 0; i < fields.length; i++) {
 					ByteBuffer buffer = ByteBuffer.allocate(view.size(fields[i]));
 					view.read(fields[i], buffer);
 					buffer.flip();
 					values[i] = Charset.defaultCharset().decode(buffer).toString();
 				}
-				
 
 				this.type = 'f';
 				this.size = Long.parseLong(values[1]);
@@ -252,10 +250,11 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 				this.owner = values[2];
 				this.gowner = values[3];
 
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				e.printStackTrace();
 			}
-			
+
 			// zip members
 			try {
 				String zm = "zip_members";
@@ -263,12 +262,12 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 				view.read(zm, buffer);
 				buffer.flip();
 				zm = Charset.defaultCharset().decode(buffer).toString();
-				
+
 				this.type = 'a';
 				final JSONParser parser = new JSONParser();
-				final Object obj = parser.parse(zm);				
+				final Object obj = parser.parse(zm);
 				final JSONArray mem = (JSONArray) obj;
-				
+
 				if (mem != null && mem.size() > 0) {
 					this.type = 'a';
 					zipMembers = new LinkedHashSet<>();
@@ -288,17 +287,17 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 						zipMembers.add(new ZIPM(lfnName, fileSize, md5Sum));
 					}
 				}
-				
+
 			}
 			catch (@SuppressWarnings("unused") final Exception e) {
 				// No zip members
 			}
-			
+
 			// lfns collection
-			try (FileReader lfnfile = new FileReader(canonicalLFN); Scanner scannerFile = new Scanner(new File(canonicalLFN)) ) {
-				if (scannerFile.nextLine() != null){
+			try (FileReader lfnfile = new FileReader(canonicalLFN); Scanner scannerFile = new Scanner(new File(canonicalLFN))) {
+				if (scannerFile.nextLine() != null) {
 					final JSONParser parser = new JSONParser();
-					final Object obj = parser.parse(lfnfile);				
+					final Object obj = parser.parse(lfnfile);
 					final JSONArray colmembers = (JSONArray) obj;
 					this.type = 'c';
 					if (colmembers != null && colmembers.size() > 0) {
@@ -311,19 +310,19 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 			catch (@SuppressWarnings("unused") final Exception e) {
 				// No lfns
 			}
-			
+
 			// pfns
-			try  {
+			try {
 				String pfnsstring = "pfns";
 				ByteBuffer buffer = ByteBuffer.allocate(view.size(pfnsstring));
 				view.read(pfnsstring, buffer);
 				buffer.flip();
 				pfnsstring = Charset.defaultCharset().decode(buffer).toString();
-				
+
 				final JSONParser parser = new JSONParser();
-				final Object obj = parser.parse(pfnsstring);				
+				final Object obj = parser.parse(pfnsstring);
 				final JSONArray pfns = (JSONArray) obj;
-				
+
 				if (pfns != null && pfns.size() > 0) {
 					pfnCache = new LinkedHashSet<>();
 
@@ -340,10 +339,10 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 			catch (@SuppressWarnings("unused") final Exception e) {
 				// No pfns
 			}
-			
-			if( isFile() || isArchive() ){
+
+			if (isFile() || isArchive()) {
 				// md5
-				try  {
+				try {
 					String md5String = "md5";
 					ByteBuffer buffer = ByteBuffer.allocate(view.size(md5String));
 					view.read(md5String, buffer);
@@ -353,7 +352,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 				catch (@SuppressWarnings("unused") final Exception e) {
 					// No md5?
 				}
-			}	
+			}
 		}
 	}
 

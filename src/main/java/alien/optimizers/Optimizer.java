@@ -38,17 +38,17 @@ public class Optimizer extends Thread {
 		}
 
 		switch (type) {
-		case "catalogue":
-			startCatalogueOptimizers();
-			break;
-		case "job":
-			startJobOptimizers();
-			break;
-		case "transfer":
-			startTransferOptimizers();
-			break;
-		default:
-			startAllOptimizers();
+			case "catalogue":
+				startCatalogueOptimizers();
+				break;
+			case "job":
+				startJobOptimizers();
+				break;
+			case "transfer":
+				startTransferOptimizers();
+				break;
+			default:
+				startAllOptimizers();
 		}
 	}
 
@@ -64,7 +64,8 @@ public class Optimizer extends Thread {
 				final Optimizer optclass = (Optimizer) Class.forName(opt).getConstructor().newInstance();
 				logger.log(Level.INFO, "New catalogue optimizer: " + opt);
 				optclass.start();
-			} catch (ReflectiveOperationException e) {
+			}
+			catch (ReflectiveOperationException e) {
 				logger.log(Level.SEVERE, "Can't instantiate optimizer " + opt + "! " + e);
 			}
 	}

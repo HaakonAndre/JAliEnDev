@@ -45,18 +45,18 @@ import lia.util.Utils;
  */
 public class CatalogueToCVMFSThreads {
 
-	/** 
+	/**
 	 * Array of thread-dir
 	 */
 	static final HashMap<Long, LFN> activeThreadFolders = new HashMap<>();
 
 	/**
-	 *  Thread pool
+	 * Thread pool
 	 */
 	static ThreadPoolExecutor tPool = null;
 
 	/**
-	 *  Entries processed
+	 * Entries processed
 	 */
 	static final int origlimit = 500000;
 	/**
@@ -69,10 +69,10 @@ public class CatalogueToCVMFSThreads {
 	static AtomicInteger limit = new AtomicInteger(origlimit);
 
 	/**
-	 *  File for tracking created folders
+	 * File for tracking created folders
 	 */
 	static PrintWriter out = null;
-	
+
 	/**
 	 * Writer
 	 */
@@ -191,11 +191,10 @@ public class CatalogueToCVMFSThreads {
 					System.exit(-1);
 				}
 			}
-			else
-				if (!f.mkdirs()) {
-					System.err.println("Error creating base directory");
-					System.exit(-1);
-				}
+			else if (!f.mkdirs()) {
+				System.err.println("Error creating base directory");
+				System.exit(-1);
+			}
 		}
 
 		// Control-C catch
@@ -207,7 +206,8 @@ public class CatalogueToCVMFSThreads {
 				try {
 					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
 						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Something went wrong in shutdown!: " + e);
 				}
 
@@ -225,7 +225,8 @@ public class CatalogueToCVMFSThreads {
 						for (final LFN l : activeThreadFolders.values())
 							pendingTasks.println(l.lfn);
 					}
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					System.err.println("Something went wrong dumping tasks!: " + e.toString() + " - " + tQueue.toString());
 				}
 
@@ -246,7 +247,8 @@ public class CatalogueToCVMFSThreads {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -381,7 +383,8 @@ public class CatalogueToCVMFSThreads {
 
 					try {
 						tPool.submit(new Recurse(l));
-					} catch (final RejectedExecutionException ree) {
+					}
+					catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -389,149 +392,153 @@ public class CatalogueToCVMFSThreads {
 						return;
 					}
 				}
-				else
-					if (l.isCollection()) {
-						// Touch file
+				else if (l.isCollection()) {
+					// Touch file
+					try {
+						Files.createFile(Paths.get(suffix + l.getCanonicalName()));
+					}
+					catch (final IOException e) {
+						final String msg = "Can't create LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
+						failed_collections.println(msg);
+						failed_collections.flush();
+						return;
+					}
+
+					// Set xattrs
+					final Path path = Paths.get(suffix + l.getCanonicalName());
+					final UserDefinedFileAttributeView view = Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+
+					try (FileWriter file = new FileWriter(suffix + l.getCanonicalName())) {
+						view.write("lfn", Charset.defaultCharset().encode(l.getCanonicalName()));
+						view.write("size", Charset.defaultCharset().encode(String.valueOf(l.size)));
+						view.write("owner", Charset.defaultCharset().encode(l.getOwner()));
+						view.write("gowner", Charset.defaultCharset().encode(l.getGroup()));
+						view.write("perm", Charset.defaultCharset().encode(l.getPermissions()));
+						view.write("ctime", Charset.defaultCharset().encode(df.format(l.ctime)));
+						view.write("jobid", Charset.defaultCharset().encode(String.valueOf(l.jobid)));
+						view.write("guid", Charset.defaultCharset().encode(l.guid.toString()));
+
+						final JSONArray filesjson = new JSONArray();
+						for (final String s : l.listCollection())
+							filesjson.add(s);
+
+						String myJsonString = filesjson.toJSONString();
+						myJsonString = myJsonString.replaceAll("\\\\", "");
+						myJsonString = myJsonString.replaceAll(",", ",\n");
+						file.write(myJsonString);
+						// view.write("lfns", Charset.defaultCharset().encode(myJsonString));
+					}
+					catch (final IOException e) {
+						final String msg1 = "Can't set attr or write lfns LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Message: " + e.getMessage();
+						failed_collections.println(msg1);
+						failed_collections.flush();
 						try {
-							Files.createFile(Paths.get(suffix + l.getCanonicalName()));
-						} catch (final IOException e) {
-							final String msg = "Can't create LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
-							failed_collections.println(msg);
-							failed_collections.flush();
-							return;
+							Files.delete(path);
 						}
+						catch (final IOException e1) {
+							final String msg2 = "Can't delete failed LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e1;
+							failed_collections.println(msg2);
+							failed_collections.flush();
+						}
+						return;
+					}
+				}
+				else if (l.isFile()) {
 
-						// Set xattrs
-						final Path path = Paths.get(suffix + l.getCanonicalName());
-						final UserDefinedFileAttributeView view = Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+					if (members_of_archives.contains(l))
+						continue;
 
-						try (FileWriter file = new FileWriter(suffix + l.getCanonicalName())) {
-							view.write("lfn", Charset.defaultCharset().encode(l.getCanonicalName()));
-							view.write("size", Charset.defaultCharset().encode(String.valueOf(l.size)));
-							view.write("owner", Charset.defaultCharset().encode(l.getOwner()));
-							view.write("gowner", Charset.defaultCharset().encode(l.getGroup()));
-							view.write("perm", Charset.defaultCharset().encode(l.getPermissions()));
-							view.write("ctime", Charset.defaultCharset().encode(df.format(l.ctime)));
-							view.write("jobid", Charset.defaultCharset().encode(String.valueOf(l.jobid)));
-							view.write("guid", Charset.defaultCharset().encode(l.guid.toString()));
+					final List<LFN> zip_members = getZipMembers(whereis, l);
+					final boolean isArchive = zip_members != null && !zip_members.isEmpty();
 
-							final JSONArray filesjson = new JSONArray();
-							for (final String s : l.listCollection())
-								filesjson.add(s);
+					// Touch file
+					try {
+						Files.createFile(Paths.get(suffix + l.getCanonicalName()));
+					}
+					catch (final IOException e) {
+						final String msg = "Can't create LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
+						failed_files.println(msg);
+						failed_files.flush();
+						return;
+					}
 
-							String myJsonString = filesjson.toJSONString();
+					// Set xattrs
+					final Path path = Paths.get(suffix + l.getCanonicalName());
+					final UserDefinedFileAttributeView view = Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
+
+					try {
+						view.write("lfn", Charset.defaultCharset().encode(l.getCanonicalName()));
+						view.write("size", Charset.defaultCharset().encode(String.valueOf(l.size)));
+						view.write("owner", Charset.defaultCharset().encode(l.getOwner()));
+						view.write("gowner", Charset.defaultCharset().encode(l.getGroup()));
+						view.write("perm", Charset.defaultCharset().encode(String.valueOf(l.getPermissions())));
+						view.write("ctime", Charset.defaultCharset().encode(df.format(l.ctime)));
+						view.write("jobid", Charset.defaultCharset().encode(String.valueOf(l.jobid)));
+						view.write("guid", Charset.defaultCharset().encode(String.valueOf(l.guid)));
+						view.write("md5", Charset.defaultCharset().encode(l.md5));
+
+						Set<PFN> pfns = null;
+						// we have the pfns in the map
+						for (final GUID guidmap : whereis.keySet())
+							if (whereis.get(guidmap).equals(l))
+								pfns = guidmap.getPFNs();
+
+						if (pfns != null) {
+							final JSONArray pfnsjson = new JSONArray();
+							for (final PFN p : pfns) {
+								final JSONObject pfn = new JSONObject();
+								final String se = p.getSE().getName();
+								if (se == null) {
+									failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
+									failed_ses.flush();
+									continue;
+								}
+								pfn.put("se", se);
+								pfn.put("pfn", p.pfn);
+								pfnsjson.add(pfn);
+							}
+
+							String myJsonString = pfnsjson.toJSONString();
 							myJsonString = myJsonString.replaceAll("\\\\", "");
 							myJsonString = myJsonString.replaceAll(",", ",\n");
-							file.write(myJsonString);
-							// view.write("lfns", Charset.defaultCharset().encode(myJsonString));
-						} catch (final IOException e) {
-							final String msg1 = "Can't set attr or write lfns LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Message: " + e.getMessage();
-							failed_collections.println(msg1);
-							failed_collections.flush();
-							try {
-								Files.delete(path);
-							} catch (final IOException e1) {
-								final String msg2 = "Can't delete failed LFN collection: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e1;
-								failed_collections.println(msg2);
-								failed_collections.flush();
+							view.write("pfns", Charset.defaultCharset().encode(myJsonString));
+						}
+
+						if (isArchive) {
+							final JSONArray members = new JSONArray();
+							// we have an archive, we create ln per member
+							for (final LFN lfn_in_zip : zip_members) {
+								members_of_archives.add(lfn_in_zip);
+								final JSONObject entry = new JSONObject();
+								entry.put("lfn", lfn_in_zip.getFileName());
+								entry.put("size", String.valueOf(lfn_in_zip.size));
+								entry.put("md5", lfn_in_zip.md5);
+								members.add(entry);
 							}
-							return;
+
+							String myJsonString = members.toJSONString();
+							myJsonString = myJsonString.replaceAll("\\\\", "");
+							myJsonString = myJsonString.replaceAll(",", ",\n");
+							view.write("zip_members", Charset.defaultCharset().encode(myJsonString));
+
+							for (final LFN lfn_in_zip : zip_members)
+								Files.createSymbolicLink(Paths.get(suffix + lfn_in_zip.getCanonicalName()), Paths.get(l.getFileName()));
 						}
 					}
-					else
-						if (l.isFile()) {
-
-							if (members_of_archives.contains(l))
-								continue;
-
-							final List<LFN> zip_members = getZipMembers(whereis, l);
-							final boolean isArchive = zip_members != null && !zip_members.isEmpty();
-
-							// Touch file
-							try {
-								Files.createFile(Paths.get(suffix + l.getCanonicalName()));
-							} catch (final IOException e) {
-								final String msg = "Can't create LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
-								failed_files.println(msg);
-								failed_files.flush();
-								return;
-							}
-
-							// Set xattrs
-							final Path path = Paths.get(suffix + l.getCanonicalName());
-							final UserDefinedFileAttributeView view = Files.getFileAttributeView(path, UserDefinedFileAttributeView.class);
-
-							try {
-								view.write("lfn", Charset.defaultCharset().encode(l.getCanonicalName()));
-								view.write("size", Charset.defaultCharset().encode(String.valueOf(l.size)));
-								view.write("owner", Charset.defaultCharset().encode(l.getOwner()));
-								view.write("gowner", Charset.defaultCharset().encode(l.getGroup()));
-								view.write("perm", Charset.defaultCharset().encode(String.valueOf(l.getPermissions())));
-								view.write("ctime", Charset.defaultCharset().encode(df.format(l.ctime)));
-								view.write("jobid", Charset.defaultCharset().encode(String.valueOf(l.jobid)));
-								view.write("guid", Charset.defaultCharset().encode(String.valueOf(l.guid)));
-								view.write("md5", Charset.defaultCharset().encode(l.md5));
-
-								Set<PFN> pfns = null;
-								// we have the pfns in the map
-								for (final GUID guidmap : whereis.keySet())
-									if (whereis.get(guidmap).equals(l))
-										pfns = guidmap.getPFNs();
-
-								if (pfns != null) {
-									final JSONArray pfnsjson = new JSONArray();
-									for (final PFN p : pfns) {
-										final JSONObject pfn = new JSONObject();
-										final String se = p.getSE().getName();
-										if (se == null) {
-											failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
-											failed_ses.flush();
-											continue;
-										}
-										pfn.put("se", se);
-										pfn.put("pfn", p.pfn);
-										pfnsjson.add(pfn);
-									}
-
-									String myJsonString = pfnsjson.toJSONString();
-									myJsonString = myJsonString.replaceAll("\\\\", "");
-									myJsonString = myJsonString.replaceAll(",", ",\n");
-									view.write("pfns", Charset.defaultCharset().encode(myJsonString));
-								}
-
-								if (isArchive) {
-									final JSONArray members = new JSONArray();
-									// we have an archive, we create ln per member
-									for (final LFN lfn_in_zip : zip_members) {
-										members_of_archives.add(lfn_in_zip);
-										final JSONObject entry = new JSONObject();
-										entry.put("lfn", lfn_in_zip.getFileName());
-										entry.put("size", String.valueOf(lfn_in_zip.size));
-										entry.put("md5", lfn_in_zip.md5);
-										members.add(entry);
-									}
-
-									String myJsonString = members.toJSONString();
-									myJsonString = myJsonString.replaceAll("\\\\", "");
-									myJsonString = myJsonString.replaceAll(",", ",\n");
-									view.write("zip_members", Charset.defaultCharset().encode(myJsonString));
-
-									for (final LFN lfn_in_zip : zip_members)
-										Files.createSymbolicLink(Paths.get(suffix + lfn_in_zip.getCanonicalName()), Paths.get(l.getFileName()));
-								}
-							} catch (final IOException e) {
-								final String msg = "Can't set attr LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
-								failed_files.println(msg);
-								failed_files.flush();
-								try {
-									Files.delete(path);
-								} catch (final IOException e1) {
-									final String msg2 = "Can't delete failed LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e1;
-									failed_files.println(msg2);
-									failed_files.flush();
-								}
-							}
+					catch (final IOException e) {
+						final String msg = "Can't set attr LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
+						failed_files.println(msg);
+						failed_files.flush();
+						try {
+							Files.delete(path);
 						}
+						catch (final IOException e1) {
+							final String msg2 = "Can't delete failed LFN: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e1;
+							failed_files.println(msg2);
+							failed_files.flush();
+						}
+					}
+				}
 			}
 			// Remove from list
 			activeThreadFolders.remove(Long.valueOf(threadId));

@@ -34,7 +34,8 @@ public class FindOrphanFoldersOutput {
 
 			try {
 				jobjdl = new JDL(jobid);
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				System.err.println("Can't get job JDL: " + e);
 				return;
 			}
@@ -85,7 +86,8 @@ public class FindOrphanFoldersOutput {
 						System.out.println(ite.lfn + db.gets("lfn"));
 						outfile.println(ite.lfn + db.gets("lfn"));
 					}
-				} catch (FileNotFoundException e) {
+				}
+				catch (FileNotFoundException e) {
 					System.err.println("Could not write to file for: " + jobid + " :" + e);
 					return;
 				}

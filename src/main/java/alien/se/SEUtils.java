@@ -594,9 +594,8 @@ public final class SEUtils {
 		for (final PFN pfn : spfns)
 			if (SEs != null && SEs.contains(pfn.getSE()))
 				ret.add(pfn);
-			else
-				if (exSEs == null || !exSEs.contains(pfn.getSE()))
-					tail.add(pfn);
+			else if (exSEs == null || !exSEs.contains(pfn.getSE()))
+				tail.add(pfn);
 
 		ret.addAll(tail);
 		return ret;
@@ -722,14 +721,12 @@ public final class SEUtils {
 
 		if (toSE instanceof SE)
 			se = (SE) toSE;
+		else if (toSE instanceof String)
+			se = getSE((String) toSE);
+		else if (toSE instanceof Integer)
+			se = getSE((Integer) toSE);
 		else
-			if (toSE instanceof String)
-				se = getSE((String) toSE);
-			else
-				if (toSE instanceof Integer)
-					se = getSE((Integer) toSE);
-				else
-					throw new IllegalArgumentException("Invalid object type for the toSE parameter: " + toSE.getClass().getCanonicalName());
+			throw new IllegalArgumentException("Invalid object type for the toSE parameter: " + toSE.getClass().getCanonicalName());
 
 		if (se == null)
 			return null;
@@ -945,9 +942,8 @@ public final class SEUtils {
 				if (!source.seStoragePath.equals(dest.seStoragePath))
 					q1 += ", pfn=replace(replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "'), '"
 							+ Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath)) + "', '" + Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath)) + "')";
-				else
-					if (!source.seioDaemons.equals(dest.seioDaemons))
-						q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
+				else if (!source.seioDaemons.equals(dest.seioDaemons))
+					q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
 
 				q1 += " WHERE seNumber=" + source.seNumber;
 

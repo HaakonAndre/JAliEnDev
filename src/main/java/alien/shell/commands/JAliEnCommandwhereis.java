@@ -54,16 +54,14 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 			if (lfn != null && lfn.isFile() && lfn.guid != null)
 				guid = lfn.guid.toString();
-			else
-				if (GUIDUtils.isValidGUID(lfnOrGuid)) {
-					bG = true;
-					guid = lfnOrGuid;
-				}
-				else
-					if (lfn != null && !lfn.isFile()) {
-						commander.setReturnCode(2, "The path you indicated is not a file: " + lfnOrGuid);
-						return;
-					}
+			else if (GUIDUtils.isValidGUID(lfnOrGuid)) {
+				bG = true;
+				guid = lfnOrGuid;
+			}
+			else if (lfn != null && !lfn.isFile()) {
+				commander.setReturnCode(2, "The path you indicated is not a file: " + lfnOrGuid);
+				return;
+			}
 		}
 
 		if (guid != null) {
@@ -117,11 +115,10 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 					commander.printOutln("\t " + padRight(se, 30) + " pfn => " + pfn.pfn + "\n");
 				}
 			}
+			else if (pfns == null)
+				commander.setReturnCode(5, "GUID " + guid + " does not exist in the catalogue");
 			else
-				if (pfns == null)
-					commander.setReturnCode(5, "GUID " + guid + " does not exist in the catalogue");
-				else
-					commander.setReturnCode(6, "GUID " + guid + " has no replicas, this is a lost file");
+				commander.setReturnCode(6, "GUID " + guid + " has no replicas, this is a lost file");
 		}
 		else
 			commander.setReturnCode(7, "This file doesn't exist in the catalogue: " + lfnOrGuid);
@@ -176,7 +173,8 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				lfnOrGuid = options.nonOptionArguments().iterator().next().toString();
 			else
 				printHelp();
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

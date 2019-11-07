@@ -64,59 +64,58 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				else
 					commander.printOutln(jdl);
 		}
-		else
-			if (getTrace > 0) {
-				final String tracelog = commander.q_api.getTraceLog(getTrace);
-				logger.log(Level.FINE, "tracelog " + tracelog);
+		else if (getTrace > 0) {
+			final String tracelog = commander.q_api.getTraceLog(getTrace);
+			logger.log(Level.FINE, "tracelog " + tracelog);
 
-				if (tracelog != null)
-					if (commander.bColour)
-						commander.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
+			if (tracelog != null)
+				if (commander.bColour)
+					commander.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
 
-				commander.printOutln("--- not implemented yet ---");
+			commander.printOutln("--- not implemented yet ---");
 
-			}
-			else {
-				if (users.size() == 0)
-					users.add(commander.getUsername());
+		}
+		else {
+			if (users.size() == 0)
+				users.add(commander.getUsername());
 
-				final List<Job> ps = commander.q_api.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
-				logger.log(Level.INFO, "ps " + ps);
+			final List<Job> ps = commander.q_api.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
+			logger.log(Level.INFO, "ps " + ps);
 
-				if (ps != null)
-					for (final Job j : ps) {
-						commander.outNextResult();
-						final String owner = (j.getOwner() != null) ? j.getOwner() : "";
+			if (ps != null)
+				for (final Job j : ps) {
+					commander.outNextResult();
+					final String owner = (j.getOwner() != null) ? j.getOwner() : "";
 
-						final String jId = commander.bColour ? ShellColor.bold() + j.queueId + ShellColor.reset() : String.valueOf(j.queueId);
+					final String jId = commander.bColour ? ShellColor.bold() + j.queueId + ShellColor.reset() : String.valueOf(j.queueId);
 
-						final String name = (j.name != null) ? j.name.substring(j.name.lastIndexOf('/') + 1) : "";
+					final String name = (j.name != null) ? j.name.substring(j.name.lastIndexOf('/') + 1) : "";
 
-						if (bL) {
-							final String site = (j.site != null) ? j.site : "";
-							final String node = (j.node != null) ? j.node : "";
-							commander.printOut("owner ", String.valueOf(owner));
-							commander.printOut("id ", jId.toString());
-							commander.printOut("site ", String.valueOf(site));
-							commander.printOut("node", String.valueOf(node));
-							commander.printOut("status", " " + j.status());
-							commander.printOut("name", String.valueOf(name));
-							commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(4) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
-									+ padLeft(String.valueOf(site), 38) + padSpace(2) + padLeft(String.valueOf(node), 40) + padSpace(2) + abbrvStatus(j.status()) + padSpace(2)
-									+ padLeft(String.valueOf(name), 30));
-						}
-						else {
-
-							commander.printOut("owner ", String.valueOf(owner));
-							commander.printOut("id ", jId.toString());
-							commander.printOut("priority ", printPriority(j.status(), j.priority));
-							commander.printOut("status ", " " + j.status());
-							commander.printOut("name ", String.valueOf(name));
-							commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
-									+ abbrvStatus(j.status()) + padSpace(2) + padLeft(String.valueOf(name), 32));
-						}
+					if (bL) {
+						final String site = (j.site != null) ? j.site : "";
+						final String node = (j.node != null) ? j.node : "";
+						commander.printOut("owner ", String.valueOf(owner));
+						commander.printOut("id ", jId.toString());
+						commander.printOut("site ", String.valueOf(site));
+						commander.printOut("node", String.valueOf(node));
+						commander.printOut("status", " " + j.status());
+						commander.printOut("name", String.valueOf(name));
+						commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(4) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
+								+ padLeft(String.valueOf(site), 38) + padSpace(2) + padLeft(String.valueOf(node), 40) + padSpace(2) + abbrvStatus(j.status()) + padSpace(2)
+								+ padLeft(String.valueOf(name), 30));
 					}
-			}
+					else {
+
+						commander.printOut("owner ", String.valueOf(owner));
+						commander.printOut("id ", jId.toString());
+						commander.printOut("priority ", printPriority(j.status(), j.priority));
+						commander.printOut("status ", " " + j.status());
+						commander.printOut("name ", String.valueOf(name));
+						commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
+								+ abbrvStatus(j.status()) + padSpace(2) + padLeft(String.valueOf(name), 32));
+					}
+				}
+		}
 	}
 
 	private String printPriority(final JobStatus status, final int priority) {
@@ -126,11 +125,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				String cTag = "";
 				if (priority <= 0)
 					cTag = ShellColor.jobStateBlueError();
+				else if (priority < 70)
+					cTag = ShellColor.jobStateBlue();
 				else
-					if (priority < 70)
-						cTag = ShellColor.jobStateBlue();
-					else
-						cTag = ShellColor.jobStateGreen();
+					cTag = ShellColor.jobStateGreen();
 				return cTag + padLeft(String.valueOf(priority), 3) + ShellColor.reset();
 			}
 			return padLeft(String.valueOf(priority), 3);
@@ -146,28 +144,143 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 		if (commander.bColour) {
 			switch (status) {
+				case KILLED:
+					return ShellColor.jobStateRed() + padLeft("  K", 3) + ShellColor.reset();
+				case RUNNING:
+					return ShellColor.jobStateGreen() + padLeft("  R", 3) + ShellColor.reset();
+				case STARTED:
+					return ShellColor.jobStateGreen() + padLeft(" ST", 3) + ShellColor.reset();
+				case DONE:
+					return padLeft("  D", 3);
+				case DONE_WARN:
+					return padLeft(" DW", 3);
+				case WAITING:
+					return ShellColor.jobStateBlue() + padLeft("  W", 3) + ShellColor.reset();
+				case OVER_WAITING:
+					return padLeft(" OW", 3);
+				case INSERTING:
+					return ShellColor.jobStateYellow() + padLeft("  I", 3) + ShellColor.reset();
+				case SPLIT:
+					return padLeft("  S", 3);
+				case SPLITTING:
+					return padLeft(" SP", 3);
+				case SAVING:
+					return ShellColor.jobStateGreen() + padLeft(" SV", 3) + ShellColor.reset();
+				case SAVED:
+					return padLeft("SVD", 3);
+				case ANY:
+					return padLeft("ANY", 3); // shouldn't happen!
+				case ASSIGNED:
+					return padLeft("ASG", 3);
+				case A_STAGED:
+					return padLeft("AST", 3);
+				case FORCEMERGE:
+					return padLeft(" FM", 3);
+				case IDLE:
+					return padLeft("IDL", 3);
+				case INTERACTIV:
+					return padLeft("INT", 3);
+				case MERGING:
+					return padLeft("  M", 3);
+				case SAVED_WARN:
+					return padLeft(" SW", 3);
+				case STAGING:
+					return padLeft(" ST", 3);
+				case TO_STAGE:
+					return padLeft("TST", 3);
+				case ERROR_A:
+					e = " EA";
+					break;
+				case ERROR_E:
+					e = " EE";
+					break;
+				case ERROR_I:
+					e = " EI";
+					break;
+				case ERROR_IB:
+					e = "EIB";
+					break;
+				case ERROR_M:
+					e = " EM";
+					break;
+				case ERROR_RE:
+					e = "ERE";
+					break;
+				case ERROR_S:
+					e = " ES";
+					break;
+				case ERROR_SV:
+					e = "ESV";
+					break;
+				case ERROR_V:
+					e = " EV";
+					break;
+				case ERROR_VN:
+					e = "EVN";
+					break;
+				case ERROR_VT:
+					e = "EVT";
+					break;
+				case ERROR_SPLT:
+					e = "ESP";
+					break;
+				case ERROR_W:
+					e = " EW";
+					break;
+				case ERROR_VER:
+					e = "EVE";
+					break;
+				case FAILED:
+					e = " FF";
+					break;
+				case ZOMBIE:
+					e = "  Z";
+					break;
+				case EXPIRED:
+					e = " XP";
+					break;
+				case ERROR_EW:
+					e = " EW";
+					break;
+				case UPDATING:
+					e = " UP";
+					break;
+				case FAULTY:
+					e = "  F";
+					break;
+				case INCORRECT:
+					e = "INC";
+					break;
+				default:
+					break;
+			}
+
+			return ShellColor.jobStateRedError() + padLeft(e, 3) + ShellColor.reset();
+		}
+
+		switch (status) {
 			case KILLED:
-				return ShellColor.jobStateRed() + padLeft("  K", 3) + ShellColor.reset();
+				return padLeft("  K", 3);
 			case RUNNING:
-				return ShellColor.jobStateGreen() + padLeft("  R", 3) + ShellColor.reset();
+				return padLeft("  R", 3);
 			case STARTED:
-				return ShellColor.jobStateGreen() + padLeft(" ST", 3) + ShellColor.reset();
+				return padLeft(" ST", 3);
 			case DONE:
 				return padLeft("  D", 3);
 			case DONE_WARN:
 				return padLeft(" DW", 3);
 			case WAITING:
-				return ShellColor.jobStateBlue() + padLeft("  W", 3) + ShellColor.reset();
+				return padLeft("  W", 3);
 			case OVER_WAITING:
 				return padLeft(" OW", 3);
 			case INSERTING:
-				return ShellColor.jobStateYellow() + padLeft("  I", 3) + ShellColor.reset();
+				return padLeft("  I", 3);
 			case SPLIT:
 				return padLeft("  S", 3);
 			case SPLITTING:
 				return padLeft(" SP", 3);
 			case SAVING:
-				return ShellColor.jobStateGreen() + padLeft(" SV", 3) + ShellColor.reset();
+				return padLeft(" SV", 3);
 			case SAVED:
 				return padLeft("SVD", 3);
 			case ANY:
@@ -255,121 +368,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				break;
 			default:
 				break;
-			}
-
-			return ShellColor.jobStateRedError() + padLeft(e, 3) + ShellColor.reset();
-		}
-
-		switch (status) {
-		case KILLED:
-			return padLeft("  K", 3);
-		case RUNNING:
-			return padLeft("  R", 3);
-		case STARTED:
-			return padLeft(" ST", 3);
-		case DONE:
-			return padLeft("  D", 3);
-		case DONE_WARN:
-			return padLeft(" DW", 3);
-		case WAITING:
-			return padLeft("  W", 3);
-		case OVER_WAITING:
-			return padLeft(" OW", 3);
-		case INSERTING:
-			return padLeft("  I", 3);
-		case SPLIT:
-			return padLeft("  S", 3);
-		case SPLITTING:
-			return padLeft(" SP", 3);
-		case SAVING:
-			return padLeft(" SV", 3);
-		case SAVED:
-			return padLeft("SVD", 3);
-		case ANY:
-			return padLeft("ANY", 3); // shouldn't happen!
-		case ASSIGNED:
-			return padLeft("ASG", 3);
-		case A_STAGED:
-			return padLeft("AST", 3);
-		case FORCEMERGE:
-			return padLeft(" FM", 3);
-		case IDLE:
-			return padLeft("IDL", 3);
-		case INTERACTIV:
-			return padLeft("INT", 3);
-		case MERGING:
-			return padLeft("  M", 3);
-		case SAVED_WARN:
-			return padLeft(" SW", 3);
-		case STAGING:
-			return padLeft(" ST", 3);
-		case TO_STAGE:
-			return padLeft("TST", 3);
-		case ERROR_A:
-			e = " EA";
-			break;
-		case ERROR_E:
-			e = " EE";
-			break;
-		case ERROR_I:
-			e = " EI";
-			break;
-		case ERROR_IB:
-			e = "EIB";
-			break;
-		case ERROR_M:
-			e = " EM";
-			break;
-		case ERROR_RE:
-			e = "ERE";
-			break;
-		case ERROR_S:
-			e = " ES";
-			break;
-		case ERROR_SV:
-			e = "ESV";
-			break;
-		case ERROR_V:
-			e = " EV";
-			break;
-		case ERROR_VN:
-			e = "EVN";
-			break;
-		case ERROR_VT:
-			e = "EVT";
-			break;
-		case ERROR_SPLT:
-			e = "ESP";
-			break;
-		case ERROR_W:
-			e = " EW";
-			break;
-		case ERROR_VER:
-			e = "EVE";
-			break;
-		case FAILED:
-			e = " FF";
-			break;
-		case ZOMBIE:
-			e = "  Z";
-			break;
-		case EXPIRED:
-			e = " XP";
-			break;
-		case ERROR_EW:
-			e = " EW";
-			break;
-		case UPDATING:
-			e = " UP";
-			break;
-		case FAULTY:
-			e = "  F";
-			break;
-		case INCORRECT:
-			e = "INC";
-			break;
-		default:
-			break;
 		}
 
 		return padLeft(e, 3);
@@ -461,122 +459,127 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			if (options.has("jdl") && options.hasArgument("jdl"))
 				try {
 					getJDL = ((Long) options.valueOf("jdl")).longValue();
-				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+				}
+				catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					commander.setReturnCode(1, "Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
 				}
-			else
-				if (options.has("trace") && options.hasArgument("trace"))
-					try {
-						getTrace = ((Long) options.valueOf("trace")).longValue();
-					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-						commander.setReturnCode(2, "Illegal job ID " + options.valueOf("trace"));
-						getTrace = -1;
-					}
-				else {
+			else if (options.has("trace") && options.hasArgument("trace"))
+				try {
+					getTrace = ((Long) options.valueOf("trace")).longValue();
+				}
+				catch (@SuppressWarnings("unused") final NumberFormatException e) {
+					commander.setReturnCode(2, "Illegal job ID " + options.valueOf("trace"));
+					getTrace = -1;
+				}
+			else {
 
-					if (options.has("f") && options.hasArgument("f"))
-						decodeFlagsAndStates((String) options.valueOf("f"));
+				if (options.has("f") && options.hasArgument("f"))
+					decodeFlagsAndStates((String) options.valueOf("f"));
 
-					if (options.has("u") && options.hasArgument("u")) {
-						final StringTokenizer st = new StringTokenizer((String) options.valueOf("u"), ",");
-						while (st.hasMoreTokens())
-							users.add(st.nextToken());
-					}
+				if (options.has("u") && options.hasArgument("u")) {
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("u"), ",");
+					while (st.hasMoreTokens())
+						users.add(st.nextToken());
+				}
 
-					if (options.has("s") && options.hasArgument("s")) {
-						final StringTokenizer st = new StringTokenizer((String) options.valueOf("s"), ",");
-						while (st.hasMoreTokens())
-							sites.add(st.nextToken());
-						states.add(JobStatus.ANY);
-					}
+				if (options.has("s") && options.hasArgument("s")) {
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("s"), ",");
+					while (st.hasMoreTokens())
+						sites.add(st.nextToken());
+					states.add(JobStatus.ANY);
+				}
 
-					if (options.has("n") && options.hasArgument("n")) {
-						final StringTokenizer st = new StringTokenizer((String) options.valueOf("n"), ",");
-						while (st.hasMoreTokens())
-							nodes.add(st.nextToken());
-						states.add(JobStatus.ANY);
-					}
+				if (options.has("n") && options.hasArgument("n")) {
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("n"), ",");
+					while (st.hasMoreTokens())
+						nodes.add(st.nextToken());
+					states.add(JobStatus.ANY);
+				}
 
-					if (options.has("m") && options.hasArgument("m")) {
-						final StringTokenizer st = new StringTokenizer((String) options.valueOf("m"), ",");
+				if (options.has("m") && options.hasArgument("m")) {
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("m"), ",");
 
-						while (st.hasMoreTokens())
-							try {
-								mjobs.add(Integer.valueOf(st.nextToken()));
-							} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-								// ignore
-							}
-
-						states.add(JobStatus.ANY);
-					}
-
-					if (options.has("j") && options.hasArgument("j")) {
-						final StringTokenizer st = new StringTokenizer((String) options.valueOf("j"), ",");
-						while (st.hasMoreTokens())
-							try {
-								jobid.add(Integer.valueOf(st.nextToken()));
-							} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-								// ignore
-							}
-						states.add(JobStatus.ANY);
-						users.add("%");
-					}
-
-					if (options.has("l") && options.hasArgument("l"))
+					while (st.hasMoreTokens())
 						try {
-							final int lim = ((Integer) options.valueOf("l")).intValue();
-							if (lim > 0)
-								limit = lim;
-						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+							mjobs.add(Integer.valueOf(st.nextToken()));
+						}
+						catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 							// ignore
 						}
 
-					if (options.has("X")) {
-						bL = true;
-						states.addAll(flag_r());
-						states.addAll(flag_s());
-					}
-
-					if (options.has("Fl") || options.has("L") || (options.has("F") && "l".equals(options.valueOf("F"))))
-						bL = true;
-
-					if ((options.has("o") && options.hasArgument("o")))
-						orderByKey = (String) options.valueOf("o");
-
-					//
-					// case 'M':
-					// st_masterjobs = "\\\\0";
-
-					if (options.has("A")) {
-						states.clear();
-						states.add(JobStatus.ANY);
-						users.add(commander.getUsername());
-					}
-					if (options.has("E")) {
-						states.addAll(flag_f());
-						users.add(commander.getUsername());
-					}
-					if (options.has("W")) {
-						states.addAll(flag_s());
-						users.add(commander.getUsername());
-					}
-
-					if (options.has("M")) {
-						mjobs.clear();
-						mjobs.add(Integer.valueOf(0));
-					}
-
-					if (options.has("a")) {
-						users.clear();
-						users.add("%");
-					}
+					states.add(JobStatus.ANY);
 				}
+
+				if (options.has("j") && options.hasArgument("j")) {
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("j"), ",");
+					while (st.hasMoreTokens())
+						try {
+							jobid.add(Integer.valueOf(st.nextToken()));
+						}
+						catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+							// ignore
+						}
+					states.add(JobStatus.ANY);
+					users.add("%");
+				}
+
+				if (options.has("l") && options.hasArgument("l"))
+					try {
+						final int lim = ((Integer) options.valueOf("l")).intValue();
+						if (lim > 0)
+							limit = lim;
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException e) {
+						// ignore
+					}
+
+				if (options.has("X")) {
+					bL = true;
+					states.addAll(flag_r());
+					states.addAll(flag_s());
+				}
+
+				if (options.has("Fl") || options.has("L") || (options.has("F") && "l".equals(options.valueOf("F"))))
+					bL = true;
+
+				if ((options.has("o") && options.hasArgument("o")))
+					orderByKey = (String) options.valueOf("o");
+
+				//
+				// case 'M':
+				// st_masterjobs = "\\\\0";
+
+				if (options.has("A")) {
+					states.clear();
+					states.add(JobStatus.ANY);
+					users.add(commander.getUsername());
+				}
+				if (options.has("E")) {
+					states.addAll(flag_f());
+					users.add(commander.getUsername());
+				}
+				if (options.has("W")) {
+					states.addAll(flag_s());
+					users.add(commander.getUsername());
+				}
+
+				if (options.has("M")) {
+					mjobs.clear();
+					mjobs.add(Integer.valueOf(0));
+				}
+
+				if (options.has("a")) {
+					users.clear();
+					users.add("%");
+				}
+			}
 
 			if (options.has("b"))
 				commander.bColour = false;
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}
@@ -596,30 +599,30 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				final char[] flags = line.toCharArray();
 				for (final char f : flags)
 					switch (f) {
-					case 'a':
-						all = true;
-						break;
-					case 'r':
-						states.addAll(flag_r());
-						break;
-					case 'q':
-						states.addAll(flag_q());
-						break;
-					case 'f':
-						states.addAll(flag_f());
-						break;
-					case 'd':
-						states.addAll(flag_d());
-						break;
-					case 't':
-						states.addAll(flag_t());
-						break;
-					case 's':
-						states.addAll(flag_s());
-						break;
-					default:
-						// ignore any other flag
-						break;
+						case 'a':
+							all = true;
+							break;
+						case 'r':
+							states.addAll(flag_r());
+							break;
+						case 'q':
+							states.addAll(flag_q());
+							break;
+						case 'f':
+							states.addAll(flag_f());
+							break;
+						case 'd':
+							states.addAll(flag_d());
+							break;
+						case 't':
+							states.addAll(flag_t());
+							break;
+						case 's':
+							states.addAll(flag_s());
+							break;
+						default:
+							// ignore any other flag
+							break;
 					}
 			}
 		}

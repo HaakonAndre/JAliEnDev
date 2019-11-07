@@ -26,12 +26,12 @@ public class GuidTable extends Optimizer {
 	 * When to switch to a new G table
 	 */
 	final static int maxCount = 50000000; // 50M
-	
+
 	/**
 	 * At what point to send a warning about the current G table
 	 */
 	final static int warnCount = 40000000; // 40M
-	
+
 	/**
 	 * Number of rows at the last iteration
 	 */
@@ -95,7 +95,8 @@ public class GuidTable extends Optimizer {
 				try {
 					logger.log(Level.INFO, "GuidTable sleeps " + this.getSleepPeriod());
 					sleep(this.getSleepPeriod());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
 			}

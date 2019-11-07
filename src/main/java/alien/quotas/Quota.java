@@ -38,7 +38,7 @@ public class Quota implements Serializable, Comparable<Quota> {
 	 * Account id
 	 */
 	public final int userId;
-	
+
 	/**
 	 * Account name
 	 */
@@ -149,9 +149,9 @@ public class Quota implements Serializable, Comparable<Quota> {
 	 */
 	public Quota(final DBFunctions db) {
 		userId = db.geti("userid");
-		
+
 		user = StringFactory.get(db.gets("user").toLowerCase());
-		
+
 		priority = db.getf("priority");
 
 		maxparallelJobs = db.geti("maxparallelJobs");

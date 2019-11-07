@@ -37,14 +37,12 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 				else
 					commander.setReturnCode(3, "File does not exist: " + lfnName);
 			}
+			else if (lfn.md5 != null && lfn.md5.length() > 0)
+				commander.printOutln(lfn.md5 + "\t" + lfnName);
+			else if (!lfn.isFile())
+				commander.setReturnCode(4, "This entry is not a file: " + lfnName);
 			else
-				if (lfn.md5 != null && lfn.md5.length() > 0)
-					commander.printOutln(lfn.md5 + "\t" + lfnName);
-				else
-					if (!lfn.isFile())
-						commander.setReturnCode(4, "This entry is not a file: " + lfnName);
-					else
-						commander.setReturnCode(5, "This file doesn't have a valid associated MD5 checksum: " + lfnName);
+				commander.setReturnCode(5, "This file doesn't have a valid associated MD5 checksum: " + lfnName);
 		}
 	}
 
@@ -77,7 +75,8 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 
 			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(optionToString(options.nonOptionArguments()));
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

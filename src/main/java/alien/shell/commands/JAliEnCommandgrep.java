@@ -208,11 +208,10 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 				commander.printErrln("grep requires a pattern to search for, and at least one file to look at");
 				setArgumentsOk(false);
 			}
-			else
-				if (alPaths.size() == 0) {
-					commander.printErrln("grep requires some files to process");
-					setArgumentsOk(false);
-				}
+			else if (alPaths.size() == 0) {
+				commander.printErrln("grep requires some files to process");
+				setArgumentsOk(false);
+			}
 		}
 		catch (final OptionException e) {
 			printHelp();

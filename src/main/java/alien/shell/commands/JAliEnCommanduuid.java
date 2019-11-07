@@ -29,7 +29,8 @@ public class JAliEnCommanduuid extends JAliEnBaseCommand {
 			if (lfn == null) {
 				try {
 					u = UUID.fromString(lfnName);
-				} catch (@SuppressWarnings("unused") Throwable t) {
+				}
+				catch (@SuppressWarnings("unused") Throwable t) {
 					commander.setReturnCode(1, "File does not exist: " + lfnName);
 				}
 			}
@@ -76,7 +77,8 @@ public class JAliEnCommanduuid extends JAliEnBaseCommand {
 
 			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(optionToString(options.nonOptionArguments()));
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

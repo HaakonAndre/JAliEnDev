@@ -71,7 +71,8 @@ public class ComputingElement extends Thread {
 
 			queue = getBatchQueue((String) config.get("ce_type"));
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.severe("Problem in construction of ComputingElement: " + e.toString());
 		}
 	}
@@ -83,7 +84,8 @@ public class ComputingElement extends Thread {
 			logger.info("Trying to start JBox");
 			JBoxServer.startJBoxService();
 			port = JBoxServer.getPort();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.severe("Unable to start JBox: " + e.toString());
 		}
 
@@ -93,7 +95,8 @@ public class ComputingElement extends Thread {
 
 			try {
 				Thread.sleep(System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 				logger.severe("Unable to sleep: " + e.toString());
 			}
 
@@ -130,20 +133,20 @@ public class ComputingElement extends Thread {
 		}
 		else { // Error
 			switch (slots.get(0).intValue()) {
-			case 1:
-				logger.info("Failed getting or inserting host in getNumberFreeSlots");
-				break;
-			case 2:
-				logger.info("Failed updating host in getNumberFreeSlots");
-				break;
-			case 3:
-				logger.info("Failed getting slots in getNumberFreeSlots");
-				break;
-			case -2:
-				logger.info("The queue is centrally locked!");
-				break;
-			default:
-				logger.info("Unknown error in getNumberFreeSlots");
+				case 1:
+					logger.info("Failed getting or inserting host in getNumberFreeSlots");
+					break;
+				case 2:
+					logger.info("Failed updating host in getNumberFreeSlots");
+					break;
+				case 3:
+					logger.info("Failed getting slots in getNumberFreeSlots");
+					break;
+				case -2:
+					logger.info("The queue is centrally locked!");
+					break;
+				default:
+					logger.info("Unknown error in getNumberFreeSlots");
 			}
 			return 0;
 		}
@@ -179,7 +182,8 @@ public class ComputingElement extends Thread {
 
 		try {
 			apmon.sendParameters(site + "_CE_" + siteMap.get("CE"), config.get("host_host").toString(), paramNames.size(), paramNames, paramValues);
-		} catch (ApMonException | IOException e) {
+		}
+		catch (ApMonException | IOException e) {
 			logger.severe("Can't send parameter to ML (getNumberFreeSlots): " + e);
 		}
 
@@ -294,7 +298,8 @@ public class ComputingElement extends Thread {
 		try {
 			agent_startup_file.createNewFile();
 			agent_startup_file.setExecutable(true);
-		} catch (final IOException e1) {
+		}
+		catch (final IOException e1) {
 			logger.info("Error creating Agent Sturtup file: " + e1.toString());
 			return null;
 		}
@@ -302,9 +307,11 @@ public class ComputingElement extends Thread {
 		try (PrintWriter writer = new PrintWriter(agent_startup_path, "UTF-8")) {
 			writer.println("#!/bin/bash");
 			writer.println(content_str);
-		} catch (final FileNotFoundException e) {
+		}
+		catch (final FileNotFoundException e) {
 			logger.info("Agent Sturtup file not found: " + e.toString());
-		} catch (final UnsupportedEncodingException e) {
+		}
+		catch (final UnsupportedEncodingException e) {
 			logger.info("Encoding error while writing Agent Sturtup file: " + e.toString());
 		}
 
@@ -320,7 +327,8 @@ public class ComputingElement extends Thread {
 			token_cert_and_key[0] = gtc.getCertificateAsString();
 			token_cert_and_key[1] = gtc.getPrivateKeyAsString();
 			return token_cert_and_key;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.info("Getting JobAgent TokenCertificate failed: " + e);
 		}
 
@@ -376,9 +384,8 @@ public class ComputingElement extends Thread {
 
 		if (config.containsKey("host_closese"))
 			smenv.put("closeSE", config.get("host_closese").toString());
-		else
-			if (config.containsKey("site_closese"))
-				smenv.put("closeSE", config.get("site_closese").toString());
+		else if (config.containsKey("site_closese"))
+			smenv.put("closeSE", config.get("site_closese").toString());
 
 		if (config.containsKey("host_environment"))
 			host_environment = getValuesFromLDAPField(config.get("host_environment"));
@@ -423,7 +430,8 @@ public class ComputingElement extends Thread {
 		Class<?> cl = null;
 		try {
 			cl = Class.forName("alien.site.batchqueue." + type);
-		} catch (final ClassNotFoundException e) {
+		}
+		catch (final ClassNotFoundException e) {
 			logger.severe("Cannot find class for type: " + type + "\n" + e);
 			return null;
 		}
@@ -431,7 +439,8 @@ public class ComputingElement extends Thread {
 		Constructor<?> con = null;
 		try {
 			con = cl.getConstructor(config.getClass(), logger.getClass());
-		} catch (NoSuchMethodException | SecurityException e) {
+		}
+		catch (NoSuchMethodException | SecurityException e) {
 			logger.severe("Cannot find class for ceConfig: " + e);
 			return null;
 		}
@@ -439,13 +448,14 @@ public class ComputingElement extends Thread {
 		// prepare some needed fields for the queue
 		if (!config.containsKey("host_host") || (config.get("host_host") == null))
 			config.put("host_host", ConfigUtils.getLocalHostname());
-		
+
 		if (!config.containsKey("host_port") || (config.get("host_port") == null))
 			config.put("host_port", Integer.valueOf(this.port));
 
 		try {
 			queue = (BatchQueue) con.newInstance(config, logger);
-		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+		}
+		catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.severe("Cannot instantiate queue class for type: " + type + "\n" + e);
 		}
 

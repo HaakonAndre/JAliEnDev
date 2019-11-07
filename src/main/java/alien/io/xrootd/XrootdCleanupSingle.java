@@ -280,15 +280,14 @@ public class XrootdCleanupSingle extends Thread {
 		if (options.has("a"))
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
+		else if (options.has("d")) {
+			for (final SE se : SEUtils.getSEs(null))
+				if (se.isQosType("disk"))
+					ses.add(se.getName());
+		}
 		else
-			if (options.has("d")) {
-				for (final SE se : SEUtils.getSEs(null))
-					if (se.isQosType("disk"))
-						ses.add(se.getName());
-			}
-			else
-				for (final Object o : options.nonOptionArguments())
-					ses.add(o.toString());
+			for (final Object o : options.nonOptionArguments())
+				ses.add(o.toString());
 
 		final Map<String, XrootdCleanupSingle> progress = new TreeMap<>();
 

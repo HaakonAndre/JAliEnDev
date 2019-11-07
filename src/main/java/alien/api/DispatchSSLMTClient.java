@@ -129,7 +129,8 @@ public class DispatchSSLMTClient extends Thread {
 					sc = instances.pop();
 					return sc;
 				}
-			} catch (@SuppressWarnings("unused") EmptyStackException e) {
+			}
+			catch (@SuppressWarnings("unused") EmptyStackException e) {
 				// System.err.println("Nothing in the stack");
 				synchronized (instances) {
 					if (numInstances < MAX_INSTANCES) {
@@ -145,7 +146,8 @@ public class DispatchSSLMTClient extends Thread {
 					try {
 						int sleepInterval = (int) (1500 + 1000 * ThreadLocalRandom.current().nextDouble(0.1, 1));
 						Thread.sleep(sleepInterval);
-					} catch (@SuppressWarnings("unused") InterruptedException ei) {
+					}
+					catch (@SuppressWarnings("unused") InterruptedException ei) {
 						System.err.println("Sleep in DispatchSSLMTClient.getInstance" + " has been interrupted");
 					}
 					numRetries--;
@@ -215,10 +217,12 @@ public class DispatchSSLMTClient extends Thread {
 			}
 			logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
 
-		} catch (final ConnectException e) {
+		}
+		catch (final ConnectException e) {
 			logger.log(Level.SEVERE, "Could not connect to JCentral: [" + e.getMessage() + "].");
 			System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
-		} catch (final Throwable e) {
+		}
+		catch (final Throwable e) {
 			logger.log(Level.SEVERE, "Could not initiate SSL connection to the server.", e);
 			e.printStackTrace();
 			System.err.println("Could not initiate SSL connection to the server.");
@@ -233,21 +237,24 @@ public class DispatchSSLMTClient extends Thread {
 		if (ois != null)
 			try {
 				ois.close();
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				// ignore
 			}
 
 		if (oos != null)
 			try {
 				oos.close();
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				// ignore
 			}
 
 		if (connection != null)
 			try {
 				connection.close();
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				// ignore
 			}
 
@@ -275,7 +282,8 @@ public class DispatchSSLMTClient extends Thread {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1));
 					addr = address.substring(0, idx);
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
 					addr = defaultHost;
 					port = defaultPort;
 				}
@@ -291,12 +299,14 @@ public class DispatchSSLMTClient extends Thread {
 		// initializeSocketInfo();
 		try {
 			return dispatchARequest(r);
-		} catch (@SuppressWarnings("unused") final IOException e) {
+		}
+		catch (@SuppressWarnings("unused") final IOException e) {
 			// Now let's try, if we can reconnect
 			// instance.put(Integer.valueOf(port), null);
 			try {
 				return dispatchARequest(r);
-			} catch (final IOException e1) {
+			}
+			catch (final IOException e1) {
 				// This time we give up
 				e1.printStackTrace();
 				logger.log(Level.SEVERE, "Error running request, potential connection error.", e1);
@@ -338,7 +348,8 @@ public class DispatchSSLMTClient extends Thread {
 		Object o;
 		try {
 			o = c.ois.readObject();
-		} catch (final ClassNotFoundException e) {
+		}
+		catch (final ClassNotFoundException e) {
 			throw new IOException(e.getMessage());
 		}
 

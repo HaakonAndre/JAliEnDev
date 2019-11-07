@@ -514,9 +514,9 @@ public class SE implements Serializable, Comparable<SE> {
 				final SE se = new SE(db);
 
 				System.err.println(se);
-				
+
 				System.err.println(se.getHTTPPort());
-				
+
 				System.err.println();
 			}
 		}

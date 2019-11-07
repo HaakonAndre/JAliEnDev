@@ -55,22 +55,22 @@ public class LFNListCollectionFromString extends Request {
 						this.lfns.add(lfnItr.next());
 					}
 
-				} catch (IOException e) {
+				}
+				catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
+			else if (entry.isCollection()) {
+				Set<String> entries = entry.listCollection();
+
+				this.lfns = new LinkedHashSet<>(entries.size());
+
+				for (final String lfn : entries)
+					this.lfns.add(LFNUtils.getLFN(lfn));
+			}
 			else
-				if (entry.isCollection()) {
-					Set<String> entries = entry.listCollection();
-
-					this.lfns = new LinkedHashSet<>(entries.size());
-
-					for (final String lfn : entries)
-						this.lfns.add(LFNUtils.getLFN(lfn));
-				}
-				else
-					throw new IllegalArgumentException("Not a collection");
+				throw new IllegalArgumentException("Not a collection");
 		}
 		else
 			throw new IllegalArgumentException("No such LFN \"" + path + "\"");

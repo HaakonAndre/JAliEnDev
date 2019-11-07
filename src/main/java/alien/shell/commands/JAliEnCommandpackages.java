@@ -36,9 +36,8 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 		if (System.getProperty("os.arch").contains("amd64"))
 			ret += "-x86_64";
 
-		else
-			if (ret.toLowerCase().contains("mac") && System.getProperty("os.arch").contains("ppc"))
-				ret = "Darwin-PowerMacintosh";
+		else if (ret.toLowerCase().contains("mac") && System.getProperty("os.arch").contains("ppc"))
+			ret = "Darwin-PowerMacintosh";
 
 		return ret;
 	}

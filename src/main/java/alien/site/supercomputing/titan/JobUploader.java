@@ -85,11 +85,10 @@ public class JobUploader extends Thread {
 		this.js = js;
 		if (js.executionCode != 0)
 			jobStatus = JobStatus.ERROR_E;
+		else if (js.validationCode != 0)
+			jobStatus = JobStatus.ERROR_V;
 		else
-			if (js.validationCode != 0)
-				jobStatus = JobStatus.ERROR_V;
-			else
-				jobStatus = JobStatus.DONE;
+			jobStatus = JobStatus.DONE;
 		dbname = js.batch.dbName;
 		username = "";
 	}
@@ -135,41 +134,40 @@ public class JobUploader extends Thread {
 						// ignore
 					}
 				}
-				else
-					if (js.validationCode != 0) {
-						changeStatus(queueId.longValue(), JobStatus.ERROR_V);
-						final Vector<String> varnames = new Vector<>();
-						varnames.add("host");
-						varnames.add("statusID");
-						varnames.add("jobID");
-						final Vector<Object> varvalues = new Vector<>();
-						varvalues.add(hostName);
-						varvalues.add("-10");
-						varvalues.add(queueId);
-						try {
-							apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						}
-						catch (@SuppressWarnings("unused") ApMonException | IOException e) {
-							// ignore
-						}
+				else if (js.validationCode != 0) {
+					changeStatus(queueId.longValue(), JobStatus.ERROR_V);
+					final Vector<String> varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("statusID");
+					varnames.add("jobID");
+					final Vector<Object> varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("-10");
+					varvalues.add(queueId);
+					try {
+						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
 					}
-					else {
-						changeStatus(queueId.longValue(), JobStatus.SAVING);
-						final Vector<String> varnames = new Vector<>();
-						varnames.add("host");
-						varnames.add("statusID");
-						varnames.add("jobID");
-						final Vector<Object> varvalues = new Vector<>();
-						varvalues.add(hostName);
-						varvalues.add("11");
-						varvalues.add(queueId);
-						try {
-							apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						}
-						catch (@SuppressWarnings("unused") ApMonException | IOException e) {
-							// ignore
-						}
+					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						// ignore
 					}
+				}
+				else {
+					changeStatus(queueId.longValue(), JobStatus.SAVING);
+					final Vector<String> varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("statusID");
+					varnames.add("jobID");
+					final Vector<Object> varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("11");
+					varvalues.add(queueId);
+					try {
+						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
+					}
+					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						// ignore
+					}
+				}
 				uploadOutputFiles(); // upload data
 				cleanup();
 				System.err.println(String.format("Upload job %d finished", queueId));
@@ -379,42 +377,41 @@ public class JobUploader extends Thread {
 					// ignore
 				}
 			}
-			else
-				if (uploadedAllOutFiles) {
-					changeStatus(queueId.longValue(), JobStatus.DONE);
-					final Vector<String> varnames = new Vector<>();
-					varnames.add("host");
-					varnames.add("statusID");
-					varnames.add("jobID");
-					final Vector<Object> varvalues = new Vector<>();
-					varvalues.add(hostName);
-					varvalues.add("15");
-					varvalues.add(queueId);
-					try {
-						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", queueId), 3, varnames, varvalues);
-					}
-					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
-						// ignore
-					}
+			else if (uploadedAllOutFiles) {
+				changeStatus(queueId.longValue(), JobStatus.DONE);
+				final Vector<String> varnames = new Vector<>();
+				varnames.add("host");
+				varnames.add("statusID");
+				varnames.add("jobID");
+				final Vector<Object> varvalues = new Vector<>();
+				varvalues.add(hostName);
+				varvalues.add("15");
+				varvalues.add(queueId);
+				try {
+					apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
+					apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", queueId), 3, varnames, varvalues);
 				}
-				else {
-					changeStatus(queueId.longValue(), JobStatus.ERROR_SV);
-					final Vector<String> varnames = new Vector<>();
-					varnames.add("host");
-					varnames.add("statusID");
-					varnames.add("jobID");
-					final Vector<Object> varvalues = new Vector<>();
-					varvalues.add(hostName);
-					varvalues.add("-9");
-					varvalues.add(queueId);
-					try {
-						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-					}
-					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
-						// ignore
-					}
+				catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+					// ignore
 				}
+			}
+			else {
+				changeStatus(queueId.longValue(), JobStatus.ERROR_SV);
+				final Vector<String> varnames = new Vector<>();
+				varnames.add("host");
+				varnames.add("statusID");
+				varnames.add("jobID");
+				final Vector<Object> varvalues = new Vector<>();
+				varvalues.add(hostName);
+				varvalues.add("-9");
+				varvalues.add(queueId);
+				try {
+					apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
+				}
+				catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+					// ignore
+				}
+			}
 
 		return uploadedAllOutFiles;
 	}
@@ -427,9 +424,8 @@ public class JobUploader extends Thread {
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
-		else
-			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		else if (outputDir == null)
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
 	}
@@ -446,17 +442,16 @@ public class JobUploader extends Thread {
 
 			TaskQueueApiUtils.setJobStatus(jobId, newStatus, extrafields);
 		}
-		else
-			if (newStatus == JobStatus.RUNNING) {
-				final HashMap<String, Object> extrafields = new HashMap<>();
-				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-				extrafields.put("node", hostName);
-				extrafields.put("exechost", hostName);
+		else if (newStatus == JobStatus.RUNNING) {
+			final HashMap<String, Object> extrafields = new HashMap<>();
+			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+			extrafields.put("node", hostName);
+			extrafields.put("exechost", hostName);
 
-				TaskQueueApiUtils.setJobStatus(jobId, newStatus, extrafields);
-			}
-			else
-				TaskQueueApiUtils.setJobStatus(jobId, newStatus);
+			TaskQueueApiUtils.setJobStatus(jobId, newStatus, extrafields);
+		}
+		else
+			TaskQueueApiUtils.setJobStatus(jobId, newStatus);
 
 		jobStatus = newStatus;
 

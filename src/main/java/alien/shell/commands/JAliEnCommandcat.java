@@ -55,12 +55,11 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 									commander.printOut("count", count + "");
 									commander.printOut(++count + "  ");
 								}
-								else
-									if (bB)
-										if (line.trim().length() > 0) {
-											commander.printOut("count", count + "");
-											commander.printOut(++count + "  ");
-										}
+								else if (bB)
+									if (line.trim().length() > 0) {
+										commander.printOut("count", count + "");
+										commander.printOut(++count + "  ");
+									}
 								if (bT)
 									line = Format.replace(line, "\t", "^I");
 

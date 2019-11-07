@@ -86,7 +86,8 @@ public class TokenAuthzHandler {
 		Envelope envelope = null;
 		try {
 			envelope = decodeEnvelope(authzTokenString, keypair);
-		} catch (CorruptedEnvelopeException e) {
+		}
+		catch (CorruptedEnvelopeException e) {
 			throw new GeneralSecurityException(
 					"Error parsing authorization token: " + e.getMessage());
 		}
@@ -129,7 +130,8 @@ public class TokenAuthzHandler {
 			if (grantedPermission < FilePerm.WRITE_ONCE.ordinal()) {
 				return false;
 			}
-		} else if (mode == FilePerm.DELETE) {
+		}
+		else if (mode == FilePerm.DELETE) {
 			if (grantedPermission < FilePerm.DELETE.ordinal()) {
 				return false;
 			}
@@ -193,16 +195,19 @@ public class TokenAuthzHandler {
 		if (vo != null) {
 			if (keystore.containsKey(vo)) {
 				keypair = keystore.get(vo);
-			} else {
+			}
+			else {
 				throw new GeneralSecurityException("no keypair for VO " + vo
 						+ " found in keystore");
 			}
-		} else {
+		}
+		else {
 			// fall back to default keypair in case the VO is
 			// unspecified
 			if (keystore.containsKey("*")) {
 				keypair = keystore.get("*");
-			} else {
+			}
+			else {
 				throw new GeneralSecurityException(
 						"no default keypair found in keystore, required for decoding authorization token");
 			}

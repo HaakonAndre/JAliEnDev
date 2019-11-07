@@ -96,7 +96,8 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 			this.param_to_set = param;
 			try {
 				this.value_to_set = Long.valueOf(alArguments.get(3));
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			}
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// FIXME invalid numeric values are ignored
 			}
 		}

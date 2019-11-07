@@ -38,7 +38,7 @@ public class RemoveLFNfromString extends Request {
 	 * @param user
 	 * @param path
 	 * @param recursive
-	 * @param purge 
+	 * @param purge
 	 */
 	public RemoveLFNfromString(final AliEnPrincipal user, final String path, final boolean recursive, final boolean purge) {
 		setRequestUser(user);

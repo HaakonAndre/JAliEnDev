@@ -62,11 +62,10 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	private void setShellPrintWriter(final OutputStream os, final String shelltype) {
 		if (shelltype.equals("plain"))
 			out = new JShPrintWriter(os);
+		else if (shelltype.equals("json"))
+			out = new JSONPrintWriter(os);
 		else
-			if (shelltype.equals("json"))
-				out = new JSONPrintWriter(os);
-			else
-				out = new XMLPrintWriter(os);
+			out = new XMLPrintWriter(os);
 	}
 
 	static final DelayQueue<SessionContext> sessionQueue = new DelayQueue<>();

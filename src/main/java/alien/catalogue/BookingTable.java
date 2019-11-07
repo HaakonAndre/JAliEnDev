@@ -93,9 +93,8 @@ public class BookingTable {
 
 			if (check == null)
 				message += ": no such folder " + lfn.getParentName();
-			else
-				if (!check.equals(lfn))
-					message += ": not enough rights on " + check.getCanonicalName();
+			else if (!check.equals(lfn))
+				message += ": not enough rights on " + check.getCanonicalName();
 
 			throw new IOException(message);
 		}

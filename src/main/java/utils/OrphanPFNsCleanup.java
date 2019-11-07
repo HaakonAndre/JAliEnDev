@@ -93,7 +93,8 @@ public class OrphanPFNsCleanup {
 			if (resultSet != null) {
 				try {
 					resultSet.close();
-				} catch (@SuppressWarnings("unused") final Throwable t) {
+				}
+				catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 
@@ -103,7 +104,8 @@ public class OrphanPFNsCleanup {
 			if (stat != null) {
 				try {
 					stat.close();
-				} catch (@SuppressWarnings("unused") final Throwable t) {
+				}
+				catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 
@@ -129,7 +131,8 @@ public class OrphanPFNsCleanup {
 				}
 
 				return true;
-			} catch (final SQLException e) {
+			}
+			catch (final SQLException e) {
 				logger.log(Level.WARNING, "Exception executing the query", e);
 
 				return false;
@@ -180,19 +183,22 @@ public class OrphanPFNsCleanup {
 
 										if (updateCount > 0)
 											startSEThread(seNumber.intValue() > 0 ? SEUtils.getSE(seNumber) : null);
-									} finally {
+									}
+									finally {
 										executeQuery(dbc, "UNLOCK TABLES;");
 										executeClose();
 										dbc.free();
 									}
 								}
 						}
-				} catch (final Throwable t) {
+				}
+				catch (final Throwable t) {
 					logger.log(Level.SEVERE, "Exception in the main mover", t);
 				}
 				try {
 					sleep(1000L * 60 * 60 * 2);
-				} catch (@SuppressWarnings("unused") final InterruptedException e) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					break;
 				}
 			}
@@ -217,9 +223,8 @@ public class OrphanPFNsCleanup {
 
 			t.start();
 		}
-		else
-			if (logger.isLoggable(Level.INFO))
-				logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
+		else if (logger.isLoggable(Level.INFO))
+			logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
 	}
 
 	/**
@@ -245,13 +250,15 @@ public class OrphanPFNsCleanup {
 
 						lastCheck = System.currentTimeMillis();
 					}
-				} catch (final Throwable t) {
+				}
+				catch (final Throwable t) {
 					logger.log(Level.SEVERE, "Exception in the SE thread check/start part", t);
 				}
 
 				try {
 					Thread.sleep(1000 * 60);
-				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
 
@@ -328,7 +335,8 @@ public class OrphanPFNsCleanup {
 											+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 100000;", true);
 								else
 									ok = db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 100000;");
-							} finally {
+							}
+							finally {
 								concurrentQueryies.release();
 							}
 
@@ -382,7 +390,8 @@ public class OrphanPFNsCleanup {
 					do {
 						try {
 							Thread.sleep(5000);
-						} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+						}
+						catch (@SuppressWarnings("unused") final InterruptedException ie) {
 							// ignore
 						}
 
@@ -391,16 +400,19 @@ public class OrphanPFNsCleanup {
 						setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " total tasks, " + queued + " queued");
 					} while (queued > 0);
 				}
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				logger.log(Level.SEVERE, "Caught exception in the SE thread (" + seNumber + ")", t);
-			} finally {
+			}
+			finally {
 				try {
 					if (executor != null) {
 						executor.shutdown();
 
 						EXECUTORS.remove(Integer.valueOf(seNumber));
 					}
-				} catch (@SuppressWarnings("unused") final Throwable t) {
+				}
+				catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 
@@ -497,7 +509,8 @@ public class OrphanPFNsCleanup {
 					g.delete(true);
 
 				db.query("DELETE FROM orphan_pfns_0 WHERE guid=string2binary(?);", false, sGUID);
-			} finally {
+			}
+			finally {
 				concurrentQueryies.release();
 			}
 		}
@@ -535,7 +548,8 @@ public class OrphanPFNsCleanup {
 
 				try {
 					guid = GUIDUtils.getGUID(uuid, true);
-				} finally {
+				}
+				finally {
 					concurrentQueryies.release();
 				}
 			}
@@ -557,7 +571,8 @@ public class OrphanPFNsCleanup {
 
 			try {
 				pfn = knownPFN == null || knownPFN.length() == 0 ? new PFN(guid, se) : new PFN(knownPFN, guid, se);
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				System.err.println("Cannot generate the entry for " + seNumber + " (" + se.getName() + ") and " + sGUID);
 				t.printStackTrace();
 
@@ -571,7 +586,8 @@ public class OrphanPFNsCleanup {
 
 			try {
 				env = new XrootDEnvelope(AccessType.DELETE, pfn);
-			} finally {
+			}
+			finally {
 				concurrentQueryies.release();
 			}
 
@@ -581,7 +597,8 @@ public class OrphanPFNsCleanup {
 				else
 					// new xrootd implementations accept signed-only envelopes
 					XrootDEnvelopeSigner.signEnvelope(env);
-			} catch (final GeneralSecurityException e) {
+			}
+			catch (final GeneralSecurityException e) {
 				e.printStackTrace();
 				return;
 			}
@@ -597,7 +614,8 @@ public class OrphanPFNsCleanup {
 						db2.query("UPDATE orphan_pfns_" + seNumber + " SET fail_count=fail_count+1 WHERE guid=string2binary(?);", false, sGUID);
 
 						failOne(se);
-					} finally {
+					}
+					finally {
 						concurrentQueryies.release();
 					}
 				}
@@ -633,11 +651,13 @@ public class OrphanPFNsCleanup {
 						}
 
 						db2.query("DELETE FROM orphan_pfns_" + seNumber + " WHERE guid=string2binary(?);", false, sGUID);
-					} finally {
+					}
+					finally {
 						concurrentQueryies.release();
 					}
 				}
-			} catch (final IOException e) {
+			}
+			catch (final IOException e) {
 				// e.printStackTrace();
 
 				failOne(se);
@@ -651,7 +671,8 @@ public class OrphanPFNsCleanup {
 
 				try (DBFunctions db2 = h.getDB()) {
 					db2.query("UPDATE orphan_pfns_" + seNumber + " SET fail_count=fail_count+1 WHERE guid=string2binary(?);", false, sGUID);
-				} finally {
+				}
+				finally {
 					concurrentQueryies.release();
 				}
 			}

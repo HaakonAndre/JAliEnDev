@@ -279,7 +279,8 @@ public class LFN_JSON implements Comparable<LFN_JSON>, CatalogEntity {
 						collectionMembers.add((String) colmembers.get(i));
 				}
 
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				e.printStackTrace();
 			}
 		}

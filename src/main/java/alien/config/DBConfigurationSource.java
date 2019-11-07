@@ -27,7 +27,7 @@ class DBConfigurationSource implements ConfigSource {
 		ExtProperties tmp = new ExtProperties();
 
 		if (isCentralService && fileConfig.getb("jalien.config.hasDBBackend", true)) {
-			try(final DBFunctions dbAdmin = new DBFunctions(oldConfig.get("admin"))) {
+			try (final DBFunctions dbAdmin = new DBFunctions(oldConfig.get("admin"))) {
 				final DBProperties dbProp = new DBProperties(dbAdmin);
 				dbProp.makeReadOnly();
 				tmp = dbProp;

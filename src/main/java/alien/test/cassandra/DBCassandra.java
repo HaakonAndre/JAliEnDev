@@ -58,7 +58,8 @@ public class DBCassandra {
 				try {
 					addresses[i] = InetAddress.getByName(ns[i]).getHostAddress();
 					logger.info("Node address[" + i + "]: " + addresses[i]);
-				} catch (UnknownHostException e) {
+				}
+				catch (UnknownHostException e) {
 					logger.severe("Cannot create InetAddress from: " + ns[i] + " - Exception: " + e);
 				}
 			}

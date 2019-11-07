@@ -418,11 +418,10 @@ public class Xrootd extends Protocol {
 					else
 						sMessage = "rm exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
+				else if (exitStatus.getExtProcExitStatus() < 0)
+					sMessage = "The following command has timed out and was killed after 1m: " + getFormattedLastCommand();
 				else
-					if (exitStatus.getExtProcExitStatus() < 0)
-						sMessage = "The following command has timed out and was killed after 1m: " + getFormattedLastCommand();
-					else
-						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + getFormattedLastCommand();
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + getFormattedLastCommand();
 
 				throw new TargetException(sMessage);
 			}
@@ -547,9 +546,8 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
-				else
-					if (pfn.ticket.envelope.getSignedEnvelope() != null)
-						command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
@@ -603,11 +601,10 @@ public class Xrootd extends Protocol {
 					else
 						sMessage = xrdcpPath + " exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
+				else if (exitStatus.getExtProcExitStatus() < 0)
+					sMessage = "The following command has timed out and was killed after " + maxTime + "s:\n" + getFormattedLastCommand();
 				else
-					if (exitStatus.getExtProcExitStatus() < 0)
-						sMessage = "The following command has timed out and was killed after " + maxTime + "s:\n" + getFormattedLastCommand();
-					else
-						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
 
 				throw new SourceException(sMessage);
 			}
@@ -730,9 +727,8 @@ public class Xrootd extends Protocol {
 
 					command.add(opaqueParams);
 				}
-				else
-					if (pfn.ticket.envelope.getSignedEnvelope() != null)
-						command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 
 			command.add(transactionURL);
@@ -780,11 +776,10 @@ public class Xrootd extends Protocol {
 					else
 						sMessage = xrdcpPath + " exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
+				else if (exitStatus.getExtProcExitStatus() < 0)
+					sMessage = "The following command had timed out and was killed after " + maxTime + "s:\n" + getFormattedLastCommand();
 				else
-					if (exitStatus.getExtProcExitStatus() < 0)
-						sMessage = "The following command had timed out and was killed after " + maxTime + "s:\n" + getFormattedLastCommand();
-					else
-						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
 
 				throw new TargetException(sMessage);
 			}
@@ -1060,26 +1055,25 @@ public class Xrootd extends Protocol {
 					command.add("stat");
 					command.add(qProt.substring(qProt.indexOf('/') + 1));
 				}
-				else
-					if (returnEnvelope) {
-						// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
-						command.add(xrootd_default_path + "/bin/xrd");
+				else if (returnEnvelope) {
+					// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+					command.add(xrootd_default_path + "/bin/xrd");
 
-						command.add(host + ":" + port);
-						command.add("query");
-						command.add("32");
-						String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
+					command.add(host + ":" + port);
+					command.add("query");
+					command.add("32");
+					String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
 
-						if (forceRecalcMd5)
-							qpfn += "\\&recomputemd5=1";
+					if (forceRecalcMd5)
+						qpfn += "\\&recomputemd5=1";
 
-						command.add(qpfn);
-					}
-					else {
-						command.add(xrootd_default_path + "/bin/xrdstat");
-						command.addAll(getCommonArguments(null));
-						command.add(pfn.getPFN());
-					}
+					command.add(qpfn);
+				}
+				else {
+					command.add(xrootd_default_path + "/bin/xrdstat");
+					command.addAll(getCommonArguments(null));
+					command.add(pfn.getPFN());
+				}
 
 				setLastCommand(command);
 
@@ -1249,16 +1243,14 @@ public class Xrootd extends Protocol {
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					sourcePath += "?authz=" + source.ticket.envelope.getEncryptedEnvelope();
-				else
-					if (source.ticket.envelope.getSignedEnvelope() != null)
-						sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
+				else if (source.ticket.envelope.getSignedEnvelope() != null)
+					sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					targetPath += "?authz=" + target.ticket.envelope.getEncryptedEnvelope();
-				else
-					if (target.ticket.envelope.getSignedEnvelope() != null)
-						targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
+				else if (target.ticket.envelope.getSignedEnvelope() != null)
+					targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
 
 			command.add(sourcePath);
 			command.add(targetPath);
@@ -1310,11 +1302,10 @@ public class Xrootd extends Protocol {
 					else
 						sMessage = "xrdcp (TPC==" + iTPC + ") exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
+				else if (exitStatus.getExtProcExitStatus() < 0)
+					sMessage = "The following command has timed out and was killed after " + seconds + "s:\n" + getFormattedLastCommand();
 				else
-					if (exitStatus.getExtProcExitStatus() < 0)
-						sMessage = "The following command has timed out and was killed after " + seconds + "s:\n" + getFormattedLastCommand();
-					else
-						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
 
 				if (exitStatus.getExtProcExitStatus() == 5 && exitStatus.getStdOut().indexOf("source or destination has 0 size") >= 0) {
 					logger.log(Level.WARNING, "Retrying xrdstat, maybe the file shows up with the correct size in a few seconds");
@@ -1368,18 +1359,17 @@ public class Xrootd extends Protocol {
 						break;
 					}
 				}
-				else
-					if (line.startsWith("xstat:")) {
-						final int idx = line.indexOf("size=");
+				else if (line.startsWith("xstat:")) {
+					final int idx = line.indexOf("size=");
 
-						if (idx > 0) {
-							final int idx2 = line.indexOf(" ", idx);
+					if (idx > 0) {
+						final int idx2 = line.indexOf(" ", idx);
 
-							size = Long.parseLong(line.substring(idx + 5, idx2));
+						size = Long.parseLong(line.substring(idx + 5, idx2));
 
-							break;
-						}
+						break;
 					}
+				}
 		}
 		catch (final IOException e) {
 			e.printStackTrace();
@@ -1747,11 +1737,10 @@ public class Xrootd extends Protocol {
 					if (!line.equals("version") && !line.startsWith("["))
 						if (line.startsWith("v"))
 							ret.setVersion("Xrootd", line);
+						else if (line.startsWith("dCache "))
+							ret.setVersion("dCache", line.substring(line.indexOf(' ') + 1).trim());
 						else
-							if (line.startsWith("dCache "))
-								ret.setVersion("dCache", line.substring(line.indexOf(' ') + 1).trim());
-							else
-								ret.setVersion(null, line);
+							ret.setVersion(null, line);
 				}
 			}
 		}
@@ -1762,13 +1751,13 @@ public class Xrootd extends Protocol {
 
 		return ret;
 	}
-	
+
 	@Override
 	public Object clone() {
 		final Xrootd theClone = (Xrootd) super.clone();
-		
+
 		theClone.extraEnvVariables = new HashMap<>(this.extraEnvVariables);
-		
+
 		return theClone;
 	}
 }

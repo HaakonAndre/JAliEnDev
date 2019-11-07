@@ -51,26 +51,26 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 			int code = commander.c_api.moveLFNCSD(fullSource, fullTarget);
 
 			switch (code) {
-			case 1:
-				commander.setReturnCode(code, "Source and destination are the same");
-				break;
-			case 2:
-				commander.setReturnCode(code, "The destination parent doesn't exist");
-				break;
-			case 3:
-				commander.setReturnCode(code, "No permission to write on destination");
-				break;
-			case 4:
-				commander.setReturnCode(code, "Some entries failed to be moved");
-				break;
-			case 5:
-				commander.setReturnCode(code, "No permission to move the source");
-				break;
-			case 6:
-				commander.setReturnCode(code, "Cannot mv " + fullSource + "into " + fullTarget);
-				break;
-			default:
-				break;
+				case 1:
+					commander.setReturnCode(code, "Source and destination are the same");
+					break;
+				case 2:
+					commander.setReturnCode(code, "The destination parent doesn't exist");
+					break;
+				case 3:
+					commander.setReturnCode(code, "No permission to write on destination");
+					break;
+				case 4:
+					commander.setReturnCode(code, "Some entries failed to be moved");
+					break;
+				case 5:
+					commander.setReturnCode(code, "No permission to move the source");
+					break;
+				case 6:
+					commander.setReturnCode(code, "Cannot mv " + fullSource + "into " + fullTarget);
+					break;
+				default:
+					break;
 			}
 
 		}
@@ -118,7 +118,8 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 
 			target = nonOptionArguments.get(size - 1);
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

@@ -1,11 +1,10 @@
 package alien.test.utils;
 
-
 /**
  * @author ron
  * @since Sep 09, 2011
  */
-public class TestException extends Exception{
+public class TestException extends Exception {
 
 	/**
 	 * 

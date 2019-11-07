@@ -56,7 +56,8 @@ public class PackageUtils {
 				synchronized (wakeupObject) {
 					try {
 						wakeupObject.wait(1000 * 60 * 60);
-					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+					}
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						// ignore
 					}
 
@@ -136,7 +137,8 @@ public class PackageUtils {
 					while ((line = br.readLine()) != null)
 						newCvmfsPackages.add(line.trim());
 				}
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				logger.log(Level.WARNING, "Exception getting the CVMFS package list", t);
 			}
 

@@ -154,29 +154,29 @@ public class Base64Moded {
 				| (numSigBytes > 2 ? ((source[srcOffset + 2] << 24) >>> 24) : 0);
 
 		switch (numSigBytes) {
-		case 3:
-			destination[destOffset] = ALPHABET[(inBuff >>> 18)];
-			destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
-			destination[destOffset + 2] = ALPHABET[(inBuff >>> 6) & 0x3f];
-			destination[destOffset + 3] = ALPHABET[(inBuff) & 0x3f];
-			return destination;
+			case 3:
+				destination[destOffset] = ALPHABET[(inBuff >>> 18)];
+				destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
+				destination[destOffset + 2] = ALPHABET[(inBuff >>> 6) & 0x3f];
+				destination[destOffset + 3] = ALPHABET[(inBuff) & 0x3f];
+				return destination;
 
-		case 2:
-			destination[destOffset] = ALPHABET[(inBuff >>> 18)];
-			destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
-			destination[destOffset + 2] = ALPHABET[(inBuff >>> 6) & 0x3f];
-			destination[destOffset + 3] = EQUALS_SIGN;
-			return destination;
+			case 2:
+				destination[destOffset] = ALPHABET[(inBuff >>> 18)];
+				destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
+				destination[destOffset + 2] = ALPHABET[(inBuff >>> 6) & 0x3f];
+				destination[destOffset + 3] = EQUALS_SIGN;
+				return destination;
 
-		case 1:
-			destination[destOffset] = ALPHABET[(inBuff >>> 18)];
-			destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
-			destination[destOffset + 2] = EQUALS_SIGN;
-			destination[destOffset + 3] = EQUALS_SIGN;
-			return destination;
+			case 1:
+				destination[destOffset] = ALPHABET[(inBuff >>> 18)];
+				destination[destOffset + 1] = ALPHABET[(inBuff >>> 12) & 0x3f];
+				destination[destOffset + 2] = EQUALS_SIGN;
+				destination[destOffset + 3] = EQUALS_SIGN;
+				return destination;
 
-		default:
-			return destination;
+			default:
+				return destination;
 		} // end switch
 	} // end encode3to4
 
@@ -434,7 +434,8 @@ public class Base64Moded {
 			destination[destOffset] = (byte) (outBuff >>> 16);
 			destination[destOffset + 1] = (byte) (outBuff >>> 8);
 			return 2;
-		} else
+		}
+		else
 			try {
 				// Two ways to do the same thing. Don't know which way I like best.
 				// int outBuff = ( ( DECODABET[ source[ srcOffset ] ] << 24 ) >>> 6 )
@@ -449,7 +450,8 @@ public class Base64Moded {
 				destination[destOffset + 2] = (byte) (outBuff);
 
 				return 3;
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			}
+			catch (@SuppressWarnings("unused") final Exception e) {
 				System.out.println("" + source[srcOffset] + ": " + (DECODABET[source[srcOffset]]));
 				System.out.println("" + source[srcOffset + 1] + ": " + (DECODABET[source[srcOffset + 1]]));
 				System.out.println("" + source[srcOffset + 2] + ": " + (DECODABET[source[srcOffset + 2]]));

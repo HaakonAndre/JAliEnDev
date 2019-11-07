@@ -64,7 +64,8 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 
 				if (!a.wasRemoved())
 					commander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
-			} catch (final ServerException e) {
+			}
+			catch (final ServerException e) {
 				e.getCause().printStackTrace();
 				commander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
 			}
@@ -122,7 +123,8 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			bV = options.has("v");
 
 			alPaths = optionToString(options.nonOptionArguments());
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

@@ -113,29 +113,28 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 							ret += localLFN.id.toString().toUpperCase() + padSpace(3) + localLFN.getName();
 						}
 					}
-					else
-						if (bC)
-							ret += localLFN.getCanonicalName();
-						else {
-							if (bL) {
-								commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
-								commander.printOut("user", localLFN.owner);
-								commander.printOut("group", localLFN.gowner);
-								commander.printOut("size", String.valueOf(localLFN.size));
-								commander.printOut("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
-								ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
-										+ padLeft(String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getName();
-							}
-							else {
-								ret += localLFN.getName();
-							}
-
-							if (bF && (localLFN.type == 'd'))
-								ret += "/";
-
-							commander.printOut("name", localLFN.getName() + (bF && localLFN.isDirectory() ? "/" : ""));
-							commander.printOut("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
+					else if (bC)
+						ret += localLFN.getCanonicalName();
+					else {
+						if (bL) {
+							commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
+							commander.printOut("user", localLFN.owner);
+							commander.printOut("group", localLFN.gowner);
+							commander.printOut("size", String.valueOf(localLFN.size));
+							commander.printOut("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
+							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
+									+ padLeft(String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getName();
 						}
+						else {
+							ret += localLFN.getName();
+						}
+
+						if (bF && (localLFN.type == 'd'))
+							ret += "/";
+
+						commander.printOut("name", localLFN.getName() + (bF && localLFN.isDirectory() ? "/" : ""));
+						commander.printOut("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
+					}
 
 					logger.info("LS line : " + ret);
 
@@ -229,7 +228,8 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 			bA = options.has("a");
 			bF = options.has("F");
 			bC = options.has("c");
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

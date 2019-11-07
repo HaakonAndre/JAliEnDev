@@ -83,7 +83,8 @@ public class JAliEnCommandchown_csd extends JAliEnBaseCommand {
 
 			// get file
 			this.file = params.get(1);
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			// printHelp();
 			throw e;
 		}

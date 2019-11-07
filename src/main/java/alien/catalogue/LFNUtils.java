@@ -553,11 +553,10 @@ public class LFNUtils {
 			lfn.gowner = user.getRoles().iterator().next();
 			lfn.perm = "755";
 		}
-		else
-			if (!AuthorizationChecker.canWrite(lfn, user)) {
-				logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
-				return false;
-			}
+		else if (!AuthorizationChecker.canWrite(lfn, user)) {
+			logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
+			return false;
+		}
 
 		lfn.ctime = new Date();
 

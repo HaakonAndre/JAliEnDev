@@ -56,7 +56,8 @@ public final class AuthorizationFactory {
 					cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
 					if (cert != null)
 						user = UserFactory.getByCertificate((X509Certificate[]) cert);
-				} catch (KeyStoreException e) {
+				}
+				catch (KeyStoreException e) {
 					e.printStackTrace();
 				}
 
@@ -182,23 +183,21 @@ public final class AuthorizationFactory {
 			if (pfns != null && pfns.contains(pfn))
 				return "PFN already associated to the GUID";
 		}
-		else
-			if (access == AccessType.DELETE || access == AccessType.READ) {
-				// PFN must be a part of the ones registered to the GUID
+		else if (access == AccessType.DELETE || access == AccessType.READ) {
+			// PFN must be a part of the ones registered to the GUID
 
-				if (access == AccessType.DELETE) {
-					if (!AuthorizationChecker.canWrite(guid, user))
-						return "User is not allowed to delete this entry";
-				}
-				else
-					if (!AuthorizationChecker.canRead(guid, user))
-						return "User is not allowed to read this entry";
-
-				if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
-					return "PFN is not registered";
+			if (access == AccessType.DELETE) {
+				if (!AuthorizationChecker.canWrite(guid, user))
+					return "User is not allowed to delete this entry";
 			}
-			else
-				return "Unknown access type : " + access;
+			else if (!AuthorizationChecker.canRead(guid, user))
+				return "User is not allowed to read this entry";
+
+			if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
+				return "PFN is not registered";
+		}
+		else
+			return "Unknown access type : " + access;
 
 		final SE referenceSE = pfn.getSE();
 
@@ -211,7 +210,8 @@ public final class AuthorizationFactory {
 					XrootDEnvelopeSigner.encryptEnvelope(env);
 				else
 					XrootDEnvelopeSigner.signEnvelope(env);
-		} catch (final GeneralSecurityException gse) {
+		}
+		catch (final GeneralSecurityException gse) {
 			logger.log(Level.SEVERE, "Cannot sign and encrypt envelope", gse);
 		}
 
@@ -233,7 +233,7 @@ public final class AuthorizationFactory {
 	 */
 	public static String fillAccessCsd(final AliEnPrincipal user, final LFN_CSD lfnc, final PFN pfn, final AccessType access, final boolean skipSanityChecks) {
 		if (logger.isLoggable(Level.FINE))
-			logger.log(Level.FINE, pfn + ", user: " + user + ", access: " + access+", skip sanity checks: "+skipSanityChecks);
+			logger.log(Level.FINE, pfn + ", user: " + user + ", access: " + access + ", skip sanity checks: " + skipSanityChecks);
 
 		// final GUID guid = pfn.getGuid();
 		//
@@ -259,9 +259,8 @@ public final class AuthorizationFactory {
 					if (!AuthorizationChecker.canWrite(lfnc, user))
 						return "User is not allowed to delete this entry";
 				}
-				else
-					if (!AuthorizationChecker.canRead(lfnc, user))
-						return "User is not allowed to read this entry";
+				else if (!AuthorizationChecker.canRead(lfnc, user))
+					return "User is not allowed to read this entry";
 
 				// if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
 				// return "PFN is not registered";
@@ -281,7 +280,8 @@ public final class AuthorizationFactory {
 					XrootDEnvelopeSigner.encryptEnvelope(env);
 				else
 					XrootDEnvelopeSigner.signEnvelope(env);
-		} catch (final GeneralSecurityException gse) {
+		}
+		catch (final GeneralSecurityException gse) {
 			logger.log(Level.SEVERE, "Cannot sign and encrypt envelope", gse);
 		}
 

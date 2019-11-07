@@ -109,7 +109,8 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 
 			// get file
 			this.files = params.subList(1, params.size());
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			// printHelp();
 			throw e;
 		}

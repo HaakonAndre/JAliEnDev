@@ -85,10 +85,12 @@ public class JobSigner {
 
 		try {
 			signer.initSign((PrivateKey) ks.getKey(keyAlias, pass));
-		} catch (final UnrecoverableKeyException e) {
+		}
+		catch (final UnrecoverableKeyException e) {
 
 			e.printStackTrace();
-		} catch (final KeyStoreException e) {
+		}
+		catch (final KeyStoreException e) {
 			e.printStackTrace();
 		}
 
@@ -186,7 +188,8 @@ public class JobSigner {
 						throw new JobSubmissionException(user.getName() + " cannot become " + j.getUser());
 					// System.out.println("user authorized.");
 
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					throw new JobSubmissionException("Error while validating the JDL syntax", e);
 				}
 			}
@@ -196,7 +199,8 @@ public class JobSigner {
 			long issued = 0;
 			try {
 				issued = Long.parseLong(sjdl.substring(sjdl.indexOf(issuedDelimOn) + issuedDelimOn.length(), sjdl.indexOf(issuedDelimOff)));
-			} catch (final NumberFormatException e) {
+			}
+			catch (final NumberFormatException e) {
 				throw new JobSubmissionException("Invalid JDL Signature: [illegal issued tag]", e);
 			}
 			if (now < issued)
@@ -205,7 +209,8 @@ public class JobSigner {
 			long expires = 0;
 			try {
 				expires = Long.parseLong(sjdl.substring(sjdl.indexOf(expiresDelimOn) + expiresDelimOn.length(), sjdl.indexOf(expiresDelimOff)));
-			} catch (final NumberFormatException e) {
+			}
+			catch (final NumberFormatException e) {
 				throw new JobSubmissionException("Invalid JDL Signature: [illegal expires tag]", e);
 			}
 			if (now > expires)
@@ -226,7 +231,8 @@ public class JobSigner {
 
 			}
 
-		} catch (final Throwable e) {
+		}
+		catch (final Throwable e) {
 			e.printStackTrace();
 			throw new JobSubmissionException("Invalid JDL Signature, [not verifyable: Exception]: " + e.getMessage());
 		}

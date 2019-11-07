@@ -44,7 +44,8 @@ public final class ProcessWithTimeout {
 					if (count > 0)
 						sb.append(new String(buffer, 0, count));
 
-				} catch (@SuppressWarnings("unused") final IOException e) {
+				}
+				catch (@SuppressWarnings("unused") final IOException e) {
 					active = false;
 				}
 			}
@@ -70,12 +71,15 @@ public final class ProcessWithTimeout {
 							sb.append(new String(buffer, 0, count));
 					} while (count >= 0);
 				}
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
+			}
+			catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore
-			} finally {
+			}
+			finally {
 				try {
 					is.close();
-				} catch (@SuppressWarnings("unused") final IOException ioe) {
+				}
+				catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 			}
@@ -114,7 +118,8 @@ public final class ProcessWithTimeout {
 
 		try {
 			p.getOutputStream().close();
-		} catch (@SuppressWarnings("unused") final IOException e) {
+		}
+		catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore
 		}
 
@@ -126,7 +131,8 @@ public final class ProcessWithTimeout {
 
 			try {
 				p.getErrorStream().close();
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
+			}
+			catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore
 			}
 		}
@@ -174,7 +180,8 @@ public final class ProcessWithTimeout {
 
 				p.destroyForcibly();
 			}
-		} finally {
+		}
+		finally {
 			shouldTerminate = true;
 
 			if (stdoutThread != null)

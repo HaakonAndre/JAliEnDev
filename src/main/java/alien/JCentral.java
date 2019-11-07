@@ -38,8 +38,9 @@ public class JCentral {
 			JAKeyStore.loadKeyStore();
 			TomcatServer.startTomcatServer();
 			DispatchSSLServer.runService();
-			
-		} catch (final Exception e) {
+
+		}
+		catch (final Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

@@ -76,7 +76,8 @@ public class TitanBatchInfo {
 			}
 
 			connection.close();
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			System.err.println("Reading wrapper info failed: " + e.getMessage());
 			throw e;
 		}
@@ -98,7 +99,8 @@ public class TitanBatchInfo {
 				if (line.equals("R"))
 					return true;
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Exception checking whether batch is running: " + e.getMessage());
 			return false;
 		}
@@ -133,7 +135,8 @@ public class TitanBatchInfo {
 					+ "replace(substr(quote(zeroblob((256 + 1)/2)), 3, 256),'0','X')," + "'I', " + "replace(substr(quote(zeroblob((256 + 1)/2)), 3, 256),'0','X'),"
 					+ "replace(substr(quote(zeroblob((256 + 1)/2)), 3, 256),'0','X')," + "'', 0, 0 " + "FROM numbers LIMIT %d", numCores));
 			statement.executeUpdate("DROP TABLE numbers");
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			System.err.println(e);
 		}
 	}
@@ -142,7 +145,8 @@ public class TitanBatchInfo {
 		try (Connection connection = DriverManager.getConnection(monitoringDbName); Statement statement = connection.createStatement()) {
 			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs_monitoring");
 			statement.executeUpdate("CREATE TABLE alien_jobs_monitoring (queue_id VARCHAR(20), resources VARCHAR(100))");
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			System.err.println(e);
 		}
 	}
@@ -161,7 +165,8 @@ public class TitanBatchInfo {
 			while (rs.next())
 				idleRanks.add(new TitanJobStatus(rs.getInt("rank"), Long.valueOf(rs.getLong("queue_id")), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"),
 						rs.getInt("val_code"), this));
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			System.err.println("Getting free slots failed: " + e.getMessage());
 			throw e;
 		}
@@ -185,7 +190,8 @@ public class TitanBatchInfo {
 						rs.getInt("val_code"), this));
 
 			connection.close();
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			System.err.println("Getting free slots failed: " + e.getMessage());
 			throw e;
 		}
@@ -216,7 +222,8 @@ public class TitanBatchInfo {
 			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
 			// close database
 			connection.close();
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			System.err.println("Unable to get monitoring data: " + e.getMessage());
 		}
 		return l;

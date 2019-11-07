@@ -35,11 +35,10 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 								logger.log(Level.WARNING, "Could not remove directory (or non-existing parents): " + path);
 							}
 						}
-						else
-							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-								commander.setReturnCode(1, "Could not remove directory: " + path);
-								logger.log(Level.WARNING, "Could not remove directory: " + path);
-							}
+						else if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
+							commander.setReturnCode(1, "Could not remove directory: " + path);
+							logger.log(Level.WARNING, "Could not remove directory: " + path);
+						}
 					}
 					else
 						commander.setReturnCode(2, "Permission denied on directory: [" + path + "]");
@@ -106,7 +105,8 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 				silent();
 			bP = options.has("p");
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

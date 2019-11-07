@@ -7,9 +7,9 @@ import java.security.SignatureException;
 
 import alien.user.AuthenticationChecker;
 
-
 /**
  * Authenticate a client with challenge/response on his private key possession
+ * 
  * @author ron
  * @since Jun 17, 2011
  */
@@ -24,7 +24,7 @@ public class Authenticate extends Request {
 	private String pubCert;
 
 	/**
-	 * @param challenge 
+	 * @param challenge
 	 */
 	public Authenticate(final String challenge) {
 		this.challenge = challenge;
@@ -36,13 +36,17 @@ public class Authenticate extends Request {
 			response = AuthenticationChecker.response(challenge);
 			pubCert = AuthenticationChecker.readPubCert();
 
-		} catch (InvalidKeyException e) {
+		}
+		catch (InvalidKeyException e) {
 			e.printStackTrace();
-		} catch (SignatureException e) {
+		}
+		catch (SignatureException e) {
 			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
+		}
+		catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -61,8 +65,6 @@ public class Authenticate extends Request {
 		return this.pubCert;
 	}
 
-	
-	
 	@Override
 	public String toString() {
 		return "Asked for : " + this.challenge + ", reply is: " + this.response;

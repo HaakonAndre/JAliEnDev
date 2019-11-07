@@ -395,11 +395,10 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 						if (jdl != null) {
 							if (js.executionCode != 0)
 								changeStatus(JobStatus.ERROR_E);
+							else if (js.validationCode != 0)
+								changeStatus(JobStatus.ERROR_V);
 							else
-								if (js.validationCode != 0)
-									changeStatus(JobStatus.ERROR_V);
-								else
-									changeStatus(JobStatus.SAVING);
+								changeStatus(JobStatus.SAVING);
 							uploadOutputFiles(); // upload data
 							cleanup();
 							System.err.println(String.format("Upload job %d finished", js.aliEnId));
@@ -466,11 +465,10 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 								monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 								installPackages(packToInstall);
 							}
-							else
-								if (Integer.valueOf(-2).equals(matchedJob.get("Code"))) {
-									logger.log(Level.INFO, "Nothing to run for now, idling for a while");
-									count = 1; // breaking the loop
-								}
+							else if (Integer.valueOf(-2).equals(matchedJob.get("Code"))) {
+								logger.log(Level.INFO, "Nothing to run for now, idling for a while");
+								count = 1; // breaking the loop
+							}
 						}
 						else {
 							// EXPERIMENTAL
@@ -1433,11 +1431,10 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V)
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
+			else if (uploadedAllOutFiles)
+				changeStatus(JobStatus.DONE);
 			else
-				if (uploadedAllOutFiles)
-					changeStatus(JobStatus.DONE);
-				else
-					changeStatus(JobStatus.ERROR_SV);
+				changeStatus(JobStatus.ERROR_SV);
 
 		return uploadedAllOutFiles;
 	}
@@ -1526,16 +1523,15 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 		}
-		else
-			if (newStatus == JobStatus.RUNNING) {
-				final HashMap<String, Object> extrafields = new HashMap<>();
-				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-				extrafields.put("node", hostName);
+		else if (newStatus == JobStatus.RUNNING) {
+			final HashMap<String, Object> extrafields = new HashMap<>();
+			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+			extrafields.put("node", hostName);
 
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-			}
-			else
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+		}
+		else
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
 
 		jobStatus = newStatus;
 
@@ -1550,9 +1546,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
-		else
-			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		else if (outputDir == null)
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
 	}

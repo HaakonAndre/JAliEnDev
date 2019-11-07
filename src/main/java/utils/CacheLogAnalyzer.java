@@ -50,7 +50,8 @@ public class CacheLogAnalyzer {
 		if (ai == null) {
 			ai = new AtomicInteger(hit);
 			h2.put(key, ai);
-		} else
+		}
+		else
 			ai.addAndGet(hit);
 	}
 
@@ -160,14 +161,16 @@ public class CacheLogAnalyzer {
 					incStats("access", "raw_data", "AOD", hit);
 
 					incStats("access", "raw_data_pass", m.group(1).toLowerCase(), hit);
-				} else {
+				}
+				else {
 					m = lfn.indexOf("/ESDs/") >= 0 ? ESD.matcher(lfn) : null;
 
 					if (m != null && m.matches()) {
 						incStats("access", "raw_data", "ESDs", hit);
 
 						incStats("access", "raw_data_pass", m.group(1).toLowerCase(), hit);
-					} else if (lfn.indexOf("/raw/") >= 0)
+					}
+					else if (lfn.indexOf("/raw/") >= 0)
 						incStats("access", "raw_data", "raw", hit);
 					else if (lfn.indexOf("/pass0/") >= 0 || lfn.indexOf("/cpass0/") >= 0)
 						incStats("access", "raw_data", "pass0", hit);

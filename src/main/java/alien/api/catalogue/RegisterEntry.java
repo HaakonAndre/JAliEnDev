@@ -19,7 +19,7 @@ public class RegisterEntry extends Request {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(RegisterEntry.class.getCanonicalName());
-	
+
 	private static final long serialVersionUID = -2004904530203513524L;
 	private OutputEntry entry;
 	private String outputDir;
@@ -40,11 +40,13 @@ public class RegisterEntry extends Request {
 		if (entry != null && outputDir != null && outputDir.length() != 0) {
 			try {
 				Register.register(entry, outputDir, getEffectiveRequester());
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				logger.log(Level.SEVERE, "Could not register entry " + entry.getName());
 				e.printStackTrace();
 			}
-		} else {
+		}
+		else {
 			logger.log(Level.SEVERE, "Invalid arguments in RegisterLFN");
 		}
 	}

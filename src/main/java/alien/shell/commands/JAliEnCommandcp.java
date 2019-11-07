@@ -112,31 +112,30 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				if (lSource == null) {
 					commander.setReturnCode(1, "File doesn't exist: " + absolutePath);
 				}
-				else
-					if (!lSource.isFile()) {
-						commander.setReturnCode(2, "This entry is not a file: " + absolutePath);
+				else if (!lSource.isFile()) {
+					commander.setReturnCode(2, "This entry is not a file: " + absolutePath);
+				}
+				else {
+					final GUID g = commander.c_api.getGUID(lSource.guid.toString());
+
+					if (g == null) {
+						commander.setReturnCode(2, "Cannot get the GUID of " + absolutePath);
 					}
 					else {
-						final GUID g = commander.c_api.getGUID(lSource.guid.toString());
+						localFile = TempFileManager.getAny(g);
 
-						if (g == null) {
-							commander.setReturnCode(2, "Cannot get the GUID of " + absolutePath);
-						}
-						else {
-							localFile = TempFileManager.getAny(g);
+						if (localFile == null) {
+							final File fTemp = File.createTempFile("jalien.get.", ".temp");
 
-							if (localFile == null) {
-								final File fTemp = File.createTempFile("jalien.get.", ".temp");
+							fTemp.delete();
 
-								fTemp.delete();
+							localFile = copyGridToLocal(absolutePath, fTemp);
 
-								localFile = copyGridToLocal(absolutePath, fTemp);
-
-								if (localFile != null)
-									TempFileManager.putTemp(g, localFile);
-							}
+							if (localFile != null)
+								TempFileManager.putTemp(g, localFile);
 						}
 					}
+				}
 			}
 			catch (@SuppressWarnings("unused") final IOException ioe) {
 				commander.printErrln("Cannot create temporary file");
@@ -161,111 +160,110 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					return;
 				}
 			}
-			else
-				if (localFileSpec(source) && !localFileSpec(target)) {
-					// from the local disk to the Grid
+			else if (localFileSpec(source) && !localFileSpec(target)) {
+				// from the local disk to the Grid
 
-					final File sourceFile = new File(getLocalFileSpec(source));
+				final File sourceFile = new File(getLocalFileSpec(source));
 
-					if (!targetLFNExists(target))
-						if (sourceFile.exists())
-							copyLocalToGrid(sourceFile, target);
-						else {
-							commander.setReturnCode(2, "A local file with this name does not exists.");
-							if (isSilent()) {
-								final IOException ex = new IOException("Local file " + target + " doesn't exist");
-
-								throw new IOError(ex);
-							}
-							return;
-						}
-				}
-				else {
-					// copying between two Grid endpoints
-
-					final LFN currentDir = commander.getCurrentDir();
-
-					final LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, target));
-
-					if (tLFN != null && tLFN.exists && !tLFN.isDirectory()) {
-						commander.setReturnCode(3, "Target file already exists: " + tLFN.getCanonicalName());
+				if (!targetLFNExists(target))
+					if (sourceFile.exists())
+						copyLocalToGrid(sourceFile, target);
+					else {
+						commander.setReturnCode(2, "A local file with this name does not exists.");
 						if (isSilent()) {
-							final IOException ex = new IOException("Target file already exists: " + tLFN.getCanonicalName());
+							final IOException ex = new IOException("Local file " + target + " doesn't exist");
 
 							throw new IOError(ex);
 						}
 						return;
 					}
+			}
+			else {
+				// copying between two Grid endpoints
 
-					final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, source);
+				final LFN currentDir = commander.getCurrentDir();
 
-					final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
+				final LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, target));
 
-					if (expandedPaths.size() == 0) {
-						commander.setReturnCode(4, "No such file: " + source);
+				if (tLFN != null && tLFN.exists && !tLFN.isDirectory()) {
+					commander.setReturnCode(3, "Target file already exists: " + tLFN.getCanonicalName());
+					if (isSilent()) {
+						final IOException ex = new IOException("Target file already exists: " + tLFN.getCanonicalName());
+
+						throw new IOError(ex);
+					}
+					return;
+				}
+
+				final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, source);
+
+				final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
+
+				if (expandedPaths.size() == 0) {
+					commander.setReturnCode(4, "No such file: " + source);
+					return;
+				}
+
+				if (expandedPaths.size() > 1) {
+					// if more than one file then the target must be an existing directory
+
+					if (tLFN == null || !tLFN.exists || !tLFN.isDirectory()) {
+						commander.setReturnCode(5, "Multiple sources can only be copied to a target directory");
+						if (isSilent()) {
+							final IOException ex = new IOException("Multiple sources can only be copied to a target directory");
+
+							throw new IOError(ex);
+						}
 						return;
 					}
+				}
 
-					if (expandedPaths.size() > 1) {
-						// if more than one file then the target must be an existing directory
+				String lastError = null;
 
-						if (tLFN == null || !tLFN.exists || !tLFN.isDirectory()) {
-							commander.setReturnCode(5, "Multiple sources can only be copied to a target directory");
-							if (isSilent()) {
-								final IOException ex = new IOException("Multiple sources can only be copied to a target directory");
+				for (final String sFile : expandedPaths) {
+					String actualTarget = target;
 
-								throw new IOError(ex);
-							}
-							return;
-						}
+					LFN actualLFN = null;
+
+					if (tLFN != null) {
+						// target is a directory, have to create the same file name inside
+						String fileName = sFile;
+
+						if (fileName.contains("/"))
+							fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+
+						actualTarget = tLFN.getCanonicalName() + fileName;
+
+						actualLFN = commander.c_api.getLFN(actualTarget);
 					}
 
-					String lastError = null;
+					if (actualLFN != null && actualLFN.exists) {
+						lastError = "Target already exists: " + actualTarget;
+						commander.setReturnCode(3, lastError);
+						continue;
+					}
 
-					for (final String sFile : expandedPaths) {
-						String actualTarget = target;
-
-						LFN actualLFN = null;
-
-						if (tLFN != null) {
-							// target is a directory, have to create the same file name inside
-							String fileName = sFile;
-
-							if (fileName.contains("/"))
-								fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
-
-							actualTarget = tLFN.getCanonicalName() + fileName;
-
-							actualLFN = commander.c_api.getLFN(actualTarget);
-						}
-
-						if (actualLFN != null && actualLFN.exists) {
-							lastError = "Target already exists: " + actualTarget;
-							commander.setReturnCode(3, lastError);
-							continue;
-						}
-
-						localFile = copyGridToLocal(sFile, null);
-						if (localFile != null && localFile.exists() && localFile.length() > 0) {
-							if (copyLocalToGrid(localFile, actualTarget)) {
-								commander.printOutln("Copied " + sFile + " -> " + actualTarget);
-							}
-							else {
-								lastError = "Could not copy " + sFile + " -> " + actualTarget;
-								commander.setReturnCode(6, lastError);
-								continue;
-							}
+					localFile = copyGridToLocal(sFile, null);
+					if (localFile != null && localFile.exists() && localFile.length() > 0) {
+						if (copyLocalToGrid(localFile, actualTarget)) {
+							commander.printOutln("Copied " + sFile + " -> " + actualTarget);
 						}
 						else {
-							lastError = "Could not get the contents of " + sFile;
-							commander.setReturnCode(7, lastError);
+							lastError = "Could not copy " + sFile + " -> " + actualTarget;
+							commander.setReturnCode(6, lastError);
 							continue;
 						}
 					}
-
-					if (lastError != null && isSilent())
-						throw new IOError(new IOException(lastError));
+					else {
+						lastError = "Could not get the contents of " + sFile;
+						commander.setReturnCode(7, lastError);
+						continue;
+					}
 				}
+
+				if (lastError != null && isSilent())
+					throw new IOError(new IOException(lastError));
+			}
 		}
 	}
 
@@ -417,11 +415,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							return;
 						}
 					}
-					else
-						if (!fDir.mkdirs()) {
-							commander.setReturnCode(103, "Could not create the directory: " + fDir.getAbsolutePath());
-							return;
-						}
+					else if (!fDir.mkdirs()) {
+						commander.setReturnCode(103, "Could not create the directory: " + fDir.getAbsolutePath());
+						return;
+					}
 				}
 
 				writeToLocalFile = new File(targetLocalFile, fileName);
@@ -535,19 +532,17 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (l != null)
 				if (l.isFile())
 					sources.add(expandedPath);
-				else
-					if (l.isDirectory()) {
-						final Collection<LFN> findresult = commander.c_api.find(expandedPath, "*", 0);
+				else if (l.isDirectory()) {
+					final Collection<LFN> findresult = commander.c_api.find(expandedPath, "*", 0);
 
-						logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
+					logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
 
-						for (final LFN file : findresult)
-							if (file.isFile())
-								sources.add(file.getCanonicalName());
-					}
-					else
-						if (l.isCollection())
-							sources.addAll(l.listCollection());
+					for (final LFN file : findresult)
+						if (file.isFile())
+							sources.add(file.getCanonicalName());
+				}
+				else if (l.isCollection())
+					sources.addAll(l.listCollection());
 		}
 
 		if (sources.size() > 1) {
@@ -566,11 +561,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					return null;
 				}
 			}
-			else
-				if (!targetLocalFile.mkdirs()) {
-					commander.setReturnCode(110, "Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
-					return null;
-				}
+			else if (!targetLocalFile.mkdirs()) {
+				commander.setReturnCode(110, "Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
+				return null;
+			}
 		}
 
 		// String longestMatchingPath = currentDir != null ?
@@ -873,9 +867,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			return true;
 		}
-		else
-			if (bD)
-				sourceFile.delete();
+		else if (bD)
+			sourceFile.delete();
 
 		return commit(envelopes, guid, bD ? null : sourceFile, referenceCount, true);
 	}
@@ -981,22 +974,20 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			return true;
 		}
-		else
-			if (envelopes.size() > 0) {
-				if (report)
-					commander.printOutln("Only " + envelopes.size() + " out of " + desiredCount + " requested replicas could be uploaded");
+		else if (envelopes.size() > 0) {
+			if (report)
+				commander.printOutln("Only " + envelopes.size() + " out of " + desiredCount + " requested replicas could be uploaded");
 
-				return true;
+			return true;
+		}
+		else if (report) {
+			commander.setReturnCode(302, "Upload failed, sorry!");
+			if (isSilent()) {
+				final IOException ex = new IOException("Upload failed");
+
+				throw new IOError(ex);
 			}
-			else
-				if (report) {
-					commander.setReturnCode(302, "Upload failed, sorry!");
-					if (isSilent()) {
-						final IOException ex = new IOException("Upload failed");
-
-						throw new IOError(ex);
-					}
-				}
+		}
 
 		return false;
 	}
@@ -1055,12 +1046,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							// give back to the central services the signed envelopes
 							returnEnvelope = pfn.ticket.envelope.getSignedEnvelope();
 					else
-						// no signed envelopes, return the encrypted one, if any
-						if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-							returnEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
-						else
-							// what kind of ticket was this?
-							returnEnvelope = targetPFNResult;
+					// no signed envelopes, return the encrypted one, if any
+					if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
+						returnEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
+					else
+						// what kind of ticket was this?
+						returnEnvelope = targetPFNResult;
 				else
 					// if no ticket at all...
 					returnEnvelope = targetPFNResult;
@@ -1257,24 +1248,22 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 									referenceCount++;
 								}
 						}
-						else
-							if (spec.contains(":"))
-								try {
-									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-									if (c > 0) {
-										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-										referenceCount = referenceCount + c;
-									}
-									else
-										throw new JAliEnCommandException("Number of replicas has to be stricly positive, in " + spec);
+						else if (spec.contains(":"))
+							try {
+								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+								if (c > 0) {
+									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+									referenceCount = referenceCount + c;
+								}
+								else
+									throw new JAliEnCommandException("Number of replicas has to be stricly positive, in " + spec);
 
-								}
-								catch (final Exception e) {
-									throw new JAliEnCommandException("Could not parse the QoS string " + spec, e);
-								}
-							else
-								if (!spec.equals(""))
-									throw new JAliEnCommandException();
+							}
+							catch (final Exception e) {
+								throw new JAliEnCommandException("Could not parse the QoS string " + spec, e);
+							}
+						else if (!spec.equals(""))
+							throw new JAliEnCommandException();
 					}
 				}
 

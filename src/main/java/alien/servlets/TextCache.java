@@ -270,17 +270,16 @@ public class TextCache extends HttpServlet {
 
 		if (requestLogger.checkError())
 			requestLogger = null;
-		else
-			if (++logCounter > 1000) {
-				logCounter = 0;
+		else if (++logCounter > 1000) {
+			logCounter = 0;
 
-				if (lastLogFile != null) {
-					final File f = new File(lastLogFile);
+			if (lastLogFile != null) {
+				final File f = new File(lastLogFile);
 
-					if (!f.exists())
-						closeStreams();
-				}
+				if (!f.exists())
+					closeStreams();
 			}
+		}
 	}
 
 	/**
@@ -413,91 +412,90 @@ public class TextCache extends HttpServlet {
 						namespace.keys.clear();
 					}
 				}
-			else
-				if (rw.gets("ns").length() == 0) {
-					for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
-						final Namespace namespace = entry.getValue();
+			else if (rw.gets("ns").length() == 0) {
+				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+					final Namespace namespace = entry.getValue();
 
-						int min = -1;
-						int max = 0;
-						long total = 0;
+					int min = -1;
+					int max = 0;
+					long total = 0;
 
-						long hits = 0;
+					long hits = 0;
 
-						int nssize;
+					int nssize;
 
-						synchronized (namespace) {
-							for (final CacheValue c : namespace.cache.values()) {
-								final int size = c.value.length();
-
-								min = (min < 0 || size < min) ? size : min;
-								max = Math.max(max, size);
-								total += size;
-
-								hits += c.accesses.intValue();
-							}
-
-							nssize = namespace.cache.size();
-						}
-
-						if (min < 0)
-							pwOut.println(entry.getKey() + " : empty");
-						else
-							pwOut.println(entry.getKey() + " : " + nssize + " / " + namespace.keys.size() + " keys (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max
-									+ ", total: " + Format.size(total) + ") : " + hits + " hits");
-					}
-
-					final Runtime r = Runtime.getRuntime();
-
-					pwOut.println("\nJava memory stats: " + Format.size(r.totalMemory()) + " total memory, " + Format.size(r.maxMemory()) + " max memory, " + Format.size(r.freeMemory()) + " free");
-					pwOut.println("Java version: " + System.getProperty("java.version"));
-					pwOut.println("Uptime: " + Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
-				}
-				else {
-					final Namespace namespace = namespaces.get(ns);
-
-					if (namespace == null)
-						pwOut.println("No such namespace: " + ns);
-					else {
-						int min = -1;
-						int max = 0;
-						long total = 0;
-						int hits = 0;
-
-						final boolean values = rw.gets("values").length() > 0;
-
-						final ArrayList<Map.Entry<String, CacheValue>> entries;
-
-						synchronized (namespace) {
-							entries = new ArrayList<>(namespace.cache.entrySet());
-						}
-
-						Collections.sort(entries, entryComparator);
-
-						for (final Map.Entry<String, CacheValue> me : entries) {
-							final CacheValue cv = me.getValue();
-
-							final int size = cv.value.length();
+					synchronized (namespace) {
+						for (final CacheValue c : namespace.cache.values()) {
+							final int size = c.value.length();
 
 							min = (min < 0 || size < min) ? size : min;
 							max = Math.max(max, size);
 							total += size;
 
-							hits += cv.accesses.intValue();
-
-							pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
+							hits += c.accesses.intValue();
 						}
 
-						final int nssize = namespace.cache.size();
-
-						pwOut.print("\n\n----------------\n\n" + nssize + " entries");
-
-						if (nssize > 0)
-							pwOut.println("(min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits + " hits");
-						else
-							pwOut.println();
+						nssize = namespace.cache.size();
 					}
+
+					if (min < 0)
+						pwOut.println(entry.getKey() + " : empty");
+					else
+						pwOut.println(entry.getKey() + " : " + nssize + " / " + namespace.keys.size() + " keys (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max
+								+ ", total: " + Format.size(total) + ") : " + hits + " hits");
 				}
+
+				final Runtime r = Runtime.getRuntime();
+
+				pwOut.println("\nJava memory stats: " + Format.size(r.totalMemory()) + " total memory, " + Format.size(r.maxMemory()) + " max memory, " + Format.size(r.freeMemory()) + " free");
+				pwOut.println("Java version: " + System.getProperty("java.version"));
+				pwOut.println("Uptime: " + Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
+			}
+			else {
+				final Namespace namespace = namespaces.get(ns);
+
+				if (namespace == null)
+					pwOut.println("No such namespace: " + ns);
+				else {
+					int min = -1;
+					int max = 0;
+					long total = 0;
+					int hits = 0;
+
+					final boolean values = rw.gets("values").length() > 0;
+
+					final ArrayList<Map.Entry<String, CacheValue>> entries;
+
+					synchronized (namespace) {
+						entries = new ArrayList<>(namespace.cache.entrySet());
+					}
+
+					Collections.sort(entries, entryComparator);
+
+					for (final Map.Entry<String, CacheValue> me : entries) {
+						final CacheValue cv = me.getValue();
+
+						final int size = cv.value.length();
+
+						min = (min < 0 || size < min) ? size : min;
+						max = Math.max(max, size);
+						total += size;
+
+						hits += cv.accesses.intValue();
+
+						pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
+					}
+
+					final int nssize = namespace.cache.size();
+
+					pwOut.print("\n\n----------------\n\n" + nssize + " entries");
+
+					if (nssize > 0)
+						pwOut.println("(min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits + " hits");
+					else
+						pwOut.println();
+				}
+			}
 
 			return;
 		}

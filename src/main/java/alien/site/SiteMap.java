@@ -55,7 +55,8 @@ public class SiteMap {
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 			hostName = hostName.replace("/.$/", "");
-		} catch (final UnknownHostException e) {
+		}
+		catch (final UnknownHostException e) {
 			logger.severe("Couldn't get hostname: " + e.toString());
 		}
 		siteMap.put("Localhost", hostName);
@@ -182,12 +183,12 @@ public class SiteMap {
 	// Gets a PackMan instance depending on configuration (env coming from LDAP)
 	private PackMan getPackman(String installationMethod, Map<String, String> envi) {
 		switch (installationMethod) {
-		case "CVMFS":
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS(envi.containsKey("CVMFS_PATH") ? envi.get("CVMFS_PATH") : "");
-		default:
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS(envi.containsKey("CVMFS_PATH") ? envi.get("CVMFS_PATH") : "");
+			case "CVMFS":
+				siteMap.put("CVMFS", Integer.valueOf(1));
+				return new CVMFS(envi.containsKey("CVMFS_PATH") ? envi.get("CVMFS_PATH") : "");
+			default:
+				siteMap.put("CVMFS", Integer.valueOf(1));
+				return new CVMFS(envi.containsKey("CVMFS_PATH") ? envi.get("CVMFS_PATH") : "");
 		}
 	}
 

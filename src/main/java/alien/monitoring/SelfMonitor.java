@@ -42,7 +42,7 @@ public class SelfMonitor implements MonitoringObject {
 
 		paramNames.add("user.name");
 		paramValues.add(UserFactory.getUserName());
-		
+
 		final int selfPid = MonitorFactory.getSelfProcessID();
 
 		if (selfPid > 0) {

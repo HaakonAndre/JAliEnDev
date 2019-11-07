@@ -74,7 +74,8 @@ public class XRDChecker {
 					final String output = xrootd.xrdstat(pfn, false, false, false);
 
 					ret.put(pfn, new XRDStatus(true, output));
-				} catch (final IOException ioe) {
+				}
+				catch (final IOException ioe) {
 					ret.put(pfn, new XRDStatus(false, ioe.getMessage()));
 
 					if (logger.isLoggable(Level.FINE))
@@ -155,9 +156,11 @@ public class XRDChecker {
 				if (zipMessage != null)
 					return new XRDStatus(false, "Broken ZIP archive: " + zipMessage);
 			}
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			return new XRDStatus(false, ioe.getMessage());
-		} finally {
+		}
+		finally {
 			if (f != null) {
 				TempFileManager.release(f);
 
@@ -189,7 +192,8 @@ public class XRDChecker {
 				ze = zis.getNextEntry();
 			}
 			return null;
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			return e.getMessage();
 		}
 	}
@@ -211,7 +215,8 @@ public class XRDChecker {
 			guid = GUIDUtils.getGUID(sLFN);
 
 			zipArchive = false;
-		} else {
+		}
+		else {
 			final LFN lfn = LFNUtils.getLFN(sLFN);
 
 			if (lfn == null)

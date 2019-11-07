@@ -162,7 +162,7 @@ public class Job implements Comparable<Job>, Serializable {
 	 * siteId
 	 */
 	public int siteid;
-	
+
 	/**
 	 * started
 	 */
@@ -491,7 +491,8 @@ public class Job implements Comparable<Job>, Serializable {
 			final JDL j = new JDL(jdl);
 
 			return Integer.parseInt(j.gets("validate")) == 1;
-		} catch (@SuppressWarnings("unused") final IOException | NumberFormatException | NullPointerException e) {
+		}
+		catch (@SuppressWarnings("unused") final IOException | NumberFormatException | NullPointerException e) {
 			// ignore
 		}
 

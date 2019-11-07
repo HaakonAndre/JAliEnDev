@@ -26,12 +26,12 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 			}
 			else {
 				switch (rc.getKey().intValue()) {
-				case 0:
-					commander.printOutln(rc.getValue());
-					break;
-				default:
-					commander.setReturnCode(rc.getKey().intValue(), rc.getValue());
-					break;
+					case 0:
+						commander.printOutln(rc.getValue());
+						break;
+					default:
+						commander.setReturnCode(rc.getKey().intValue(), rc.getValue());
+						break;
 				}
 			}
 		}
@@ -66,7 +66,8 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 		for (final String id : alArguments)
 			try {
 				queueIds.add(Long.valueOf(id));
-			} catch (final NumberFormatException e) {
+			}
+			catch (final NumberFormatException e) {
 				throw new JAliEnCommandException("Invalid job ID: " + id, e);
 			}
 	}

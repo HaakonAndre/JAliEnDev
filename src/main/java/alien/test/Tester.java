@@ -45,7 +45,8 @@ public class Tester {
 		try {
 			CreateLDAP.stopLDAP();
 			CreateDB.stopDatabase();
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		}
+		catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 		System.out.println("Don't worry about any errors up to here!");
@@ -96,7 +97,8 @@ public class Tester {
 
 			System.out.println("Finished  TestCentralUtils after " + giveMeATiming(start) + "s .");
 
-		} catch (final TestException e) {
+		}
+		catch (final TestException e) {
 			interrupt(e.getMessage());
 			return;
 		}

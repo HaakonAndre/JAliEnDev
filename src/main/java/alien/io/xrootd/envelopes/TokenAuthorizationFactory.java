@@ -51,7 +51,8 @@ public class TokenAuthorizationFactory {
 			try {
 				// initialise RSA key factory
 				keyFactory = KeyFactory.getInstance("RSA");
-			} catch (final NoSuchAlgorithmException e) {
+			}
+			catch (final NoSuchAlgorithmException e) {
 				throw new RuntimeException("Failed to initialize RSA key factory" + e.getMessage());
 			}
 
@@ -75,7 +76,8 @@ public class TokenAuthorizationFactory {
 					privKeyToken = tokenizer.nextToken();
 					pubKeyToken = tokenizer.nextToken();
 
-				} catch (final NoSuchElementException e) {
+				}
+				catch (final NoSuchElementException e) {
 					throw new Exception("line no " + (in.getLineNumber()) + " : invalid format", e);
 				}
 
@@ -100,7 +102,8 @@ public class TokenAuthorizationFactory {
 		RSAPrivateKey privKey;
 		try {
 			privKey = (RSAPrivateKey) keyFactory.generatePrivate(privKeySpec);
-		} catch (final InvalidKeySpecException e) {
+		}
+		catch (final InvalidKeySpecException e) {
 			throw new IOException("error loading private key " + privKeyFileName + ": " + e.getMessage());
 		}
 
@@ -112,7 +115,8 @@ public class TokenAuthorizationFactory {
 		RSAPublicKey pubKey;
 		try {
 			pubKey = (RSAPublicKey) keyFactory.generatePublic(pubKeySpec);
-		} catch (final InvalidKeySpecException e) {
+		}
+		catch (final InvalidKeySpecException e) {
 			throw new IOException("error loading public key " + pubKeyFileName + ": " + e.getMessage());
 		}
 
@@ -150,7 +154,8 @@ public class TokenAuthorizationFactory {
 	public void init() throws GeneralSecurityException {
 		try {
 			loadKeyStore();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			throw new GeneralSecurityException("unable to load keystore: " + e.getMessage());
 		}
 	}

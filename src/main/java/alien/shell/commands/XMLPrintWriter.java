@@ -36,7 +36,8 @@ public class XMLPrintWriter extends UIPrintWriter {
 
 		try {
 			writer = factory.createXMLStreamWriter(new PrintWriter(os));
-		} catch (@SuppressWarnings("unused") final XMLStreamException xmlEx) {
+		}
+		catch (@SuppressWarnings("unused") final XMLStreamException xmlEx) {
 			// ignore
 		}
 
@@ -113,7 +114,8 @@ public class XMLPrintWriter extends UIPrintWriter {
 			writer.writeEndElement();
 
 			writer.flush();
-		} catch (final XMLStreamException xmlEx) {
+		}
+		catch (final XMLStreamException xmlEx) {
 			logger.log(Level.WARNING, "Exception writing XML to the client", xmlEx);
 		}
 

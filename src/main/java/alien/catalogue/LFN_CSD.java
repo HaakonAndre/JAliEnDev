@@ -79,7 +79,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	static {
 		try {
 			ctime_fixed = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").parse("2017-01-01 00:00:00");
-		} catch (ParseException e) {
+		}
+		catch (ParseException e) {
 			System.err.println(e);
 			System.exit(-1);
 		}
@@ -252,7 +253,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 					logger.severe("Cannot create LFN_CSD with createParent: " + l.getCanonicalName());
 					return;
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				logger.severe("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName() + " Exception: " + e);
 				return;
 			}
@@ -261,7 +263,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (getParent) {
 			try {
 				parent_id = getParentIdFromPath(path, null);
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				logger.severe("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName() + e);
 				return;
 			}
@@ -320,7 +323,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 				ResultSet results = session.execute(boundStatement);
 				init(results.one());
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				logger.severe("Exception trying to create LFN_CSD: " + e);
 				return;
 			}
@@ -392,7 +396,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				canonicalName += "/";
 			modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 			exists = true;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
 		}
 	}
@@ -457,7 +462,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 					pathAppended += path_chunks[i] + "/";
 			}
 			return path_id;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
 			throw (e);
 		}
@@ -495,7 +501,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				return null;
 
 			return id;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
 			throw (e);
 		}
@@ -699,7 +706,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			else {
 				ret.add(new LFN_CSD(this.canonicalName, get_metadata, append_table, this.parent_id, this.id));
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception trying to whereis: " + e);
 			return null;
 		}
@@ -757,7 +765,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			for (Row row : results) {
 				pfns = (HashMap<Integer, String>) row.getMap("pfns", Integer.class, String.class);
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception trying to whereis: " + e);
 			return null;
 		}
@@ -805,7 +814,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (this.parent_id == null) {
 			try {
 				this.parent_id = getParentIdFromPath(this.path, append_table);
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				logger.severe("Exception while inserting: " + this.canonicalName + " Exception: " + e);
 				return false;
 			}
@@ -832,7 +842,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			ResultSet rs = session.execute(bs);
 			res = rs.wasApplied();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception trying to insert: " + e);
 			return false;
 		}
@@ -980,10 +991,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			newdir.type = 'd';
 
 			return newdir.insert(table, level);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
 			throw (e);
-		} finally {
+		}
+		finally {
 			folderBookingMap.remove(folder);
 			rifs.put(folder, Integer.valueOf(1), 30 * 1000); // 30 seconds
 		}
@@ -1009,7 +1022,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		UUID pid = null;
 		try {
 			pid = getParentIdFromPath(parent_of_lfn, append_table);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception from getParentIdFromPath in existsLfn for: " + lfn);
 			throw (e);
 		}
@@ -1020,7 +1034,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 		try {
 			idfolder = getChildIdFromParentIdAndName(pid, child_of_lfn, append_table);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
 			throw (e);
 		}
@@ -1124,7 +1139,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 							db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, this.id, senumber, this.checksum,
 									Long.valueOf(this.size));
 						}
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						logger.severe("LFN_CSD: delete: problem inserting into PFN cleanup queue: " + getCanonicalName() + " - " + e.toString());
 						return false;
 					}
@@ -1137,7 +1153,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				return false;
 			}
 
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("LFN_CSD: delete: problem deleting folders/file: " + e.toString());
 			return false;
 		}
@@ -1171,7 +1188,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			ret.put("path_id", res.getUUID("path_id"));
 			ret.put("flag", Integer.valueOf(res.getInt("flag")));
 			ret.put("ctime", res.getTimestamp("ctime"));
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("LFN_CSD: getInfofromChildId: problem getting ids result: " + c_id.toString() + " - " + e.toString());
 		}
 
@@ -1257,7 +1275,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			else {
 				lfnc_final = lfnc_source;
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("LFN_CSD: mv: problem getting ids result: " + lfnc_source.getCanonicalName() + " -> " + lfnc_target.getCanonicalName() + ": " + e.toString());
 		}
 
@@ -1321,7 +1340,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				logger.severe("LFN_CSD: update: problem updating entry: " + getCanonicalName());
 				return false;
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("LFN_CSD: update: problem update entry: " + e.toString());
 			return false;
 		}

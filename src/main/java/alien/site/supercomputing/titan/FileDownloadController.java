@@ -67,7 +67,8 @@ public class FileDownloadController extends Thread {
 						// notify download finished
 						notifyCompleted(l, dlFilename);
 					}
-				} catch (@SuppressWarnings("unused") final InterruptedException e) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					continue;
 				}
 		}
@@ -109,7 +110,8 @@ public class FileDownloadController extends Thread {
 		try {
 			if (instance == null)
 				instance = new FileDownloadController();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Exception caught on starting FileDownloadController: " + e.getMessage());
 			return null;
 		}
@@ -161,7 +163,8 @@ public class FileDownloadController extends Thread {
 			if (emptyQueue) {
 				try {
 					Thread.sleep(maxDownloaderSleep);
-				} catch (@SuppressWarnings("unused") final InterruptedException e) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					// ignore
 				}
 				continue;

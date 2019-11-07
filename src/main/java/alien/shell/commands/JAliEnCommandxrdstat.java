@@ -122,9 +122,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 								if (lfnName.startsWith(se.seioDaemons + "/" + se.seStoragePath)) {
 									oneSE = se;
 								}
-								else
-									if (lfnName.startsWith(se.seioDaemons))
-										fallbackSE = se;
+								else if (lfnName.startsWith(se.seioDaemons))
+									fallbackSE = se;
 							}
 
 							onePfnToCheck = new PFN(lfnName, referenceGUID, oneSE != null ? oneSE : fallbackSE);
@@ -136,13 +135,12 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					}
 				}
 			}
-			else
-				if (lfn.guid != null)
-					referenceGUID = commander.c_api.getGUID(lfn.guid.toString());
-				else {
-					commander.setReturnCode(6, "Could not get the GUID of " + lfn.getCanonicalName());
-					continue;
-				}
+			else if (lfn.guid != null)
+				referenceGUID = commander.c_api.getGUID(lfn.guid.toString());
+			else {
+				commander.setReturnCode(6, "Could not get the GUID of " + lfn.getCanonicalName());
+				continue;
+			}
 
 			Collection<PFN> pfnsToCheck;
 

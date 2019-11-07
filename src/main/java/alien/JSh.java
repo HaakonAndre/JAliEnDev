@@ -104,48 +104,47 @@ public class JSh {
 
 		if (args.length > 0 && (("-h".equals(args[0])) || ("-help".equals(args[0])) || ("--h".equals(args[0])) || ("--help".equals(args[0])) || ("help".equals(args[0]))))
 			printHelp();
-		else
-			if (args.length > 0 && ("-k".equals(args[0]))) {
-				JSh.killJBox();
-				return;
-			}
-			else {
-				if (!JSh.JBoxRunning())
-					if (runJBox())
-						try {
-							int a = 10;
-							while (a < 5000) {
-								Thread.sleep(a);
-								if (JSh.JBoxRunning())
-									break;
-								a = a * 2;
-							}
+		else if (args.length > 0 && ("-k".equals(args[0]))) {
+			JSh.killJBox();
+			return;
+		}
+		else {
+			if (!JSh.JBoxRunning())
+				if (runJBox())
+					try {
+						int a = 10;
+						while (a < 5000) {
+							Thread.sleep(a);
+							if (JSh.JBoxRunning())
+								break;
+							a = a * 2;
 						}
-						catch (@SuppressWarnings("unused") final InterruptedException e) {
-							// ignore
-						}
+					}
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
+						// ignore
+					}
 
-				if (JSh.JBoxRunning()) {
-					if (args.length > 0 && "-e".equals(args[0])) {
-						color = false;
-						boombox = new BusyBox(addr, port, password);
+			if (JSh.JBoxRunning()) {
+				if (args.length > 0 && "-e".equals(args[0])) {
+					color = false;
+					boombox = new BusyBox(addr, port, password);
 
-						if (boombox != null) {
-							final StringTokenizer st = new StringTokenizer(joinSecondArgs(args), ",");
+					if (boombox != null) {
+						final StringTokenizer st = new StringTokenizer(joinSecondArgs(args), ",");
 
-							while (st.hasMoreTokens())
-								boombox.callJBox(st.nextToken().trim());
-						}
-						else
-							printErrConnJBox();
-
+						while (st.hasMoreTokens())
+							boombox.callJBox(st.nextToken().trim());
 					}
 					else
-						boombox = new BusyBox(addr, port, password, user, true);
+						printErrConnJBox();
+
 				}
 				else
-					printErrNoJBox();
+					boombox = new BusyBox(addr, port, password, user, true);
 			}
+			else
+				printErrNoJBox();
+		}
 	}
 
 	/**

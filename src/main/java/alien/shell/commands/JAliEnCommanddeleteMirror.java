@@ -44,21 +44,21 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 		else {
 			String errline = null;
 			switch (result) {
-			case -1:
-				errline = "invalid GUID";
-				break;
-			case -2:
-				errline = "failed to get SE";
-				break;
-			case -3:
-				errline = "user not authorized";
-				break;
-			case -4:
-				errline = "unknown error";
-				break;
-			default:
-				errline = "unknown result code " + result;
-				break;
+				case -1:
+					errline = "invalid GUID";
+					break;
+				case -2:
+					errline = "failed to get SE";
+					break;
+				case -3:
+					errline = "user not authorized";
+					break;
+				case -4:
+					errline = "unknown error";
+					break;
+				default:
+					errline = "unknown result code " + result;
+					break;
 			}
 			commander.setReturnCode(3, "Error deleting mirror: " + errline);
 		}
@@ -110,7 +110,8 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 			this.se = lfns.get(1);
 
 			useLFNasGuid = options.has("g");
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

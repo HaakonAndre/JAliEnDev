@@ -38,25 +38,25 @@ public class Envelope {
 	 * @since Nov 9, 2010
 	 */
 	public static enum FilePerm {
-		/**
-		 * Read envelope
-		 */
-		READ("read"),
+	/**
+	 * Read envelope
+	 */
+	READ("read"),
 
-		/**
-		 * Write once envelope
-		 */
-		WRITE_ONCE("write-once"),
+	/**
+	 * Write once envelope
+	 */
+	WRITE_ONCE("write-once"),
 
-		/**
-		 * Write envelope
-		 */
-		WRITE("write"),
+	/**
+	 * Write envelope
+	 */
+	WRITE("write"),
 
-		/**
-		 * Delete envelope
-		 */
-		DELETE("delete");
+	/**
+	 * Delete envelope
+	 */
+	DELETE("delete");
 
 		private final String _xmlText;
 
@@ -112,9 +112,11 @@ public class Envelope {
 			try {
 				this.turl = parseTurl();
 				this.turlHost = InetAddress.getByName(this.turl.getHost());
-			} catch (final URISyntaxException e) {
+			}
+			catch (final URISyntaxException e) {
 				throw new CorruptedEnvelopeException("Malformed TURL: " + e.getMessage());
-			} catch (final UnknownHostException e) {
+			}
+			catch (final UnknownHostException e) {
 				throw new CorruptedEnvelopeException(e.getMessage());
 			}
 		}
@@ -385,7 +387,8 @@ public class Envelope {
 				}
 
 			}
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			throw new CorruptedEnvelopeException("Error reading from envelope String while parsing", e);
 		}
 	}
@@ -402,7 +405,8 @@ public class Envelope {
 
 		try {
 			key = tokenizer.nextToken();
-		} catch (@SuppressWarnings("unused") final NoSuchElementException e) {
+		}
+		catch (@SuppressWarnings("unused") final NoSuchElementException e) {
 			// ignore empty line
 			return;
 		}

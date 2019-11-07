@@ -11,7 +11,7 @@ import lia.Monitor.monitor.AppConfig;
 /**
  * @author nhardi
  *
- * Configuration coming from MonaLisa. Used only when ML is configured.
+ *         Configuration coming from MonaLisa. Used only when ML is configured.
  *
  */
 public class MLConfigurationSource implements ConfigSource {

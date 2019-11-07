@@ -152,7 +152,8 @@ public class LFNCSDUtils {
 		};
 		try {
 			tPool.submit(rl);
-		} catch (RejectedExecutionException ree) {
+		}
+		catch (RejectedExecutionException ree) {
 			logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
 			return false;
 		}
@@ -162,7 +163,8 @@ public class LFNCSDUtils {
 			while (rl.counter_left.get() >= 0) {
 				try {
 					rl.wait(1 * 1000);
-				} catch (InterruptedException e) {
+				}
+				catch (InterruptedException e) {
 					logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't wait" + e);
 				}
 			}
@@ -286,7 +288,8 @@ public class LFNCSDUtils {
 									Double value;
 									try {
 										value = Double.valueOf(lfnc.metadata.get(s));
-									} catch (NumberFormatException e) {
+									}
+									catch (NumberFormatException e) {
 										logger.info("Skipped: " + s + e);
 										continue;
 									}
@@ -307,7 +310,8 @@ public class LFNCSDUtils {
 											}
 										}
 									}
-								} catch (Exception e) {
+								}
+								catch (Exception e) {
 									logger.info("RecurseLFNs metadata - cannot get result: " + e);
 								}
 
@@ -346,11 +350,13 @@ public class LFNCSDUtils {
 									this.counter_left.incrementAndGet();
 									submitted++;
 									tPool.submit(new RecurseLFNs(this, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata, lfnc));
-								} catch (RejectedExecutionException ree) {
+								}
+								catch (RejectedExecutionException ree) {
 									logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
 								}
 							}
-						} catch (RejectedExecutionException ree) {
+						}
+						catch (RejectedExecutionException ree) {
 							logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit dir(l) - " + base + lfnc.child + "/" + ": " + ree);
 						}
 					}
@@ -363,7 +369,8 @@ public class LFNCSDUtils {
 								this.counter_left.incrementAndGet();
 								submitted++;
 								tPool.submit(new RecurseLFNs(this, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata, lfnc));
-							} catch (RejectedExecutionException ree) {
+							}
+							catch (RejectedExecutionException ree) {
 								logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit dir - " + base + lfnc.child + "/" + ": " + ree);
 							}
 						}
@@ -383,10 +390,9 @@ public class LFNCSDUtils {
 						lfn_without_version = lfnc.child.substring(0, lfnc.child.lastIndexOf("_v"));
 						version = Integer.valueOf(Integer.parseInt(lfnc.child.substring(lfnc.child.indexOf("_v") + 2, lfnc.child.indexOf("_s0"))));
 					}
-					else
-						if (lfnc.metadata.containsKey("CDB__version")) {
-							version = Integer.valueOf(lfnc.metadata.get("CDB__version"));
-						}
+					else if (lfnc.metadata.containsKey("CDB__version")) {
+						version = Integer.valueOf(lfnc.metadata.get("CDB__version"));
+					}
 
 					if (!lfn_version.containsKey(lfn_without_version)) {
 						lfn_version.put(lfn_without_version, version);
@@ -611,11 +617,10 @@ public class LFNCSDUtils {
 			lfnc.gowner = lfnc.owner;
 			lfnc.perm = "755";
 		}
-		else
-			if (!AuthorizationChecker.canWrite(lfnc, user)) {
-				logger.log(Level.SEVERE, "LFNCSDUtils: touch: no permission to touch existing file: " + lfnc.getCanonicalName());
-				return false;
-			}
+		else if (!AuthorizationChecker.canWrite(lfnc, user)) {
+			logger.log(Level.SEVERE, "LFNCSDUtils: touch: no permission to touch existing file: " + lfnc.getCanonicalName());
+			return false;
+		}
 
 		final Date old_ctime = lfnc.ctime;
 		lfnc.ctime = new Date();
@@ -666,7 +671,8 @@ public class LFNCSDUtils {
 			boolean created = false;
 			try {
 				created = LFN_CSD.createDirectory(lfnc.canonicalName, null, ConsistencyLevel.QUORUM, lfnc.owner, lfnc.gowner, 0, "755", new Date());
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				logger.severe("LFNCSDUtils: mkdir: exception creating directory: " + lfnc.canonicalName + ": exception: " + e.toString());
 			}
 
@@ -778,7 +784,8 @@ public class LFNCSDUtils {
 		try {
 			final UUID id = UUID.fromString(lfn_uuid);
 			return id != null;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.info("LFNCSDUtils: the string " + lfn_uuid + " is not a UUID: " + e.toString());
 			return false;
 		}

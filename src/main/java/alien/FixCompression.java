@@ -50,7 +50,8 @@ public class FixCompression {
 		if (args.length > 0) {
 			try {
 				commander = JAliEnCOMMander.getInstance();
-			} catch (final ExceptionInInitializerError | NullPointerException e) {
+			}
+			catch (final ExceptionInInitializerError | NullPointerException e) {
 				System.err.println("Failed to get a JAliEnCOMMander instance. Abort");
 				e.printStackTrace();
 				return;
@@ -285,7 +286,8 @@ public class FixCompression {
 					if (!Factory.xrootd.delete(pfn)) {
 						System.err.println("[" + new Date() + "] " + remoteArchive + ": Could not delete " + pfn.pfn);
 					}
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					e.printStackTrace();
 				}
 			}
@@ -339,9 +341,11 @@ public class FixCompression {
 			// Clean up local files
 			newArchive.delete();
 
-		} catch (final IOException e1) {
+		}
+		catch (final IOException e1) {
 			e1.printStackTrace();
-		} catch (final ServerException e1) {
+		}
+		catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + parentdir + "/root_archive.zip" + ": Could not get PFN. Abort");
 			e1.printStackTrace();
 		}
@@ -349,7 +353,8 @@ public class FixCompression {
 		try {
 			FileUtils.deleteDirectory(workingdir);
 			System.out.println();
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -409,7 +414,8 @@ public class FixCompression {
 
 			zipIn.close();
 			return true;
-		} catch (final FileNotFoundException e) {
+		}
+		catch (final FileNotFoundException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -453,7 +459,8 @@ public class FixCompression {
 					for (final String child : getFileListing(file.getCanonicalPath())) {
 						listOfFiles.add(file.getName() + "/" + child);
 					}
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					e.printStackTrace();
 				}
 			}

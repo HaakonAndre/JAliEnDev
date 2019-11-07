@@ -71,23 +71,21 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 									referenceCount++;
 								}
 						}
-						else
-							if (spec.contains(":"))
-								try {
-									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-									if (c > 0) {
-										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-										referenceCount = referenceCount + c;
-									}
-									else
-										throw new JAliEnCommandException("Number of replicas cannot be negative, in QoS string " + spec);
+						else if (spec.contains(":"))
+							try {
+								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+								if (c > 0) {
+									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+									referenceCount = referenceCount + c;
 								}
-								catch (final Exception e) {
-									throw new JAliEnCommandException("Exception parsing QoS string " + spec, e);
-								}
-							else
-								if (!spec.equals(""))
-									throw new JAliEnCommandException();
+								else
+									throw new JAliEnCommandException("Number of replicas cannot be negative, in QoS string " + spec);
+							}
+							catch (final Exception e) {
+								throw new JAliEnCommandException("Exception parsing QoS string " + spec, e);
+							}
+						else if (!spec.equals(""))
+							throw new JAliEnCommandException();
 					}
 				}
 			}

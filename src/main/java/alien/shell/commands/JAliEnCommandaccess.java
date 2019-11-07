@@ -84,16 +84,15 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		if (accessRequest == AccessType.WRITE)
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
-		else
-			if (accessRequest == AccessType.READ) {
-				logger.log(Level.INFO, "Access called for a read operation");
-				pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
-			}
-			else {
-				logger.log(Level.SEVERE, "Unknown access type");
-				commander.setReturnCode(2, "Unknown access type [error in processing].");
-				return;
-			}
+		else if (accessRequest == AccessType.READ) {
+			logger.log(Level.INFO, "Access called for a read operation");
+			pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
+		}
+		else {
+			logger.log(Level.SEVERE, "Unknown access type");
+			commander.setReturnCode(2, "Unknown access type [error in processing].");
+			return;
+		}
 
 		if (pfns == null || pfns.isEmpty()) {
 			logger.log(Level.SEVERE, "No PFNs for this LFN");
@@ -189,13 +188,12 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				logger.log(Level.INFO, "We got write accesss");
 				accessRequest = AccessType.WRITE;
 			}
+			else if (access.equals("read")) {
+				logger.log(Level.INFO, "We got read accesss");
+				accessRequest = AccessType.READ;
+			}
 			else
-				if (access.equals("read")) {
-					logger.log(Level.INFO, "We got read accesss");
-					accessRequest = AccessType.READ;
-				}
-				else
-					logger.log(Level.INFO, "We got unknown accesss");
+				logger.log(Level.INFO, "We got unknown accesss");
 
 			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
 				lfnName = arg.next();
@@ -214,23 +212,22 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 									referenceCount++;
 								}
 						}
-						else
-							if (spec.contains(":"))
-								try {
-									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-									if (c > 0) {
-										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-										referenceCount = referenceCount + c;
-									}
-									else
-										throw new JAliEnCommandException("The number replicas has to be stricly positive");
-
-								} catch (final Exception e) {
-									throw new JAliEnCommandException("Exception parsing the QoS string", e);
+						else if (spec.contains(":"))
+							try {
+								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+								if (c > 0) {
+									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+									referenceCount = referenceCount + c;
 								}
-							else
-								if (!spec.equals(""))
-									throw new JAliEnCommandException();
+								else
+									throw new JAliEnCommandException("The number replicas has to be stricly positive");
+
+							}
+							catch (final Exception e) {
+								throw new JAliEnCommandException("Exception parsing the QoS string", e);
+							}
+						else if (!spec.equals(""))
+							throw new JAliEnCommandException();
 					}
 				}
 			}

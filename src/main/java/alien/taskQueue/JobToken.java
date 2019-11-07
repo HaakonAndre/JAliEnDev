@@ -41,7 +41,7 @@ public class JobToken implements Comparable<JobToken> {
 	 * Resubmission
 	 */
 	public int resubmission;
-	
+
 	/**
 	 * Legacy, session-ID like token
 	 */
@@ -79,7 +79,7 @@ public class JobToken implements Comparable<JobToken> {
 		this.username = username;
 
 		this.exists = false;
-		
+
 		this.legacyToken = generateToken();
 	}
 
@@ -183,7 +183,7 @@ public class JobToken implements Comparable<JobToken> {
 			// only the resubmission can change
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
-			
+
 			if (!db.query(REPLACE_QUERY, false, Long.valueOf(queueId), username, Integer.valueOf(resubmission_queue))) {
 				// wrong table name or what?
 				logger.log(Level.INFO, "Replace JobToken for queueId: " + queueId + " username: " + username + " resubmission: " + resubmission + " failed");
@@ -200,13 +200,14 @@ public class JobToken implements Comparable<JobToken> {
 				logger.log(Level.INFO, "Legacy table query failed");
 				return false;
 			}
-			
+
 			if (db.getUpdateCount() == 0) {
 				// the entry did not exist in fact, what's going on?
 				logger.log(Level.INFO, "Replace legacy JobToken for: " + queueId + " count 0");
 				return false;
 			}
-		} finally {
+		}
+		finally {
 			db.close();
 		}
 
@@ -277,7 +278,8 @@ public class JobToken implements Comparable<JobToken> {
 				exists = false;
 				return true;
 			}
-		} finally {
+		}
+		finally {
 			db.close();
 		}
 

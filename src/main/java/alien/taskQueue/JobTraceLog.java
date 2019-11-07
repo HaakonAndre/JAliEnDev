@@ -26,7 +26,8 @@ public class JobTraceLog {
 	private void retrieve(final String url) {
 		try {
 			trace = Utils.download(url, null);
-		} catch (@SuppressWarnings("unused") final IOException ioe) {
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore
 		}
 	}

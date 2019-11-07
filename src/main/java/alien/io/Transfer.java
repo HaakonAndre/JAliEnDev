@@ -199,20 +199,17 @@ public class Transfer implements Serializable, Runnable {
 					ret.add((Protocol) Factory.xrootdcsd.clone());
 			}
 		}
-		else
-			if (s.equals("http")) {
-				if (Factory.http.isSupported())
-					ret.add((Protocol) Factory.http.clone());
-			}
-			else
-				if (s.equals("torrent")) {
-					if (Factory.torrent.isSupported())
-						ret.add((Protocol) Factory.torrent.clone());
-				}
-				else
-					if (s.equals("file"))
-						if (Factory.cp.isSupported())
-							ret.add((Protocol) Factory.cp.clone());
+		else if (s.equals("http")) {
+			if (Factory.http.isSupported())
+				ret.add((Protocol) Factory.http.clone());
+		}
+		else if (s.equals("torrent")) {
+			if (Factory.torrent.isSupported())
+				ret.add((Protocol) Factory.torrent.clone());
+		}
+		else if (s.equals("file"))
+			if (Factory.cp.isSupported())
+				ret.add((Protocol) Factory.cp.clone());
 
 		return ret;
 	}
@@ -292,9 +289,8 @@ public class Transfer implements Serializable, Runnable {
 
 							if (db.gets(2).equals("xrd3cp"))
 								SE_FORCED_3RD.add(key);
-							else
-								if (db.gets(2).equals("xrdcp"))
-									SE_FORCED_3RD.remove(key);
+							else if (db.gets(2).equals("xrdcp"))
+								SE_FORCED_3RD.remove(key);
 						}
 					}
 				}
@@ -375,9 +371,8 @@ public class Transfer implements Serializable, Runnable {
 			for (final Protocol p : sortedProtocols)
 				if (p.protocolID() == Factory.xrootd.protocolID())
 					xrootd = p;
-				else
-					if (p.protocolID() == Factory.xrd3cp4.protocolID())
-						containsXrd3cp4 = true;
+				else if (p.protocolID() == Factory.xrd3cp4.protocolID())
+					containsXrd3cp4 = true;
 
 			if (containsXrd3cp4 && xrootd != null)
 				sortedProtocols.remove(xrootd);

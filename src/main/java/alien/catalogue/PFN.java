@@ -188,11 +188,11 @@ public class PFN implements Serializable, Comparable<PFN> {
 		this.isCsd = true;
 		this.uuid = id;
 		this.guid = GUIDUtils.getGUID(id);
-		
-		if (this.guid!=null)
+
+		if (this.guid != null)
 			this.guid.size = size;
-		
-		this.hashCode = this.pfn != null ? this.pfn.hashCode() : (this.guid!=null ? guid.hashCode() : id.hashCode());
+
+		this.hashCode = this.pfn != null ? this.pfn.hashCode() : (this.guid != null ? guid.hashCode() : id.hashCode());
 	}
 
 	/**

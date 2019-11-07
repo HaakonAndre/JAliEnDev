@@ -9,21 +9,21 @@ import lazyj.FallbackProperties;
 /**
  * @author nhardi
  *
- * ConfigManager can handle multiple configuration sources and resolve their priorities.
- * Each configuration source has to implement ConfigSource interface and has to be registered
- * with methods registerPrimary() or registerFallback().
+ *         ConfigManager can handle multiple configuration sources and resolve their priorities.
+ *         Each configuration source has to implement ConfigSource interface and has to be registered
+ *         with methods registerPrimary() or registerFallback().
  *
- * There are two levels of configuration keys, the configuration file and configuration key
- * inside of a configuration file. Keys need not to be unique across files. All keys defined in
- * configuration files with the same name are unified by ConfigManager.
+ *         There are two levels of configuration keys, the configuration file and configuration key
+ *         inside of a configuration file. Keys need not to be unique across files. All keys defined in
+ *         configuration files with the same name are unified by ConfigManager.
  *
- * A configuration files is an abstract collection of configuration keys and doesn't have to be
- * a physical file. The keys can be put together into a configuration file from LDAP, database or
- * any other source implemented by ConfigSource.
+ *         A configuration files is an abstract collection of configuration keys and doesn't have to be
+ *         a physical file. The keys can be put together into a configuration file from LDAP, database or
+ *         any other source implemented by ConfigSource.
  *
- * To get unified view of all registered configuration sources, use method getConfiguration().
+ *         To get unified view of all registered configuration sources, use method getConfiguration().
  *
- * ConfigManager preserves configuration auto-reloading where applicable.
+ *         ConfigManager preserves configuration auto-reloading where applicable.
  *
  */
 public class ConfigManager implements ConfigSource {
@@ -131,6 +131,7 @@ public class ConfigManager implements ConfigSource {
 
 	/**
 	 * Create merged ExtProperties, and old configuration (parameter a) has precedence.
+	 * 
 	 * @see #mergeProperties(ExtProperties, ExtProperties, boolean)
 	 *
 	 * @param a old (existing) configuration

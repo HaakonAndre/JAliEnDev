@@ -145,11 +145,13 @@ public class TestCommand {
 				return false;
 			}
 
-		} catch (final InterruptedException ie) {
-			System.err.println("Interrupted while waiting for the following command to finish : " + command.toString()+" : "+ie.getMessage());
+		}
+		catch (final InterruptedException ie) {
+			System.err.println("Interrupted while waiting for the following command to finish : " + command.toString() + " : " + ie.getMessage());
 			return false;
-		} catch (IOException e) {
-			System.err.println("IOException while waiting for the following command to finish : " + command.toString()+" : "+e.getMessage());
+		}
+		catch (IOException e) {
+			System.err.println("IOException while waiting for the following command to finish : " + command.toString() + " : " + e.getMessage());
 			return false;
 		}
 		return true;

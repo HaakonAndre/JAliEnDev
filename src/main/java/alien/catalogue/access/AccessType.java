@@ -33,5 +33,5 @@ public enum AccessType {
 	public String toString() {
 		return shortDescription;
 	}
-	
+
 }

@@ -256,7 +256,8 @@ public class TestConfig {
 			full_host_name = InetAddress.getByName("127.0.0.1").getCanonicalHostName();
 			VO_name = full_host_name.substring(0, full_host_name.indexOf("."));
 			domain = full_host_name.substring(full_host_name.indexOf(".") + 1);
-		} else {
+		}
+		else {
 			VO_name = "localhost";
 			domain = "localdomain";
 			full_host_name = VO_name + "." + domain;
@@ -305,7 +306,8 @@ public class TestConfig {
 		if (!home.exists()) {
 			if (!home.mkdirs())
 				System.err.println("Canont create path: " + home);
-		} else if (!home.isDirectory() || !home.canWrite())
+		}
+		else if (!home.isDirectory() || !home.canWrite())
 			System.err.println("Cannot write here: " + home);
 
 		if ((new File(tvo_config)).mkdir()) {

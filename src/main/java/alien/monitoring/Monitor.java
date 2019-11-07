@@ -171,11 +171,10 @@ public class Monitor implements Runnable {
 			if (old != null && (old instanceof Counter))
 				c = (Counter) old;
 		}
+		else if (mo instanceof Counter)
+			c = (Counter) mo;
 		else
-			if (mo instanceof Counter)
-				c = (Counter) mo;
-			else
-				return -1;
+			return -1;
 
 		return c.increment(count);
 	}
@@ -201,11 +200,10 @@ public class Monitor implements Runnable {
 			if (old != null && (old instanceof Measurement))
 				t = (Measurement) old;
 		}
+		else if (mo instanceof Measurement)
+			t = (Measurement) mo;
 		else
-			if (mo instanceof Measurement)
-				t = (Measurement) mo;
-			else
-				return -1;
+			return -1;
 
 		return t.addMeasurement(quantity);
 	}
@@ -240,11 +238,10 @@ public class Monitor implements Runnable {
 			if (old != null && (old instanceof CacheMonitor))
 				cm = (CacheMonitor) old;
 		}
+		else if (mo instanceof CacheMonitor)
+			cm = (CacheMonitor) mo;
 		else
-			if (mo instanceof CacheMonitor)
-				cm = (CacheMonitor) mo;
-			else
-				return null;
+			return null;
 
 		return cm;
 
@@ -354,19 +351,18 @@ public class Monitor implements Runnable {
 					paramValues.add(Double.valueOf(r.param[i]));
 				}
 			}
-			else
-				if (o instanceof eResult) {
-					final eResult er = (eResult) o;
+			else if (o instanceof eResult) {
+				final eResult er = (eResult) o;
 
-					if (er.param == null)
-						continue;
+				if (er.param == null)
+					continue;
 
-					for (int i = 0; i < er.param.length; i++) {
-						paramNames.add(er.param_name[i]);
-						paramValues.add(er.param[i].toString());
-					}
-
+				for (int i = 0; i < er.param.length; i++) {
+					paramNames.add(er.param_name[i]);
+					paramValues.add(er.param[i].toString());
 				}
+
+			}
 
 		sendParameters(paramNames, paramValues);
 	}

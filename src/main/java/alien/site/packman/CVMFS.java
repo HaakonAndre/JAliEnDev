@@ -31,7 +31,8 @@ public class CVMFS extends PackMan {
 
 	/**
 	 * Constructor just checks CVMFS bin exist
-	 * @param location 
+	 * 
+	 * @param location
 	 */
 	public CVMFS(String location) {
 		if (location != null && location.length() > 0)
@@ -39,7 +40,8 @@ public class CVMFS extends PackMan {
 
 		try {
 			alienv_bin = SystemCommand.bash("which " + alienv_bin + "/alienv").stdout.trim();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.info("which alienv not ok: " + e.toString());
 		}
 
@@ -110,7 +112,7 @@ public class CVMFS extends PackMan {
 				if (str[1].contains("\\"))
 					str[1] = str[1].replace("\\", "");
 
-				environment.put(str[0], str[1].trim()); //alienv adds a space at the end of each entry
+				environment.put(str[0], str[1].trim()); // alienv adds a space at the end of each entry
 			}
 
 		return environment;

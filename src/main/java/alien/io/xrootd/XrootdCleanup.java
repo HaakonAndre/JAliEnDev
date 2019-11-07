@@ -95,7 +95,8 @@ public class XrootdCleanup {
 		while (inProgress.intValue() > 0) {
 			try {
 				Thread.sleep(1000);
-			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+			}
+			catch (@SuppressWarnings("unused") final InterruptedException ie) {
 				// ignore
 			}
 
@@ -150,7 +151,8 @@ public class XrootdCleanup {
 
 						try {
 							storageCleanup(dir);
-						} finally {
+						}
+						finally {
 							inProgress.decrementAndGet();
 
 							synchronized (activeSet) {
@@ -158,7 +160,8 @@ public class XrootdCleanup {
 							}
 						}
 					}
-				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
 		}
@@ -216,7 +219,8 @@ public class XrootdCleanup {
 			for (final XrootdFile dir : listing.getDirs())
 				if (dir.path.matches("^/\\d{2}(/\\d{5})?$"))
 					pushDir(dir.path);
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			System.err.println(ioe.getMessage());
 			ioe.printStackTrace();
 		}
@@ -268,7 +272,8 @@ public class XrootdCleanup {
 			else
 				// new xrootd implementations accept signed-only envelopes
 				XrootDEnvelopeSigner.signEnvelope(env);
-		} catch (final GeneralSecurityException e) {
+		}
+		catch (final GeneralSecurityException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -285,7 +290,8 @@ public class XrootdCleanup {
 			}
 
 			return true;
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 
@@ -302,7 +308,8 @@ public class XrootdCleanup {
 
 			try {
 				uuid = UUID.fromString(file.getName());
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			}
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// not an alien file name, ignore
 				return;
 			}
@@ -335,15 +342,18 @@ public class XrootdCleanup {
 				if (removeFile(file)) {
 					sizeRemoved.addAndGet(file.size);
 					filesRemoved.incrementAndGet();
-				} else {
+				}
+				else {
 					sizeFailed.addAndGet(file.size);
 					filesFailed.incrementAndGet();
 				}
-			} else {
+			}
+			else {
 				sizeKept.addAndGet(file.size);
 				filesKept.incrementAndGet();
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}

@@ -130,16 +130,14 @@ public class Xrd3cp extends Xrootd {
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add(QUOTES + "authz=" + source.ticket.envelope.getEncryptedEnvelope() + QUOTES);
-				else
-					if (source.ticket.envelope.getSignedEnvelope() != null)
-						command.add(source.ticket.envelope.getSignedEnvelope());
+				else if (source.ticket.envelope.getSignedEnvelope() != null)
+					command.add(source.ticket.envelope.getSignedEnvelope());
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add(QUOTES + "authz=" + target.ticket.envelope.getEncryptedEnvelope() + QUOTES);
-				else
-					if (target.ticket.envelope.getSignedEnvelope() != null)
-						command.add(target.ticket.envelope.getSignedEnvelope());
+				else if (target.ticket.envelope.getSignedEnvelope() != null)
+					command.add(target.ticket.envelope.getSignedEnvelope());
 
 			setLastCommand(command);
 
@@ -172,7 +170,8 @@ public class Xrd3cp extends Xrootd {
 				}
 				else
 					throw new IOException("Cannot execute command: " + command);
-			} catch (final InterruptedException ie) {
+			}
+			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -198,7 +197,8 @@ public class Xrd3cp extends Xrootd {
 
 							return ret;
 						}
-					} catch (final IOException ioe) {
+					}
+					catch (final IOException ioe) {
 						logger.log(Level.WARNING, "xrdstat throwed exception", ioe);
 					}
 				}
@@ -214,9 +214,11 @@ public class Xrd3cp extends Xrootd {
 			}
 
 			return xrdstat(target, (target.ticket.envelope.getSignedEnvelope() == null));
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("Transfer aborted because " + t);
