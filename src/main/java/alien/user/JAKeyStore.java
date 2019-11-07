@@ -30,6 +30,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -828,5 +829,30 @@ public class JAKeyStore {
 			logger.log(Level.SEVERE, "Token request failed", e);
 			return false;
 		}
+	}
+
+	public static boolean isLoaded(String ksName) {
+		KeyStore ks = null;
+
+		if (ksName == "user") {
+			ks = clientCert;
+		} else if (ksName == "host") {
+			ks = hostCert;
+		} else if (ksName == "token") {
+			ks = tokenCert;
+		}
+
+		return isLoaded(ks);
+	}
+
+	private static boolean isLoaded(KeyStore ks) {
+		boolean status = false;
+		if (ks != null) {
+			try {
+				status = ks.getCertificateChain("User.cert") != null;
+			} catch (@SuppressWarnings("unused") Exception e) {
+			}
+		}
+		return status;
 	}
 }
