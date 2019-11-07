@@ -177,10 +177,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
 		Map<String, String> ok = null;
+		
+		if(packMan == null) {
+			logger.log(Level.WARNING, "Packman is null!");
+			return ok;
+		}
 
 		for (final String pack : packToInstall) {
-			if(packMan == null)
-				logger.log(Level.WARNING, "Packman is null!");
 			ok = packMan.installPackage(username, pack, null);
 			if (ok == null) {
 				logger.log(Level.INFO, "Error installing the package " + pack);
@@ -189,6 +192,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				System.exit(1);
 			}
 		}
+		
 		return ok;
 	}
 
