@@ -50,7 +50,6 @@ public class PackageUtils {
 			setDaemon(true);
 		}
 
-		@SuppressWarnings("synthetic-access")
 		@Override
 		public void run() {
 			while (true)
