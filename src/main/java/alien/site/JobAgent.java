@@ -226,7 +226,7 @@ public class JobAgent implements Runnable {
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
 
-				monitor.sendParameter("ja_status", jaStatus.REQUESTING_JOB.getValue());
+				monitor.sendParameter("ja_status", Integer.valueOf(jaStatus.REQUESTING_JOB.getValue()));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
@@ -317,8 +317,8 @@ public class JobAgent implements Runnable {
 	private void cleanup() {
 		logger.log(Level.INFO, "Sending monitoring values...");
 
-		monitor.sendParameter("job_id", 0);
-		monitor.sendParameter("ja_status", jaStatus.DONE.getValue());
+		monitor.sendParameter("job_id", Integer.valueOf(0));
+		monitor.sendParameter("ja_status", Integer.valueOf(jaStatus.DONE.getValue()));
 
 		logger.log(Level.INFO, "Cleaning up after execution...");
 
@@ -450,9 +450,8 @@ public class JobAgent implements Runnable {
 	}
 
 	/**
-	 * 
-	 * @param processID
 	 * @return Command w/arguments for starting the JobWrapper, based on the command used for the JobAgent
+	 * @throws InterruptedException 
 	 */
 	public List<String> generateLaunchCommand() throws InterruptedException {
 		try {
@@ -461,25 +460,25 @@ public class JobAgent implements Runnable {
 			
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
-			Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
-			String readArg;
-			while (cmdScanner.hasNext()) {
-				readArg = (cmdScanner.next());
-				switch (readArg) {
-				case "-cp":
-					cmdScanner.next();
-					break;
-				case "alien.site.JobAgent":
-					launchCmd.add("-DAliEnConfig="+jobWorkdir);
-					launchCmd.add("-cp");
-					launchCmd.add(jarPath+jarName);
-					launchCmd.add("alien.site.JobWrapper");
-					break;
-				default:
-					launchCmd.add(readArg);
+			try (Scanner cmdScanner = new Scanner(cmdChecker.getInputStream())) {
+				String readArg;
+				while (cmdScanner.hasNext()) {
+					readArg = (cmdScanner.next());
+					switch (readArg) {
+						case "-cp":
+							cmdScanner.next();
+							break;
+						case "alien.site.JobAgent":
+							launchCmd.add("-DAliEnConfig=" + jobWorkdir);
+							launchCmd.add("-cp");
+							launchCmd.add(jarPath + jarName);
+							launchCmd.add("alien.site.JobWrapper");
+							break;
+						default:
+							launchCmd.add(readArg);
+					}
 				}
 			}
-			cmdScanner.close();
 
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
@@ -513,19 +512,18 @@ public class JobAgent implements Runnable {
 				final Process singularityProbe = pb.start();
 				singularityProbe.waitFor();
 
-				cmdScanner = new Scanner(singularityProbe.getErrorStream());
-				while(cmdScanner.hasNext()) {
-					if(cmdScanner.next().contains("Runtime")) {
-						singularityCmd.set(singularityCmd.size()-1, setupEnv + String.join(" ", launchCmd));
+				try (Scanner cmdScanner = new Scanner(singularityProbe.getErrorStream())) {
+					while (cmdScanner.hasNext()) {
+						if (cmdScanner.next().contains("Runtime")) {
+							singularityCmd.set(singularityCmd.size() - 1, setupEnv + String.join(" ", launchCmd));
 
-						jobWrapperLogDir = CONTAINER_TMPDIR + "/" + jobWrapperLogName; 
-						return singularityCmd;
+							jobWrapperLogDir = CONTAINER_TMPDIR + "/" + jobWrapperLogName;
+							return singularityCmd;
+						}
 					}
 				}
 			}catch (final Exception e2) {
 				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
-			}finally {
-				cmdScanner.close();
 			}
 
 			return launchCmd;
@@ -535,7 +533,7 @@ public class JobAgent implements Runnable {
 		}
 	}
 
-	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
+	private int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
@@ -548,34 +546,32 @@ public class JobAgent implements Runnable {
 
 		// stdin from the viewpoint of the wrapper
 		final OutputStream stdin;
-		final ObjectOutputStream stdinObj;
-
-		final InputStream stdout;
 
 		try {
 			p = pBuilder.start();
 
 			stdin = p.getOutputStream();
-			stdinObj = new ObjectOutputStream(stdin);
+			try (ObjectOutputStream stdinObj = new ObjectOutputStream(stdin)) {
+				stdinObj.writeObject(jdl);
+				stdinObj.writeObject(username);
+				stdinObj.writeObject(Long.valueOf(queueId));
+				stdinObj.writeObject(tokenCert);
+				stdinObj.writeObject(tokenKey);
+				stdinObj.writeObject(ce);
+				stdinObj.writeObject(siteMap);
+				stdinObj.writeObject(defaultOutputDirPrefix);
+				stdinObj.writeObject(legacyToken);
 
-			stdinObj.writeObject(jdl);
-			stdinObj.writeObject(username);
-			stdinObj.writeObject(queueId);
-			stdinObj.writeObject(tokenCert);
-			stdinObj.writeObject(tokenKey);
-			stdinObj.writeObject(ce);
-			stdinObj.writeObject(siteMap);
-			stdinObj.writeObject(defaultOutputDirPrefix);
-			stdinObj.writeObject(legacyToken);
-
-			stdinObj.flush();
+				stdinObj.flush();
+			}
 
 			logger.log(Level.INFO, "JDL info sent to JobWrapper");
 			commander.q_api.putJobLog(queueId, "trace", "JobWrapper started");
 
 			//Wait for JobWrapper to start
-			stdout = p.getInputStream();
-					stdout.read();
+			try (InputStream stdout = p.getInputStream()){
+				stdout.read();
+			}
 
 		} catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
@@ -645,7 +641,6 @@ public class JobAgent implements Runnable {
 		}  finally {
 			try{
 				t.cancel();
-				stdinObj.close();
 				stdin.close();
 			} catch (final Exception e){
 				logger.log(Level.WARNING, "Not all resources from the current job could be cleared: " + e);
@@ -691,13 +686,18 @@ public class JobAgent implements Runnable {
 			}
 
 			// getting cpu, memory and runtime info
-			RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
-			RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
-			RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
-			RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
-			RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
-			RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
-			RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
+			if (diskinfo != null)
+				RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
+			
+			if (jobinfo != null) {
+				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
+				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
+				RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
+				RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
+				RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
+				RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
+			}
+			
 			// RES_RESOURCEUSAGE =
 			// Format.showDottedDouble(RES_CPUTIME.doubleValue() *
 			// Double.parseDouble(RES_CPUMHZ) / 1000, 2);
@@ -800,7 +800,7 @@ public class JobAgent implements Runnable {
 			props.setProperty("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
 
 			logger.log(Level.INFO, "Logging properties loaded for the JobWrapper");
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 
 			logger.log(Level.INFO, "Logging properties for JobWrapper not found.");
 			logger.log(Level.INFO, "Using fallback logging configurations for JobWrapper");
@@ -827,12 +827,12 @@ public class JobAgent implements Runnable {
 		} 
 	}
 
-	public void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
+	private void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 		return;
 	}
 
-	public String readWrapperStatus() {
+	private String readWrapperStatus() {
 		try {
 			return Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
 		} catch (IOException e) {
