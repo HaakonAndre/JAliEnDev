@@ -877,4 +877,25 @@ public class JAKeyStore {
 			}
 		}.start();
 	}
+
+	public static boolean bootstrapFirstToken() {
+		if (!JAKeyStore.requestTokenCert()) {
+			return false;
+		}
+
+		try {
+			if (!JAKeyStore.loadTokenKeyStorage()) {
+				System.err.println("Token Certificate could not be loaded.");
+				System.err.println("Exiting...");
+				return false;
+			}
+		}
+		catch (final Exception e) {
+			logger.log(Level.SEVERE, "Error loading token", e);
+			System.err.println("Error loading token");
+			return false;
+		}
+
+		return true;
+	}
 }

@@ -22,6 +22,16 @@ public class JBox {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
+	public static void logLoud(String msg) {
+		logger.log(Level.INFO, msg);
+		System.err.println(msg);
+	}
+
+  public static void logLoud(String msg, Exception e) {
+    logger.log(Level.INFO, msg, e);
+    System.err.println(msg);
+  }
+
 	/**
 	 * Debugging method
 	 *
@@ -51,36 +61,27 @@ public class JBox {
 			e.printStackTrace();
 		}
 
-		// First, load user certificate (or token) and create keystore
-		if (JAKeyStore.loadKeyStore()) {
-			// Request token certificate from JCentral
-			if (!JAKeyStore.requestTokenCert())
-				return;
-			// Create keystore for token certificate
-			try {
-				if (!JAKeyStore.loadTokenKeyStorage()) {
-					System.err.println("Token Certificate could not be loaded.");
-					System.err.println("Exiting...");
-					return;
-				}
-			}
-			catch (final Exception e) {
-				logger.log(Level.SEVERE, "Error loading token", e);
-				System.err.println("Error loading token");
-				return;
-			}
-
-			JAKeyStore.startTokenUpdater();
-
-			JBoxServer.startJBoxService();
-			TomcatServer.startTomcatServer();
-
-			if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
-				logger.log(Level.INFO, "Failed to export JBox variables");
+		if(!JAKeyStore.loadKeyStore()) {
+			logLoud("JBox failed to load any credentials");
+			return;
 		}
-		else {
-			logger.log(Level.INFO, "JBox failed to load any credentials");
-			System.err.println("JBox failed to load any credentials");
-		}
-	}
+
+    if(!JAKeyStore.bootstrapFirstToken()) {
+      logLoud("JBox failed to get a token");
+      return;
+    }
+
+    if(JAKeyStore.isLoaded("token") && !JAKeyStore.isLoaded("user") && !JAKeyStore.isLoaded("host")) {
+      logLoud("WARNING: JBox is connected to central esrvices with a token that cannot be used to update itself.");
+      logLoud("Please use a user or host certificate to refresh tokens automatically.");
+    }
+
+    JBoxServer.startJBoxService();
+    TomcatServer.startTomcatServer();
+
+    JAKeyStore.startTokenUpdater();
+
+    if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
+      logger.log(Level.INFO, "Failed to export JBox variables");
+  }
 }
