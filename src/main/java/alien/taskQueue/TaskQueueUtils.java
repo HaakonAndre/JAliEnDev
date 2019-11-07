@@ -2458,9 +2458,8 @@ public class TaskQueueUtils {
 	/**
 	 * @param ce
 	 * @param status
-	 * @param extraparams
 	 */
-	public static void setSiteQueueStatus(final String ce, final String status, final Object... extraparams) {
+	public static void setSiteQueueStatus(final String ce, final String status) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
@@ -3377,20 +3376,25 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * Set the QUEUEJDL.resultsJdl field for a completed job
+	 * 
+	 * @param jdl
+	 * @param queueId
+	 * @return <code>true</code> if the update could be done
+	 */
 	public static boolean addResultsJdl(final JDL jdl, final Long queueId) {
-
 		logger.log(Level.INFO, "Going to add the following resultsJdl: " + jdl);
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
 
-			if (!db.query("update QUEUEJDL set resultsJdl=('" + jdl.toString() + "') where queueId=?", false, queueId))
+			if (!db.query("update QUEUEJDL set resultsJdl=? where queueId=?", false, jdl.toString(), queueId))
 				return false;
 
 			return true;
 		}
-
 	}
 
 }
