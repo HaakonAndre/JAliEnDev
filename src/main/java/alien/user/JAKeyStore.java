@@ -859,4 +859,22 @@ public class JAKeyStore {
 		}
 		return status;
 	}
+
+	public static void startTokenUpdater() {
+		// Refresh token cert every two hours
+		new Thread() {
+			@Override
+			public void run() {
+				try {
+					while (true) {
+						sleep(2 * 60 * 60 * 1000);
+						JAKeyStore.requestTokenCert();
+					}
+				}
+				catch (final InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}.start();
+	}
 }

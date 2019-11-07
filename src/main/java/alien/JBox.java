@@ -71,21 +71,7 @@ public class JBox {
 					return;
 				}
 
-				// Refresh token cert every two hours
-				new Thread() {
-					@Override
-					public void run() {
-						try {
-							while (true) {
-								sleep(2 * 60 * 60 * 1000);
-								JAKeyStore.requestTokenCert();
-							}
-						}
-						catch (final InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-				}.start();
+				JAKeyStore.startTokenUpdater();
 			}
 
 			JBoxServer.startJBoxService();
