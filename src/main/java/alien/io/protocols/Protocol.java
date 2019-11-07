@@ -302,6 +302,12 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 
 	@Override
 	public boolean equals(final Object obj) {
+		if (obj == null || !(obj instanceof Protocol))
+			return false;
+
+		if (this == obj)
+			return true;
+
 		return protocolID() == ((Protocol) obj).protocolID();
 	}
 
