@@ -54,25 +54,23 @@ public class JBox {
 		// First, load user certificate (or token) and create keystore
 		if (JAKeyStore.loadKeyStore()) {
 			// Request token certificate from JCentral
-			if (!ConfigUtils.isCentralService()) {
-				if (!JAKeyStore.requestTokenCert())
-					return;
-				// Create keystore for token certificate
-				try {
-					if (!JAKeyStore.loadTokenKeyStorage()) {
-						System.err.println("Token Certificate could not be loaded.");
-						System.err.println("Exiting...");
-						return;
-					}
-				}
-				catch (final Exception e) {
-					logger.log(Level.SEVERE, "Error loading token", e);
-					System.err.println("Error loading token");
+			if (!JAKeyStore.requestTokenCert())
+				return;
+			// Create keystore for token certificate
+			try {
+				if (!JAKeyStore.loadTokenKeyStorage()) {
+					System.err.println("Token Certificate could not be loaded.");
+					System.err.println("Exiting...");
 					return;
 				}
-
-				JAKeyStore.startTokenUpdater();
 			}
+			catch (final Exception e) {
+				logger.log(Level.SEVERE, "Error loading token", e);
+				System.err.println("Error loading token");
+				return;
+			}
+
+			JAKeyStore.startTokenUpdater();
 
 			JBoxServer.startJBoxService();
 			TomcatServer.startTomcatServer();
