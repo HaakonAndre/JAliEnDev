@@ -185,11 +185,14 @@ public class PFN implements Serializable, Comparable<PFN> {
 	public PFN(final Integer senumber, final String pfn, final UUID id, final long size) {
 		this.pfn = pfn; // TODO recreate the pfn with the seioDaemons
 		this.seNumber = senumber.intValue();
-		this.hashCode = this.pfn != null ? this.pfn.hashCode() : guid.hashCode();
 		this.isCsd = true;
 		this.uuid = id;
 		this.guid = GUIDUtils.getGUID(id);
-		this.guid.size = size;
+		
+		if (this.guid!=null)
+			this.guid.size = size;
+		
+		this.hashCode = this.pfn != null ? this.pfn.hashCode() : (this.guid!=null ? guid.hashCode() : id.hashCode());
 	}
 
 	/**
