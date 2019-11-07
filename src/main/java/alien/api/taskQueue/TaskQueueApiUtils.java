@@ -430,7 +430,7 @@ public class TaskQueueApiUtils {
 	 * 
 	 * @param jdl
 	 * @param queueId
-	 * @return
+	 * @return <code>AddResultsJDL</code> from which the database update status can be retrieved
 	 */
 	public static AddResultsJDL addResultsJdl(final JDL jdl, final long queueId) {
 		try {
