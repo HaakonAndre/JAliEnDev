@@ -28,13 +28,13 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,6 +67,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JSONPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import lazyj.ExtProperties;
+import lazyj.Format;
 
 /**
  *
@@ -235,7 +236,7 @@ public class JAKeyStore {
 		return false;
 	}
 
-	private static boolean isEncrypted(String path) {
+	private static boolean isEncrypted(final String path) {
 		boolean encrypted = false;
 		try (Scanner scanner = new Scanner(new File(path))) {
 			while (scanner.hasNext()) {
@@ -246,7 +247,7 @@ public class JAKeyStore {
 				}
 			}
 		}
-		catch (@SuppressWarnings("unused") Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			encrypted = false;
 		}
 
@@ -257,8 +258,8 @@ public class JAKeyStore {
 	 * @return initialize the client key storage (the full grid certificate)
 	 */
 	public static String getClientKeyPath() {
-		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
-		String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
+		final String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "userkey.pem").toString();
+		final String user_key = selectPath("X509_USER_KEY", "user.cert.priv.location", defaultKeyPath);
 		return user_key;
 	}
 
@@ -266,14 +267,14 @@ public class JAKeyStore {
 	 * @return get the default location of the client certificate
 	 */
 	public static String getClientCertPath() {
-		String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
-		String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
+		final String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
+		final String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
 		return user_cert;
 	}
 
 	private static boolean loadClientKeyStorage() {
-		String user_key = getClientKeyPath();
-		String user_cert = getClientCertPath();
+		final String user_key = getClientKeyPath();
+		final String user_cert = getClientCertPath();
 
 		if (user_key == null || user_cert == null) {
 			return false;
@@ -293,7 +294,7 @@ public class JAKeyStore {
 	 *            to the private key in order to test if the password is vaid
 	 * @return char[] containing the correct password or empty string if the key is not encrypted
 	 */
-	public static char[] requestPassword(String keypath) {
+	public static char[] requestPassword(final String keypath) {
 		PrivateKey key = null;
 		char[] passwd = null;
 
@@ -304,7 +305,7 @@ public class JAKeyStore {
 			try {
 				passwd = System.console().readPassword("Enter the password for " + keypath + ": ");
 			}
-			catch (@SuppressWarnings("unused") Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				try (Scanner scanner = new Scanner(System.in)) {
 					passwd = scanner.nextLine().toCharArray();
 				}
@@ -317,7 +318,7 @@ public class JAKeyStore {
 				logger.log(Level.WARNING, "Failed to load key " + keypath + ", most probably wrong password.");
 				System.out.println("Wrong password! Try again");
 			}
-			catch (@SuppressWarnings("unused") Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				logger.log(Level.WARNING, "Failed to load key " + keypath);
 				System.out.println("Failed to load key");
 				break;
@@ -354,16 +355,16 @@ public class JAKeyStore {
 	 *            the filesystem path, usually the fallback/default location
 	 * @return path selected from one of the three provided locations
 	 */
-	public static String selectPath(String var, String key, String fsPath) {
+	public static String selectPath(final String var, final String key, final String fsPath) {
 		final ExtProperties config = ConfigUtils.getConfig();
 
 		if (var != null && System.getenv(var) != null) {
 			return System.getenv(var);
 		}
-		else if (key != null && config.gets(key) != null && config.gets(key) != "") {
+		else if (key != null && config.gets(key) != null && !config.gets(key).isEmpty()) {
 			return config.gets(key);
 		}
-		else if (fsPath != null && !fsPath.equals("") && Files.exists(Paths.get(fsPath))) {
+		else if (fsPath != null && !fsPath.isEmpty() && Files.exists(Paths.get(fsPath))) {
 			return fsPath;
 		}
 		else {
@@ -371,7 +372,7 @@ public class JAKeyStore {
 		}
 	}
 
-	private static KeyStore makeKeyStore(String key, String cert, String message) {
+	private static KeyStore makeKeyStore(final String key, final String cert, final String message) {
 		if (key == null || cert == null)
 			return null;
 
@@ -438,10 +439,10 @@ public class JAKeyStore {
 	 * @return <code>true</code> if keystore is loaded successfully
 	 */
 	private static boolean loadServerKeyStorage() {
-		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostkey.pem").toString();
+		final String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostkey.pem").toString();
 		final String host_key = selectPath(null, "host.cert.priv.location", defaultKeyPath);
 
-		String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostcert.pem").toString();
+		final String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostcert.pem").toString();
 		final String host_cert = selectPath(null, "host.cert.pub.location", defaultCertPath);
 
 		hostCert = makeKeyStore(host_key, host_cert, "HOST CERT");
@@ -449,13 +450,13 @@ public class JAKeyStore {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation) throws Exception {
-		char[] passwd = requestPassword(privKeyLocation);
+		final char[] passwd = requestPassword(privKeyLocation);
 		if (passwd == null)
 			throw new Exception("Failed to read password for key " + privKeyLocation);
 
-		PrivateKey key = loadPrivX509(privKeyLocation, passwd);
-		X509Certificate[] certChain = loadPubX509(pubKeyLocation, true);
-		PrivateKeyEntry entry = new PrivateKeyEntry(key, certChain);
+		final PrivateKey key = loadPrivX509(privKeyLocation, passwd);
+		final X509Certificate[] certChain = loadPubX509(pubKeyLocation, true);
+		final PrivateKeyEntry entry = new PrivateKeyEntry(key, certChain);
 
 		ks.setEntry(entryBaseName, entry, new PasswordProtection(pass));
 	}
@@ -678,7 +679,7 @@ public class JAKeyStore {
 			keystore_loaded = loadTokenKeyStorage();
 
 		if (!keystore_loaded) {
-			String msg = "Failed to load any certificate, tried: user, host and token";
+			final String msg = "Failed to load any certificate, tried: user, host and token";
 			logger.log(Level.SEVERE, msg);
 			System.err.println("ERROR: " + msg);
 		}
@@ -779,8 +780,17 @@ public class JAKeyStore {
 		final String defaultTokenKeyPath = Paths.get(tmpDir, "tokenkey_" + sUserId + ".pem").toString();
 		final String defaultTokenCertPath = Paths.get(tmpDir, "tokencert_" + sUserId + ".pem").toString();
 
-		final String tokencertpath = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
-		final String tokenkeypath = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
+		String tokencertpath = selectPath("JALIEN_TOKEN_CERT", "tokencert.path", defaultTokenCertPath);
+		String tokenkeypath = selectPath("JALIEN_TOKEN_KEY", "tokenkey.path", defaultTokenKeyPath);
+
+		if (tokencertpath == null)
+			tokencertpath = defaultTokenCertPath;
+
+		if (tokenkeypath == null)
+			tokenkeypath = defaultTokenKeyPath;
+
+		new File(tokencertpath).delete();
+		new File(tokenkeypath).delete();
 
 		try ( // Open files for writing
 				PrintWriter pwritercert = new PrintWriter(new File(tokencertpath));
@@ -788,6 +798,11 @@ public class JAKeyStore {
 
 				// We will read all data into temp output stream and then parse it and split into 2 files
 				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+			// Set correct permissions
+			Files.setPosixFilePermissions(Paths.get(tokencertpath), PosixFilePermissions.fromString("r--r-----"));
+			Files.setPosixFilePermissions(Paths.get(tokenkeypath), PosixFilePermissions.fromString("r--------"));
+
 			final UIPrintWriter out = new JSONPrintWriter(baos);
 
 			// Create Commander instance just to execute one command
@@ -826,10 +841,6 @@ public class JAKeyStore {
 				pwriterkey.flush();
 			}
 
-			// Set correct permissions
-			Files.setPosixFilePermissions(Paths.get(tokencertpath), PosixFilePermissions.fromString("rw-rw----"));
-			Files.setPosixFilePermissions(Paths.get(tokenkeypath), PosixFilePermissions.fromString("rw-------"));
-
 			// Execution finished - kill commander
 			commander.kill = true;
 			return true;
@@ -844,7 +855,7 @@ public class JAKeyStore {
 	 * @param ksName which keystore to check
 	 * @return <code>true</code> if the requested certificate has been successfully loaded
 	 */
-	public static boolean isLoaded(String ksName) {
+	public static boolean isLoaded(final String ksName) {
 		KeyStore ks = null;
 
 		if (ksName == "user") {
@@ -860,13 +871,13 @@ public class JAKeyStore {
 		return isLoaded(ks);
 	}
 
-	private static boolean isLoaded(KeyStore ks) {
+	private static boolean isLoaded(final KeyStore ks) {
 		boolean status = false;
 		if (ks != null) {
 			try {
 				status = ks.getCertificateChain("User.cert") != null;
 			}
-			catch (@SuppressWarnings("unused") Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// Do nothing
 			}
 		}
@@ -922,9 +933,9 @@ public class JAKeyStore {
 
 	/**
 	 * Get certificate's expiration date as long value
-	 * 
+	 *
 	 * @param ks a keystore that contains the certificate
-	 * @return
+	 * @return epoch time of certificate's not-valid-after field
 	 */
 	public static long getExpirationTime(final KeyStore ks) {
 		Certificate c;
@@ -933,7 +944,7 @@ public class JAKeyStore {
 			final long endTime = ((X509Certificate) c).getNotAfter().getTime();
 			return endTime;
 		}
-		catch (KeyStoreException e) {
+		catch (final KeyStoreException e) {
 			e.printStackTrace();
 		}
 
@@ -942,31 +953,28 @@ public class JAKeyStore {
 
 	/**
 	 * Check if the certificate will expire in the next two days
-	 * 
-	 * @param c certificate to be checked
+	 *
+	 * @param endTime expiration time of the certificate
+	 *
 	 * @return <code>true</code> if the certificate will be valid for less than two days
 	 */
 	public static boolean expireSoon(final long endTime) {
-		final long now = System.currentTimeMillis();
-		final long diffDays = TimeUnit.DAYS.convert(endTime - now, TimeUnit.MILLISECONDS);
-		if (endTime > now && diffDays < 2)
-			return true;
-
-		return false;
+		return endTime - System.currentTimeMillis() < 1000L * 60 * 60 * 24 * 2;
 	}
 
 	/**
 	 * Print to stdout how many days, hours and minutes left for the certificate to expire
-	 * 
+	 *
 	 * @param endTime certificate's getNotAfter() time
 	 */
 	public static void printExpirationTime(final long endTime) {
-		final long diffTime = endTime - System.currentTimeMillis();
-		final long diffDays = TimeUnit.DAYS.convert(diffTime, TimeUnit.MILLISECONDS);
-		final long diffDaysms = TimeUnit.MILLISECONDS.convert(diffDays, TimeUnit.DAYS);
-		final long diffHours = TimeUnit.HOURS.convert(diffTime - diffDaysms, TimeUnit.MILLISECONDS);
-		final long diffHoursms = TimeUnit.MILLISECONDS.convert(diffHours, TimeUnit.HOURS);
-		final long diffMinutes = TimeUnit.MINUTES.convert(diffTime - diffDaysms - diffHoursms, TimeUnit.MILLISECONDS);
-		System.err.println("> Your certificate will expire in " + diffDays + " days, " + diffHours + " hours and " + diffMinutes + " minutes");
+		final long now = System.currentTimeMillis();
+
+		if (endTime < now) {
+			System.err.println("> Your certificate has expired on " + (new Date(endTime)));
+			return;
+		}
+
+		System.err.println("> Your certificate will expire in " + Format.toInterval(endTime - now));
 	}
 }
