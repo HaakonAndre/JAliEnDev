@@ -1,7 +1,6 @@
 package alien.user;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -57,15 +56,12 @@ import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
+import alien.api.Dispatcher;
+import alien.api.token.GetTokenCertificate;
+import alien.api.token.TokenCertificateType;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
-import alien.shell.commands.JAliEnCOMMander;
-import alien.shell.commands.JSONPrintWriter;
-import alien.shell.commands.UIPrintWriter;
 import lazyj.ExtProperties;
 import lazyj.Format;
 
@@ -789,66 +785,39 @@ public class JAKeyStore {
 		if (tokenkeypath == null)
 			tokenkeypath = defaultTokenKeyPath;
 
-		new File(tokencertpath).delete();
-		new File(tokenkeypath).delete();
+		final GetTokenCertificate tokRequest = new GetTokenCertificate(userIdentity, userIdentity.getDefaultUser(), TokenCertificateType.USER_CERTIFICATE, null,
+				TokenCertificateType.USER_CERTIFICATE.getMaxValidity());
 
-		try ( // Open files for writing
-				PrintWriter pwritercert = new PrintWriter(new File(tokencertpath));
-				PrintWriter pwriterkey = new PrintWriter(new File(tokenkeypath));
+		final GetTokenCertificate tokReply;
 
-				// We will read all data into temp output stream and then parse it and split into 2 files
-				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-			// Set correct permissions
-			Files.setPosixFilePermissions(Paths.get(tokencertpath), PosixFilePermissions.fromString("r--r-----"));
-			Files.setPosixFilePermissions(Paths.get(tokenkeypath), PosixFilePermissions.fromString("r--------"));
-
-			final UIPrintWriter out = new JSONPrintWriter(baos);
-
-			// Create Commander instance just to execute one command
-			final JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
-			commander.start();
-
-			// Command to be sent (yes, we need it to be an array, even if it is one word)
-			final ArrayList<String> fullCmd = new ArrayList<>();
-			fullCmd.add("token");
-
-			synchronized (commander) {
-				commander.status.set(1);
-				commander.setLine(out, fullCmd.toArray(new String[0]));
-				commander.notifyAll();
-			}
-
-			while (commander.status.get() == 1)
-				try {
-					synchronized (commander.status) {
-						commander.status.wait(1000);
-					}
-				}
-				catch (@SuppressWarnings("unused") final InterruptedException ie) {
-					// ignore
-				}
-
-			// Now parse the reply from JCentral
-			final JSONParser jsonParser = new JSONParser();
-			final JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
-			final JSONArray jsonArray = (JSONArray) readf.get("results");
-			for (final Object object : jsonArray) {
-				final JSONObject aJson = (JSONObject) object;
-				pwritercert.print(aJson.get("tokencert"));
-				pwriterkey.print(aJson.get("tokenkey"));
-				pwritercert.flush();
-				pwriterkey.flush();
-			}
-
-			// Execution finished - kill commander
-			commander.kill = true;
-			return true;
+		try {
+			tokReply = Dispatcher.execute(tokRequest);
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Token request failed", e);
 			return false;
 		}
+
+		new File(tokencertpath).delete();
+		new File(tokenkeypath).delete();
+		
+		try ( // Open files for writing
+				PrintWriter pwritercert = new PrintWriter(new File(tokencertpath));
+				PrintWriter pwriterkey = new PrintWriter(new File(tokenkeypath))) {
+
+			// Set correct permissions
+			Files.setPosixFilePermissions(Paths.get(tokencertpath), PosixFilePermissions.fromString("r--r-----"));
+			Files.setPosixFilePermissions(Paths.get(tokenkeypath), PosixFilePermissions.fromString("r--------"));
+
+			pwritercert.write(tokReply.getCertificateAsString());
+			pwriterkey.write(tokReply.getPrivateKeyAsString());
+		}
+		catch (IOException e) {
+			logger.log(Level.SEVERE, "Exception writing token content to files", e);
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
