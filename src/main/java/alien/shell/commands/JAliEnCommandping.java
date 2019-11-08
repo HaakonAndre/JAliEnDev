@@ -63,7 +63,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 
 					commander.printOutln("reply from " + p.getPartnerAddress() + ": time=" + Format.point(t.getMillis()) + " ms");
 
-					if (i < count && sleep > 0)
+					if (i < count - 1 && sleep > 0)
 						try {
 							Thread.sleep(sleep);
 						}
@@ -71,9 +71,9 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 							return;
 						}
 				}
-
-				commander.printOutln(count + " packets transmitted, time " + Format.point(tGlobal.getMillis()) + " ms");
 			}
+
+			commander.printOutln(count + " packets transmitted, time " + Format.point(tGlobal.getMillis()) + " ms");
 
 			double mdev = Math.sqrt(sum2 / count - (sum * sum) / (count * count));
 
