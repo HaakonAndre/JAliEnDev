@@ -1,6 +1,5 @@
 package alien;
 
-import java.security.KeyStoreException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +28,6 @@ public class JBox {
 	 * Debugging method
 	 *
 	 * @param args
-	 * @throws KeyStoreException
 	 */
 	public static void main(final String[] args) {
 		logLoud(Level.FINE, "Starting JBox");
