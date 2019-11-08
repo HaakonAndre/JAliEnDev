@@ -67,7 +67,7 @@ public class JBox {
 		}
 
 		if (JAKeyStore.isLoaded("token") && !JAKeyStore.isLoaded("user") && !JAKeyStore.isLoaded("host")) {
-			logLoud(Level.INFO, "WARNING: JBox is connected to central esrvices with a token that cannot be used to update itself.");
+			logLoud(Level.INFO, "WARNING: JBox is connected to central services with a token that cannot be used to update itself.");
 			logLoud(Level.INFO, "Please use a user or host certificate to refresh tokens automatically.");
 		}
 
