@@ -8,8 +8,6 @@ import alien.api.JBoxServer;
 import alien.api.TomcatServer;
 import alien.config.ConfigUtils;
 import alien.user.JAKeyStore;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -36,6 +34,7 @@ public class JBox {
 	public static void main(final String[] args) {
 		logLoud(Level.FINE, "Starting JBox");
 
+		// Load certificates
 		if (!JAKeyStore.loadKeyStore()) {
 			logLoud(Level.SEVERE, "ERROR: JBox failed to load any credentials");
 			return;
@@ -51,11 +50,17 @@ public class JBox {
 			logLoud(Level.INFO, "Please use a user or host certificate to refresh tokens automatically.");
 		}
 
+		final long expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.getKeyStore());
+		if (JAKeyStore.expireSoon(expirationTime))
+			JAKeyStore.printExpirationTime(expirationTime);
+
+		// Start JBox and Tomcat services
 		JBoxServer.startJBoxService();
 		TomcatServer.startTomcatServer();
 
 		JAKeyStore.startTokenUpdater();
 
+		// Create /tmp/jclient_token file and export env variables
 		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables()))
 			logLoud(Level.INFO, "Failed to export JBox variables");
 	}

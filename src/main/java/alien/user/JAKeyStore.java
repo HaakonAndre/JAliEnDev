@@ -34,6 +34,7 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -362,7 +363,7 @@ public class JAKeyStore {
 		else if (key != null && config.gets(key) != null && config.gets(key) != "") {
 			return config.gets(key);
 		}
-		else if (fsPath != null && !fsPath.equals("")) {
+		else if (fsPath != null && !fsPath.equals("") && Files.exists(Paths.get(fsPath))) {
 			return fsPath;
 		}
 		else {
@@ -371,6 +372,9 @@ public class JAKeyStore {
 	}
 
 	private static KeyStore makeKeyStore(String key, String cert, String message) {
+		if (key == null || cert == null)
+			return null;
+
 		KeyStore ks = null;
 		logger.log(Level.SEVERE, "Trying to load " + message);
 
@@ -393,7 +397,7 @@ public class JAKeyStore {
 	/**
 	 * Load the token credentials (required for running Tomcat / WebSockets)
 	 *
-	 * @return true if token has been successfully loaded
+	 * @return <code>true</code> if token has been successfully loaded
 	 */
 	public static boolean loadTokenKeyStorage() {
 		final String sUserId = UserFactory.getUserID();
@@ -431,7 +435,7 @@ public class JAKeyStore {
 	}
 
 	/**
-	 * @return true if keystore is loaded successfully
+	 * @return <code>true</code> if keystore is loaded successfully
 	 */
 	private static boolean loadServerKeyStorage() {
 		String defaultKeyPath = Paths.get(UserFactory.getUserHome(), ".globus", "hostkey.pem").toString();
@@ -595,8 +599,9 @@ public class JAKeyStore {
 
 			while ((obj = reader.readObject()) != null)
 				if (obj instanceof X509Certificate) {
+					final X509Certificate c = (X509Certificate) obj;
 					try {
-						((X509Certificate) obj).checkValidity();
+						c.checkValidity();
 					}
 					catch (final CertificateException e) {
 						logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
@@ -604,7 +609,7 @@ public class JAKeyStore {
 						reader.close();
 						return null;
 					}
-					chain.add((X509Certificate) obj);
+					chain.add(c);
 				}
 				else if (obj instanceof X509CertificateHolder) {
 					final X509CertificateHolder ch = (X509CertificateHolder) obj;
@@ -655,7 +660,7 @@ public class JAKeyStore {
 	private static boolean keystore_loaded = false;
 
 	/**
-	 * @return true if JAliEn managed to load one of keystores
+	 * @return <code>true</code> if JAliEn managed to load one of keystores
 	 */
 	public static boolean loadKeyStore() {
 		keystore_loaded = false;
@@ -735,7 +740,7 @@ public class JAKeyStore {
 	/**
 	 * Request token certificate from JCentral
 	 *
-	 * @return true if tokencert was successfully received
+	 * @return <code>true</code> if tokencert was successfully received
 	 */
 	public static boolean requestTokenCert() {
 		// Get user certificate to connect to JCentral
@@ -837,7 +842,7 @@ public class JAKeyStore {
 
 	/**
 	 * @param ksName which keystore to check
-	 * @return true if the requested certificate has been successfully loaded
+	 * @return <code>true</code> if the requested certificate has been successfully loaded
 	 */
 	public static boolean isLoaded(String ksName) {
 		KeyStore ks = null;
@@ -862,6 +867,7 @@ public class JAKeyStore {
 				status = ks.getCertificateChain("User.cert") != null;
 			}
 			catch (@SuppressWarnings("unused") Exception e) {
+				// Do nothing
 			}
 		}
 		return status;
@@ -891,7 +897,7 @@ public class JAKeyStore {
 	/**
 	 * Fetch and load the first token that will be used for Tomcat
 	 *
-	 * @return true if the token is fetched and loaded successfully
+	 * @return <code>true</code> if the token is fetched and loaded successfully
 	 */
 	public static boolean bootstrapFirstToken() {
 		if (!JAKeyStore.requestTokenCert()) {
@@ -912,5 +918,55 @@ public class JAKeyStore {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get certificate's expiration date as long value
+	 * 
+	 * @param ks a keystore that contains the certificate
+	 * @return
+	 */
+	public static long getExpirationTime(final KeyStore ks) {
+		Certificate c;
+		try {
+			c = ks.getCertificateChain("User.cert")[0];
+			final long endTime = ((X509Certificate) c).getNotAfter().getTime();
+			return endTime;
+		}
+		catch (KeyStoreException e) {
+			e.printStackTrace();
+		}
+
+		return 0;
+	}
+
+	/**
+	 * Check if the certificate will expire in the next two days
+	 * 
+	 * @param c certificate to be checked
+	 * @return <code>true</code> if the certificate will be valid for less than two days
+	 */
+	public static boolean expireSoon(final long endTime) {
+		final long now = System.currentTimeMillis();
+		final long diffDays = TimeUnit.DAYS.convert(endTime - now, TimeUnit.MILLISECONDS);
+		if (endTime > now && diffDays < 2)
+			return true;
+
+		return false;
+	}
+
+	/**
+	 * Print to stdout how many days, hours and minutes left for the certificate to expire
+	 * 
+	 * @param endTime certificate's getNotAfter() time
+	 */
+	public static void printExpirationTime(final long endTime) {
+		final long diffTime = endTime - System.currentTimeMillis();
+		final long diffDays = TimeUnit.DAYS.convert(diffTime, TimeUnit.MILLISECONDS);
+		final long diffDaysms = TimeUnit.MILLISECONDS.convert(diffDays, TimeUnit.DAYS);
+		final long diffHours = TimeUnit.HOURS.convert(diffTime - diffDaysms, TimeUnit.MILLISECONDS);
+		final long diffHoursms = TimeUnit.MILLISECONDS.convert(diffHours, TimeUnit.HOURS);
+		final long diffMinutes = TimeUnit.MINUTES.convert(diffTime - diffDaysms - diffHoursms, TimeUnit.MILLISECONDS);
+		System.err.println("> Your certificate will expire in " + diffDays + " days, " + diffHours + " hours and " + diffMinutes + " minutes");
 	}
 }
