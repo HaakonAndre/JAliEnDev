@@ -301,7 +301,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
-		final HashMap<String, String> jBoxEnv = ConfigUtils.exportJBoxVariables(0);
+		final HashMap<String, String> jBoxEnv = ConfigUtils.exportJBoxVariables();
 
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());

@@ -33,28 +33,8 @@ public class JBox {
 	 * @param args
 	 * @throws KeyStoreException
 	 */
-	public static void main(final String[] args) throws KeyStoreException {
-
-		System.out.println("Starting JBox");
-
-		logger.log(Level.FINE, "Starting JBox");
-
-		final OptionParser parser = new OptionParser();
-		parser.accepts("login");
-		parser.accepts("debug").withRequiredArg().ofType(Integer.class);
-
-		int iDebug = 0;
-
-		try {
-			final OptionSet options = parser.parse(args);
-
-			if (options.has("debug"))
-				iDebug = ((Integer) options.valueOf("debug")).intValue();
-		}
-		catch (final Exception e) {
-			// nothing, we just let it 0, nothing to debug
-			e.printStackTrace();
-		}
+	public static void main(final String[] args) {
+		logLoud(Level.FINE, "Starting JBox");
 
 		if (!JAKeyStore.loadKeyStore()) {
 			logLoud(Level.SEVERE, "ERROR: JBox failed to load any credentials");
@@ -76,7 +56,7 @@ public class JBox {
 
 		JAKeyStore.startTokenUpdater();
 
-		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
+		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables()))
 			logLoud(Level.INFO, "Failed to export JBox variables");
 	}
 }

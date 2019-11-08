@@ -704,11 +704,9 @@ public class ConfigUtils {
 	/**
 	 * Write the configuration file and export variable that are used by JAliEn-ROOT and JSh
 	 *
-	 * @param iDebug
-	 *            the debug level received from the command line
 	 * @return the environment variables to export to the job (as actual env variables or config file)
 	 */
-	public static HashMap<String, String> exportJBoxVariables(final int iDebug) {
+	public static HashMap<String, String> exportJBoxVariables() {
 		final HashMap<String, String> vars = new HashMap<>();
 		final String sHost = "127.0.0.1";
 
@@ -722,7 +720,6 @@ public class ConfigUtils {
 		vars.put("JALIEN_HOST", sHost);
 		vars.put("JALIEN_PORT", Integer.toString(JBoxServer.getPort()));
 		vars.put("JALIEN_WSPORT", Integer.toString(TomcatServer.getPort()));
-		vars.put("JALIEN_DEBUG", Integer.toString(iDebug));
 		vars.put("JALIEN_PID", Integer.toString(MonitorFactory.getSelfProcessID()));
 		vars.put("JALIEN_PASSWORD", JBoxServer.getPassword());
 
