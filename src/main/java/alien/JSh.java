@@ -265,6 +265,9 @@ public class JSh {
 					System.out.println();
 					return true;
 				}
+				else if (sLine.startsWith(">")) {
+					System.out.println(sLine);
+				}
 			}
 
 			System.err.println("JBox agent could not be started, it is likely that the password you have provided is not correct");

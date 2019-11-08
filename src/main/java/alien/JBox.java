@@ -24,7 +24,7 @@ public class JBox {
 
 	private static void logLoud(Level l, String msg) {
 		logger.log(l, msg);
-		System.err.println(msg);
+		System.err.println("> " + msg); // Prepend stderr messages with ">" to make JShell print them
 	}
 
 	/**
@@ -77,6 +77,6 @@ public class JBox {
 		JAKeyStore.startTokenUpdater();
 
 		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables(iDebug)))
-			logger.log(Level.INFO, "Failed to export JBox variables");
+			logLoud(Level.INFO, "Failed to export JBox variables");
 	}
 }
