@@ -12,6 +12,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.Format;
+import lazyj.Utils;
 
 /**
  * @author costing
@@ -24,6 +25,8 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 	private long sleep = 1000;
 
 	private static final double NANO_TO_MS = 1000000.;
+
+	private boolean bN = false;
 
 	/**
 	 * Send a simple object upstream and measure how long it takes to have it back
@@ -45,6 +48,8 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 			long sum = 0;
 			long sum2 = 0;
 
+			String resolvedHostName = null;
+
 			for (int i = 0; i < count; i++) {
 				try (Timing t = new Timing()) {
 					p = Dispatcher.execute(new Ping());
@@ -61,7 +66,44 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 					sum += delta;
 					sum2 += delta * delta;
 
-					commander.printOutln("reply from " + p.getPartnerAddress() + ": time=" + Format.point(t.getMillis()) + " ms");
+					if (resolvedHostName == null && !bN) {
+						resolvedHostName = Utils.getHostName(p.getPartnerAddress().getHostAddress());
+					}
+
+					String from = p.getPartnerAddress().getHostAddress();
+
+					if (resolvedHostName != null && resolvedHostName.length() > 0) {
+						String partnerHostName = null;
+
+						try {
+							partnerHostName = p.getPartnerAddress().getHostName();
+						}
+						catch (@SuppressWarnings("unused") final Throwable t1) {
+							// ignore
+						}
+
+						if (!resolvedHostName.equalsIgnoreCase(partnerHostName))
+							from += " (" + partnerHostName + " / " + resolvedHostName + ")";
+						else
+							from += " (" + resolvedHostName + ")";
+					}
+					else {
+						if (!bN) {
+							String partnerHostName = null;
+
+							try {
+								partnerHostName = p.getPartnerAddress().getHostName();
+							}
+							catch (@SuppressWarnings("unused") final Throwable t1) {
+								// ignore
+							}
+
+							if (partnerHostName != null)
+								from += " (" + partnerHostName + ")";
+						}
+					}
+
+					commander.printOutln("reply from " + from + ": time=" + Format.point(t.getMillis()) + " ms");
 
 					if (i < count - 1 && sleep > 0)
 						try {
@@ -105,6 +147,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 		commander.printOutln(helpUsage("ping"));
 		commander.printOutln(helpOption("-c", "Number of iterations"));
 		commander.printOutln(helpOption("-s", "Sleep between iterations, default " + sleep + " (milliseconds)"));
+		commander.printOutln(helpOption("-n", "Numeric IP addresses, don't try to resolve anything"));
 		commander.printOutln();
 	}
 
@@ -135,6 +178,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 
 			parser.accepts("c").withRequiredArg().describedAs("Number of iterations").ofType(Integer.class);
 			parser.accepts("s").withRequiredArg().describedAs("Sleep between iterations").ofType(Long.class);
+			parser.accepts("n");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -145,6 +189,8 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 				commander.printOutln("Ignoring count value of " + count);
 				count = 3;
 			}
+
+			bN = options.has("n");
 
 			if (options.hasArgument("s"))
 				sleep = ((Long) options.valueOf("s")).intValue();
