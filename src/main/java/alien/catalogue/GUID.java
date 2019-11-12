@@ -785,18 +785,23 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 					if (pfnCache != null)
 						pfnCache.remove(pfn);
 
-					if (purge && pfn.pfn.startsWith("root://")) {
+					final SE se = SEUtils.getSE(pfn.seNumber);
+
+					if (se != null && !(se.getName().equalsIgnoreCase("no_se"))) {
 						final GUID g = pfn.getGuid();
 
 						if (g != null && g.guid != null) {
-							final SE se = SEUtils.getSE(pfn.seNumber);
-
-							if (se != null && !(se.getName().equalsIgnoreCase("no_se"))) {
+							if (purge && pfn.pfn.startsWith("root://")) {
 								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size,pfn) VALUES (1,string2binary(?), ?, ?, ?, ?);", false, g.guid.toString(), seNo, g.md5,
 										Long.valueOf(g.size), pfn.pfn.equals(se.generatePFN(g)) ? null : pfn.pfn);
-
-								SEUtils.incrementStorageCounters(se.seNumber, -1, -g.size);
 							}
+
+							// Update the quota information for this SE with the actual size that was reclaimed
+							SEUtils.incrementStorageCounters(se.seNumber, -1, -g.size);
+						}
+						else {
+							// Don't know how big the removed file was, just decrement the counter
+							SEUtils.incrementStorageCounters(se.seNumber, -1, 0);
 						}
 					}
 				}
