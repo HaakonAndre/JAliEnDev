@@ -109,7 +109,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 						try {
 							Thread.sleep(sleep);
 						}
-						catch (@SuppressWarnings("unused") InterruptedException e) {
+						catch (@SuppressWarnings("unused") final InterruptedException e) {
 							return;
 						}
 				}
@@ -117,7 +117,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 
 			commander.printOutln(count + " packets transmitted, time " + Format.point(tGlobal.getMillis()) + " ms");
 
-			double mdev = Math.sqrt(sum2 / count - (sum * sum) / (count * count));
+			final double mdev = Math.sqrt(sum2 / count - (sum * sum) / (count * count));
 
 			commander.printOut("rtt min/avg/max/mdev = ");
 			commander.printOut(Format.point(min / NANO_TO_MS) + "/");
@@ -132,7 +132,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 					commander.printOutln("  " + entry.getKey() + " : " + entry.getValue());
 			}
 		}
-		catch (ServerException e) {
+		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not execute the ping command");
 			e.getCause().printStackTrace();
 		}
