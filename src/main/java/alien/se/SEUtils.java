@@ -28,6 +28,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
@@ -230,11 +232,11 @@ public final class SEUtils {
 	}
 
 	/**
-	 * Get all SE objects that have the given names
+	 * Get all SE objects that have the given names, exactly or matching the regex if the name is a pattern or a fragment of a valid SE name.
 	 *
 	 * @param ses
 	 *            names to get the objects for, can be <code>null</code> in which case all known SEs are returned
-	 * @return SE objects
+	 * @return SE objects matching one of the names/patterns in the argument list
 	 */
 	public static List<SE> getSEs(final List<String> ses) {
 		updateSECache();
@@ -246,11 +248,31 @@ public final class SEUtils {
 			return new ArrayList<>(seCache.values());
 
 		final List<SE> ret = new ArrayList<>();
-		for (final String se : ses) {
-			final SE maybeSE = SEUtils.getSE(se);
+		for (final String seName : ses) {
+			final SE maybeSE = SEUtils.getSE(seName);
 
-			if (maybeSE != null)
-				ret.add(maybeSE);
+			if (maybeSE != null) {
+				if (!ret.contains(maybeSE))
+					ret.add(maybeSE);
+			}
+			else {
+				// could it have been a pattern ?
+				if (seName.contains("*") || seName.contains("+") || seName.contains(".") || !seName.contains("::") || seName.indexOf("::") == seName.lastIndexOf("::")) {
+					try {
+						final Pattern p = Pattern.compile("^.*" + seName + ".*$", Pattern.CASE_INSENSITIVE);
+
+						for (final SE se1 : seCache.values()) {
+							final Matcher m = p.matcher(se1.seName);
+
+							if (m.matches() && !ret.contains(se1))
+								ret.add(se1);
+						}
+					}
+					catch (@SuppressWarnings("unused") final Throwable t) {
+						// ignore wrongly specified pattern
+					}
+				}
+			}
 		}
 
 		return ret;
