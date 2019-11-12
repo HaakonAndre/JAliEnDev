@@ -977,6 +977,7 @@ public class Xrootd extends Protocol {
 		command.add(xrootd_default_path + "/bin/xrdfs");
 		command.add(host + ":" + port);
 		command.add("prepare");
+		command.add("-s");
 
 		if (path.startsWith("//"))
 			path = path.substring(1);
