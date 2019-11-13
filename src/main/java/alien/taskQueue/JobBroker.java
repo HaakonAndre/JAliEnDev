@@ -401,7 +401,7 @@ public class JobBroker {
 				}
 
 			if (matchRequest.containsKey("Partition")) {
-				where += "and ? like concat('%,',`partition`, '%,') ";
+				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}
 
