@@ -19,7 +19,7 @@ import lazyj.Format;
  */
 public class JAliEnCommanddu extends JAliEnBaseCommand {
 
-	private boolean bH = false;
+	private boolean bN = false;
 	private boolean bC = false;
 	private boolean bS = false;
 
@@ -70,21 +70,39 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 	}
 
 	private String getSize(final long value) {
-		return (bH ? Format.size(value) : String.valueOf(value));
+		return (bN ? String.valueOf(value) + " bytes" : Format.size(value));
 	}
 
 	private void printStats(final String firstLine, final DUStats stats) {
 		commander.printOutln(firstLine);
-		commander.printOutln("  Logical files : " + stats.logicalFiles + " of " + getSize(stats.logicalSize));
-		commander.printOut("  Physical files: " + stats.physicalFiles + " of " + getSize(stats.physicalTotalSize));
-		commander.printOut(" in " + stats.physicalReplicas + " replicas ");
 
-		if (stats.physicalFiles > 0)
+		if (stats.subfolders > 0)
+			commander.printOutln("  Folders: " + stats.subfolders);
+
+		commander.printOutln("  Files: " + (stats.logicalFiles + stats.physicalFiles) + " of an apparent size of " + getSize(stats.physicalOneCopy + stats.logicalSize) + ", of which:");
+
+		if (stats.physicalFiles > 0) {
+			commander.printOut("  - physical files: " + stats.physicalFiles + " files of " + getSize(stats.physicalTotalSize));
+			commander.printOut(" with " + stats.physicalReplicas + " replicas");
+
 			commander.printOut(" (avg " + Format.point((double) stats.physicalReplicas / stats.physicalFiles) + " replicas/file)");
 
-		commander.printOutln(", size of one replica: " + getSize(stats.physicalOneCopy));
+			commander.printOutln(", size of one replica: " + getSize(stats.physicalOneCopy));
+		}
 
-		commander.printOutln("  Subfolders: " + stats.subfolders);
+		if (stats.logicalFiles > 0)
+			commander.printOutln("  - archive members : " + stats.logicalFiles + " files of " + getSize(stats.logicalSize));
+
+		// and now set the return values for JSON export
+		commander.outNextResult();
+		commander.printOut("entry", firstLine);
+		commander.printOut("folders", String.valueOf(stats.subfolders));
+		commander.printOut("physical_files_count", String.valueOf(stats.physicalFiles));
+		commander.printOut("physical_files_size", String.valueOf(stats.physicalTotalSize));
+		commander.printOut("physical_files_replicas", String.valueOf(stats.physicalReplicas));
+		commander.printOut("physical_files_one_replica_size", String.valueOf(stats.physicalOneCopy));
+		commander.printOut("logical_files_count", String.valueOf(stats.logicalFiles));
+		commander.printOut("logical_files_size", String.valueOf(stats.logicalSize));
 	}
 
 	@Override
@@ -96,12 +114,12 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 
 		final List<String> pathsToRunOn = new ArrayList<>();
 
-		for (String path : paths) {
+		for (final String path : paths) {
 			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
 
 			final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-			for (String expandedPath : expandedPaths)
+			for (final String expandedPath : expandedPaths)
 				if (!pathsToRunOn.contains(expandedPath))
 					pathsToRunOn.add(expandedPath);
 		}
@@ -113,13 +131,13 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 
 			if (lfns != null) {
 				for (final LFN l : lfns) {
-					if (l.isDirectory())
-						stats.addSubfolder();
-
-					if (l.isCollection() && bC)
+					if (l.isDirectory()) {
+						if (!l.getCanonicalName().equals(path))
+							stats.addSubfolder();
+					}
+					else if (l.isCollection() && bC)
 						stats.addLogicalFile(l.getSize());
-
-					if (l.isFile()) {
+					else if (l.isFile()) {
 						final Set<PFN> pfns = commander.c_api.getPFNs(l.guid.toString());
 
 						if (pfns != null && pfns.size() > 0) {
@@ -158,10 +176,10 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln("Gives the disk space usge of one or more directories");
-		commander.printOutln("Usage: du [-hc] <dir> ...");
+		commander.printOutln("Usage: du [-hc] <path> ...");
 		commander.printOutln();
 		commander.printOutln("Options:");
-		commander.printOutln("	-h: Give the output in human readable format");
+		commander.printOutln("	-n: Print raw numbers in machine readable format");
 		commander.printOutln("	-c: Include collections in the summary information");
 		commander.printOutln("	-s: Print a summary of all parameters");
 		commander.printOutln();
@@ -182,7 +200,7 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 
 		try {
 			final OptionParser parser = new OptionParser();
-			parser.accepts("h");
+			parser.accepts("n");
 			parser.accepts("c");
 			parser.accepts("s");
 
@@ -193,7 +211,7 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 			if (paths.size() < 1)
 				return;
 
-			bH = options.has("h");
+			bN = options.has("n");
 			bC = options.has("c");
 			bS = options.has("s");
 		}
