@@ -345,6 +345,13 @@ public class JobBroker {
 	 *         entry to JOBAGENT if asked for
 	 */
 	public static HashMap<String, Object> getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
+		boolean isRemoteAccessAllowed = false;
+
+		final Object remoteValue = matchRequest.get("Remote");
+
+		if (remoteValue != null && (remoteValue instanceof Number))
+			isRemoteAccessAllowed = ((Number) remoteValue).intValue() > 0;
+
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 			if (db == null)
 				return null;
@@ -406,8 +413,14 @@ public class JobBroker {
 			}
 
 			if (matchRequest.containsKey("CE")) {
-				where += " and (ce like '' or ce like concat('%,',?,',%')) and noce not like concat('%,',?,',%')";
-				bindValues.add(matchRequest.get("CE"));
+				if (!isRemoteAccessAllowed) {
+					// if remote access is allowed then the CE doesn't have to match any more, any site from the same partition can pick up the job
+					// on the other hand if remote access is not allowed then the CE must match the requirements, so enforce it here
+					where += " and (ce like '' or ce like concat('%,',?,',%'))";
+					bindValues.add(matchRequest.get("CE"));
+				}
+				
+				where += " and noce not like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("CE"));
 			}
 
@@ -442,7 +455,7 @@ public class JobBroker {
 
 			db.setReadOnly(true);
 
-			if (((Integer) matchRequest.get("Remote")).intValue() == 1) {
+			if (isRemoteAccessAllowed) {
 				logger.log(Level.INFO, "Checking for remote agents");
 
 				// TODO: ask cache for ns:jobbroker key:remoteagents
@@ -451,7 +464,7 @@ public class JobBroker {
 				db.query("select distinct agentId from QUEUE where agentId is not null and statusId=5 and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)");
 
 				if (db.moveNext()) {
-					where += "and entryId in (";
+					where += " and entryId in (";
 
 					do {
 						final int agentid = db.geti("agentId");
