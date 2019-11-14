@@ -1,5 +1,9 @@
 package alien.taskQueue;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,6 +20,7 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
 import lazyj.DBFunctions;
+import lazyj.DBFunctions.DBConnection;
 
 /**
  *
@@ -188,7 +193,7 @@ public class JobBroker {
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
 					}
-					catch (Exception e) {
+					catch (final Exception e) {
 						logger.info("Getting TokenCertificate for job " + queueId + " failed: " + e);
 					}
 				}
@@ -231,10 +236,8 @@ public class JobBroker {
 			final String host = (String) waiting.get("Host");
 			final String ceName = (String) waiting.get("CE");
 
-			int hostId, siteId;
-
-			hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", host);
-			siteId = TaskQueueUtils.getSiteId(ceName);
+			final int hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", host);
+			final int siteId = TaskQueueUtils.getSiteId(ceName);
 
 			if (hostId == 0 || siteId == 0)
 				logger.log(Level.INFO, "The value for " + (hostId > 0 ? "site" : "host") + " is missing");
@@ -245,74 +248,97 @@ public class JobBroker {
 
 			String extra = "";
 			if (waiting.containsKey("Remote") && ((Integer) waiting.get("Remote")).intValue() == 1)
-				extra = "and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)";
+				extra = " and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)";
 
-			// Lock QUEUE
-			if (!db.query("LOCK TABLE QUEUE WRITE", false)) {
-				job.put("Error", "Failed locking QUEUE");
-				job.put("Code", Integer.valueOf(-5));
-				return job;
-			}
+			final DBConnection dbc = db.getConnection();
 
-			// Get a job
 			long queueId;
-			db.query("SELECT min(queueId) FROM QUEUE where statusId=5 and agentid=? " + extra, false, agentId);
-			if (db.moveNext()) {
-				queueId = db.getl(1);
-				logger.log(Level.INFO, "Got the queueId: " + queueId);
+
+			try {
+				dbc.getConnection();
+
+				dbc.setReadOnly(false);
+
+				try (Statement stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+					stat.execute("SET @update_id := 0;", Statement.NO_GENERATED_KEYS);
+				}
+
+				String updateQuery = "UPDATE QUEUE SET statusId=6, siteid=?, exechostid=?, queueId = (SELECT @update_id := queueId) WHERE statusId=5 and agentId=?" + extra
+						+ " ORDER BY queueId ASC LIMIT 1;";
+
+				try (PreparedStatement stat = dbc.getConnection().prepareStatement(updateQuery, Statement.NO_GENERATED_KEYS)) {
+					stat.setObject(1, Long.valueOf(siteId));
+					stat.setObject(2, Long.valueOf(hostId));
+					stat.setObject(3, agentId);
+
+					stat.setQueryTimeout(60); // don't wait more than 1 minute for an UPDATE operation, bail out and let the JA fail
+
+					stat.execute();
+
+					if (stat.getUpdateCount() == 0) {
+						logger.log(Level.INFO, "No jobs to give back");
+						job.put("Error", "No jobs to give back");
+						job.put("Code", Integer.valueOf(-2));
+						return job;
+					}
+				}
+
+				try (Statement stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+					stat.execute("SELECT @update_id;", Statement.NO_GENERATED_KEYS);
+
+					try (ResultSet resultSet = stat.getResultSet()) {
+						if (!resultSet.first()) {
+							logger.log(Level.INFO, "Couldn't get the updated queueId for agentId: " + agentId);
+							job.put("Error", "Couldn't get the updated queueId for the agentId: " + agentId);
+							job.put("Code", Integer.valueOf(-6));
+							return job;
+						}
+
+						queueId = resultSet.getLong(1);
+					}
+				}
 			}
-			else {
-				logger.log(Level.INFO, "Couldn't get the queueId for agentId: " + agentId);
-				job.put("Error", "Couldn't get the queueId for the agentId: " + agentId);
+			catch (final SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+
+				logger.log(Level.INFO, "Some other SQL exception while updating the queue for agentId " + agentId, e);
+				job.put("Error", "Could not get you a job for agentId: " + agentId);
 				job.put("Code", Integer.valueOf(-6));
 				return job;
 			}
+			finally {
+				dbc.free();
+			}
 
-			// Update to ASSIGNED
-			db.query("UPDATE QUEUE set statusId=6,siteid=?, exechostid=? where statusId=5 and queueId=? limit 1", false, Integer.valueOf(siteId), Integer.valueOf(hostId), Long.valueOf(queueId));
+			// we got something to run
+			String jdl, user;
 
-			final int count = db.getUpdateCount();
+			db.query("select origjdl jdl, user from QUEUEJDL join QUEUE using (queueid) join QUEUE_USER using (userId) where queueId=?", false, Long.valueOf(queueId));
 
-			// Unlock QUEUE
-			if (!db.query("UNLOCK TABLES", false))
-				logger.log(Level.INFO, "Failed unlocking QUEUE");
-
-			if (count > 0) {
-				// we got something to run
-				String jdl, user;
-
-				db.query("select queueId, origjdl jdl, user from QUEUEJDL join QUEUE using (queueid) " + "join QUEUE_USER using (userId) where queueId=?", false, Long.valueOf(queueId));
-
-				if (db.moveNext()) {
-					logger.log(Level.INFO, "Updated and getting fields queueId, jdl, user");
-					queueId = db.getl(1);
-					jdl = db.gets(2);
-					user = db.gets(3);
-				}
-				else {
-					logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
-					job.put("Error", "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
-					job.put("Code", Integer.valueOf(-7));
-					return job;
-				}
-
-				db.query("update QUEUEPROC set lastupdate=CURRENT_TIMESTAMP where queueId=?", false, Long.valueOf(queueId));
-
-				db.query("update SITEQUEUES set ASSIGNED=ASSIGNED+1 where siteid=?", false, Integer.valueOf(siteId));
-				db.query("update SITEQUEUES set WAITING=WAITING-1 where siteid=?", false, Integer.valueOf(siteId));
-
-				TaskQueueUtils.deleteJobAgent(Long.parseLong(agentId), queueId);
-
-				job.put("queueId", Long.valueOf(queueId));
-				job.put("JDL", jdl);
-				job.put("User", user);
-
-				logger.log(Level.INFO, "Going to return " + queueId + " and " + user + " and " + jdl);
+			if (db.moveNext()) {
+				logger.log(Level.INFO, "Updated and getting fields queueId, jdl, user for queueId " + queueId);
+				jdl = db.gets(1);
+				user = db.gets(2);
+			}
+			else {
+				logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
+				job.put("Error", "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
+				job.put("Code", Integer.valueOf(-7));
 				return job;
 			}
-			logger.log(Level.INFO, "No jobs to give back");
-			job.put("Error", "No jobs to give back");
-			job.put("Code", Integer.valueOf(-2));
+
+			db.query("update QUEUEPROC set lastupdate=CURRENT_TIMESTAMP where queueId=?", false, Long.valueOf(queueId));
+
+			db.query("update SITEQUEUES set ASSIGNED=ASSIGNED+1, WAITING=WAITING-1 where siteid=?", false, Integer.valueOf(siteId));
+
+			TaskQueueUtils.deleteJobAgent(Long.parseLong(agentId), queueId);
+
+			job.put("queueId", Long.valueOf(queueId));
+			job.put("JDL", jdl);
+			job.put("User", user);
+
+			logger.log(Level.INFO, "Going to return " + queueId + " and " + user + " and " + jdl);
 			return job;
 		}
 	}
@@ -419,7 +445,7 @@ public class JobBroker {
 					where += " and (ce like '' or ce like concat('%,',?,',%'))";
 					bindValues.add(matchRequest.get("CE"));
 				}
-				
+
 				where += " and noce not like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("CE"));
 			}
@@ -513,15 +539,15 @@ public class JobBroker {
 	 * @return a two-element list with the status code ([0]) and the number of
 	 *         slots ([1])
 	 */
-	public static List<Integer> getNumberFreeSlots(String host, int port, String ceName, String version) {
+	public static List<Integer> getNumberFreeSlots(final String host, final int port, final String ceName, final String version) {
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 			if (db == null)
 				return null;
 
-			ArrayList<Integer> code_and_slots = new ArrayList<>();
+			final ArrayList<Integer> code_and_slots = new ArrayList<>();
 			code_and_slots.add(Integer.valueOf(0));
 
-			int hostId = TaskQueueUtils.getHostOrInsert(host, port, version);
+			final int hostId = TaskQueueUtils.getHostOrInsert(host, port, version);
 			if (hostId == 0) {
 				logger.severe("Error: getNumberFreeSlots, failed getHostOrInsert: " + host);
 				code_and_slots.set(0, Integer.valueOf(1));
@@ -535,7 +561,7 @@ public class JobBroker {
 			}
 
 			if (!ceName.equals("")) {
-				String blocking = TaskQueueUtils.getSiteQueueBlocked(ceName);
+				final String blocking = TaskQueueUtils.getSiteQueueBlocked(ceName);
 
 				if (blocking == null || !blocking.equals("open")) {
 					logger.info("The queue " + ceName + " is blocked in the master queue!");
@@ -545,7 +571,7 @@ public class JobBroker {
 				}
 			}
 
-			ArrayList<Integer> slots = TaskQueueUtils.getNumberMaxAndQueuedCE(host, ceName);
+			final ArrayList<Integer> slots = TaskQueueUtils.getNumberMaxAndQueuedCE(host, ceName);
 			if (slots == null || slots.size() != 2) {
 				logger.severe("Error: getNumberFreeSlots, failed to get slots: " + host + " - " + ceName);
 				code_and_slots.set(0, Integer.valueOf(3));
