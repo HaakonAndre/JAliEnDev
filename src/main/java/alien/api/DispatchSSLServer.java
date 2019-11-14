@@ -369,7 +369,7 @@ public class DispatchSSLServer extends Thread {
 
 		}
 		catch (final Throwable e) {
-			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.", e);
+			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket on " + address + ":" + port, e);
 		}
 	}
 
