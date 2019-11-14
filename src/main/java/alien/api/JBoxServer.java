@@ -444,8 +444,6 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Start once the UIServer
-	 *
-	 * @param iDebugLevel
 	 */
 	public static synchronized void startJBoxServer() {
 
@@ -482,8 +480,6 @@ public class JBoxServer extends Thread {
 	/**
 	 *
 	 * Load necessary keys and start JBoxServer
-	 *
-	 * @param iDebug
 	 */
 	public static void startJBoxService() {
 		logger.log(Level.INFO, "Starting JBox");
@@ -502,11 +498,14 @@ public class JBoxServer extends Thread {
 		return server != null ? server.port : -1;
 	}
 
+	/**
+	 * @return the random password set for this session, to share with the local clients
+	 */
 	public static String getPassword() {
 		return password != null ? password : "";
 	}
 
-	public static void setPassword(final String password2set) {
+	private static void setPassword(final String password2set) {
 		password = password2set;
 	}
 }
