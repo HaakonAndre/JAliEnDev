@@ -1147,19 +1147,29 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @return <code>true</code> if a replica should exist on this SE
 	 */
 	public boolean hasReplica(final int seNumber) {
+		return getReplica(seNumber) != null;
+	}
+
+	/**
+	 * Get the replica from a particular SE
+	 * 
+	 * @param seNumber
+	 * @return the PFN to the replica on this storage element, if it exists
+	 */
+	public PFN getReplica(final int seNumber) {
 		if (!exists())
-			return false;
+			return null;
 
 		final Set<PFN> pfns = getPFNs();
 
 		if (pfns == null || pfns.size() == 0)
-			return false;
+			return null;
 
 		for (final PFN p : pfns)
 			if (p.seNumber == seNumber)
-				return true;
+				return p;
 
-		return false;
+		return null;
 	}
 
 	/**
