@@ -140,6 +140,8 @@ public class GetTokenCertificate extends Request {
 
 		final String requester = getEffectiveRequester().getDefaultUser();
 
+		final boolean isAdmin = getEffectiveRequester().canBecome("admin");
+
 		switch (certificateType) {
 			case USER_CERTIFICATE:
 				if (getEffectiveRequester().isJob() || getEffectiveRequester().isJobAgent())
@@ -150,8 +152,8 @@ public class GetTokenCertificate extends Request {
 				builder = builder.setCn("Users").setCn(requester).setOu(requested);
 				break;
 			case JOB_TOKEN:
-				if (!getEffectiveRequester().isJobAgent())
-					throw new IllegalArgumentException("Only a JobAgent can ask for a Job token");
+				if (!getEffectiveRequester().isJobAgent() && !isAdmin)
+					throw new IllegalArgumentException("Only a JobAgent can ask for a Job token, " + getEffectiveRequester() + " is not one");
 
 				if (extension == null || extension.length() == 0)
 					throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
@@ -165,7 +167,7 @@ public class GetTokenCertificate extends Request {
 				builder = builder.setCn("JobAgent");
 				break;
 			case HOST:
-				if (!getEffectiveRequester().canBecome("admin"))
+				if (!isAdmin)
 					throw new IllegalArgumentException("Only admin can do that");
 
 				builder = builder.setOu("ALICE");
@@ -188,25 +190,29 @@ public class GetTokenCertificate extends Request {
 
 		ZonedDateTime notAfter = ZonedDateTime.now().plus(amount);
 
-		if (getEffectiveRequester().getUserCert() != null) {
-			final ZonedDateTime userNotAfter = getEffectiveRequester().getUserCert()[0].getNotAfter().toInstant().atZone(ZoneId.systemDefault());
+		if (!isAdmin || certificateType != TokenCertificateType.HOST) {
+			// Admin can generate host certificates unbound by its own certificate duration, anything else is checked against requester's identity
+			if (getEffectiveRequester().getUserCert() != null) {
+				final ZonedDateTime userNotAfter = getEffectiveRequester().getUserCert()[0].getNotAfter().toInstant().atZone(ZoneId.systemDefault());
 
-			if (notAfter.isAfter(userNotAfter))
-				notAfter = userNotAfter;
-		}
-		else {
-			throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
-		}
-
-		final java.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
-
-		if (partnerCertificateChain != null)
-			for (final java.security.cert.X509Certificate partner : partnerCertificateChain) {
-				final ZonedDateTime partnerNotAfter = partner.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
-
-				if (notAfter.isAfter(partnerNotAfter))
-					notAfter = partnerNotAfter;
+				if (notAfter.isAfter(userNotAfter))
+					notAfter = userNotAfter;
 			}
+			else {
+				throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
+			}
+
+			// The validity is further constrained to the identity of the forwarding agent
+			final java.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
+
+			if (partnerCertificateChain != null)
+				for (final java.security.cert.X509Certificate partner : partnerCertificateChain) {
+					final ZonedDateTime partnerNotAfter = partner.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
+
+					if (notAfter.isAfter(partnerNotAfter))
+						notAfter = partnerNotAfter;
+				}
+		}
 
 		// Give a grace time of 2 hours to compensate for WNs that are running behind with the clock
 		final ZonedDateTime notBefore = ZonedDateTime.now().minusHours(2);
