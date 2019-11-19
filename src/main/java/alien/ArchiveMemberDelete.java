@@ -400,12 +400,12 @@ public class ArchiveMemberDelete {
 	 */
 	private static ArrayList<String> getFileListing(final Path folderName) {
 		ArrayList<String> result = new ArrayList<>();
-		try {
-			result = Files.walk(folderName).map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
+		try (Stream<Path> folder = Files.walk(folderName)) {
+			result = folder.map(path -> folderName.relativize(path).toString()).collect(Collectors.toCollection(ArrayList<String>::new));
 			// Files.walk always returns parent dir as a first element. After relativize it is transformed to "". Remove it from the result
 			result.remove("");
 
-			if (result.size() == 0)
+			if (result.isEmpty())
 				System.err.println("[" + new Date() + "] Failed to get list of files in local folder: " + folderName.toAbsolutePath());
 		}
 		catch (final IOException e) {
@@ -421,8 +421,8 @@ public class ArchiveMemberDelete {
 	 *            path of the local file or directory to delete
 	 */
 	private static void cleanUpLocal(final Path path) {
-		try {
-			Files.walk(path).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+		try (Stream<Path> folder = Files.walk(path)) {
+			folder.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 		}
 		catch (final IOException e) {
 			e.printStackTrace();
