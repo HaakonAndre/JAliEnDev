@@ -61,7 +61,9 @@ public class ArchiveMemberDelete {
 
 			final OptionParser parser = new OptionParser();
 			parser.accepts("list").withRequiredArg(); // Like "collection.xml"
+			parser.accepts("purge");
 			final OptionSet options = parser.parse(args);
+			final boolean purge = options.has("purge");
 
 			// Read archive members names from file
 			final String collectionName = (String) options.valueOf("list");
@@ -82,7 +84,7 @@ public class ArchiveMemberDelete {
 
 			xmlEntries = xmlCollection.iterator();
 			while (xmlEntries.hasNext()) {
-				deleteArchiveMember(xmlEntries.next().getCanonicalName());
+				deleteArchiveMember(xmlEntries.next().getCanonicalName(), purge);
 			}
 			System.out.println();
 			System.out.println("All files processed. Exiting");
@@ -93,7 +95,7 @@ public class ArchiveMemberDelete {
 		}
 	}
 
-	private static void deleteArchiveMember(final String xmlEntry) {
+	private static void deleteArchiveMember(final String xmlEntry, final boolean purge) {
 		// Use this for debugging
 		// final ByteArrayOutputStream out = new ByteArrayOutputStream();
 		// commander.setLine(new JSONPrintWriter(out), null);
@@ -172,11 +174,14 @@ public class ArchiveMemberDelete {
 		//
 		try (PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
 
-			final List<PFN> remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
-			if (remoteArchivePFN.isEmpty()) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Archive is orphaned");
-				validation.println("Orphaned archive " + remoteFile);
-				return;
+			List<PFN> remoteArchivePFN = null;
+			if (purge) {
+				remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+				if (remoteArchivePFN.isEmpty()) {
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Archive is orphaned");
+					validation.println("Orphaned archive " + remoteFile);
+					return;
+				}
 			}
 
 			final String remoteArchive = remoteArchiveLFN.getCanonicalName();
@@ -532,23 +537,25 @@ public class ArchiveMemberDelete {
 	 * 
 	 */
 	private static void xrdDeleteRemoteFile(final String remoteFile, final List<PFN> remotePFN) {
-		final Iterator<PFN> it = remotePFN.iterator();
-		while (it.hasNext()) {
-			final PFN pfn = it.next();
+		if (remotePFN != null && !remotePFN.isEmpty()) {
+			final Iterator<PFN> it = remotePFN.iterator();
+			while (it.hasNext()) {
+				final PFN pfn = it.next();
 
-			if (pfn == null) {
-				System.err.println("One of the PFNs of " + remoteFile + " is null");
-				continue;
-			}
-
-			try {
-				System.out.println("[" + new Date() + "] Deleting pfn: " + pfn.pfn);
-				if (!Factory.xrootd.delete(pfn)) {
-					System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
+				if (pfn == null) {
+					System.err.println("One of the PFNs of " + remoteFile + " is null");
+					continue;
 				}
-			}
-			catch (final IOException e) {
-				e.printStackTrace();
+
+				try {
+					System.out.println("[" + new Date() + "] Deleting pfn: " + pfn.pfn);
+					if (!Factory.xrootd.delete(pfn)) {
+						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
+					}
+				}
+				catch (final IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
