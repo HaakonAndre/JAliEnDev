@@ -16,7 +16,7 @@ import alien.user.JAKeyStore;
 public class JCentral {
 
 	static {
-		ConfigUtils.getVersion();
+		ConfigUtils.setApplicationName("JCentral");
 	}
 
 	/**
