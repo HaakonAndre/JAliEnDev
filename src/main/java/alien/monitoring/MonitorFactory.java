@@ -213,12 +213,19 @@ public final class MonitorFactory {
 		if (selfMonitor != null)
 			return;
 
-		selfMonitor = getMonitor("Self");
+		String selfKey = ConfigUtils.getApplicationName(null);
+
+		if (selfKey == null)
+			selfKey = "Self";
+		else
+			selfKey = "Self_" + selfKey;
+
+		selfMonitor = getMonitor(selfKey);
 
 		if (selfMonitor == null)
 			return;
 
-		selfMonitor.addMonitoring("Self", new SelfMonitor());
+		selfMonitor.addMonitoring(selfKey, new SelfMonitor());
 
 		final ApMon apmon = getApMonSender();
 
