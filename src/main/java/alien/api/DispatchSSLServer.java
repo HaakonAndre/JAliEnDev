@@ -51,7 +51,7 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Reset the object stream every this many objects sent
 	 */
-	private static final int RESET_OBJECT_STREAM_COUNTER = 1000;
+	private static final int RESET_OBJECT_STREAM_COUNTER = 10;
 
 	/**
 	 * Logger
