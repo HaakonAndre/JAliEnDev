@@ -29,9 +29,9 @@ export JAVA_HOME=${JAVA_HOME:-/opt/java}
 
 export PATH=$JAVA_HOME/bin:$PATH
 
-echo "Starting new JCentral process"
+echo "Starting new JCentral process with `which java`"
 
-JALIEN_MEM="-Xms2g -Xmx4g" nohup ./run.sh \
+JALIEN_MEM="-Xms2g -Xmx8g" nohup ./run.sh \
     -XX:CompileThreshold=5 \
     -DAliEnConfig=${CONFIG_DIR} \
     -Dsun.security.ssl.allowUnsafeRenegotiation=true \
