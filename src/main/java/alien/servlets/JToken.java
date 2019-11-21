@@ -81,9 +81,12 @@ public class JToken extends HttpServlet {
 					os.println("    'token' => '" + JobToken.generateToken() + "'");
 					os.println("  }");
 					os.println("];");
+
+					monitor.incrementCounter("success_cnt");
 				}
 				catch (final ServerException e) {
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception executing the request: " + e.getMessage());
+					monitor.incrementCounter("fail_cnt");
 				}
 			}
 		}
