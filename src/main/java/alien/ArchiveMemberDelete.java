@@ -188,6 +188,7 @@ public class ArchiveMemberDelete {
 			final String archiveName = remoteArchiveLFN.getFileName();
 			final String memberName = remoteLFN.getFileName();
 			final long jobID = remoteArchiveLFN.jobid;
+			final long remoteArchiveSize = remoteArchiveLFN.getSize();
 
 			final List<LFN> remoteArchiveMembers = commander.c_api.getArchiveMembers(remoteArchive);
 			if (remoteArchiveMembers == null || remoteArchiveMembers.isEmpty()) {
@@ -210,9 +211,9 @@ public class ArchiveMemberDelete {
 				// Remove lfn of the old archive
 				commander.c_api.removeLFN(remoteArchive);
 
-				System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
-				System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
-				System.out.println("[" + new Date() + "] " + "Reclaimed " + remoteArchiveLFN.getSize() + " bytes of disk space");
+				System.out.println("[" + new Date() + "] " + memberName + " was " + remoteFileSize + " bytes");
+				System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveSize + " bytes");
+				System.out.println("[" + new Date() + "] " + "Reclaimed " + remoteArchiveSize + " bytes of disk space");
 
 				return;
 			}
@@ -253,6 +254,7 @@ public class ArchiveMemberDelete {
 			// Upload the new archive to the Grid
 			//
 			final File newArchive = new File(usrdir + separator + "extracted" + separator + archiveName);
+			final long newArchiveSize = newArchive.length();
 
 			while (commander.c_api.getLFN(newArchiveFullPath) != null) {
 				// Delete registertemp/root_archive.zip if there is any
@@ -261,12 +263,18 @@ public class ArchiveMemberDelete {
 			}
 
 			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + newArchiveFullPath);
-			commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1"); // Create only one replica
+			// Create only one replica 
+			if (!commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1")) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
+				validation.println("Upload failed " + newArchiveFullPath);
+				cleanUpLocal(Path.of(usrdir, "extracted"));
+				return;
+			}
 
 			final LFN newArchiveLFN = commander.c_api.getLFN(newArchiveFullPath);
 			if (newArchiveLFN == null || !newArchiveLFN.exists) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
-				validation.println("Upload failed " + newArchiveFullPath);
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Couldn't find archive " + newArchiveFullPath);
+				validation.println("Couldn't find  " + newArchiveFullPath);
 				cleanUpLocal(Path.of(usrdir, "extracted"));
 				return;
 			}
@@ -291,10 +299,10 @@ public class ArchiveMemberDelete {
 			if (registerPath.length() > 20) // Safety check
 				commander.c_api.removeLFN(registerPath, true);
 
-			System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
-			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
-			System.out.println("[" + new Date() + "] " + "New archive is " + newArchive.length() + " bytes");
-			System.out.println("[" + new Date() + "] " + "Reclaimed " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
+			System.out.println("[" + new Date() + "] " + memberName + " was " + remoteFileSize + " bytes");
+			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveSize + " bytes");
+			System.out.println("[" + new Date() + "] " + "New archive is " + newArchiveSize + " bytes");
+			System.out.println("[" + new Date() + "] " + "Reclaimed " + (remoteArchiveSize - newArchiveSize) + " bytes of disk space");
 		}
 		catch (final IOException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": I/O exception. Abort");

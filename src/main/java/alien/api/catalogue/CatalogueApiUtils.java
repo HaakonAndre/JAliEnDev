@@ -725,7 +725,7 @@ public class CatalogueApiUtils {
 	 *            other `cp` command parameters to pass
 	 * @throws IOException
 	 */
-	public void uploadFile(final File localFile, final String toLFN, final String... args) throws IOException {
+	public boolean uploadFile(final File localFile, final String toLFN, final String... args) throws IOException {
 		final LFN l = getLFN(toLFN, true);
 
 		if (l.exists)
@@ -743,7 +743,7 @@ public class CatalogueApiUtils {
 
 		final JAliEnCommandcp cp = new JAliEnCommandcp(commander, cpArgs);
 
-		cp.copyLocalToGrid(localFile, lfnAbsolutePath);
+		return cp.copyLocalToGrid(localFile, lfnAbsolutePath);
 	}
 
 	/**
