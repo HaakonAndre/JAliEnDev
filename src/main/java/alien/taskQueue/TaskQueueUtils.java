@@ -876,7 +876,7 @@ public class TaskQueueUtils {
 							if (f.exists() && f.canRead()) {
 								final Path zipFile = Paths.get(f.getAbsolutePath());
 
-								try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile, null)) {
+								try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile, (ClassLoader) null)) {
 									final Path source = fileSystem.getPath(queueId + ".html");
 
 									if (source != null) {
