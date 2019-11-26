@@ -273,6 +273,7 @@ public class ComputingElement extends Thread {
 		before += "export ALIEN_CM_AS_LDAP_PROXY='" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "'\n";
 		before += "export site='" + site + "'\n";
 		before += "export CE='" + siteMap.get("CE") + "'\n";
+		before += "export CEhost='" + siteMap.get("Localhost") + "'\n";
 		before += "export TTL='" + siteMap.get("TTL") + "'\n";
 		if (config.containsKey("ce_installationmethod"))
 			before += "export installationMethod='" + config.get("ce_installationmethod") + "'\n";

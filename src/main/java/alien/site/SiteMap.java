@@ -49,6 +49,7 @@ public class SiteMap {
 		ArrayList<String> extrasites = new ArrayList<>();
 		String site = null;
 		String ce = null;
+		String cehost = null;
 
 		// Get hostname
 		String hostName = "";
@@ -79,6 +80,7 @@ public class SiteMap {
 		// Site name and CE name
 		site = env.get("site");
 		ce = env.get("CE");
+		cehost = env.get("CEhost");
 
 		// TTL
 		if (env.containsKey("TTL"))
@@ -160,6 +162,7 @@ public class SiteMap {
 		}
 		siteMap.put("CE", ce);
 		siteMap.put("Site", site);
+		siteMap.put("CEhost", cehost);
 		if (users.size() > 0)
 			siteMap.put("Users", users);
 		if (nousers.size() > 0)

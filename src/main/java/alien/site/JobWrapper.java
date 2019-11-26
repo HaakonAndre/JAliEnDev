@@ -77,6 +77,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private PackMan packMan;
 	private String hostName;
 	private final int pid;
+	private String ceHost;
 	/**
 	 * @uml.property name="commander"
 	 * @uml.associationEnd
@@ -139,6 +140,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		hostName = (String) siteMap.get("Host");
+		ceHost = (String) siteMap.get("CEhost");
 		packMan = (PackMan) siteMap.get("PackMan");
 
 		if (packMan == null)
@@ -673,7 +675,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		jobStatus = newStatus;
 
 		final HashMap<String, Object> extrafields = new HashMap<>();
-		extrafields.put("exechost", this.ce);
+		extrafields.put("exechost", ceHost);
 
 		// if final status with saved files, we set the path
 		if (jobStatus == JobStatus.DONE || jobStatus == JobStatus.DONE_WARN || jobStatus == JobStatus.ERROR_E || jobStatus == JobStatus.ERROR_V)
