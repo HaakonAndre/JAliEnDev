@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +61,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 			ConfigUtils.getConfig().getl("alien.io.protocols.TempFileManager.temp.size", 10 * 1024 * 1024 * 1024L), true);
 	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.persistent.entries", 100), 0, false);
 
-	private static Map<File, File> lockedLocalFiles = new ConcurrentHashMap<>();
+	private static Map<File, Long> lockedLocalFiles = new ConcurrentHashMap<>();
 
 	static {
 		monitor.addMonitoring("tempfilestats", (names, values) -> {
@@ -246,15 +247,12 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 * @see #release(File)
 	 */
 	private static void lock(final File f) {
-		lockedLocalFiles.put(f, f);
+		final Throwable stack = new Throwable();
+
+		lockedLocalFiles.put(f, Long.valueOf(System.currentTimeMillis()));
 
 		if (logger.isLoggable(Level.FINEST))
-			try {
-				throw new IOException();
-			}
-			catch (final IOException ioe) {
-				logger.log(Level.FINEST, f.getAbsolutePath() + " locked by", ioe);
-			}
+			logger.log(Level.FINEST, f.getAbsolutePath() + " locked by", stack);
 	}
 
 	/**
@@ -270,12 +268,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		final boolean removed = lockedLocalFiles.remove(f) != null;
 
 		if ((!removed && logger.isLoggable(Level.FINE)) || logger.isLoggable(Level.FINEST))
-			try {
-				throw new IOException();
-			}
-			catch (final IOException ioe) {
-				logger.log(Level.FINE, "Asked to release a file " + (removed ? "that was indeed locked: " : "that was not previously locked: ") + f.getAbsolutePath(), ioe);
-			}
+			logger.log(Level.FINE, "Asked to release a file " + (removed ? "that was indeed locked: " : "that was not previously locked: ") + f.getAbsolutePath(), new Throwable());
 
 		return removed;
 	}
@@ -285,7 +278,13 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 * @return <code>true</code> if the file is locked
 	 */
 	public static boolean isLocked(final File f) {
-		return lockedLocalFiles.containsKey(f);
+		final Long lockedSince = lockedLocalFiles.get(f);
+
+		if (lockedSince == null)
+			return false;
+
+		// after 30 minutes the files are automatically released
+		return System.currentTimeMillis() - lockedSince.longValue() < 1000 * 60 * 30;
 	}
 
 	/**
@@ -293,6 +292,13 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 */
 	public static List<File> getLockedFiles() {
 		return new ArrayList<>(lockedLocalFiles.keySet());
+	}
+
+	/**
+	 * @return the currently locked files with the stack trace of who locked them, and when
+	 */
+	public static Map<File, Long> getLockedFilesMap() {
+		return new LinkedHashMap<>(lockedLocalFiles);
 	}
 
 	/**
