@@ -2,14 +2,17 @@ package alien.io;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +58,29 @@ public class IOUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
+
+	private static PrintWriter activityLog;
+
+	static {
+		try {
+			String logPath = ConfigUtils.getConfig().gets("alien.io.IOUtils.logPath");
+
+			if (logPath != null && logPath.length() > 0)
+				activityLog = new PrintWriter("/tmp/IOUtils.log");
+		}
+		catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private static synchronized void logActivity(final String line) {
+		if (activityLog != null) {
+			activityLog.println((new Date()) + " " + line);
+			activityLog.println(lia.util.Utils.getStackTrace(new Throwable()));
+			activityLog.flush();
+		}
+	}
 
 	/**
 	 * @param f
@@ -290,8 +316,11 @@ public class IOUtils {
 					try {
 						f = protocol.get(realPfn, null);
 
-						if (f != null)
+						if (f != null) {
+							logActivity("DW " + f.getAbsolutePath() + " < " + realPfn.getPFN());
+
 							break;
+						}
 					}
 					catch (final IOException e) {
 						logger.log(Level.FINE, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
@@ -303,8 +332,10 @@ public class IOUtils {
 					}
 			}
 			catch (@SuppressWarnings("unused") final Throwable t) {
-				if (f != null)
+				if (f != null) {
 					TempFileManager.release(f);
+					f = null;
+				}
 			}
 		}
 
@@ -322,91 +353,97 @@ public class IOUtils {
 
 		final Object lock = new Object();
 
-		File f = null;
+		File f = TempFileManager.getAny(guid);
 
-		final List<DownloadWork> tasks = new ArrayList<>(realPFNsSet.size());
+		if (f == null) {
+			// there is no previously known copy of this file, we should actually download it
 
-		for (final PFN realPfn : realPFNsSet) {
-			if (realPfn.ticket == null) {
-				logger.log(Level.WARNING, "Missing ticket for " + realPfn.pfn);
-				continue; // no access to this guy
+			final List<DownloadWork> tasks = new ArrayList<>(realPFNsSet.size());
+
+			for (final PFN realPfn : realPFNsSet) {
+				if (realPfn.ticket == null) {
+					logger.log(Level.WARNING, "Missing ticket for " + realPfn.pfn);
+					continue; // no access to this guy
+				}
+
+				final DownloadWork dw = new DownloadWork(realPfn, lock);
+
+				tasks.add(dw);
+
+				final Future<DownloadWork> future = PARALLEL_DW_THREAD_POOL.submit(dw, dw);
+
+				parallelDownloads.add(future);
 			}
 
-			final DownloadWork dw = new DownloadWork(realPfn, lock);
+			while (f == null && parallelDownloads.size() > 0) {
+				final Iterator<Future<DownloadWork>> it = parallelDownloads.iterator();
 
-			tasks.add(dw);
+				while (it.hasNext()) {
+					final Future<DownloadWork> future = it.next();
 
-			final Future<DownloadWork> future = PARALLEL_DW_THREAD_POOL.submit(dw, dw);
+					if (future.isDone()) {
+						try {
+							final DownloadWork dw = future.get();
 
-			parallelDownloads.add(future);
-		}
+							tasks.remove(dw);
 
-		while (f == null && parallelDownloads.size() > 0) {
-			final Iterator<Future<DownloadWork>> it = parallelDownloads.iterator();
+							f = dw.getLocalFile();
 
-			while (it.hasNext()) {
-				final Future<DownloadWork> future = it.next();
+							if (logger.isLoggable(Level.FINER))
+								if (f != null)
+									logger.log(Level.FINER, "The first replica to reply was: " + dw.getPFN().pfn);
+								else
+									logger.log(Level.FINER, "This replica was not accessible: " + dw.getPFN().pfn);
+						}
+						catch (final InterruptedException e) {
+							e.printStackTrace();
+						}
+						catch (final ExecutionException e) {
+							e.printStackTrace();
+						}
+						finally {
+							it.remove();
+						}
 
-				if (future.isDone()) {
-					try {
-						final DownloadWork dw = future.get();
-
-						tasks.remove(dw);
-
-						f = dw.getLocalFile();
-
-						if (logger.isLoggable(Level.FINER))
-							if (f != null)
-								logger.log(Level.FINER, "The first replica to reply was: " + dw.getPFN().pfn);
-							else
-								logger.log(Level.FINER, "This replica was not accessible: " + dw.getPFN().pfn);
+						if (f != null)
+							break;
 					}
-					catch (final InterruptedException e) {
-						e.printStackTrace();
-					}
-					catch (final ExecutionException e) {
-						e.printStackTrace();
-					}
-					finally {
-						it.remove();
-					}
-
-					if (f != null)
-						break;
 				}
+
+				if (f == null)
+					synchronized (lock) {
+						try {
+							lock.wait(100);
+						}
+						catch (@SuppressWarnings("unused") final InterruptedException e) {
+							break;
+						}
+					}
 			}
 
-			if (f == null)
-				synchronized (lock) {
-					try {
-						lock.wait(100);
+			for (final Future<DownloadWork> future : parallelDownloads)
+				future.cancel(true);
+
+			Thread.yield();
+
+			for (final DownloadWork dw : tasks) {
+				final File tempFile = dw.getLocalFile();
+
+				if (logger.isLoggable(Level.FINEST))
+					logger.log(Level.FINEST, "Got one file to test:" + tempFile);
+
+				if (tempFile != null)
+					if (f == null) {
+						if (logger.isLoggable(Level.FINEST))
+							logger.log(Level.FINEST, "Keeping this as the main instance:" + tempFile);
+
+						f = tempFile;
 					}
-					catch (@SuppressWarnings("unused") final InterruptedException e) {
-						break;
+					else {
+						if (!tempFile.equals(f))
+							TempFileManager.release(tempFile);
 					}
-				}
-		}
-
-		for (final Future<DownloadWork> future : parallelDownloads)
-			future.cancel(true);
-
-		Thread.yield();
-
-		for (final DownloadWork dw : tasks) {
-			final File tempFile = dw.getLocalFile();
-
-			if (logger.isLoggable(Level.FINEST))
-				logger.log(Level.FINEST, "Got one file to test:" + tempFile);
-
-			if (tempFile != null)
-				if (f == null) {
-					if (logger.isLoggable(Level.FINEST))
-						logger.log(Level.FINEST, "Keeping this as the main instance:" + tempFile);
-
-					f = tempFile;
-				}
-				else
-					TempFileManager.release(tempFile);
+			}
 		}
 
 		if (localFile != null && f != null)
@@ -417,6 +454,9 @@ public class IOUtils {
 
 				return localFile;
 			}
+
+		if (f != null)
+			logActivity("PD returning " + f.getAbsolutePath());
 
 		return f;
 	}
