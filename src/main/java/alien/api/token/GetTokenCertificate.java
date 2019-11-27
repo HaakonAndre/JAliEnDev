@@ -8,14 +8,20 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAmount;
+import java.util.Set;
 import java.util.logging.Logger;
 
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import alien.api.Request;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.LDAPHelper;
 import alien.user.UserFactory;
 import io.github.olivierlemasle.ca.CA;
 import io.github.olivierlemasle.ca.Certificate;
@@ -23,6 +29,11 @@ import io.github.olivierlemasle.ca.CsrWithPrivateKey;
 import io.github.olivierlemasle.ca.DistinguishedName;
 import io.github.olivierlemasle.ca.DnBuilder;
 import io.github.olivierlemasle.ca.RootCertificate;
+import io.github.olivierlemasle.ca.Signer.SignerWithSerial;
+import io.github.olivierlemasle.ca.ext.CertExtension;
+import io.github.olivierlemasle.ca.ext.ExtKeyUsageExtension;
+import io.github.olivierlemasle.ca.ext.KeyUsageExtension;
+import io.github.olivierlemasle.ca.ext.KeyUsageExtension.KeyUsage;
 
 /**
  * Get a limited duration (token) certificate for users to authenticate with
@@ -142,6 +153,10 @@ public class GetTokenCertificate extends Request {
 
 		final boolean isAdmin = getEffectiveRequester().canBecome("admin");
 
+		final ExtKeyUsageExtension extKeyUsage;
+
+		CertExtension san = null;
+
 		switch (certificateType) {
 			case USER_CERTIFICATE:
 				if (getEffectiveRequester().isJob() || getEffectiveRequester().isJobAgent())
@@ -150,6 +165,35 @@ public class GetTokenCertificate extends Request {
 				final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
 
 				builder = builder.setCn("Users").setCn(requester).setOu(requested);
+
+				// User token can be used as both client identity and local (JBox) server identity
+				// CERN also adds "E-mail Protection" and "Microsoft Encrypted File System" (the later one doesn't have a corresponding value yet)
+				extKeyUsage = ExtKeyUsageExtension.create(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth, KeyPurposeId.id_kp_emailProtection);
+
+				/*
+				 * Set the email addresses known for this user as extensions, similar to what CERN does (though the actual extension is different, i.e.:
+				 * 
+				 * (ours)
+				 * X509v3 Subject Alternative Name:
+				 * email:Costin.Grigoras@cern.ch
+				 *
+				 * (CERN)
+				 * X509v3 Subject Alternative Name:
+				 * othername:<unsupported>, email:Costin.Grigoras@cern.ch
+				 */
+				final Set<String> emailAddresses = LDAPHelper.getEmails(requested);
+
+				final GeneralName[] nameArray = new GeneralName[0 + (emailAddresses != null ? emailAddresses.size() : 0)];
+
+				if (emailAddresses != null) {
+					int idx = 0;
+
+					for (final String email : emailAddresses)
+						nameArray[idx++] = new GeneralName(GeneralName.rfc822Name, email);
+
+					san = new CertExtension(Extension.subjectAlternativeName, false, new GeneralNames(nameArray));
+				}
+
 				break;
 			case JOB_TOKEN:
 				if (!getEffectiveRequester().isJobAgent() && !isAdmin)
@@ -158,17 +202,29 @@ public class GetTokenCertificate extends Request {
 				if (extension == null || extension.length() == 0)
 					throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
 
+				// A JobWrapper must act as both client (in interacting with upstream services) and server (WebSocketS towards the payload)
+				extKeyUsage = ExtKeyUsageExtension.create(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth);
+
 				builder = builder.setCn("Jobs").setCn(requestedUser).setOu(requestedUser);
 				break;
 			case JOB_AGENT_TOKEN:
 				if (!getEffectiveRequester().canBecome("vobox"))
 					throw new IllegalArgumentException("You don't have permissions to ask for a JobAgent token");
 
+				// A JobAgent is client only, uses the certificate to request an actual job
+				extKeyUsage = ExtKeyUsageExtension.create(KeyPurposeId.id_kp_clientAuth);
+
 				builder = builder.setCn("JobAgent");
 				break;
 			case HOST:
 				if (!isAdmin)
 					throw new IllegalArgumentException("Only admin can do that");
+
+				// Central service or VoBox should be able to act as both client and server
+				extKeyUsage = ExtKeyUsageExtension.create(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth);
+
+				final GeneralNames names = new GeneralNames(new GeneralName(GeneralName.dNSName, extension));
+				san = new CertExtension(Extension.subjectAlternativeName, false, names);
 
 				builder = builder.setOu("ALICE");
 				break;
@@ -217,7 +273,15 @@ public class GetTokenCertificate extends Request {
 		// Give a grace time of 2 hours to compensate for WNs that are running behind with the clock
 		final ZonedDateTime notBefore = ZonedDateTime.now().minusHours(2);
 
-		final Certificate cert = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(notAfter).setNotBefore(notBefore).sign();
+		final SignerWithSerial signer = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(notAfter).setNotBefore(notBefore).addExtension(extKeyUsage);
+
+		final KeyUsageExtension usage = KeyUsageExtension.create(KeyUsage.DIGITAL_SIGNATURE, KeyUsage.KEY_ENCIPHERMENT, KeyUsage.NON_REPUDIATION);
+		signer.addExtension(usage);
+
+		if (san != null)
+			signer.addExtension(san);
+
+		final Certificate cert = signer.sign();
 
 		certificate = cert.getX509Certificate();
 		privateKey = csr.getPrivateKey();
