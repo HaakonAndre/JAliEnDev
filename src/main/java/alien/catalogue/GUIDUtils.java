@@ -24,6 +24,7 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import alien.io.protocols.TempFileManager;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
@@ -690,6 +691,7 @@ public final class GUIDUtils {
 					return false;
 				}
 				finally {
+					TempFileManager.release(temp);
 					temp.delete();
 				}
 			logger.log(Level.WARNING, "Could not download " + g.guid);
