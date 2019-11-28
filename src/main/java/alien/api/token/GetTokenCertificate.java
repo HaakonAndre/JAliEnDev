@@ -183,10 +183,16 @@ public class GetTokenCertificate extends Request {
 				 */
 				final Set<String> emailAddresses = LDAPHelper.getEmails(requested);
 
-				final GeneralName[] nameArray = new GeneralName[0 + (emailAddresses != null ? emailAddresses.size() : 0)];
+				final GeneralName[] nameArray = new GeneralName[4 + (emailAddresses != null ? emailAddresses.size() : 0)];
+
+				// Token certificates can be used by JBox to listen on, so only localhost should validate 
+				nameArray[0] = new GeneralName(GeneralName.dNSName, "localhost");
+				nameArray[1] = new GeneralName(GeneralName.dNSName, "localhost.localdomain");
+				nameArray[2] = new GeneralName(GeneralName.dNSName, "127.0.0.1");
+				nameArray[3] = new GeneralName(GeneralName.dNSName, "::1");
 
 				if (emailAddresses != null) {
-					int idx = 0;
+					int idx = 4;
 
 					for (final String email : emailAddresses)
 						nameArray[idx++] = new GeneralName(GeneralName.rfc822Name, email);
@@ -204,6 +210,15 @@ public class GetTokenCertificate extends Request {
 
 				// A JobWrapper must act as both client (in interacting with upstream services) and server (WebSocketS towards the payload)
 				extKeyUsage = ExtKeyUsageExtension.create(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth);
+
+				// Payload runs on the same machine, advertise only localhost as acceptable target for clients
+				final GeneralNames names = new GeneralNames(new GeneralName[] {
+						new GeneralName(GeneralName.dNSName, "localhost"),
+						new GeneralName(GeneralName.dNSName, "localhost.localdomain"),
+						new GeneralName(GeneralName.dNSName, "127.0.0.1"),
+						new GeneralName(GeneralName.dNSName, "::1") });
+
+				san = new CertExtension(Extension.subjectAlternativeName, false, names);
 
 				builder = builder.setCn("Jobs").setCn(requestedUser).setOu(requestedUser);
 				break;
@@ -223,8 +238,8 @@ public class GetTokenCertificate extends Request {
 				// Central service or VoBox should be able to act as both client and server
 				extKeyUsage = ExtKeyUsageExtension.create(KeyPurposeId.id_kp_clientAuth, KeyPurposeId.id_kp_serverAuth);
 
-				final GeneralNames names = new GeneralNames(new GeneralName(GeneralName.dNSName, extension));
-				san = new CertExtension(Extension.subjectAlternativeName, false, names);
+				final GeneralNames hostName = new GeneralNames(new GeneralName(GeneralName.dNSName, extension));
+				san = new CertExtension(Extension.subjectAlternativeName, false, hostName);
 
 				builder = builder.setOu("ALICE");
 				break;
