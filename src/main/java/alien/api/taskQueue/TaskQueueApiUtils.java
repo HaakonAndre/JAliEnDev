@@ -14,6 +14,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get the JDL object
@@ -303,13 +304,14 @@ public class TaskQueueApiUtils {
 	}
 
 	/**
+	 * @param user
 	 * @param fld
 	 * @param val
 	 * @return <code>true</code> if the operation was successful
 	 */
-	public boolean setFileQuota(final String fld, final String val) {
+	public static boolean setFileQuota(final AliEnPrincipal user, final String fld, final String val) {
 		try {
-			final SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
+			final SetFileQuota sq = new SetFileQuota(user, fld, val);
 			final SetFileQuota sqres = Dispatcher.execute(sq);
 			return sqres.getSucceeded();
 		}

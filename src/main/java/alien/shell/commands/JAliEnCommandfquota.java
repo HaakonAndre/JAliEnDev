@@ -2,7 +2,10 @@ package alien.shell.commands;
 
 import java.util.List;
 
+import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.quotas.FileQuota;
+import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 import joptsimple.OptionException;
 
 /**
@@ -11,8 +14,8 @@ import joptsimple.OptionException;
 public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	private boolean isAdmin;
 	private String command;
-	// FIXME: requested user is not passed
-	private String user_to_set;
+
+	private AliEnPrincipal user_to_set;
 	private String param_to_set;
 	private Long value_to_set;
 
@@ -33,6 +36,13 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 				return;
 			}
 
+			commander.printOut("username", q.user);
+			commander.printOut("totalSize", String.valueOf(q.totalSize));
+			commander.printOut("maxTotalSize", String.valueOf(q.maxTotalSize));
+			commander.printOut("nbFiles", String.valueOf(q.nbFiles));
+			commander.printOut("maxNbFiles", String.valueOf(q.maxNbFiles));
+			commander.printOut("maxNbFiles", String.valueOf(q.maxNbFiles));
+
 			commander.printOutln(q.toString());
 			return;
 		}
@@ -48,7 +58,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 				return;
 			}
 			// run the update
-			if (commander.q_api.setFileQuota(this.param_to_set, this.value_to_set.toString()))
+			if (TaskQueueApiUtils.setFileQuota(user_to_set, this.param_to_set, this.value_to_set.toString()))
 				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 			else
 				commander.setReturnCode(4, "Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
@@ -84,12 +94,14 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	public JAliEnCommandfquota(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
+
 		if (alArguments.size() == 0)
 			return;
+
 		this.command = alArguments.get(0);
 		// System.out.println( alArguments );
 		if (this.command.equals("set") && alArguments.size() == 4) {
-			this.user_to_set = alArguments.get(1);
+			this.user_to_set = UserFactory.getByUsername(alArguments.get(1));
 			final String param = alArguments.get(2);
 			if (FileQuota.canUpdateField(param))
 				return;
