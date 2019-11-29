@@ -322,13 +322,14 @@ public class TaskQueueApiUtils {
 	}
 
 	/**
+	 * @param user User for whom to set the new value
 	 * @param fld
 	 * @param val
 	 * @return <code>true</code> if the operation was successful
 	 */
-	public boolean setJobsQuota(final String fld, final String val) {
+	public static boolean setJobsQuota(final AliEnPrincipal user, final String fld, final String val) {
 		try {
-			final SetJobsQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
+			final SetJobsQuota sq = new SetJobsQuota(user, fld, val);
 			final SetJobsQuota sqres = Dispatcher.execute(sq);
 			return sqres.getSucceeded();
 		}
