@@ -19,9 +19,9 @@ public class EndpointConfig implements ServerApplicationConfig {
 
 		Set<ServerEndpointConfig> result = new HashSet<>();
 
-		if (scanned.contains(JsonWebsocketEndpoint.class)) {
-			result.add(ServerEndpointConfig.Builder.create(JsonWebsocketEndpoint.class, "/websocket/json").build());
-			result.add(ServerEndpointConfig.Builder.create(JsonWebsocketEndpoint.class, "/websocket/plain").build());
+		if (scanned.contains(WebsocketEndpoint.class)) {
+			result.add(ServerEndpointConfig.Builder.create(WebsocketEndpoint.class, "/websocket/json").build());
+			result.add(ServerEndpointConfig.Builder.create(WebsocketEndpoint.class, "/websocket/plain").build());
 		}
 
 		return result;

@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
@@ -41,14 +42,14 @@ import alien.user.AliEnPrincipal;
 import lazyj.Utils;
 
 /**
- * @author yuw
+ * @author vyurchen
  *
- *         Implementation of websocket endpoint, that parses JSON commands
+ *         Implementation of websocket endpoint, that supports plain text and JSON clients
  */
-public class JsonWebsocketEndpoint extends Endpoint {
-	static transient final Logger logger = ConfigUtils.getLogger(JsonWebsocketEndpoint.class.getCanonicalName());
+public class WebsocketEndpoint extends Endpoint {
+	static transient final Logger logger = ConfigUtils.getLogger(WebsocketEndpoint.class.getCanonicalName());
 
-	static transient final Monitor monitor = MonitorFactory.getMonitor(JsonWebsocketEndpoint.class.getCanonicalName());
+	static transient final Monitor monitor = MonitorFactory.getMonitor(WebsocketEndpoint.class.getCanonicalName());
 
 	AliEnPrincipal userIdentity = null;
 
@@ -73,14 +74,14 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 	private static final class SessionContext implements Delayed {
 		final Session session;
-		final JsonWebsocketEndpoint endpoint;
+		final WebsocketEndpoint endpoint;
 
 		final long startTime = System.currentTimeMillis();
 		long lastActivityTime = System.currentTimeMillis();
 
 		final long absoluteRunningDeadline;
 
-		public SessionContext(final JsonWebsocketEndpoint endpoint, final Session session, final long userCertExpiring) {
+		public SessionContext(final WebsocketEndpoint endpoint, final Session session, final long userCertExpiring) {
 			this.endpoint = endpoint;
 			this.session = session;
 
@@ -366,40 +367,64 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 			try {
 				if (remoteEndpointBasic != null) {
-					// Try to parse incoming JSON
-					Object pobj;
-					JSONObject jsonObject;
-					JSONParser parser = new JSONParser();
-
-					try {
-						pobj = parser.parse(new StringReader(message));
-						jsonObject = (JSONObject) pobj;
-					}
-					catch (@SuppressWarnings("unused") ParseException e) {
-						synchronized (remoteEndpointBasic) {
-							remoteEndpointBasic.sendText("Incoming JSON not ok", true);
-						}
-						return;
-					}
-
-					// Filter out cp commands
-					if (jsonObject.get("command").toString().equals("cp")) {
-						synchronized (remoteEndpointBasic) {
-							remoteEndpointBasic.sendText("'cp' grid command is not implemented. Please use native client's Cp() method", true);
-						}
-						return;
-					}
-
-					// Split JSONObject into strings
 					final ArrayList<String> fullCmd = new ArrayList<>();
-					fullCmd.add(jsonObject.get("command").toString());
 
-					JSONArray mArray = new JSONArray();
-					if (jsonObject.get("options") != null) {
-						mArray = (JSONArray) jsonObject.get("options");
+					if (this.out.getClass().getCanonicalName() == "alien.shell.commands.JSONPrintWriter") {
+						// Try to parse incoming JSON
+						Object pobj;
+						JSONObject jsonObject;
+						JSONParser parser = new JSONParser();
 
-						for (int i = 0; i < mArray.size(); i++)
-							fullCmd.add(mArray.get(i).toString());
+						try {
+							pobj = parser.parse(new StringReader(message));
+							jsonObject = (JSONObject) pobj;
+						}
+						catch (@SuppressWarnings("unused") ParseException e) {
+							synchronized (remoteEndpointBasic) {
+								remoteEndpointBasic.sendText("{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"Incoming JSON not ok\"},\"results\":[]}", true);
+							}
+							return;
+						}
+
+						// Filter out cp commands
+						if (jsonObject.get("command").toString().equals("cp")) {
+							synchronized (remoteEndpointBasic) {
+								remoteEndpointBasic.sendText(
+										"{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"'cp' grid command is not implemented. Please use native client's Cp() method\"},\"results\":[]}", true);
+							}
+							return;
+						}
+
+						// Split JSONObject into strings
+						fullCmd.add(jsonObject.get("command").toString());
+
+						JSONArray mArray = new JSONArray();
+						if (jsonObject.get("options") != null) {
+							mArray = (JSONArray) jsonObject.get("options");
+
+							for (int i = 0; i < mArray.size(); i++)
+								fullCmd.add(mArray.get(i).toString());
+						}
+					}
+					else if (this.out.getClass().getCanonicalName() == "alien.shell.commands.JShPrintWriter") {
+						// Split incoming message into tokens
+						final StringTokenizer st = new StringTokenizer(message, " ");
+
+						while (st.hasMoreTokens())
+							fullCmd.add(st.nextToken());
+
+						// Filter out cp commands
+						if (fullCmd.get(0).equals("cp")) {
+							synchronized (remoteEndpointBasic) {
+								remoteEndpointBasic.sendText("'cp' grid command is not implemented. Please use native client's Cp() method", true);
+							}
+							return;
+						}
+					}
+					else {
+						// this is XMLPrintWriter or some other type of writer
+						logger.log(Level.SEVERE, "Tried to use unsopported writer " + this.out.getClass().getCanonicalName() + " in the websocket endpoint");
+						return;
 					}
 
 					if (!commander.isAlive()) {
