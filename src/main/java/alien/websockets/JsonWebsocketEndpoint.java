@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -182,6 +183,12 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		monitor.incrementCounter("new_sessions");
 	}
 
+	/**
+	 * Get the client's closest site
+	 * 
+	 * @param ip IP address of the client
+	 * @return the name of the closest site
+	 */
 	private static String getSite(final String ip) {
 		if (ip == null) {
 			logger.log(Level.SEVERE, "Client IP address is unknown");
@@ -204,8 +211,15 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		return null;
 	}
 
+	/**
+	 * Get the IP address of the client using reflection of the socket object
+	 * 
+	 * @param session websocket session which contains the socket
+	 * @return IP address
+	 */
 	private static String getRemoteIP(final Session session) {
 		try {
+			disableAccessWarnings();
 			Object obj = session.getAsyncRemote();
 
 			for (final String fieldName : new String[] { "base", "socketWrapper", "socket", "sc", "remoteAddress" }) {
@@ -240,6 +254,29 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Disable the reflection access warning produced by {@link #getRemoteIP(final Session session) getRemoteIP} accessing field <code>sun.nio.ch.SocketChannelImpl.remoteAddress</code>
+	 */
+	public static void disableAccessWarnings() {
+		try {
+			Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+			Field field = unsafeClass.getDeclaredField("theUnsafe");
+			field.setAccessible(true);
+			Object unsafe = field.get(null);
+
+			Method putObjectVolatile = unsafeClass.getDeclaredMethod("putObjectVolatile", Object.class, long.class, Object.class);
+			Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+
+			Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
+			Field loggerField = loggerClass.getDeclaredField("logger");
+			Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+			putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
+		}
+		catch (@SuppressWarnings("unused") Exception ignored) {
+			// ignore
+		}
 	}
 
 	@Override
