@@ -12,7 +12,7 @@ import org.json.simple.JSONObject;
 import alien.config.ConfigUtils;
 
 /**
- * @author yuw
+ * @author vyurchen
  *
  */
 public class JSONPrintWriter extends UIPrintWriter {

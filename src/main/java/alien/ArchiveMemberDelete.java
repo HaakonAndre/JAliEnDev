@@ -34,7 +34,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
 /**
- * @author yuw
+ * @author vyurchen
  *
  */
 public class ArchiveMemberDelete {

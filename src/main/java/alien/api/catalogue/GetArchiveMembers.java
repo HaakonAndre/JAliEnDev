@@ -8,7 +8,7 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * @author yuw
+ * @author vyurchen
  * @since 2018-05-29
  * 
  */

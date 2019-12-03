@@ -9,15 +9,15 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Service;
 import org.apache.catalina.connector.Connector;
-import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
-import org.apache.tomcat.util.scan.StandardJarScanner;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -25,9 +25,10 @@ import alien.monitoring.MonitorFactory;
 import alien.user.JAKeyStore;
 import alien.user.LdapCertificateRealm;
 import alien.user.UserFactory;
+import alien.websockets.WebsocketListener;
 
 /**
- * @author yuw
+ * @author vyurchen
  *
  */
 public class TomcatServer {
@@ -63,13 +64,13 @@ public class TomcatServer {
 		final LdapCertificateRealm ldapRealm = new LdapCertificateRealm();
 		tomcat.getEngine().setRealm(ldapRealm);
 
-		// Configure websocket webapplication
+		// Add an empty Tomcat context
+		final Context ctx = tomcat.addContext("", null);
 
-		// Add a dummy ROOT context
-		final StandardContext ctx = (StandardContext) tomcat.addWebapp("", new File(System.getProperty("java.io.tmpdir")).getAbsolutePath());
-
-		// disable per context work directories too
-		ctx.setWorkDir(System.getProperty("java.io.tmpdir"));
+		// Configure websocket context listener
+		ctx.addApplicationListener(WebsocketListener.class.getName());
+		Tomcat.addServlet(ctx, "default", new DefaultServlet());
+		ctx.addServletMappingDecoded("/", "default");
 
 		// Set security constraints in order to use AlienUserPrincipal later
 		final SecurityCollection securityCollection = new SecurityCollection();
@@ -79,7 +80,7 @@ public class TomcatServer {
 		securityConstraint.setAuthConstraint(true);
 		securityConstraint.setUserConstraint("CONFIDENTIAL");
 		securityConstraint.addAuthRole("users");
-		// ctx.addSecurityRole("users123");
+		// ctx.addSecurityRole("users");
 		ctx.addConstraint(securityConstraint);
 
 		final LoginConfig loginConfig = new LoginConfig();
@@ -87,36 +88,6 @@ public class TomcatServer {
 		loginConfig.setRealmName(LdapCertificateRealm.class.getCanonicalName());
 		ctx.setLoginConfig(loginConfig);
 		ctx.setRealm(ldapRealm);
-
-		// ctx.getPipeline().addValve(new SSLAuthenticator());
-
-		// Tell Jar Scanner not to look inside jar manifests
-		// otherwise it will produce useless warnings
-		final StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
-		jarScanner.setScanManifest(false);
-
-		// // Add a dummy ROOT context
-		// final StandardContext ctx = (StandardContext) tomcat.addContext("", null);
-		//
-		// // Configure websocket application
-		// ctx.addApplicationListener(TesterEndpointConfig.class.getName());
-		//
-		//
-		// // Set security constraints in order to use AlienUserPrincipal later
-		// final SecurityCollection securityCollection = new SecurityCollection();
-		// securityCollection.addPattern("/*");
-		// final SecurityConstraint securityConstraint = new SecurityConstraint();
-		// securityConstraint.addCollection(securityCollection);
-		// securityConstraint.setUserConstraint("CONFIDENTIAL");
-		//
-		// final LoginConfig loginConfig = new LoginConfig();
-		// loginConfig.setAuthMethod("CLIENT-CERT");
-		// loginConfig.setRealmName(LdapCertificateRealm.class.getCanonicalName());
-		// ctx.setLoginConfig(loginConfig);
-		//
-		// securityConstraint.addAuthRole("users");
-		// ctx.addSecurityRole("users");
-		// ctx.addConstraint(securityConstraint);
 
 		tomcat.start();
 		if (tomcat.getService().findConnectors()[0].getState() == LifecycleState.FAILED)

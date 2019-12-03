@@ -11,7 +11,7 @@ import alien.site.OutputEntry;
 import alien.user.AliEnPrincipal;
 
 /**
- * @author yuw
+ * @author vyurchen
  *
  */
 public class RegisterEntry extends Request {
