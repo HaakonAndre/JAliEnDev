@@ -33,13 +33,10 @@ dependencies {
 	compile name: 'tomcat-api'
 	compile name: 'tomcat-coyote'
 	compile name: 'tomcat-dbcp'
-	compile name: 'tomcat-jasper'
 	compile name: 'tomcat-jni'
-	compile name: 'tomcat-jsp-api'
 	compile name: 'tomcat-juli'
 	compile name: 'tomcat-util'
 	compile name: 'tomcat-util-scan'
-	compile name: 'tomcat-jasper'
 	compile name: 'tomcat-websocket'
 }
 
