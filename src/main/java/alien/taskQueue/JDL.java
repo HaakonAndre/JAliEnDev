@@ -485,18 +485,20 @@ public class JDL implements Serializable {
 
 		final List<String> otherInputFiles = new LinkedList<>();
 
-		for (final String file : dataFiles) {
-			if (file.endsWith(".xml"))
-				try {
-					final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
+		if (dataFiles != null) {
+			for (final String file : dataFiles) {
+				if (file.endsWith(".xml"))
+					try {
+						final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
 
-					return x;
-				}
-				catch (@SuppressWarnings("unused") final IOException ioe) {
-					// ignore
-				}
+						return x;
+					}
+					catch (@SuppressWarnings("unused") final IOException ioe) {
+						// ignore
+					}
 
-			otherInputFiles.add(file);
+				otherInputFiles.add(file);
+			}
 		}
 
 		final List<LFN> tempList = LFNUtils.getLFNs(true, otherInputFiles);
@@ -532,7 +534,12 @@ public class JDL implements Serializable {
 	 * @return list of input data to the job
 	 */
 	public List<String> getInputData(final boolean bNodownloadIncluded) {
-		return getInputList(bNodownloadIncluded, "InputData");
+		final List<String> inputData = getInputList(bNodownloadIncluded, "InputData");
+
+		if (inputData != null)
+			return inputData;
+
+		return getInputList(bNodownloadIncluded, "InputDataCollection");
 	}
 
 	/**
