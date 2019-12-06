@@ -23,6 +23,7 @@ public class RegisterEntry extends Request {
 	private static final long serialVersionUID = -2004904530203513524L;
 	private OutputEntry entry;
 	private String outputDir;
+	private boolean wasRegistered;
 
 	/**
 	 * @param entry lfn entry to register (converted to OutputEntry)
@@ -33,13 +34,14 @@ public class RegisterEntry extends Request {
 		setRequestUser(user);
 		this.entry = entry;
 		this.outputDir = outputDir;
+		this.wasRegistered = false;
 	}
 
 	@Override
 	public void run() {
 		if (entry != null && outputDir != null && outputDir.length() != 0) {
 			try {
-				Register.register(entry, outputDir, getEffectiveRequester());
+				wasRegistered = Register.register(entry, outputDir, getEffectiveRequester());
 			}
 			catch (IOException e) {
 				logger.log(Level.SEVERE, "Could not register entry " + entry.getName());
@@ -49,5 +51,12 @@ public class RegisterEntry extends Request {
 		else {
 			logger.log(Level.SEVERE, "Invalid arguments in RegisterLFN");
 		}
+	}
+
+	/**
+	 * @return the status of the registration of the LFN(s)
+	 */
+	public boolean wasRegistered() {
+		return this.wasRegistered;
 	}
 }

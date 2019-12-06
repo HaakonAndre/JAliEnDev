@@ -589,7 +589,10 @@ public class ArchiveMemberDelete {
 		}
 
 		System.out.println("[" + new Date() + "] Registering files in the catalogue");
-		CatalogueApiUtils.registerEntry(entry, registerPath + "/", commander.getUser());
+		if (!CatalogueApiUtils.registerEntry(entry, registerPath + "/", commander.getUser())) {
+			System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register archive or it's members " + registerPath + "/" + entry.getName());
+			validation.println("Register failed " + registerPath + "/" + entry.getName());
+		}
 
 		for (final String file : entry.getFilesIncluded()) {
 			final LFN entryLFN = commander.c_api.getLFN(registerPath + "/" + file);

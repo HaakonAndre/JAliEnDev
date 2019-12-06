@@ -704,14 +704,15 @@ public class CatalogueApiUtils {
 	 * @param outputDir
 	 * @param user
 	 */
-	public static void registerEntry(final OutputEntry entry, final String outputDir, final AliEnPrincipal user) {
+	public static boolean registerEntry(final OutputEntry entry, final String outputDir, final AliEnPrincipal user) {
 		try {
-			Dispatcher.execute(new RegisterEntry(entry, outputDir, user));
+			return Dispatcher.execute(new RegisterEntry(entry, outputDir, user)).wasRegistered();
 		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not register entry " + entry.getName());
 			e.getCause().printStackTrace();
 		}
+		return false;
 	}
 
 	/**
