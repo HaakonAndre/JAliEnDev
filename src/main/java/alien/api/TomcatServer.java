@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Service;
+import org.apache.catalina.authenticator.SSLAuthenticator;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Tomcat;
@@ -88,6 +89,7 @@ public class TomcatServer {
 		loginConfig.setRealmName(LdapCertificateRealm.class.getCanonicalName());
 		ctx.setLoginConfig(loginConfig);
 		ctx.setRealm(ldapRealm);
+		ctx.getPipeline().addValve(new SSLAuthenticator());
 
 		tomcat.start();
 		if (tomcat.getService().findConnectors()[0].getState() == LifecycleState.FAILED)
