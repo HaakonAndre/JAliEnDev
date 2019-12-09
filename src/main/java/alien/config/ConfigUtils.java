@@ -14,6 +14,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -416,8 +417,7 @@ public class ConfigUtils {
 				hostName = InetAddress.getLocalHost().getCanonicalHostName();
 			}
 			catch (final UnknownHostException e) {
-				logger.log(Level.SEVERE, "Error: couldn't get hostname", e);
-				return null;
+				logger.log(Level.WARNING, "Error: couldn't get hostname", e);
 			}
 		}
 
@@ -442,8 +442,8 @@ public class ConfigUtils {
 					}
 				}
 			}
-			catch (final Throwable t) {
-				System.err.println(t.getMessage());
+			catch (final SocketException se) {
+				logger.log(Level.WARNING, "Could not enumerate local network interfaces", se);
 			}
 
 			if (hostNameCandidates.size() > 1) {
