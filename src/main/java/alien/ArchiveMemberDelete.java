@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
@@ -477,7 +478,8 @@ public class ArchiveMemberDelete {
 					commander.c_api.removeLFN(registerPath, true);
 			}
 			else {
-				if (commander.c_api.find(parentdir + "/", "root_archive.zip", 0).isEmpty()) {
+				final Collection<LFN> root_archive = commander.c_api.find(parentdir + "/", "root_archive.zip", 0);
+				if (root_archive == null || root_archive.isEmpty()) {
 					System.out.println("[" + new Date() + "] " + "registertemp is not there, original archive and it's members have been removed by someone else. Nothing to do");
 				}
 				else {

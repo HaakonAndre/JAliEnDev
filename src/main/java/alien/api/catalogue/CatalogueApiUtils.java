@@ -80,7 +80,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param slfn
 	 *            name of the LFN
-	 * @return the LFN objects
+	 * @return the LFN objects, or <code>null</code> if failed to get them
 	 */
 	public List<LFN> getLFNs(final String slfn) {
 		try {
@@ -101,7 +101,7 @@ public class CatalogueApiUtils {
 	 *            name of the LFN
 	 * @param ignoreFolders
 	 * @param evenIfDoesntExist
-	 * @return the LFN object
+	 * @return the list of LFNs, or <code>null</code> if failed to get them
 	 */
 	public List<LFN> getLFNs(final Collection<String> slfn, final boolean ignoreFolders, final boolean evenIfDoesntExist) {
 		try {
@@ -139,7 +139,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param path
 	 *            absolute path to the LFN
-	 * @return state of the LFN's deletion <code>null</code>
+	 * @return state of the LFN's deletion or <code>null</code>
 	 */
 	public boolean removeLFN(final String path) {
 		try {
@@ -160,7 +160,7 @@ public class CatalogueApiUtils {
 	 *            absolute path to the LFN
 	 * @param recursive
 	 *            <code>true</code> to delete directory's content recursively
-	 * @return state of the LFN's deletion <code>null</code>
+	 * @return state of the LFN's deletion or <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive) {
 		try {
@@ -183,7 +183,7 @@ public class CatalogueApiUtils {
 	 *            <code>true</code> to delete directory's content recursively
 	 * @param purge
 	 *            <code>true</code> to delete a physical copy
-	 * @return state of the LFN's deletion <code>null</code>
+	 * @return state of the LFN's deletion or <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive, final boolean purge) {
 		try {
@@ -204,7 +204,7 @@ public class CatalogueApiUtils {
 	 *            absolute path to the LFN
 	 * @param newpath
 	 *            absolute path to the target
-	 * @return state of the LFN's deletion <code>null</code>
+	 * @return state of the LFN's deletion or <code>null</code>
 	 */
 	public LFN moveLFN(final String path, final String newpath) {
 		try {
@@ -223,7 +223,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param sguid
 	 *            GUID as String
-	 * @return the GUID object
+	 * @return the GUID object, or <code>null</code> if failed to get it
 	 */
 	public GUID getGUID(final String sguid) {
 		return getGUID(sguid, false, false);
@@ -237,7 +237,7 @@ public class CatalogueApiUtils {
 	 * @param evenIfDoesNotExist
 	 * @param resolveLFNs
 	 *            populate the LFN cache of the GUID object
-	 * @return the GUID object
+	 * @return the GUID object, or <code>null</code> if failed to get it
 	 */
 	public GUID getGUID(final String sguid, final boolean evenIfDoesNotExist, final boolean resolveLFNs) {
 		try {
@@ -256,7 +256,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param sguid
 	 *            GUID as String
-	 * @return the PFNs
+	 * @return the PFNs, or <code>null</code> if failed to get them
 	 */
 	public Set<PFN> getPFNs(final String sguid) {
 		try {
@@ -279,7 +279,7 @@ public class CatalogueApiUtils {
 	 *            SEs to prioritize to read from
 	 * @param exses
 	 *            SEs to deprioritize to read from
-	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
+	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized, or <code>null</code> if failed to get them
 	 */
 	public List<PFN> getPFNsToRead(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		try {
@@ -305,7 +305,7 @@ public class CatalogueApiUtils {
 	 *            SEs to de-prioritize
 	 * @param qos
 	 *            QoS types and counts to ask for
-	 * @return PFNs, filled with write envelopes and credentials if necessary and authorized
+	 * @return PFNs, filled with write envelopes and credentials if necessary and authorized, or <code>null</code> if failed to get them
 	 */
 	public List<PFN> getPFNsToWrite(final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos) {
 		try {
@@ -325,6 +325,7 @@ public class CatalogueApiUtils {
 	 * @param envelopes
 	 * @return PFNs that were successfully registered
 	 * @param state the state to register the files in
+	 * @return PFNs that were successfully registered or <code>null</code> if failed to register
 	 */
 	public List<PFN> registerEnvelopes(final List<String> envelopes, final BOOKING_STATE state) {
 		try {
@@ -370,7 +371,7 @@ public class CatalogueApiUtils {
 	 * @param size
 	 * @param md5
 	 * @param state what to do with the given files
-	 * @return PFNs that were successfully registered
+	 * @return PFNs that were successfully registered or <code>null</code> if failed to register
 	 */
 	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final BOOKING_STATE state) {
 		try {
@@ -434,7 +435,7 @@ public class CatalogueApiUtils {
 	 * Remove a directory in the Catalogue
 	 *
 	 * @param path
-	 * @return state of directory's deletion <code>null</code>
+	 * @return state of directory's deletion
 	 */
 	public boolean removeCatalogueDirectory(final String path) {
 		try {
@@ -454,7 +455,7 @@ public class CatalogueApiUtils {
 	 * @param path
 	 * @param pattern
 	 * @param flags
-	 * @return result LFNs
+	 * @return result LFNs or <code>null</code> if no LFNs found
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags) {
 		return find(path, pattern, flags, "");
@@ -467,7 +468,7 @@ public class CatalogueApiUtils {
 	 * @param pattern
 	 * @param flags
 	 * @param xmlCollectionName
-	 * @return result LFNs
+	 * @return result LFNs or <code>null</code> if no LFNs found
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName) {
 		return this.find(path, pattern, flags, xmlCollectionName, Long.valueOf(0));
@@ -481,7 +482,7 @@ public class CatalogueApiUtils {
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
-	 * @return result LFNs
+	 * @return result LFNs or <code>null</code> if no LFNs found
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName, Long queueid) {
 		return this.find(path, pattern, null, flags, xmlCollectionName, queueid);
@@ -496,7 +497,7 @@ public class CatalogueApiUtils {
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
-	 * @return result LFNs
+	 * @return result LFNs or <code>null</code> if no LFNs found
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, Long queueid) {
 		try {
@@ -515,7 +516,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param se
 	 *            name of the SE
-	 * @return SE object
+	 * @return SE object or <code>null</code> if failed to get it
 	 */
 	public SE getSE(final String se) {
 		try {
@@ -534,7 +535,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param seno
 	 *            number of the SE
-	 * @return SE object
+	 * @return SE object or <code>null</code> if failed to get it
 	 */
 	public SE getSE(final int seno) {
 		try {
@@ -553,7 +554,7 @@ public class CatalogueApiUtils {
 	 * different size (and order) than the given argument.
 	 * 
 	 * @param ses
-	 * @return the SEs matching the request
+	 * @return the SEs matching the request or <code>null</code> if failed to get the SE
 	 */
 	public List<SE> getSEs(final List<String> ses) {
 		try {
@@ -571,7 +572,7 @@ public class CatalogueApiUtils {
 	 * Get Packages for a certain platform
 	 *
 	 * @param platform
-	 * @return the Packages
+	 * @return the Packages or <code>null</code> if failed to get them
 	 */
 	public List<Package> getPackages(final String platform) {
 		try {
@@ -590,7 +591,7 @@ public class CatalogueApiUtils {
 	 * @param username_to_chown
 	 * @param groupname_to_chown
 	 * @param recursive
-	 * @return command result for each lfn
+	 * @return command result for each lfn or <code>null</code>
 	 */
 	public HashMap<String, Boolean> chownLFN(final String lfn_name, final String username_to_chown, final String groupname_to_chown, final boolean recursive) {
 		if (lfn_name == null || lfn_name.length() == 0)
@@ -619,7 +620,7 @@ public class CatalogueApiUtils {
 	 * @param qos
 	 * @param useLFNasGuid
 	 * @param attempts
-	 * @return command result for each lfn
+	 * @return command result for each lfn or <code>null</code>
 	 */
 	public HashMap<String, Long> mirrorLFN(final String lfn_name, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean useLFNasGuid,
 			final Integer attempts) {
@@ -646,7 +647,7 @@ public class CatalogueApiUtils {
 	 * @param write
 	 * @param lfn
 	 * @param qos
-	 * @return SE distance list
+	 * @return SE distance list or <code>null</code> if failed to get it
 	 */
 	public List<HashMap<SE, Double>> listSEDistance(final String site, final boolean write, final String lfn, final String qos) {
 		ListSEDistance lsd;
@@ -667,7 +668,7 @@ public class CatalogueApiUtils {
 	 * @param id
 	 * @param count
 	 * @param desc
-	 * @return transfer details
+	 * @return transfer details or <code>null</code> if failed to get them
 	 */
 	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Long id, final int count, final boolean desc) {
 
@@ -700,9 +701,12 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Register the LFNs contained in the OutputEntry in the catalogue
+	 * 
 	 * @param entry
 	 * @param outputDir
 	 * @param user
+	 * @return <code>true</code> if the entry was registered
 	 */
 	public static boolean registerEntry(final OutputEntry entry, final String outputDir, final AliEnPrincipal user) {
 		try {
@@ -725,6 +729,7 @@ public class CatalogueApiUtils {
 	 * @param args
 	 *            other `cp` command parameters to pass
 	 * @throws IOException
+	 * @return <code>true</code> if the copy was successful
 	 */
 	public boolean uploadFile(final File localFile, final String toLFN, final String... args) throws IOException {
 		final LFN l = getLFN(toLFN, true);
@@ -782,7 +787,7 @@ public class CatalogueApiUtils {
 	 * 
 	 * @param archive
 	 * 
-	 * @return list of archive members LFNs
+	 * @return list of archive members LFNs or <code>null</code> if failed to get it
 	 */
 	public List<LFN> getArchiveMembers(final String archive) {
 		try {
@@ -800,7 +805,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param slfn
 	 *            name of the LFN
-	 * @return the LFNCSD objects
+	 * @return the LFNCSD objects or <code>null</code> if failed to get them
 	 */
 	public Collection<LFN_CSD> getLFNCSDs(final String slfn) {
 		try {
@@ -823,7 +828,7 @@ public class CatalogueApiUtils {
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
-	 * @return result LFNCSDs
+	 * @return result LFNCSDs or <code>null</code> if failed to get them
 	 */
 	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, Long queueid) {
 		try {
@@ -887,7 +892,7 @@ public class CatalogueApiUtils {
 	 * Get LFN_CSD from String
 	 *
 	 * @param lfn_path
-	 * @return the LFNCSD object
+	 * @return the LFNCSD object or <code>null</code> if failed to get it
 	 */
 	public LFN_CSD getLFNCSD(final String lfn_path) {
 		ArrayList<String> slfn = new ArrayList<>();
@@ -907,7 +912,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param slfn
 	 * @param lfns_are_uuids
-	 * @return the LFNCSD objects
+	 * @return the LFNCSD objects or <code>null</code> if failed to get them
 	 */
 	public Collection<LFN_CSD> getLFNCSD(final Collection<String> slfn, final boolean lfns_are_uuids) {
 		try {
@@ -947,7 +952,7 @@ public class CatalogueApiUtils {
 	 *
 	 * @param uuid
 	 *            UUID as String
-	 * @return the LFNCSD object
+	 * @return the LFNCSD object or <code>null</code> if failed to get it
 	 */
 	public LFN_CSD guid2lfncsd(final String uuid) {
 		try {
@@ -998,7 +1003,7 @@ public class CatalogueApiUtils {
 	 *            SEs to prioritize to read from
 	 * @param exses
 	 *            SEs to deprioritize to read from
-	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
+	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized or <code>null</code> if failed to get them
 	 */
 	public List<PFN> getPFNsToReadCsd(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		try {
@@ -1016,7 +1021,7 @@ public class CatalogueApiUtils {
 	 * Register the output of a given job ID
 	 * 
 	 * @param jobId job ID to register the output of
-	 * @return the list of booked (so written but not yet committed) LFNs for this (normally failed) job ID
+	 * @return the list of booked (so written but not yet committed) LFNs for this (normally failed) job ID or <code>null</code> if failed to get them
 	 */
 	public Collection<LFN> registerOutput(final long jobId) {
 		try {
