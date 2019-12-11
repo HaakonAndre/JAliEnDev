@@ -257,6 +257,13 @@ public class ArchiveMemberDelete {
 			final File newArchive = new File(usrdir + separator + "extracted" + separator + archiveName);
 			final long newArchiveSize = newArchive.length();
 
+			if (newArchiveSize == 0) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Produced archive is 0 bytes");
+				validation.println("Zipping failed  " + newArchiveFullPath);
+				cleanUpLocal(Path.of(usrdir, "extracted"));
+				return;
+			}
+
 			while (commander.c_api.getLFN(newArchiveFullPath) != null) {
 				// Delete registertemp/root_archive.zip if there is any
 				System.out.println("[" + new Date() + "] Deleting corrupted " + newArchiveFullPath);
@@ -264,7 +271,7 @@ public class ArchiveMemberDelete {
 			}
 
 			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + newArchiveFullPath);
-			// Create only one replica 
+			// Create only one replica
 			if (!commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1")) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
 				validation.println("Upload failed " + newArchiveFullPath);
@@ -277,6 +284,15 @@ public class ArchiveMemberDelete {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Couldn't find archive " + newArchiveFullPath);
 				validation.println("Couldn't find  " + newArchiveFullPath);
 				cleanUpLocal(Path.of(usrdir, "extracted"));
+				return;
+			}
+
+			if (newArchiveLFN.getSize() == 0) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Uploaded archive is 0 bytes: " + newArchiveFullPath);
+				validation.println("Upload failed  " + newArchiveFullPath);
+				cleanUpLocal(Path.of(usrdir, "extracted"));
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
 				return;
 			}
 
