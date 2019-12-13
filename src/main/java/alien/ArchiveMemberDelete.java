@@ -306,7 +306,8 @@ public class ArchiveMemberDelete {
 
 			// Delete old files
 			//
-			deleteRemoteArchive(remoteFile, remoteArchive, remoteArchiveMembers, registerPath, remoteArchivePFN, validation);
+			if (!deleteRemoteArchive(remoteFile, remoteArchive, remoteArchiveMembers, registerPath, remoteArchivePFN, validation))
+				return;
 
 			// Move new files from registertemp to parentdir
 			//
@@ -521,7 +522,7 @@ public class ArchiveMemberDelete {
 	 * Delete an archive and it's member from the catalogue
 	 * 
 	 */
-	private static void deleteRemoteArchive(final String remoteFile, final String remoteArchive, final List<LFN> remoteArchiveMembers, final String registerPath, final List<PFN> remoteArchivePFN,
+	private static boolean deleteRemoteArchive(final String remoteFile, final String remoteArchive, final List<LFN> remoteArchiveMembers, final String registerPath, final List<PFN> remoteArchivePFN,
 			final PrintWriter validation) {
 		// Delete the members links of old archive
 		//
@@ -535,7 +536,7 @@ public class ArchiveMemberDelete {
 				// Delete all newly created entries and directories
 				if (registerPath.length() > 20) // Safety check
 					commander.c_api.removeLFN(registerPath, true);
-				return;
+				return false;
 			}
 		}
 
@@ -551,11 +552,12 @@ public class ArchiveMemberDelete {
 			// Delete all newly created entries and directories
 			if (registerPath.length() > 20) // Safety check
 				commander.c_api.removeLFN(registerPath, true);
-			return;
+			return false;
 		}
 
 		// Remove physical replicas of the old archive
 		xrdDeleteRemoteFile(remoteFile, remoteArchivePFN);
+		return true;
 	}
 
 	/**
