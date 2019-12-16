@@ -62,8 +62,6 @@ public class TomcatServer {
 		final Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
 		service.addConnector(createSslConnector(tomcatPort));
-		final LdapCertificateRealm ldapRealm = new LdapCertificateRealm();
-		tomcat.getEngine().setRealm(ldapRealm);
 
 		// Add an empty Tomcat context
 		final Context ctx = tomcat.addContext("", null);
@@ -88,6 +86,7 @@ public class TomcatServer {
 		loginConfig.setAuthMethod("CLIENT-CERT");
 		loginConfig.setRealmName(LdapCertificateRealm.class.getCanonicalName());
 		ctx.setLoginConfig(loginConfig);
+		final LdapCertificateRealm ldapRealm = new LdapCertificateRealm();
 		ctx.setRealm(ldapRealm);
 		ctx.getPipeline().addValve(new SSLAuthenticator());
 
