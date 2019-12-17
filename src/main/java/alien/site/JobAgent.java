@@ -871,7 +871,7 @@ public class JobAgent implements Runnable {
 			
 			return jalienVersionString;
 		}
-		catch (StringIndexOutOfBoundsException e) {
+		catch (StringIndexOutOfBoundsException | NullPointerException e) {
 			logger.log(Level.WARNING, "Could not get jAliEn version");
 			return "";
 		}
