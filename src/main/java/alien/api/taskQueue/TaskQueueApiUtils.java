@@ -240,13 +240,11 @@ public class TaskQueueApiUtils {
 	 * @return status of the kill
 	 */
 	public boolean killJob(final long queueId) {
-
 		try {
 			final KillJob j = new KillJob(commander.getUser(), queueId);
 
-			Dispatcher.execute(j);
-			return j.wasKilled();
-
+			final KillJob answer = Dispatcher.execute(j);
+			return answer.wasKilled();
 		}
 		catch (final Exception e) {
 			System.out.println("Could not kill the job  with id: [" + queueId + "]");
