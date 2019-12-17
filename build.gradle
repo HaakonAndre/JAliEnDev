@@ -32,6 +32,8 @@ dependencies {
 	compile name: 'websocket-api'
 	compile name: 'tomcat-api'
 	compile name: 'tomcat-coyote'
+	compile name: 'tomcat-jni'
+	compile name: 'tomcat-juli'
 	compile name: 'tomcat-util'
 	compile name: 'tomcat-util-scan'
 	compile name: 'tomcat-websocket'
