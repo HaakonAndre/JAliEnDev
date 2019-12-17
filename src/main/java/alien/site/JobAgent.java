@@ -863,12 +863,16 @@ public class JobAgent implements Runnable {
 	
 	private String getJAliEnVersion() {
 		try {
-			final String loadedmodules = env.get("LOADEDMODULES");
-			String jalienVersionString = loadedmodules.substring(loadedmodules.lastIndexOf("JAliEn") + 6);
+			final String loadedmodules = env.get("LOADEDMODULES");			
+			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
 			
-			if(jalienVersionString.contains(":"))
-				jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
-			
+			String jalienVersionString = "";
+			if(jalienModulePos >0){
+				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
+
+				if(jalienVersionString.contains(":"))
+					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
+			}
 			return jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
