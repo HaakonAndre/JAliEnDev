@@ -501,10 +501,7 @@ public class JobAgent implements Runnable {
 				singularityCmd.add("/bin/bash");
 				singularityCmd.add("-c");
 
-				final String loadedmodules = env.get("LOADEDMODULES");
-				final String jalienVersion = loadedmodules.substring(loadedmodules.lastIndexOf(':') + 1);
-
-				final String setupEnv = "source <( " + ALIENV_DIR + " printenv " + jalienVersion + " ); ";
+				final String setupEnv = "source <( " + ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion() + " ); ";
 				final String javaTest = "java -version";
 
 				singularityCmd.add(setupEnv + javaTest);
@@ -863,4 +860,21 @@ public class JobAgent implements Runnable {
 				return Integer.parseInt(number);
 		}
 	}
+	
+	private String getJAliEnVersion() {
+		try {
+			final String loadedmodules = env.get("LOADEDMODULES");
+			String jalienVersionString = loadedmodules.substring(loadedmodules.lastIndexOf("JAliEn") + 6);
+			
+			if(jalienVersionString.contains(":"))
+				jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
+			
+			return jalienVersionString;
+		}
+		catch (StringIndexOutOfBoundsException e) {
+			logger.log(Level.WARNING, "Could not get jAliEn version");
+			return "";
+		}
+	}
+	
 }
