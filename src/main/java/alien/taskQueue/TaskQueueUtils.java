@@ -2005,17 +2005,33 @@ public class TaskQueueUtils {
 	 * @return state of the kill operation
 	 */
 	public static boolean killJob(final AliEnPrincipal user, final long queueId) {
-		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user)) {
-			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "].");
+		final Job j = TaskQueueUtils.getJob(queueId);
 
-			final Job j = getJob(queueId, true);
+		if (j == null)
+			return false;
 
-			setJobStatus(j, JobStatus.KILLED, "", null, null, null);
+		return killJob(user, j);
+	}
 
-			System.out.println("Exec host: " + j.execHost);
+	/**
+	 * @param user
+	 * @param j
+	 * @return state of the kill operation
+	 */
+	public static boolean killJob(final AliEnPrincipal user, final Job j) {
+		if (AuthorizationChecker.canModifyJob(j, user)) {
+			System.out.println("Authorized job kill for [" + j.queueId + "] by user/role [" + user.getName() + "].");
 
+			return killJob(j);
+		}
+
+		System.out.println("Job kill authorization failed for [" + j.queueId + "] by user/role [" + user.getName() + "].");
+		return false;
+	}
+
+	private static boolean killJob(final Job j) {
+		if (setJobStatus(j, JobStatus.KILLED, null, null, null, null)) {
 			if (j.execHost != null) {
-
 				// my ($port) =
 				// $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
 				// or
@@ -2025,29 +2041,40 @@ public class TaskQueueUtils {
 				//
 				// $DEBUG and $self->debug(1,
 				// "Sending a signal to $data->{exechost} $port to kill the process... ");
-				final String target = j.execHost.substring(j.execHost.indexOf('@' + 1));
+
+				String target = j.execHost;
+
+				final int idx = target.indexOf('@');
+
+				if (idx >= 0)
+					target = target.substring(idx + 1);
 
 				final int expires = (int) (System.currentTimeMillis() / 1000) + 300;
 
-				insertMessage(queueId, target, "ClusterMonitor", "killProcess", j.queueId + "", expires);
-
+				insertMessage(j.queueId, target, "ClusterMonitor", "killProcess", String.valueOf(j.queueId), expires);
 			}
 
 			// The removal has to be done properly, in Perl it was just the
 			// default !/alien-job directory
 			// $self->{CATALOGUE}->execute("rmdir", $procDir, "-r")
 
-			return false;
+			if (j.isMaster()) {
+				final List<Job> subjobs = TaskQueueUtils.getSubjobs(j.queueId);
 
+				if (subjobs != null) {
+					for (final Job subjob : subjobs)
+						killJob(subjob);
+				}
+			}
+
+			return true;
 		}
 
-		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + user.getName() + "].");
 		return false;
 	}
 
 	// status and jdl
 	private static boolean updateJob(final Job j, final JobStatus newStatus) {
-
 		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE || j.status() == JobStatus.INTERACTIV) && j.isMaster())
 			return false;
 
@@ -2061,22 +2088,32 @@ public class TaskQueueUtils {
 		if (j.split != 0)
 			setSubJobMerges(j);
 
-		if (j.status() != newStatus)
-			if (newStatus == JobStatus.ASSIGNED) {
-				// $self->_do("UPDATE $self->{SITEQUEUETABLE} SET $status=$status+1 where site=?",
-				// {bind_values =>
-				// [$dbsite]})
-				// TODO:
+		if (j.status() != newStatus) {
+			try (DBFunctions db = getQueueDB()) {
+				if (!db.query("UPDATE QUEUE SET statusId=? WHERE queueId=? and statusId=?;", false, Integer.valueOf(newStatus.getAliEnLevel()), Long.valueOf(j.queueId),
+						Integer.valueOf(j.status().getAliEnLevel())))
+					return false;
+
+				if (db.getUpdateCount() > 0) {
+					// job stats was updated correctly, let's update the queue table too
+
+					if (j.site != null) {
+						int siteId = getSiteId(j.site);
+
+						if (siteId > 0)
+							db.query("UPDATE SITEQUEUES SET " + j.status().toSQL() + "=GREATEST(" + j.status().toSQL() + "-1,0), " + newStatus.toSQL() + "=" + newStatus + "+1 WHERE siteId=?", false,
+									Integer.valueOf(siteId));
+					}
+				}
+				else
+					return false;
 			}
-			else {
-				// do(
-				// "UPDATE $self->{SITEQUEUETABLE} SET $dboldstatus = $dboldstatus-1, $status=$status+1 where site=?",
-				// {bind_values => [$dbsite]}
-			}
+		}
 
 		if (newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.STAGING)
 			setAction(newStatus);
 
+		// if the state already was the desired one, return <code>true</code>
 		return true;
 	}
 
@@ -2090,11 +2127,12 @@ public class TaskQueueUtils {
 	 * @return <code>true</code> if the status was successfully changed
 	 */
 	public static boolean setJobStatus(final Job j, final JobStatus newStatus, final String arg, final String site, final String spyurl, final String node) {
-
 		final String time = String.valueOf(System.currentTimeMillis() / 1000);
 
 		final HashMap<String, String> jdltags = new HashMap<>();
+
 		jdltags.put("procinfotime", time);
+
 		if (spyurl != null)
 			jdltags.put("spyurl", spyurl);
 		if (site != null)
@@ -2117,15 +2155,12 @@ public class TaskQueueUtils {
 		else if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN)
 			jdltags.put("finished", time);
 		else if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
-
 			jdltags.put("spyurl", "");
 			jdltags.put("finished", time);
 			deleteJobToken(j.queueId);
-
 		}
-		// put the JobLog message
 
-		final HashMap<String, String> joblogtags = new HashMap<>(jdltags);
+		// put the JobLog message
 
 		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;
 
@@ -2134,7 +2169,7 @@ public class TaskQueueUtils {
 		if (!success)
 			message = "FAILED: " + message;
 
-		putJobLog(j.queueId, "state", message, joblogtags);
+		putJobLog(j.queueId, "state", message, jdltags);
 
 		if (site != null) {
 			// # lock queues with submission errors ....
@@ -3044,7 +3079,7 @@ public class TaskQueueUtils {
 					final String target = j.node + "-" + queueId + "-" + j.resubmission;
 					final int expires = (int) (System.currentTimeMillis() / 1000) + 3600 * 3; // now + 3h
 
-					if (!insertMessage(queueId, target, "JobAgent", "killProcess", j.queueId + "", expires))
+					if (!insertMessage(queueId, target, "JobAgent", "killProcess", String.valueOf(j.queueId), expires))
 						logger.severe("Resubmit: could not insert kill message: " + queueId);
 				}
 
