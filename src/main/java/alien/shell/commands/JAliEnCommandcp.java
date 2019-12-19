@@ -1224,6 +1224,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (options.has("j"))
 				jobId = ((Long) options.valueOf("j")).longValue();
+			else
+				jobId = ConfigUtils.getConfig().getl("ALIEN_PROC_ID", jobId);
 
 			if (options.has("nc")) {
 				if (jobId > 0)
