@@ -28,6 +28,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.catalogue.access.AccessType;
+import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.OutputEntry;
@@ -188,7 +189,7 @@ public class ArchiveMemberDelete {
 			final String remoteArchive = remoteArchiveLFN.getCanonicalName();
 			final String archiveName = remoteArchiveLFN.getFileName();
 			final String memberName = remoteLFN.getFileName();
-			final long jobID = remoteArchiveLFN.jobid;
+			final long jobID = ConfigUtils.getConfig().getl("ALIEN_PROC_ID", remoteArchiveLFN.jobid);
 			final long remoteArchiveSize = remoteArchiveLFN.getSize();
 
 			final List<LFN> remoteArchiveMembers = commander.c_api.getArchiveMembers(remoteArchive);
@@ -240,6 +241,7 @@ public class ArchiveMemberDelete {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + usrdir + separator + archiveName);
 				validation.println("Extraction failed " + remoteArchive);
 				cleanUpLocal(localArchive.toPath());
+				cleanUpLocal(Path.of(usrdir, "extracted"));
 				return;
 			}
 			cleanUpLocal(localArchive.toPath());
@@ -251,9 +253,6 @@ public class ArchiveMemberDelete {
 			entry.createZip(usrdir + separator + "extracted");
 
 			final String newArchiveFullPath = registerPath + separator + archiveName;
-
-			// Upload the new archive to the Grid
-			//
 			final File newArchive = new File(usrdir + separator + "extracted" + separator + archiveName);
 			final long newArchiveSize = newArchive.length();
 
@@ -264,6 +263,8 @@ public class ArchiveMemberDelete {
 				return;
 			}
 
+			// Upload the new archive to the Grid
+			//
 			while (commander.c_api.getLFN(newArchiveFullPath) != null) {
 				// Delete registertemp/root_archive.zip if there is any
 				System.out.println("[" + new Date() + "] Deleting corrupted " + newArchiveFullPath);
@@ -276,6 +277,8 @@ public class ArchiveMemberDelete {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
 				validation.println("Upload failed " + newArchiveFullPath);
 				cleanUpLocal(Path.of(usrdir, "extracted"));
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
 				return;
 			}
 
@@ -284,6 +287,8 @@ public class ArchiveMemberDelete {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Couldn't find archive " + newArchiveFullPath);
 				validation.println("Couldn't find  " + newArchiveFullPath);
 				cleanUpLocal(Path.of(usrdir, "extracted"));
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
 				return;
 			}
 
@@ -314,6 +319,7 @@ public class ArchiveMemberDelete {
 			if (!renameFiles(remoteArchive, listOfFiles, archiveName, registerPath, remoteFile, validation, parentdir))
 				return;
 
+			// Clean up
 			if (registerPath.length() > 20) // Safety check
 				commander.c_api.removeLFN(registerPath, true);
 
@@ -510,7 +516,7 @@ public class ArchiveMemberDelete {
 		if (commander.c_api.getLFN(registerPath) != null) {
 			// Delete registertemp dir since it can be corrupted
 			if (registerPath.length() > 20) // Safety check
-				commander.c_api.removeLFN(registerPath, true);
+				return commander.c_api.removeLFN(registerPath, true);
 		}
 		else {
 			System.out.println("[" + new Date() + "] " + "registertemp is not there, continue with the main procedure");
@@ -612,8 +618,14 @@ public class ArchiveMemberDelete {
 		if (!CatalogueApiUtils.registerEntry(entry, registerPath + "/", commander.getUser())) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register archive or it's members " + registerPath + "/" + entry.getName());
 			validation.println("Register failed " + registerPath + "/" + entry.getName());
+
+			// Delete all newly created entries and directories
+			if (registerPath.length() > 20) // Safety check
+				commander.c_api.removeLFN(registerPath, true);
+			return false;
 		}
 
+		// Loop over newly registered files to make sure they exist
 		for (final String file : entry.getFilesIncluded()) {
 			final LFN entryLFN = commander.c_api.getLFN(registerPath + "/" + file);
 			if (entryLFN == null || !entryLFN.exists) {
