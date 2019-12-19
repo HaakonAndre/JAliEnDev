@@ -51,14 +51,7 @@ public class RemoveLFNfromString extends Request {
 	public void run() {
 		final LFN lfn = LFNUtils.getLFN(path);
 		if (lfn != null)
-			if (lfn.isDirectory()) {
-				if (recursive)
-					wasRemoved = LFNUtils.rmdir(getEffectiveRequester(), lfn, recursive);
-				else
-					wasRemoved = false;
-			}
-			else
-				wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn, recursive, purge);
+			wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn, recursive, purge);
 
 	}
 
