@@ -146,6 +146,8 @@ public class WebsocketEndpoint extends Endpoint {
 	};
 
 	static {
+		disableAccessWarnings();
+		
 		sessionCheckingThread.setName("JsonWebsocketEndpoint.timeoutChecker");
 		sessionCheckingThread.setDaemon(true);
 		sessionCheckingThread.start();
@@ -220,7 +222,6 @@ public class WebsocketEndpoint extends Endpoint {
 	 */
 	private static String getRemoteIP(final Session session) {
 		try {
-			disableAccessWarnings();
 			Object obj = session.getAsyncRemote();
 
 			for (final String fieldName : new String[] { "base", "socketWrapper", "socket", "sc", "remoteAddress" }) {
@@ -258,9 +259,9 @@ public class WebsocketEndpoint extends Endpoint {
 	}
 
 	/**
-	 * Disable the reflection access warning produced by {@link #getRemoteIP(final Session session) getRemoteIP} accessing field <code>sun.nio.ch.SocketChannelImpl.remoteAddress</code>
+	 * Disable the reflection access warning produced by getRemoteIP(Session) accessing field <code>sun.nio.ch.SocketChannelImpl.remoteAddress</code>
 	 */
-	public static void disableAccessWarnings() {
+	private static void disableAccessWarnings() {
 		try {
 			Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
 			Field field = unsafeClass.getDeclaredField("theUnsafe");
@@ -275,8 +276,8 @@ public class WebsocketEndpoint extends Endpoint {
 			Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
 			putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
 		}
-		catch (@SuppressWarnings("unused") Exception ignored) {
-			// ignore
+		catch (Exception e) {
+			logger.log(Level.FINE, "Could not disable warnings regarding access to sun.nio.ch.SocketChannelImpl.remoteAddress", e);
 		}
 	}
 
