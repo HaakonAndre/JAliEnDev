@@ -129,7 +129,7 @@ public class Base64 {
 	 *            <code>byte[]</code> data to be encoded
 	 * @param len
 	 *            <code>int<code> length of wrapped lines; No wrapping if less than 4.
-	 * &#64;param wrap 
+	 * @param wrap 
 	 * @return a <code>String</code> with encoded data
 	 */
 	public static String encode(byte[] binaryData, int len, boolean wrap) {
