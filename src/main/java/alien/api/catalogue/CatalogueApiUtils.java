@@ -323,7 +323,6 @@ public class CatalogueApiUtils {
 	 * Register PFNs with envelopes
 	 *
 	 * @param envelopes
-	 * @return PFNs that were successfully registered
 	 * @param state the state to register the files in
 	 * @return PFNs that were successfully registered or <code>null</code> if failed to register
 	 */
