@@ -607,7 +607,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 			if (result) {
 				exists = true;
-				entryId = db.getLastGeneratedKey().intValue();
+				entryId = db.getLastGeneratedKeyLong().longValue();
 			}
 
 			return result;
