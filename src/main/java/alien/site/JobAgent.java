@@ -860,25 +860,25 @@ public class JobAgent implements Runnable {
 				return Integer.parseInt(number);
 		}
 	}
-	
+
 	private String getJAliEnVersion() {
 		try {
-			final String loadedmodules = env.get("LOADEDMODULES");			
+			final String loadedmodules = env.get("LOADEDMODULES");
 			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
-			
+
 			String jalienVersionString = "";
-			if(jalienModulePos >0){
+			if (jalienModulePos > 0) {
 				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
 
-				if(jalienVersionString.contains(":"))
+				if (jalienVersionString.contains(":"))
 					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
 			}
 			return jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get jAliEn version");
+			logger.log(Level.WARNING, "Could not get jAliEn version", e);
 			return "";
 		}
 	}
-	
+
 }
