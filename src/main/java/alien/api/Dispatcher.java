@@ -69,7 +69,7 @@ public class Dispatcher {
 		else
 			key = null;
 
-		if (r instanceof Cacheable) {
+		if (isCacheable) {
 			final WeakReference<Request> cachedObject = cache.get(key);
 
 			final Object cachedValue;
