@@ -65,6 +65,6 @@ public class PFNfromString extends Request implements Cacheable {
 
 	@Override
 	public long getTimeout() {
-		return 1000 * 60 * 5;
+		return 1000 * 15;
 	}
 }
