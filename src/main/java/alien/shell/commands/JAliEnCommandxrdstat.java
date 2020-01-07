@@ -48,6 +48,10 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 	private boolean verbose = false;
 
+	private boolean onlineStatusCheck = false;
+
+	private boolean bringOnline = false;
+
 	@Override
 	public void run() {
 		Xrootd xrootd = null;
@@ -172,89 +176,152 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				if (xrootd == null)
 					xrootd = (Xrootd) Factory.xrootd.clone();
 
-				try {
-					final String status = (bDownload && ignoreStat && (onePfnToCheck == null)) ? null : xrootd.xrdstat(p, false, false, false);
-
-					// xrdstat was ok at this point
-
-					if (bDownload && onePfnToCheck == null) {
-						File f = null;
-
-						String warning = null;
-
-						long timing = -1;
-
-						try {
-							f = File.createTempFile("xrdcheck-", "-download.tmp", IOUtils.getTemporaryDirectory());
-
-							if (!f.delete())
-								warning = "Could not create and delete the temporary file " + f.getCanonicalPath();
-							else {
-								final long lStart = System.currentTimeMillis();
-
-								xrootd.get(p, f);
-
-								timing = System.currentTimeMillis() - lStart;
-
-								if (f.length() != referenceGUID.size) {
-									commander.setReturnCode(7, "Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
-									throw new IOException("Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
-								}
-
-								if (referenceGUID.md5 != null && referenceGUID.md5.length() > 0) {
-									final String fileMD5 = IOUtils.getMD5(f);
-
-									if (!fileMD5.equalsIgnoreCase(referenceGUID.md5)) {
-										commander.setReturnCode(8, "The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
-										throw new IOException("The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
-									}
-								}
-							}
-						}
-						finally {
-							if (f != null) {
-								TempFileManager.release(f);
-
-								f.delete();
-							}
-						}
-
-						if (warning != null) {
-							commander.printOutln(ShellColor.jobStateYellow() + "WARNING" + ShellColor.reset());
-							commander.printOutln("\t\t" + warning);
-						}
-						else {
-							commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
-							commander.printOutln("\t\tDownloaded file matches the catalogue details"
-									+ (timing > 0 ? ", retrieving took " + Format.toInterval(timing) + " (" + Format.size(referenceGUID.size * 1000. / timing) + "/s)" : ""));
-						}
-					}
-					else {
-						// just namespace check, no actual IO
-						commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
-
-						if (verbose && status != null)
-							commander.printOutln(status);
-					}
-				}
-				catch (final Throwable t) {
-					final String error = t.getMessage();
-
-					commander.printOutln(ShellColor.jobStateRed() + "ERR" + ShellColor.reset());
-
-					if (verbose)
-						commander.printOutln(error);
-
-					if (printCommand) {
-						final String cmd = xrootd.getFormattedLastCommand();
-
-						if (!error.contains(cmd))
-							commander.printOutln(cmd);
-					}
-				}
+				if (onlineStatusCheck)
+					isPFNOnline(xrootd, onePfnToCheck, p);
+				else if (bringOnline)
+					bringPFNOnline(xrootd, onePfnToCheck, p);
+				else
+					checkOnePFN(xrootd, referenceGUID, onePfnToCheck, p);
 			}
 		}
+	}
 
+	private void isPFNOnline(final Xrootd xrootd, final PFN onePfnToCheck, final PFN p) {
+		try {
+			final boolean isOnline = xrootd.isOnline(onePfnToCheck != null ? onePfnToCheck : p);
+
+			if (isOnline)
+				commander.printOutln(ShellColor.jobStateGreen() + "Online" + ShellColor.reset());
+			else
+				commander.printOutln(ShellColor.jobStateYellow() + "Offline" + ShellColor.reset());
+		}
+		catch (final Throwable t) {
+			final String error = t.getMessage();
+
+			commander.printOutln(ShellColor.jobStateRed() + "IO error" + ShellColor.reset());
+
+			if (verbose)
+				commander.printOutln(error);
+
+			if (printCommand) {
+				final String cmd = xrootd.getFormattedLastCommand();
+
+				if (!error.contains(cmd))
+					commander.printOutln(cmd);
+			}
+		}
+	}
+
+	private void bringPFNOnline(final Xrootd xrootd, final PFN onePfnToCheck, final PFN p) {
+		try {
+			final PFN targetPFN = onePfnToCheck != null ? onePfnToCheck : p;
+
+			if (xrootd.isOnline(targetPFN))
+				commander.printOutln(ShellColor.jobStateGreen() + "Online" + ShellColor.reset());
+			else {
+				xrootd.prepare(onePfnToCheck != null ? onePfnToCheck : p);
+
+				commander.printOutln(ShellColor.jobStateYellow() + "prepare request sent" + ShellColor.reset());
+			}
+		}
+		catch (final Throwable t) {
+			final String error = t.getMessage();
+
+			commander.printOutln(ShellColor.jobStateRed() + "prepare request failed" + ShellColor.reset());
+
+			if (verbose)
+				commander.printOutln(error);
+
+			if (printCommand) {
+				final String cmd = xrootd.getFormattedLastCommand();
+
+				if (!error.contains(cmd))
+					commander.printOutln(cmd);
+			}
+		}
+	}
+
+	private void checkOnePFN(final Xrootd xrootd, final GUID referenceGUID, final PFN onePfnToCheck, final PFN p) {
+		try {
+			final String status = (bDownload && ignoreStat && (onePfnToCheck == null)) ? null : xrootd.xrdstat(p, false, false, false);
+
+			// xrdstat was ok at this point
+
+			if (bDownload && onePfnToCheck == null) {
+				File f = null;
+
+				String warning = null;
+
+				long timing = -1;
+
+				try {
+					f = File.createTempFile("xrdcheck-", "-download.tmp", IOUtils.getTemporaryDirectory());
+
+					if (!f.delete())
+						warning = "Could not create and delete the temporary file " + f.getCanonicalPath();
+					else {
+						final long lStart = System.currentTimeMillis();
+
+						xrootd.get(p, f);
+
+						timing = System.currentTimeMillis() - lStart;
+
+						if (f.length() != referenceGUID.size) {
+							commander.setReturnCode(7, "Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
+							throw new IOException("Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
+						}
+
+						if (referenceGUID.md5 != null && referenceGUID.md5.length() > 0) {
+							final String fileMD5 = IOUtils.getMD5(f);
+
+							if (!fileMD5.equalsIgnoreCase(referenceGUID.md5)) {
+								commander.setReturnCode(8, "The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
+								throw new IOException("The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
+							}
+						}
+					}
+				}
+				finally {
+					if (f != null) {
+						TempFileManager.release(f);
+
+						f.delete();
+					}
+				}
+
+				if (warning != null) {
+					commander.printOutln(ShellColor.jobStateYellow() + "WARNING" + ShellColor.reset());
+					commander.printOutln("\t\t" + warning);
+				}
+				else {
+					commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
+					commander.printOutln("\t\tDownloaded file matches the catalogue details"
+							+ (timing > 0 ? ", retrieving took " + Format.toInterval(timing) + " (" + Format.size(referenceGUID.size * 1000. / timing) + "/s)" : ""));
+				}
+			}
+			else {
+				// just namespace check, no actual IO
+				commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
+
+				if (verbose && status != null)
+					commander.printOutln(status);
+			}
+		}
+		catch (final Throwable t) {
+			final String error = t.getMessage();
+
+			commander.printOutln(ShellColor.jobStateRed() + "ERR" + ShellColor.reset());
+
+			if (verbose)
+				commander.printOutln(error);
+
+			if (printCommand) {
+				final String cmd = xrootd.getFormattedLastCommand();
+
+				if (!error.contains(cmd))
+					commander.printOutln(cmd);
+			}
+		}
 	}
 
 	@Override
@@ -268,6 +335,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-c", "Print the full command line in case of errors."));
 		commander.printOutln(helpOption("-v", "More details on the status."));
 		commander.printOutln(helpOption("-p", "Comma-separated list of job IDs to check the input data of"));
+		commander.printOutln(helpOption("-o", "Only show the online status (for files with tape replicas in particular)"));
+		commander.printOutln(helpOption("-O", "Request the file to be brought online"));
 		commander.printOutln();
 	}
 
@@ -295,12 +364,16 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			parser.accepts("i");
 			parser.accepts("v");
 			parser.accepts("p").withRequiredArg().withValuesSeparatedBy(',').describedAs("Comma-separated list of job IDs to check the input data of");
+			parser.accepts("o");
+			parser.accepts("O");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 			bDownload = options.has("d");
 			printCommand = options.has("c");
 			ignoreStat = options.has("i");
 			verbose = options.has("v");
+			onlineStatusCheck = options.has("o");
+			bringOnline = options.has("O");
 
 			if (options.has("s")) {
 				final StringTokenizer st = new StringTokenizer(options.valueOf("s").toString(), ",;");
