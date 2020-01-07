@@ -368,12 +368,12 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			parser.accepts("O");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
-			bDownload = options.has("d");
 			printCommand = options.has("c");
 			ignoreStat = options.has("i");
 			verbose = options.has("v");
 			onlineStatusCheck = options.has("o");
 			bringOnline = options.has("O");
+			bDownload = !onlineStatusCheck && !bringOnline && options.has("d");
 
 			if (options.has("s")) {
 				final StringTokenizer st = new StringTokenizer(options.valueOf("s").toString(), ",;");
