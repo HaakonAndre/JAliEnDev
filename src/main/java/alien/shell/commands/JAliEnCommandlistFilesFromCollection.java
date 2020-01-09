@@ -31,30 +31,23 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 */
 	private boolean bZ = false;
 
-	/*
-	 * The command received -x argument
-	 */
-	private boolean bX = false;
-
 	/**
 	 * execute the type
 	 */
 	@Override
 	public void run() {
-
 		// A9D461B2-1386-11E1-9717-7623A10ABEEF (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)
-		// -v A9D461B2-1386-11E1-9717-7623A10ABEEF (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
+		// A9D461B2-1386-11E1-9717-7623A10ABEEF (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
 
 		String collectionPath;
 
 		if (sPath.startsWith("/"))
 			collectionPath = sPath;
-		else {
+		else
 			collectionPath = commander.getCurrentDirName() + sPath;
-		}
 
 		try {
-			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath, bX));
+			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath));
 
 			lfns = ret.getLFNs();
 		}
@@ -100,13 +93,18 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		// ignore
+		commander.printOutln();
+		commander.printOutln(helpUsage("listFilesFromCollection", "[-options] collection"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-z", "show size and other file details"));
+		commander.printOutln(helpOption("-s", "silent (API only)"));
+		commander.printOutln();
 	}
 
 	/**
-	 * ls can run without arguments
+	 * listFilesFromCollection needs at least the collection name to run on, so no, it cannot run without arguments
 	 *
-	 * @return <code>true</code>
+	 * @return <code>false</code>
 	 */
 	@Override
 	public boolean canRunWithoutArguments() {
@@ -129,7 +127,6 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 		parser.accepts("z");
 		parser.accepts("s");
-		parser.accepts("x");
 
 		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -137,7 +134,6 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			silent();
 
 		bZ = options.has("z");
-		bX = options.has("x");
 
 		if (options.nonOptionArguments().size() != 1) {
 			setArgumentsOk(false);
