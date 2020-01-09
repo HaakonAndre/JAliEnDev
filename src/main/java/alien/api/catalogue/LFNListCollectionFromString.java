@@ -54,7 +54,7 @@ public class LFNListCollectionFromString extends Request {
 					this.lfns = new XmlCollection(entry);
 				}
 				catch (final IOException ioe) {
-					throw new IllegalArgumentException("Cannot read or parse the content of \"" + path + "\"", ioe);
+					throw new IllegalArgumentException(ioe.getMessage() + " (" + path + ")");
 				}
 			}
 		}
