@@ -90,9 +90,15 @@ public class Dispatcher {
 				r.authorizeUserAndRole();
 
 				if (passesFirewallRules(r)) {
-					monitor.addMeasurement("executed_requests", timing);
-
-					r.run();
+					try {
+						r.run();
+					}
+					catch (final Throwable t) {
+						throw new ServerException(t.getMessage(), t);
+					}
+					finally {
+						monitor.addMeasurement("executed_requests", timing);
+					}
 				}
 				else {
 					monitor.addMeasurement("firewalled_requests", timing);
@@ -101,9 +107,12 @@ public class Dispatcher {
 				ret = r;
 			}
 			else {
-				ret = dispatchRequest(r);
-
-				monitor.addMeasurement("forwarded_requests", timing);
+				try {
+					ret = dispatchRequest(r);
+				}
+				finally {
+					monitor.addMeasurement("forwarded_requests", timing);
+				}
 			}
 		}
 
