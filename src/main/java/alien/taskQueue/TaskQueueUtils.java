@@ -933,8 +933,8 @@ public class TaskQueueUtils {
 	 * @param limit
 	 * @return the ps listing
 	 */
-	public static List<Job> getPS(final Collection<JobStatus> states, final Collection<String> users, final Collection<String> sites, final Collection<String> nodes, final Collection<Integer> mjobs,
-			final Collection<Integer> jobids, final String orderByKey, final int limit) {
+	public static List<Job> getPS(final Collection<JobStatus> states, final Collection<String> users, final Collection<String> sites, final Collection<String> nodes, final Collection<Long> mjobs,
+			final Collection<Long> jobids, final String orderByKey, final int limit) {
 
 		final List<Job> ret = new ArrayList<>();
 
@@ -974,7 +974,8 @@ public class TaskQueueUtils {
 						whe.append('\'').append(s.toSQL()).append('\'');
 				}
 
-				where += whe + ") ) and ";
+				if (!first)
+					where += whe + ") ) and ";
 			}
 
 			if (users != null && users.size() > 0 && !users.contains("%")) {
@@ -994,49 +995,60 @@ public class TaskQueueUtils {
 						whe.append("submitHost like '").append(Format.escSQL(u)).append("@%'");
 				}
 
-				where += whe + " ) and ";
+				if (!first)
+					where += whe + " ) and ";
 			}
 
 			if (sites != null && sites.size() > 0 && !sites.contains("%")) {
-				final StringBuilder whe = new StringBuilder(" ( site in (");
+				final StringBuilder whe = new StringBuilder(" ( siteId in (");
 
 				boolean first = true;
 
 				for (final String s : sites) {
-					if (!first)
-						whe.append(',');
-					else
-						first = false;
+					final int id = getSiteId(s);
 
-					whe.append('\'').append(Format.escSQL(s)).append('\'');
+					if (id >= 0) {
+						if (!first)
+							whe.append(',');
+						else
+							first = false;
+
+						whe.append(id);
+					}
 				}
 
-				where += whe + ") ) and ";
+				if (!first)
+					where += whe + ") ) and ";
 			}
 
 			if (nodes != null && nodes.size() > 0 && !nodes.contains("%")) {
-				final StringBuilder whe = new StringBuilder(" ( node in (");
+				final StringBuilder whe = new StringBuilder(" ( nodeId in (");
 
 				boolean first = true;
 
 				for (final String n : nodes) {
-					if (!first)
-						whe.append(',');
-					else
-						first = false;
+					final Integer nodeId = getHostId(n);
 
-					whe.append('\'').append(Format.escSQL(n)).append('\'');
+					if (nodeId != null) {
+						if (!first)
+							whe.append(',');
+						else
+							first = false;
+
+						whe.append(nodeId);
+					}
 				}
 
-				where += whe + ") ) and ";
+				if (!first)
+					where += whe + ") ) and ";
 			}
 
-			if (mjobs != null && mjobs.size() > 0 && !mjobs.contains(Integer.valueOf(0))) {
+			if (mjobs != null && mjobs.size() > 0 && !mjobs.contains(Long.valueOf(0))) {
 				final StringBuilder whe = new StringBuilder(" ( split in (");
 
 				boolean first = true;
 
-				for (final Integer m : mjobs) {
+				for (final Long m : mjobs) {
 					if (!first)
 						whe.append(',');
 					else
@@ -1045,15 +1057,16 @@ public class TaskQueueUtils {
 					whe.append(m);
 				}
 
-				where += whe + ") ) and ";
+				if (!first)
+					where += whe + ") ) and ";
 			}
 
-			if (jobids != null && jobids.size() > 0 && !jobids.contains(Integer.valueOf(0))) {
+			if (jobids != null && jobids.size() > 0 && !jobids.contains(Long.valueOf(0))) {
 				final StringBuilder whe = new StringBuilder(" ( queueId in (");
 
 				boolean first = true;
 
-				for (final Integer i : jobids) {
+				for (final Long i : jobids) {
 					if (!first)
 						whe.append(',');
 					else
@@ -1062,7 +1075,8 @@ public class TaskQueueUtils {
 					whe.append(i);
 				}
 
-				where += whe + ") ) and ";
+				if (!first)
+					where += whe + ") ) and ";
 			}
 
 			if (where.endsWith(" and "))
@@ -1071,9 +1085,9 @@ public class TaskQueueUtils {
 			String orderBy = " order by ";
 
 			if (orderByKey == null || orderByKey.length() == 0)
-				orderBy += " queueId asc ";
+				orderBy += "queueId";
 			else
-				orderBy += orderByKey + " asc ";
+				orderBy += "`" + orderByKey + "`";
 
 			if (where.length() > 0)
 				where = " WHERE " + where;
@@ -1081,11 +1095,11 @@ public class TaskQueueUtils {
 			final String q;
 
 			if (dbStructure2_20)
-				q = "SELECT * FROM QUEUE " + where + orderBy + " limit " + lim + ";";
+				q = "SELECT * FROM (SELECT * FROM QUEUE " + where + " ORDER BY queueId DESC " + " limit " + lim + ") x " + orderBy;
 			else
 				q = "SELECT " + ALL_BUT_JDL + " FROM QUEUE " + where + orderBy + " limit " + lim + ";";
 
-			// System.out.println("SQL: " + q);
+			System.out.println("SQL: " + q);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
