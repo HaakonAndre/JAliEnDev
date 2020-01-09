@@ -10,7 +10,7 @@ import lazyj.Utils;
  */
 public class JobTraceLog {
 
-	final private static String jobTraceLogURLPrefix = "http://aliendb8.cern.ch/joblog/";
+	final private static String jobTraceLogURLPrefix = "http://aliendb10.cern.ch/joblog/";
 
 	private String trace = "";
 
@@ -19,8 +19,7 @@ public class JobTraceLog {
 	 *            job ID
 	 */
 	JobTraceLog(final long id) {
-		final String queueId = String.valueOf(id);
-		retrieve(jobTraceLogURLPrefix + (queueId.length() > 4 ? queueId.substring(0, 4) : queueId) + "/" + queueId + ".log");
+		retrieve(jobTraceLogURLPrefix + (id / 10000) + "/" + id + ".log");
 	}
 
 	private void retrieve(final String url) {

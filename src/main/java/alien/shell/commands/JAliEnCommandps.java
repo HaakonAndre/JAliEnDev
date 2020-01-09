@@ -71,9 +71,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			if (tracelog != null)
 				if (commander.bColour)
 					commander.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
-
-			commander.printOutln("--- not implemented yet ---");
-
+				else
+					commander.printOutln(tracelog);
 		}
 		else {
 			if (users.size() == 0)
