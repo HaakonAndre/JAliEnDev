@@ -43,9 +43,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	private final Set<String> nodes = new LinkedHashSet<>();
 
-	private final Set<Integer> mjobs = new LinkedHashSet<>();
+	private final Set<Long> mjobs = new LinkedHashSet<>();
 
-	private final Set<Integer> jobid = new LinkedHashSet<>();
+	private final Set<Long> jobid = new LinkedHashSet<>();
 
 	private String orderByKey = "queueId";
 
@@ -434,9 +434,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			parser.accepts("Fl");
 			parser.accepts("L");
 
-			parser.accepts("f").withRequiredArg();
-			parser.accepts("u").withRequiredArg();
-			parser.accepts("s").withRequiredArg();
+			parser.accepts("f").withRequiredArg().ofType(String.class);
+			parser.accepts("u").withRequiredArg().ofType(String.class);
+			parser.accepts("s").withRequiredArg().ofType(String.class);
 			parser.accepts("n").withRequiredArg();
 			parser.accepts("m").withRequiredArg();
 			parser.accepts("o").withRequiredArg();
@@ -473,20 +473,11 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					getTrace = -1;
 				}
 			else {
-
-				if (options.has("f") && options.hasArgument("f"))
-					decodeFlagsAndStates((String) options.valueOf("f"));
-
-				if (options.has("u") && options.hasArgument("u")) {
-					final StringTokenizer st = new StringTokenizer((String) options.valueOf("u"), ",");
-					while (st.hasMoreTokens())
-						users.add(st.nextToken());
-				}
-
 				if (options.has("s") && options.hasArgument("s")) {
 					final StringTokenizer st = new StringTokenizer((String) options.valueOf("s"), ",");
 					while (st.hasMoreTokens())
 						sites.add(st.nextToken());
+
 					states.add(JobStatus.ANY);
 				}
 
@@ -502,7 +493,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 					while (st.hasMoreTokens())
 						try {
-							mjobs.add(Integer.valueOf(st.nextToken()));
+							mjobs.add(Long.valueOf(st.nextToken()));
 						}
 						catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 							// ignore
@@ -515,13 +506,44 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					final StringTokenizer st = new StringTokenizer((String) options.valueOf("j"), ",");
 					while (st.hasMoreTokens())
 						try {
-							jobid.add(Integer.valueOf(st.nextToken()));
+							jobid.add(Long.valueOf(st.nextToken()));
 						}
 						catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 							// ignore
 						}
 					states.add(JobStatus.ANY);
 					users.add("%");
+				}
+
+				if (options.has("X")) {
+					bL = true;
+
+					states.clear();
+
+					states.addAll(flag_r());
+					states.addAll(flag_s());
+				}
+
+				if (options.has("E")) {
+					states.addAll(flag_f());
+					users.add(commander.getUsername());
+				}
+
+				if (options.has("W")) {
+					states.addAll(flag_s());
+					users.add(commander.getUsername());
+				}
+
+				if (options.has("f") && options.hasArgument("f")) {
+					states.clear();
+
+					decodeFlagsAndStates((String) options.valueOf("f"));
+				}
+
+				if (options.has("u") && options.hasArgument("u")) {
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("u"), ",");
+					while (st.hasMoreTokens())
+						users.add(st.nextToken());
 				}
 
 				if (options.has("l") && options.hasArgument("l"))
@@ -533,12 +555,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					catch (@SuppressWarnings("unused") final NumberFormatException e) {
 						// ignore
 					}
-
-				if (options.has("X")) {
-					bL = true;
-					states.addAll(flag_r());
-					states.addAll(flag_s());
-				}
 
 				if (options.has("Fl") || options.has("L") || (options.has("F") && "l".equals(options.valueOf("F"))))
 					bL = true;
@@ -555,18 +571,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					states.add(JobStatus.ANY);
 					users.add(commander.getUsername());
 				}
-				if (options.has("E")) {
-					states.addAll(flag_f());
-					users.add(commander.getUsername());
-				}
-				if (options.has("W")) {
-					states.addAll(flag_s());
-					users.add(commander.getUsername());
-				}
 
 				if (options.has("M")) {
 					mjobs.clear();
-					mjobs.add(Integer.valueOf(0));
+					mjobs.add(Long.valueOf(0));
 				}
 
 				if (options.has("a")) {

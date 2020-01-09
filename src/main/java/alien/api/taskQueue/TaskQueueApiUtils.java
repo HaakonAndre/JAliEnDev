@@ -61,8 +61,8 @@ public class TaskQueueApiUtils {
 	 * @param limit
 	 * @return a PS listing
 	 */
-	public List<Job> getPS(final Collection<JobStatus> states, final Collection<String> users, final Collection<String> sites, final Collection<String> nodes, final Collection<Integer> mjobs,
-			final Collection<Integer> jobid, final String orderByKey, final int limit) {
+	public List<Job> getPS(final Collection<JobStatus> states, final Collection<String> users, final Collection<String> sites, final Collection<String> nodes, final Collection<Long> mjobs,
+			final Collection<Long> jobid, final String orderByKey, final int limit) {
 
 		try {
 			final GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));

@@ -35,9 +35,9 @@ public class GetPS extends Request {
 
 	private final Collection<String> nodes;
 
-	private final Collection<Integer> mjobs;
+	private final Collection<Long> mjobs;
 
-	private final Collection<Integer> jobid;
+	private final Collection<Long> jobid;
 
 	private final String orderByKey;
 
@@ -55,7 +55,7 @@ public class GetPS extends Request {
 	 * @param limit
 	 */
 	public GetPS(final AliEnPrincipal user, final Collection<JobStatus> states, final Collection<String> users, final Collection<String> sites, final Collection<String> nodes,
-			final Collection<Integer> mjobs, final Collection<Integer> jobid, final String orderByKey, final int limit) {
+			final Collection<Long> mjobs, final Collection<Long> jobid, final String orderByKey, final int limit) {
 		setRequestUser(user);
 		this.states = states;
 		this.users = users;
