@@ -32,6 +32,11 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	private boolean bZ = false;
 
 	/**
+	 * The -v flag is passed by a check in AliAnalysisAlien.cxx to check if the argument is an AliEn collection
+	 */
+	private boolean bV = false;
+
+	/**
 	 * execute the type
 	 */
 	@Override
@@ -47,7 +52,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			collectionPath = commander.getCurrentDirName() + sPath;
 
 		try {
-			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath));
+			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath, bV));
 
 			lfns = ret.getLFNs();
 		}
@@ -127,6 +132,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 		parser.accepts("z");
 		parser.accepts("s");
+		parser.accepts("v");
 
 		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -134,6 +140,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			silent();
 
 		bZ = options.has("z");
+		bV = options.has("v");
 
 		if (options.nonOptionArguments().size() != 1) {
 			setArgumentsOk(false);

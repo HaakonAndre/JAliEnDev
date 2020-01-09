@@ -26,13 +26,17 @@ public class LFNListCollectionFromString extends Request {
 
 	private Set<LFN> lfns = null;
 
+	private boolean onlyAliEnCollections = false;
+
 	/**
 	 * @param user
 	 * @param path
+	 * @param onlyAliEnCollections validate if the given path is an AliEn collection, throw an exception if not
 	 */
-	public LFNListCollectionFromString(final AliEnPrincipal user, final String path) {
+	public LFNListCollectionFromString(final AliEnPrincipal user, final String path, final boolean onlyAliEnCollections) {
 		setRequestUser(user);
 		this.path = path;
+		this.onlyAliEnCollections = onlyAliEnCollections;
 	}
 
 	@Override
@@ -47,8 +51,14 @@ public class LFNListCollectionFromString extends Request {
 
 				for (final String lfn : entries)
 					this.lfns.add(LFNUtils.getLFN(lfn));
+
+				return;
 			}
-			else if (entry.isFile()) {
+
+			if (onlyAliEnCollections)
+				throw new IllegalArgumentException("This entry is not an AliEn collection: \"" + path + "\"");
+
+			if (entry.isFile()) {
 				// is it an XML collection ?
 				try {
 					this.lfns = new XmlCollection(entry);
@@ -56,6 +66,9 @@ public class LFNListCollectionFromString extends Request {
 				catch (final IOException ioe) {
 					throw new IllegalArgumentException(ioe.getMessage() + " (" + path + ")");
 				}
+			}
+			else {
+				throw new IllegalArgumentException("Illegal entry type for \"" + path + "\": " + entry.getType());
 			}
 		}
 		else
@@ -71,6 +84,6 @@ public class LFNListCollectionFromString extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked for : " + this.path + " reply is: " + this.lfns;
+		return "Asked for : " + this.path + " reply " + (this.lfns != null ? "has " + this.lfns.size() + " entres" : "is null");
 	}
 }
