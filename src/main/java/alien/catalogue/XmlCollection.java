@@ -117,17 +117,29 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	}
 
 	private void parseXML(final String content, final boolean getReal) throws IOException {
-		if (content == null) {
-			System.err.println("Failed to read a content of XML collection: " + this.getName());
-			return;
-		}
+		if (content == null)
+			throw new IOException("Failed to read a content of XML collection: " + this.getName());
 
 		final BufferedReader br = new BufferedReader(new StringReader(content));
 
 		String sLine;
 
+		int lineNo = 0;
+
+		boolean alienTagFound = false;
+
 		while ((sLine = br.readLine()) != null) {
 			sLine = sLine.trim();
+
+			lineNo++;
+
+			if (sLine.startsWith("<alien>")) {
+				alienTagFound = true;
+				continue;
+			}
+
+			if (lineNo > 10 && !alienTagFound)
+				throw new IOException("This is not an AliEn XML collection");
 
 			if (!sLine.startsWith("<file name=\""))
 				continue;
@@ -262,6 +274,8 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 			}
 		}
 
+		if (!alienTagFound)
+			throw new IOException("This was not an AliEn XML collection");
 	}
 
 	private static final String value(final StringTokenizer st) {
