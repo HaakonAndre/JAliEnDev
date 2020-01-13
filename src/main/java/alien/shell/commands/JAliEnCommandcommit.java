@@ -159,7 +159,6 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 				guid = arg.next();
 			if (arg.hasNext())
 				md5 = arg.next();
-
 		}
 	}
 }
