@@ -285,6 +285,7 @@ public class WebsocketEndpoint extends Endpoint {
 	public void onClose(final Session session, final CloseReason closeReason) {
 		monitor.incrementCounter("closed_sessions");
 
+		commander.interrupt();
 		commander.kill = true;
 
 		out = null;
