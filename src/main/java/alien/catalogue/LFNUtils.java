@@ -655,7 +655,7 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
-		return find(path, pattern, null, flags, owner, xmlCollectionName, queueid);
+		return find(path, pattern, null, flags, owner, xmlCollectionName, queueid, 0);
 	}
 
 	/**
@@ -668,9 +668,10 @@ public class LFNUtils {
 	 * @param xmlCollectionName
 	 * @param queueid
 	 *            a job id to filter for its files
+	 * @param queryLimit if strictly positive then restrict the number of returned entries to this many; if more would be produced, exit with an exception
 	 * @return the list of LFNs that match
 	 */
-	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
+	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid, final long queryLimit) {
 		String processedPattern;
 
 		if ((flags & FIND_REGEXP) == 0)
@@ -705,6 +706,9 @@ public class LFNUtils {
 				return null;
 
 			ret.addAll(findResults);
+			
+			if (queryLimit > 0 && ret.size()>queryLimit)
+				throw new IllegalArgumentException("Too many results in the `find` command. Restrict your search and try again.");
 		}
 
 		if ((flags & FIND_SAVE_XML) != 0) {
@@ -1246,7 +1250,7 @@ public class LFNUtils {
 
 		final LFN parentDir = archive.getParentDir();
 		if (parentDir.exists) {
-			final Collection<LFN> allJobFiles = find(parentDir.getCanonicalName(), "*", "", 0, null, "", Long.valueOf(archive.jobid));
+			final Collection<LFN> allJobFiles = find(parentDir.getCanonicalName(), "*", "", 0, null, "", Long.valueOf(archive.jobid), 0);
 
 			if (allJobFiles == null || allJobFiles.size() == 0)
 				return null;

@@ -127,7 +127,7 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 		for (final String path : pathsToRunOn) {
 			final DUStats stats = new DUStats();
 
-			final Collection<LFN> lfns = commander.c_api.find(path, "*", null, LFNUtils.FIND_INCLUDE_DIRS | LFNUtils.FIND_NO_SORT, null, null);
+			final Collection<LFN> lfns = commander.c_api.find(path, "*", null, LFNUtils.FIND_INCLUDE_DIRS | LFNUtils.FIND_NO_SORT, null, null, 10000000);
 
 			if (lfns != null) {
 				for (final LFN l : lfns) {

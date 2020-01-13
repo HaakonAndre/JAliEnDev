@@ -28,6 +28,7 @@ public class FindfromString extends Request implements Cacheable {
 	private Collection<LFN> lfns;
 	private final String xmlCollectionName;
 	private Long queueid = Long.valueOf(0);
+	private long queryLimit = 1000000;
 
 	/**
 	 * @param user
@@ -52,8 +53,10 @@ public class FindfromString extends Request implements Cacheable {
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
+	 * @param queryLimit number of entries to limit the search to. If strictly positive, a larger set than this would throw an exception
 	 */
-	public FindfromString(final AliEnPrincipal user, final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, final Long queueid) {
+	public FindfromString(final AliEnPrincipal user, final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, final Long queueid,
+			final long queryLimit) {
 		setRequestUser(user);
 		this.path = path;
 		this.pattern = pattern;
@@ -61,6 +64,9 @@ public class FindfromString extends Request implements Cacheable {
 		this.flags = flags;
 		this.xmlCollectionName = xmlCollectionName;
 		this.queueid = queueid;
+
+		if (queryLimit > 0)
+			this.queryLimit = queryLimit;
 	}
 
 	/**
@@ -81,7 +87,7 @@ public class FindfromString extends Request implements Cacheable {
 
 	@Override
 	public void run() {
-		lfns = LFNUtils.find(path, pattern, query, flags, getEffectiveRequester(), xmlCollectionName, queueid);
+		lfns = LFNUtils.find(path, pattern, query, flags, getEffectiveRequester(), xmlCollectionName, queueid, queryLimit);
 	}
 
 	/**

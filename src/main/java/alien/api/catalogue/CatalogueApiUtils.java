@@ -457,34 +457,7 @@ public class CatalogueApiUtils {
 	 * @return result LFNs or <code>null</code> if no LFNs found
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags) {
-		return find(path, pattern, flags, "");
-	}
-
-	/**
-	 * Find an LFN based on pattern and save to XmlCollection
-	 * 
-	 * @param path
-	 * @param pattern
-	 * @param flags
-	 * @param xmlCollectionName
-	 * @return result LFNs or <code>null</code> if no LFNs found
-	 */
-	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName) {
-		return this.find(path, pattern, flags, xmlCollectionName, Long.valueOf(0));
-	}
-
-	/**
-	 * Find an LFN based on pattern and save to XmlCollection
-	 * 
-	 * @param path
-	 * @param pattern
-	 * @param flags
-	 * @param xmlCollectionName
-	 * @param queueid
-	 * @return result LFNs or <code>null</code> if no LFNs found
-	 */
-	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName, Long queueid) {
-		return this.find(path, pattern, null, flags, xmlCollectionName, queueid);
+		return find(path, pattern, null, flags, "", Long.valueOf(0), 1000000);
 	}
 
 	/**
@@ -496,15 +469,17 @@ public class CatalogueApiUtils {
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
+	 * @param queryLimit how many LFNs to return at maximum. The server will throw and exception if the set is larger than this value.
 	 * @return result LFNs or <code>null</code> if no LFNs found
 	 */
-	public Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, Long queueid) {
+	public Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, final Long queueid, final long queryLimit) {
 		try {
-			return Dispatcher.execute(new FindfromString(commander.getUser(), path, pattern, query, flags, xmlCollectionName, queueid)).getLFNs();
+			return Dispatcher.execute(new FindfromString(commander.getUser(), path, pattern, query, flags, xmlCollectionName, queueid, queryLimit)).getLFNs();
 		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();
+			commander.printErrln(e.getMessage());
 		}
 
 		return null;

@@ -110,7 +110,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid);
+		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid, -1);
 
 		if (lfns != null) {
 			if (offset >= lfns.size())
