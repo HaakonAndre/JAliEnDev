@@ -49,7 +49,6 @@ public class BusyBox {
 	private boolean prompting = false;
 
 	private String username;
-	private String role;
 
 	private String currentDir;
 
@@ -144,17 +143,15 @@ public class BusyBox {
 		remainreconnect--;
 
 		final String whoami = this.username;
-		final String roleami = this.role;
 		final String currentDirTemp = this.currentDir;
 
 		if (JSh.reconnect())
 			if (connect(JSh.getAddr(), JSh.getPort(), JSh.getPassword()))
 				if (callJBox("user " + whoami))
-					if (callJBox("role " + roleami))
-						if (callJBox("cd " + currentDirTemp)) {
-							remainreconnect = tryreconnect;
-							return true;
-						}
+					if (callJBox("cd " + currentDirTemp)) {
+						remainreconnect = tryreconnect;
+						return true;
+					}
 
 		printErrRestartJBox();
 		return false;
@@ -388,8 +385,6 @@ public class BusyBox {
 			currentDir = st.nextToken();
 		if (st.hasMoreTokens())
 			username = st.nextToken();
-		if (st.hasMoreTokens())
-			role = st.nextToken();
 	}
 
 	/**
