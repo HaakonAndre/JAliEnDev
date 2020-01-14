@@ -479,7 +479,7 @@ public class CatalogueApiUtils {
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();
-			commander.printErrln(e.getMessage());
+			commander.setReturnCode(1, e.getMessage());
 		}
 
 		return null;
