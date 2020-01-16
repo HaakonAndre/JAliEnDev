@@ -480,49 +480,12 @@ public class JobAgent implements Runnable {
 					}
 				}
 			}
-
-			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
-			if (containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
-				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " + DEFAULT_JOB_CONTAINER_PATH);
-			}
-
+			
 			// Check if Singularity is present on site. If yes, add singularity to launchCmd
-			try {
-				// TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?
-				final List<String> singularityCmd = new ArrayList<>();
-				singularityCmd.add("singularity");
-				singularityCmd.add("exec");
-				singularityCmd.add("-C");
-				singularityCmd.add("--pwd");
-				singularityCmd.add(CONTAINER_JOBDIR);
-				singularityCmd.add("-B");
-				singularityCmd.add("/cvmfs:/cvmfs," + siteTmp + ":" + CONTAINER_TMPDIR + "," + jobWorkdir + ":" + CONTAINER_JOBDIR);
-				singularityCmd.add(containerImgPath);
-				singularityCmd.add("/bin/bash");
-				singularityCmd.add("-c");
-
-				final String setupEnv = "source <( " + ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion() + " ); ";
-				final String javaTest = "java -version";
-
-				singularityCmd.add(setupEnv + javaTest);
-
-				final ProcessBuilder pb = new ProcessBuilder(singularityCmd);
-				final Process singularityProbe = pb.start();
-				singularityProbe.waitFor();
-
-				try (Scanner cmdScanner = new Scanner(singularityProbe.getErrorStream())) {
-					while (cmdScanner.hasNext()) {
-						if (cmdScanner.next().contains("Runtime")) {
-							singularityCmd.set(singularityCmd.size() - 1, setupEnv + String.join(" ", launchCmd));
-
-							jobWrapperLogDir = CONTAINER_TMPDIR + "/" + jobWrapperLogName;
-							return singularityCmd;
-						}
-					}
-				}
-			}
-			catch (final Exception e2) {
-				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
+			Containerizer cont = ContainerizerFactory.getContainerizer();
+			if(cont != null) {
+				cont.setWorkdir(jobWorkdir);
+				return cont.containerize(String.join(" ", launchCmd)); 
 			}
 
 			return launchCmd;
@@ -858,26 +821,6 @@ public class JobAgent implements Runnable {
 				return Integer.parseInt(number) * 1024;
 			default: // MB
 				return Integer.parseInt(number);
-		}
-	}
-
-	private String getJAliEnVersion() {
-		try {
-			final String loadedmodules = env.get("LOADEDMODULES");
-			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
-
-			String jalienVersionString = "";
-			if (jalienModulePos > 0) {
-				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
-
-				if (jalienVersionString.contains(":"))
-					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
-			}
-			return jalienVersionString;
-		}
-		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get jAliEn version", e);
-			return "";
 		}
 	}
 
