@@ -31,4 +31,4 @@ fi
 
 export CLASSPATH JAVA_OPTS
 
-exec java $JAVA_OPTS "$@" $JALIEN_MAIN
+exec java $JAVA_OPTS $JALIEN_MAIN "$@"
