@@ -62,7 +62,6 @@ public class JobAgent implements Runnable {
 	private static final String jobWrapperLogName = "jalien-jobwrapper.log";
 	private String jobWorkdir;
 	private String jobWrapperLogDir;
-	private final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
 
 	// Job variables
 	private JDL jdl;
@@ -83,12 +82,6 @@ public class JobAgent implements Runnable {
 
 	private int totalJobs;
 	private final long jobAgentStartTime = System.currentTimeMillis();
-
-	// Container specific
-	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
-	private static final String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin/alienv";
-	private static final String CONTAINER_JOBDIR = "/workdir";
-	private static final String CONTAINER_TMPDIR = "/tmp";
 
 	// Other
 	private String hostName;
