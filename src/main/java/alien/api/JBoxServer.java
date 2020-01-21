@@ -296,8 +296,9 @@ public class JBoxServer extends Thread {
 										logger.log(Level.INFO, "Received [SIGINT] from JSh.");
 
 										try {
-											commander.interrupt();
+											commander.setLine(null, null);
 											commander.kill = true;
+											commander.interrupt();
 										}
 										catch (@SuppressWarnings("unused") final Throwable t) {
 											// ignore
