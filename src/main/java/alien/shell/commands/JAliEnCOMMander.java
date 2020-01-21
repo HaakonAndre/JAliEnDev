@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,6 +92,13 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	private static final String[] commandList;
 
+	private static final AtomicInteger commanderIDSequence = new AtomicInteger();
+	
+	/**
+	 * Unique identifier of the commander
+	 */
+	public final int commanderId = commanderIDSequence.incrementAndGet();
+	
 	static {
 		final List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));
 		final List<String> comms = comm_set;
@@ -363,7 +371,7 @@ public class JAliEnCOMMander extends Thread {
 				try {
 					status.set(1);
 
-					setName("Commander: Executing: " + Arrays.toString(arg));
+					setName("Commander "+commanderId+": Executing: " + Arrays.toString(arg));
 
 					execute();
 				}
@@ -373,7 +381,7 @@ public class JAliEnCOMMander extends Thread {
 				finally {
 					out = null;
 
-					setName("Commander: Idle");
+					setName("Commander "+commanderId+": Idle");
 
 					status.set(0);
 					synchronized (status) {
