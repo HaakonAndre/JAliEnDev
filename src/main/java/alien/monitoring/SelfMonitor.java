@@ -1,5 +1,6 @@
 package alien.monitoring;
 
+import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -89,5 +90,8 @@ public class SelfMonitor implements MonitoringObject {
 
 		paramNames.add("jvm_uptime");
 		paramValues.add(Double.valueOf((System.currentTimeMillis() - systemStarted) / 1000d));
+	
+		paramNames.add("jvm_threads");
+		paramValues.add(Double.valueOf(ManagementFactory.getThreadMXBean().getThreadCount()));
 	}
 }
