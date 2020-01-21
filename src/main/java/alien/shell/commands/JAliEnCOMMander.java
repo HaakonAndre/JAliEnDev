@@ -345,7 +345,7 @@ public class JAliEnCOMMander extends Thread {
 					wait(1000);
 				}
 				catch (@SuppressWarnings("unused") final InterruptedException e) {
-					// ignore
+					return;
 				}
 			}
 	}
