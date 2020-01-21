@@ -176,6 +176,7 @@ public class WebsocketEndpoint extends Endpoint {
 			setShellPrintWriter(os, "plain");
 
 		commander = new JAliEnCOMMander(userIdentity, null, getSite(getRemoteIP(session)), out);
+		commander.start();
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
@@ -433,6 +434,8 @@ public class WebsocketEndpoint extends Endpoint {
 					}
 
 					if (!commander.isAlive()) {
+						commander.kill = true;
+
 						final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
 						commander = comm;
 
