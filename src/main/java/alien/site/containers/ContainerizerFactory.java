@@ -10,7 +10,8 @@ public class ContainerizerFactory {
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	enum Containerizers {
-		Singularity
+		Singularity,
+		Docker
 	}
 
 	public static Containerizer getContainerizer(){
