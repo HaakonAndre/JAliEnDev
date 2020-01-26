@@ -358,7 +358,11 @@ public class JBoxServer extends Thread {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			}
 			finally {
-				waitCommandFinish();
+				if (commander!=null){
+					commander.setLine(null, null);
+					commander.kill = true;
+					commander.interrupt();
+				}
 
 				if (br != null)
 					try {
