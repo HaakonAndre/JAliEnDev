@@ -22,7 +22,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (!this.command.equals("list") && !(isAdmin && this.command.equals("set"))) {
-			commander.printErrln("Wrong command passed");
+			commander.setReturnCode(1, "Wrong command passed");
 			printHelp();
 			return;
 		}

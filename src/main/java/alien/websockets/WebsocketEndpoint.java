@@ -13,6 +13,8 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,9 +49,9 @@ import lazyj.Utils;
  *         Implementation of websocket endpoint, that supports plain text and JSON clients
  */
 public class WebsocketEndpoint extends Endpoint {
-	static transient final Logger logger = ConfigUtils.getLogger(WebsocketEndpoint.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(WebsocketEndpoint.class.getCanonicalName());
 
-	static transient final Monitor monitor = MonitorFactory.getMonitor(WebsocketEndpoint.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(WebsocketEndpoint.class.getCanonicalName());
 
 	AliEnPrincipal userIdentity = null;
 
@@ -94,7 +96,6 @@ public class WebsocketEndpoint extends Endpoint {
 
 			if (delta < 0)
 				return -1;
-
 			if (delta > 0)
 				return 1;
 
@@ -139,6 +140,7 @@ public class WebsocketEndpoint extends Endpoint {
 				}
 				catch (@SuppressWarnings("unused") InterruptedException e) {
 					// was told to exit
+					Thread.currentThread().interrupt(); // restore interrupt
 					return;
 				}
 			}
@@ -147,7 +149,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 	static {
 		disableAccessWarnings();
-		
+
 		sessionCheckingThread.setName("JsonWebsocketEndpoint.timeoutChecker");
 		sessionCheckingThread.setDaemon(true);
 		sessionCheckingThread.start();
@@ -170,7 +172,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		os = new ByteArrayOutputStream();
 		final ServerEndpointConfig serverConfig = (ServerEndpointConfig) endpointConfig;
-		if (serverConfig.getPath() == "/websocket/json")
+		if (serverConfig.getPath().equals("/websocket/json"))
 			setShellPrintWriter(os, "json");
 		else
 			setShellPrintWriter(os, "plain");
@@ -180,7 +182,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
-		session.addMessageHandler(new EchoMessageHandlerText(context, commander, out, os));
+		session.addMessageHandler(new WSMessageHandler(context, commander, out, os));
 
 		sessionQueue.add(context);
 
@@ -234,8 +236,8 @@ public class WebsocketEndpoint extends Endpoint {
 
 			return ((InetSocketAddress) obj).getAddress().getHostAddress();
 		}
-		catch (final Throwable t) {
-			logger.log(Level.SEVERE, "Cannot extract the remote IP address from a session", t);
+		catch (final Exception e) {
+			logger.log(Level.SEVERE, "Cannot extract the remote IP address from a session", e);
 		}
 
 		return null;
@@ -286,8 +288,8 @@ public class WebsocketEndpoint extends Endpoint {
 	public void onClose(final Session session, final CloseReason closeReason) {
 		monitor.incrementCounter("closed_sessions");
 
-		logger.log(Level.INFO, "Closing session of commander ID "+commander.commanderId);
-		
+		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId);
+
 		commander.kill = true;
 		commander.setLine(null, null);
 		commander.interrupt();
@@ -298,7 +300,6 @@ public class WebsocketEndpoint extends Endpoint {
 				os.close();
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		os = null;
@@ -314,12 +315,10 @@ public class WebsocketEndpoint extends Endpoint {
 					if (sc.session.equals(session))
 						it.remove();
 				}
-
 				session.close();
 			}
 		}
 		catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -333,8 +332,7 @@ public class WebsocketEndpoint extends Endpoint {
 		//
 	}
 
-	private static class EchoMessageHandlerText implements MessageHandler.Partial<String> {
-
+	private static class WSMessageHandler implements MessageHandler.Partial<String> {
 		private final RemoteEndpoint.Basic remoteEndpointBasic;
 
 		private JAliEnCOMMander commander = null;
@@ -343,7 +341,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		private final SessionContext context;
 
-		EchoMessageHandlerText(final SessionContext context, final JAliEnCOMMander commander, final UIPrintWriter out, OutputStream os) {
+		WSMessageHandler(final SessionContext context, final JAliEnCOMMander commander, final UIPrintWriter out, OutputStream os) {
 			this.context = context;
 			this.remoteEndpointBasic = context.session.getBasicRemote();
 			this.commander = commander;
@@ -351,122 +349,196 @@ public class WebsocketEndpoint extends Endpoint {
 			this.os = os;
 		}
 
-		private void waitCommandFinish() {
-			// wait for the previous command to finish
-			if (commander == null)
-				return;
-
-			while (commander.status.get() == 1)
-				try {
-					synchronized (commander.status) {
-						commander.status.wait(1000);
-					}
-				}
-				catch (@SuppressWarnings("unused") final InterruptedException ie) {
-					// ignore
-				}
-		}
-
 		@Override
 		public void onMessage(final String message, final boolean last) {
 			monitor.incrementCounter("commands");
 
+			if (remoteEndpointBasic == null)
+				return;
+
+			context.touch();
+
+			ArrayList<String> fullCmd;
+
+			// Parse incoming command
 			try {
-				if (remoteEndpointBasic != null) {
-					final ArrayList<String> fullCmd = new ArrayList<>();
-
-					if (this.out.getClass().getCanonicalName() == "alien.shell.commands.JSONPrintWriter") {
-						// Try to parse incoming JSON
-						Object pobj;
-						JSONObject jsonObject;
-						JSONParser parser = new JSONParser();
-
-						try {
-							pobj = parser.parse(new StringReader(message));
-							jsonObject = (JSONObject) pobj;
-						}
-						catch (@SuppressWarnings("unused") ParseException e) {
-							synchronized (remoteEndpointBasic) {
-								remoteEndpointBasic.sendText("{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"Incoming JSON not ok\"},\"results\":[]}", true);
-							}
-							return;
-						}
-
-						// Filter out cp commands
-						if (jsonObject.get("command").toString().equals("cp")) {
-							synchronized (remoteEndpointBasic) {
-								remoteEndpointBasic.sendText(
-										"{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"'cp' grid command is not implemented. Please use native client's Cp() method\"},\"results\":[]}", true);
-							}
-							return;
-						}
-
-						// Split JSONObject into strings
-						fullCmd.add(jsonObject.get("command").toString());
-
-						JSONArray mArray = new JSONArray();
-						if (jsonObject.get("options") != null) {
-							mArray = (JSONArray) jsonObject.get("options");
-
-							for (int i = 0; i < mArray.size(); i++)
-								fullCmd.add(mArray.get(i).toString());
-						}
-					}
-					else if (this.out.getClass().getCanonicalName() == "alien.shell.commands.JShPrintWriter") {
-						// Split incoming message into tokens
-						final StringTokenizer st = new StringTokenizer(message, " ");
-
-						while (st.hasMoreTokens())
-							fullCmd.add(st.nextToken());
-
-						// Filter out cp commands
-						if (fullCmd.get(0).equals("cp")) {
-							synchronized (remoteEndpointBasic) {
-								remoteEndpointBasic.sendText("'cp' grid command is not implemented. Please use native client's Cp() method", true);
-							}
-							return;
-						}
-					}
-					else {
-						// this is XMLPrintWriter or some other type of writer
-						logger.log(Level.SEVERE, "Tried to use unsopported writer " + this.out.getClass().getCanonicalName() + " in the websocket endpoint");
-						return;
-					}
-
-					if (!commander.isAlive()) {
-						commander.kill = true;
-
-						final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
-						commander = comm;
-
-						commander.start();
-					}
-
-					// Send the command to executor and send the result back to
-					// client via OutputStream
-					synchronized (commander) {
-						commander.status.set(1);
-						commander.setLine(out, fullCmd.toArray(new String[0]));
-						commander.notifyAll();
-					}
-					waitCommandFinish();
-
-					// Send back the result to the client
-					synchronized (remoteEndpointBasic) {
-						final ByteArrayOutputStream baos = (ByteArrayOutputStream) os;
-						remoteEndpointBasic.sendText(baos.toString(), true);
-						baos.reset();
-					}
-
-					context.touch();
+				if (this.out.getClass().getCanonicalName().equals("alien.shell.commands.JSONPrintWriter")) {
+					fullCmd = parseJSON(message);
+				}
+				else if (this.out.getClass().getCanonicalName().equals("alien.shell.commands.JShPrintWriter")) {
+					fullCmd = parsePlainText(message);
+				}
+				else {
+					// this is XMLPrintWriter or some other type of writer
+					logger.log(Level.SEVERE, "Tried to use unsopported writer " + this.out.getClass().getCanonicalName() + " in the websocket endpoint");
+					return;
 				}
 			}
 			catch (final IOException e) {
-				// TODO Auto-generated catch block
+				// Failed to send back the reply
 				e.printStackTrace();
+				logger.log(Level.SEVERE, "Websocket failed to send back the reply: " + e.getMessage());
+				return;
 			}
-			catch (final Exception e) {
-				e.printStackTrace();
+			catch (@SuppressWarnings("unused") final IllegalArgumentException e) {
+				// Illegal command. Details given by parse method
+				return;
+			}
+
+			// Restart the commander if needed
+			if (!commander.isAlive()) {
+				commander.kill = true;
+				commander.interrupt();
+
+				final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), null);
+				commander = comm;
+
+				commander.start();
+			}
+
+			// Send the command to executor and send the result back to
+			// client via OutputStream
+			synchronized (commander) {
+				commander.status.set(1);
+				commander.setLine(out, fullCmd.toArray(new String[0]));
+				commander.notifyAll();
+			}
+
+			// Wait and return the result back to the client
+			waitForResult();
+
+			context.touch();
+		}
+
+		/**
+		 * Parse incoming JSON command
+		 * 
+		 * @param message a string in JSON format
+		 * @return command and it's arguments as an array
+		 */
+		private ArrayList<String> parseJSON(final String message) throws IOException, IllegalArgumentException {
+			final ArrayList<String> fullCmd = new ArrayList<>();
+			Object pobj;
+			JSONObject jsonObject;
+			JSONParser parser = new JSONParser();
+
+			try {
+				pobj = parser.parse(new StringReader(message));
+				jsonObject = (JSONObject) pobj;
+			}
+			catch (@SuppressWarnings("unused") ParseException e) {
+				synchronized (remoteEndpointBasic) {
+					remoteEndpointBasic.sendText("{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"Incoming JSON not ok\"},\"results\":[]}", true);
+				}
+				throw new IllegalArgumentException();
+			}
+
+			// Filter out cp commands
+			if (jsonObject.get("command").toString().equals("cp")) {
+				synchronized (remoteEndpointBasic) {
+					remoteEndpointBasic.sendText(
+							"{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"'cp' grid command is not implemented. Please use native client's Cp() method\"},\"results\":[]}", true);
+				}
+				throw new IllegalArgumentException();
+			}
+
+			// Split JSONObject into strings
+			fullCmd.add(jsonObject.get("command").toString());
+
+			if (jsonObject.get("options") != null) {
+				JSONArray mArray = (JSONArray) jsonObject.get("options");
+
+				for (int i = 0; i < mArray.size(); i++)
+					fullCmd.add(mArray.get(i).toString());
+			}
+
+			return fullCmd;
+		}
+
+		/**
+		 * Parse incoming plain text command
+		 * 
+		 * @param message whitespace-separated string that contains a command and args
+		 * @return command and it's arguments as an array
+		 */
+		private ArrayList<String> parsePlainText(final String message) throws IOException, IllegalArgumentException {
+			final ArrayList<String> fullCmd = new ArrayList<>();
+
+			final StringTokenizer st = new StringTokenizer(message, " ");
+
+			while (st.hasMoreTokens())
+				fullCmd.add(st.nextToken());
+
+			// Filter out cp commands
+			if (fullCmd.get(0).equals("cp")) {
+				synchronized (remoteEndpointBasic) {
+					remoteEndpointBasic.sendText("'cp' grid command is not implemented. Please use native client's Cp() method", true);
+				}
+				throw new IllegalArgumentException();
+			}
+
+			return fullCmd;
+		}
+
+		/**
+		 * Wait for the current command to finish and return the result to the remote client.
+		 * Creates a new thread if the command takes more than 1 second to be executed to unblock websocket
+		 * endpoint and let it respond to ping
+		 */
+		private void waitForResult() {
+			if (commander == null)
+				return;
+
+			if (!waitForCommand(true, 1)) {
+				// If a command takes too long to be executed, start a new thread
+				ExecutorService commandService = Executors.newSingleThreadExecutor();
+
+				commandService.execute(() -> {
+					waitForCommand(false, 1);
+					returnResult();
+				});
+			}
+			else
+				returnResult();
+		}
+
+		/**
+		 * Check the command status to tell if it is done
+		 * 
+		 * @param oneShot set to <code>true</code> if you want to check the status once and exit
+		 * @param seconds the interval of polling for the command status
+		 * @return <code>true</code> if the command is done
+		 */
+		private boolean waitForCommand(final boolean oneShot, final int seconds) {
+			while (commander.status.get() == 1) {
+				synchronized (commander.status) {
+					try {
+						commander.status.wait(seconds * 1000);
+					}
+					catch (@SuppressWarnings("unused") InterruptedException e) {
+						Thread.currentThread().interrupt();
+					}
+				}
+				if (oneShot)
+					break;
+			}
+
+			return commander.status.get() == 0;
+		}
+		
+		/**
+		 * Send the result string to the remote client
+		 */
+		private void returnResult() {
+			synchronized (remoteEndpointBasic) {
+				final ByteArrayOutputStream baos = (ByteArrayOutputStream) os;
+				try {
+					remoteEndpointBasic.sendText(baos.toString(), true);
+				}
+				catch (final IOException e) {
+					e.printStackTrace();
+				}
+				baos.reset();
 			}
 		}
 	}
