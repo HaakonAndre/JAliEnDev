@@ -1,6 +1,9 @@
 package alien.shell.commands;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -359,6 +362,28 @@ public class JAliEnCOMMander extends Thread {
 			}
 	}
 
+	private static OutputStream accessLogStream = null;
+
+	private static synchronized OutputStream getAccessLogTarget() {
+		if (accessLogStream == null) {
+			String accessLogFile = ConfigUtils.getConfig().gets("alien.shell.commands.access_log");
+
+			if (accessLogFile.length() > 0) {
+				try {
+					accessLogStream = new FileOutputStream(accessLogFile, true);
+				}
+				catch (final IOException ioe) {
+					logger.log(Level.WARNING, "Cannot write to access log " + accessLogFile + ", will write to stderr instead", ioe);
+				}
+			}
+
+			if (accessLogStream == null)
+				accessLogStream = System.err;
+		}
+
+		return accessLogStream;
+	}
+
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting Commander");
@@ -369,8 +394,7 @@ public class JAliEnCOMMander extends Thread {
 				if (kill)
 					break;
 
-				// TODO replace with a separate log file to be handled externally by logrotate or other tools
-				try (RequestEvent event = new RequestEvent(System.err)) {
+				try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
 					event.identity = getUser();
 					event.site = getSite();
 
@@ -433,14 +457,11 @@ public class JAliEnCOMMander extends Thread {
 		}
 
 		final String comm = arg[0];
-		logger.log(Level.INFO, "Received command = " + comm);
 
 		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
 
-		System.out.println("Received JSh call " + args);
-
-		if (logger.isLoggable(Level.INFO))
-			logger.log(Level.INFO, "Received JSh call " + args);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Received JSh call " + args);
 
 		args.remove(arg[0]);
 
