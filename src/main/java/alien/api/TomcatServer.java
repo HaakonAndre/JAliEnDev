@@ -53,7 +53,7 @@ public class TomcatServer {
 	 *
 	 * @param tomcatPort
 	 */
-	private TomcatServer(final int tomcatPort) throws Exception {
+	private TomcatServer(final int tomcatPort, final String bindAddress) throws Exception {
 		this.websocketPort = tomcatPort;
 
 		tomcat = new Tomcat();
@@ -61,7 +61,7 @@ public class TomcatServer {
 		tomcat.setPort(tomcatPort);
 		final Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
-		service.addConnector(createSslConnector(tomcatPort));
+		service.addConnector(createSslConnector(tomcatPort, bindAddress));
 
 		// Add an empty Tomcat context
 		final Context ctx = tomcat.addContext("", null);
@@ -123,7 +123,7 @@ public class TomcatServer {
 	 *
 	 * @param tomcatPort
 	 */
-	private static Connector createSslConnector(final int tomcatPort) {
+	private static Connector createSslConnector(final int tomcatPort, final String bindAddress) {
 		final String keystorePass = new String(JAKeyStore.pass);
 
 		final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
@@ -139,9 +139,7 @@ public class TomcatServer {
 
 		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 
-		final boolean localhostBind = ConfigUtils.getConfig().getb("alien.api.TomcatServer.localhostBind", !ConfigUtils.isCentralService());
-		if (localhostBind)
-			connector.setAttribute("address", "localhost");
+		connector.setAttribute("address", ConfigUtils.getConfig().gets("alien.api.TomcatServer.bindAddress", bindAddress));
 
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
@@ -176,43 +174,46 @@ public class TomcatServer {
 
 		logger.log(Level.INFO, "Tomcat starting ...");
 
-		// Set dynamic port range for Tomcat server
-		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10700"));
-		int port = 8097;
+		if (ConfigUtils.isCentralService()) {
+			// Try to launch Tomcat on default port
+			final int port = ConfigUtils.getConfig().geti("alien.api.TomcatServer.csPort", 8097);
 
-		// Try to launch Tomcat on default port
-		try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
-		{
-			ssocket.close();
-			// Actually start Tomcat
-			tomcatServer = new TomcatServer(port);
-
-			logger.log(Level.INFO, "Tomcat listening on port " + port);
-			System.out.println("Tomcat is listening on port " + port);
-			return; // Everything's ok, exit
-		}
-		catch (final Exception ioe) {
-			// Port is already in use, maybe there's another user on the machine...
-			logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
-		}
-
-		// Try another ports in range
-		for (port = portMin; port < portMax; port++)
-			try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
+			try (ServerSocket ssocket = new ServerSocket(port)) // Fast check if port is available
 			{
 				ssocket.close();
 				// Actually start Tomcat
-				tomcatServer = new TomcatServer(port);
+				tomcatServer = new TomcatServer(port, "*");
 
-				logger.log(Level.INFO, "Tomcat listening on port " + port);
-				System.out.println("Tomcat is listening on port " + port);
-				break;
+				logger.log(Level.INFO, "Tomcat listening on " + getListeningAddressAndPort());
+				System.out.println("Tomcat is listening on " + getListeningAddressAndPort());
 			}
 			catch (final Exception ioe) {
-				// Try next one
-				logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
+				// Central services listen on a fixed server port, they should not bind on a different one as a fallback
+				logger.log(Level.SEVERE, "Tomcat: Could not listen on CS port " + port, ioe);
 			}
+		}
+		else {
+			// Set dynamic port range for Tomcat server
+			final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
+			final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10700"));
+
+			// Try another ports in range
+			for (int port = portMin; port < portMax; port++)
+				try (ServerSocket ssocket = new ServerSocket(port, 1, InetAddress.getByName("localhost"))) // Fast check if port is available
+				{
+					ssocket.close();
+					// Actually start Tomcat
+					tomcatServer = new TomcatServer(port, "localhost");
+
+					logger.log(Level.INFO, "Tomcat listening on port " + getListeningAddressAndPort());
+					System.out.println("Tomcat is listening on " + getListeningAddressAndPort());
+					break;
+				}
+				catch (final Exception ioe) {
+					// Try next one
+					logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
+				}
+		}
 	}
 
 	/**
@@ -226,4 +227,20 @@ public class TomcatServer {
 		return tomcatServer != null ? tomcatServer.websocketPort : -1;
 	}
 
+	/**
+	 * @return the address:port where Tomcat is listening, or <code>null</code> if the server is not started
+	 */
+	public static String getListeningAddressAndPort() {
+		if (tomcatServer != null) {
+			final Object addressAttribute = tomcatServer.tomcat.getConnector().getAttribute("address");
+
+			String address = addressAttribute != null ? addressAttribute.toString() : "*";
+
+			address += ":" + tomcatServer.tomcat.getConnector().getPort();
+
+			return address;
+		}
+
+		return null;
+	}
 }
