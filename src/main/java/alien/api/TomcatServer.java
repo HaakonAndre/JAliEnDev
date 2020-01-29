@@ -37,9 +37,9 @@ public class TomcatServer {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
-	static transient final Monitor monitor = MonitorFactory.getMonitor(TomcatServer.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(TomcatServer.class.getCanonicalName());
 
 	/**
 	 * Web server instance
@@ -79,7 +79,6 @@ public class TomcatServer {
 		securityConstraint.setAuthConstraint(true);
 		securityConstraint.setUserConstraint("CONFIDENTIAL");
 		securityConstraint.addAuthRole("users");
-		// ctx.addSecurityRole("users");
 		ctx.addConstraint(securityConstraint);
 
 		final LoginConfig loginConfig = new LoginConfig();
@@ -123,9 +122,8 @@ public class TomcatServer {
 	 * Create SSL connector for the Tomcat server
 	 *
 	 * @param tomcatPort
-	 * @throws Exception
 	 */
-	private static Connector createSslConnector(final int tomcatPort) throws Exception {
+	private static Connector createSslConnector(final int tomcatPort) {
 		final String keystorePass = new String(JAKeyStore.pass);
 
 		final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
@@ -140,6 +138,10 @@ public class TomcatServer {
 		JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
 
 		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+
+		final boolean localhostBind = ConfigUtils.getConfig().getb("alien.api.TomcatServer.localhostBind", !ConfigUtils.isCentralService());
+		if (localhostBind)
+			connector.setAttribute("address", "localhost");
 
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
@@ -183,14 +185,12 @@ public class TomcatServer {
 		try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
 		{
 			ssocket.close();
-
 			// Actually start Tomcat
 			tomcatServer = new TomcatServer(port);
 
 			logger.log(Level.INFO, "Tomcat listening on port " + port);
 			System.out.println("Tomcat is listening on port " + port);
 			return; // Everything's ok, exit
-
 		}
 		catch (final Exception ioe) {
 			// Port is already in use, maybe there's another user on the machine...
