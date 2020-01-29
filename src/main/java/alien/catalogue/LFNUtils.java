@@ -671,19 +671,14 @@ public class LFNUtils {
 	 * @param queryLimit if strictly positive then restrict the number of returned entries to this many; if more would be produced, exit with an exception
 	 * @return the list of LFNs that match
 	 */
-	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid, final long queryLimit) {
-		String processedPattern;
+	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid,
+			final long queryLimit) {
+		final String processedPattern;
 
 		if ((flags & FIND_REGEXP) == 0)
 			processedPattern = Format.replace(pattern, "*", "%");
-		else {
-			processedPattern = Format.replace(Format.replace(pattern, "*", "[^/]*"), "?", ".");
-
-			if ((flags & FIND_INCLUDE_DIRS) != 0)
-				processedPattern += "(/)?";
-
-			processedPattern += "$";
-		}
+		else
+			processedPattern = pattern;
 
 		if ((flags & FIND_BIGGEST_VERSION) != 0) {
 			final String tag = query.substring(0, query.indexOf(":"));
@@ -706,8 +701,8 @@ public class LFNUtils {
 				return null;
 
 			ret.addAll(findResults);
-			
-			if (queryLimit > 0 && ret.size()>queryLimit)
+
+			if (queryLimit > 0 && ret.size() > queryLimit)
 				throw new IllegalArgumentException("Too many results in the `find` command. Restrict your search and try again.");
 		}
 

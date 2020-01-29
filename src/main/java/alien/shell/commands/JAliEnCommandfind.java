@@ -54,6 +54,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	private boolean bJ = false;
 
 	/**
+	 * marker for -r argument: regex pattern
+	 */
+	private boolean bR = false;
+
+	/**
 	 * marker for -w argument : wide format, optionally human readable file sizes
 	 */
 	private boolean bW = false;
@@ -96,21 +101,30 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		if (bD)
 			flags = flags | LFNUtils.FIND_INCLUDE_DIRS;
+
 		if (bS)
 			flags = flags | LFNUtils.FIND_NO_SORT;
+
 		if (bY) {
 			for (int i = 2; i < alPaths.size(); i++)
 				query += alPaths.get(i) + " ";
+
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
 		}
+
 		if (bX)
 			flags = flags | LFNUtils.FIND_SAVE_XML;
+
 		if (bJ)
 			flags = flags | LFNUtils.FIND_FILTER_JOBID;
 
+		if (bR)
+			flags = flags | LFNUtils.FIND_REGEXP;
+
 		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid, -1);
+		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid,
+				-1);
 
 		if (lfns != null) {
 			if (offset >= lfns.size())
@@ -159,7 +173,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("find", "<path>  <pattern> flags"));
+		commander.printOutln(helpUsage("find", "[flags] <path> <pattern>"));
 		commander.printOutln();
 
 		commander.printOutln(helpStartOptions());
@@ -174,6 +188,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-j <queueid>", "filter files created by a certain job"));
 		commander.printOutln(helpOption("-l <count>", "limit the number of returned entries to at most the indicated value"));
 		commander.printOutln(helpOption("-o <offset>", "skip over the first /offset/ results"));
+		commander.printOutln(helpOption("-r", "pattern is a regular expression"));
 		commander.printOutln();
 	}
 
@@ -211,6 +226,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			parser.accepts("h");
 			parser.accepts("d");
 			parser.accepts("y");
+			parser.accepts("r");
 			parser.accepts("j").withRequiredArg().ofType(Long.class);
 			parser.accepts("l").withRequiredArg().ofType(Long.class);
 			parser.accepts("o").withRequiredArg().ofType(Long.class);
@@ -236,6 +252,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			bD = options.has("d");
 			bH = options.has("h");
 			bY = options.has("y");
+			bR = options.has("r");
 
 			if (options.has("l")) {
 				limit = ((Long) options.valueOf("l")).longValue();
@@ -266,20 +283,22 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		final StringBuilder sb = new StringBuilder();
 
 		sb.append("\n { JAliEnCommandfind received\n");
-		sb.append("Arguments: ");
+		sb.append("Arguments:");
 
 		if (bW)
-			sb.append(" -w ");
+			sb.append(" -w");
 		if (bA)
-			sb.append(" -a ");
+			sb.append(" -a");
 		if (bS)
-			sb.append(" -s ");
+			sb.append(" -s");
 		if (bX)
-			sb.append(" -x ");
+			sb.append(" -x");
 		if (bD)
-			sb.append(" -d ");
+			sb.append(" -d");
 		if (bJ)
-			sb.append(" -j ");
+			sb.append(" -j");
+		if (bR)
+			sb.append(" -r");
 
 		sb.append("}");
 
