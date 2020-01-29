@@ -340,17 +340,23 @@ public final class CatalogueUtils {
 		if (monitor != null)
 			monitor.incrementCounter("INDEXTABLE_lookup");
 
-		int bestLen = 0;
+		String searchFor = pattern;
 
-		IndexTableEntry best = null;
+		while (searchFor.length() > 0) {
+			final IndexTableEntry entry = tableentries.get(searchFor);
 
-		for (final IndexTableEntry ite : indextable)
-			if (ite.lfn.length() > bestLen && pattern.startsWith(ite.lfn)) {
-				best = ite;
-				bestLen = ite.lfn.length();
-			}
+			if (entry != null)
+				return entry;
 
-		return best;
+			final int idx = searchFor.lastIndexOf('/', searchFor.length() - 2);
+
+			if (idx >= 0)
+				searchFor = searchFor.substring(0, idx + 1);
+			else
+				break;
+		}
+
+		return null;
 	}
 
 	/**
@@ -587,8 +593,8 @@ public final class CatalogueUtils {
 	 *
 	 * @param queueId
 	 */
-	public static void cleanLfnBookedForJob(long queueId) {
-		for (Host h : CatalogueUtils.getAllHosts()) {
+	public static void cleanLfnBookedForJob(final long queueId) {
+		for (final Host h : CatalogueUtils.getAllHosts()) {
 			try (DBFunctions db = ConfigUtils.getDB(h.db)) {
 				db.setReadOnly(false);
 				db.setQueryTimeout(60);
