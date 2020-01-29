@@ -16,6 +16,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.log.RequestEvent;
 import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
@@ -93,12 +94,12 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] commandList;
 
 	private static final AtomicInteger commanderIDSequence = new AtomicInteger();
-	
+
 	/**
 	 * Unique identifier of the commander
 	 */
 	public final int commanderId = commanderIDSequence.incrementAndGet();
-	
+
 	static {
 		final List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));
 		final List<String> comms = comm_set;
@@ -368,24 +369,32 @@ public class JAliEnCOMMander extends Thread {
 				if (kill)
 					break;
 
-				try {
-					status.set(1);
+				// TODO replace with a separate log file to be handled externally by logrotate or other tools
+				try (RequestEvent event = new RequestEvent(System.err)) {
+					event.identity = getUser();
+					event.site = getSite();
 
-					setName("Commander "+commanderId+": Executing: " + Arrays.toString(arg));
+					try {
+						status.set(1);
 
-					execute();
-				}
-				catch (final Exception e) {
-					logger.log(Level.WARNING, "Got exception", e);
-				}
-				finally {
-					out = null;
+						setName("Commander " + commanderId + ": Executing: " + Arrays.toString(arg));
 
-					setName("Commander "+commanderId+": Idle");
+						execute(event);
+					}
+					catch (final Exception e) {
+						event.exception = e;
 
-					status.set(0);
-					synchronized (status) {
-						status.notifyAll();
+						logger.log(Level.WARNING, "Got exception", e);
+					}
+					finally {
+						out = null;
+
+						setName("Commander " + commanderId + ": Idle");
+
+						status.set(0);
+						synchronized (status) {
+							status.notifyAll();
+						}
 					}
 				}
 			}
@@ -406,17 +415,19 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * execute a command line
+	 * 
+	 * @param event the logging for this event
 	 *
 	 * @throws Exception
 	 *
 	 */
-	public void execute() throws Exception {
+	public void execute(RequestEvent event) throws Exception {
 		boolean help = false;
 		nomsg = false;
 		nokeys = false;
 
 		if (arg == null || arg.length == 0) {
-			System.out.println("We got empty argument!");
+			event.errorMessage = "No command to execute";
 			// flush();
 			return;
 		}
@@ -432,6 +443,9 @@ public class JAliEnCOMMander extends Thread {
 			logger.log(Level.INFO, "Received JSh call " + args);
 
 		args.remove(arg[0]);
+
+		event.command = arg[0];
+		event.arguments = new ArrayList<>(args);
 
 		// Set default return code and error message
 		out.setReturnCode(0, "");
@@ -483,8 +497,11 @@ public class JAliEnCOMMander extends Thread {
 				// jbox.shutdown();
 				// } else if (!"setshell".equals(comm)) {
 			}
-			else
-				out.setReturnCode(-1, "Command [" + comm + "] not found!");
+			else {
+				event.errorMessage = "Command [" + comm + "] not found!";
+
+				out.setReturnCode(-1, event.errorMessage);
+			}
 			// }
 		}
 		else {
@@ -495,10 +512,14 @@ public class JAliEnCOMMander extends Thread {
 				jcommand = getCommand(comm, param);
 			}
 			catch (final Exception e) {
+				if (e.getCause() instanceof OptionException || e.getCause() instanceof NumberFormatException) {
+					event.errorMessage = "Illegal command options";
 
-				if (e.getCause() instanceof OptionException || e.getCause() instanceof NumberFormatException)
-					out.setReturnCode(-2, "Illegal command options\n");
+					out.setReturnCode(-2, event.errorMessage);
+				}
 				else {
+					event.exception = e;
+
 					e.printStackTrace();
 					out.setReturnCode(-3, "Error executing command [" + comm + "] : \n" + Format.stackTraceToString(e));
 				}
@@ -526,6 +547,7 @@ public class JAliEnCOMMander extends Thread {
 				}
 			}
 			catch (final Exception e) {
+				event.exception = e;
 				e.printStackTrace();
 
 				out.setReturnCode(-5, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
