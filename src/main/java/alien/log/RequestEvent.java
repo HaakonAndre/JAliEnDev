@@ -67,7 +67,9 @@ public class RequestEvent implements Closeable {
 	/**
 	 * Duration of this request
 	 */
-	private Timing timing = new Timing();
+	private final Timing timing = new Timing();
+
+	private final Long startTimestamp = Long.valueOf(System.currentTimeMillis());
 
 	private final OutputStream os;
 
@@ -82,6 +84,8 @@ public class RequestEvent implements Closeable {
 
 	private Map<String, Object> getValues() {
 		final Map<String, Object> values = new LinkedHashMap<>();
+
+		values.put("timestamp", startTimestamp);
 
 		if (identity != null) {
 			values.put("user", identity.getDefaultUser());
