@@ -691,8 +691,20 @@ public class ConfigUtils {
 		try {
 			final String closeSiteByML = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
 
-			if (closeSiteByML != null && closeSiteByML.length() > 0)
+			if (closeSiteByML != null && closeSiteByML.length() > 0) {
+				int idx = closeSiteByML.indexOf('\n');
+
+				if (idx < 0)
+					idx = closeSiteByML.indexOf('\r');
+
+				if (idx < 0)
+					idx = closeSiteByML.indexOf(' ');
+
+				if (idx > 0)
+					return closeSiteByML.substring(0, idx);
+
 				return closeSiteByML;
+			}
 		}
 		catch (final IOException ioe) {
 			logger.log(Level.WARNING, "Cannot contact alimonitor to map you to the closest site", ioe);
