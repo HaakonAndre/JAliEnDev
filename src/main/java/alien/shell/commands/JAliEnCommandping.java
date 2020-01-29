@@ -67,10 +67,16 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 					sum2 += delta * delta;
 
 					if (resolvedHostName == null && !bN) {
-						resolvedHostName = Utils.getHostName(p.getPartnerAddress().getHostAddress());
+						if (p.getPartnerAddress() != null)
+							resolvedHostName = Utils.getHostName(p.getPartnerAddress().getHostAddress());
 					}
 
-					String from = p.getPartnerAddress().getHostAddress();
+					String from;
+
+					if (p.getPartnerAddress() != null)
+						from = p.getPartnerAddress().getHostAddress();
+					else
+						from = "localhost";
 
 					if (resolvedHostName != null && resolvedHostName.length() > 0) {
 						String partnerHostName = null;
