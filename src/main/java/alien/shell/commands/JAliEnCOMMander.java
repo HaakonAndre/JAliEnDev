@@ -366,7 +366,7 @@ public class JAliEnCOMMander extends Thread {
 
 	private static synchronized OutputStream getAccessLogTarget() {
 		if (accessLogStream == null) {
-			String accessLogFile = ConfigUtils.getConfig().gets("alien.shell.commands.access_log");
+			final String accessLogFile = ConfigUtils.getConfig().gets("alien.shell.commands.access_log");
 
 			if (accessLogFile.length() > 0) {
 				try {
@@ -439,13 +439,13 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * execute a command line
-	 * 
+	 *
 	 * @param event the logging for this event
 	 *
 	 * @throws Exception
 	 *
 	 */
-	public void execute(RequestEvent event) throws Exception {
+	public void execute(final RequestEvent event) throws Exception {
 		boolean help = false;
 		nomsg = false;
 		nokeys = false;
