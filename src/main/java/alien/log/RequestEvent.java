@@ -40,6 +40,11 @@ public class RequestEvent implements Closeable {
 	public UUID clientID = null;
 
 	/**
+	 * Request ID of that client, if available
+	 */
+	public Long requestId = null;
+
+	/**
 	 * Command that was run
 	 */
 	public String command = null;
@@ -67,7 +72,7 @@ public class RequestEvent implements Closeable {
 	/**
 	 * Duration of this request
 	 */
-	private final Timing timing = new Timing();
+	public final Timing timing = new Timing();
 
 	private final Long startTimestamp = Long.valueOf(System.currentTimeMillis());
 
@@ -90,6 +95,9 @@ public class RequestEvent implements Closeable {
 		if (identity != null) {
 			values.put("user", identity.getDefaultUser());
 			values.put("role", identity.getDefaultRole());
+
+			if (clientAddress == null && identity.getRemoteEndpoint() != null)
+				clientAddress = identity.getRemoteEndpoint();
 		}
 
 		if (clientAddress != null)
@@ -99,7 +107,10 @@ public class RequestEvent implements Closeable {
 			values.put("site", site);
 
 		if (clientID != null)
-			values.put("clientID", clientID).toString();
+			values.put("clientID", clientID);
+
+		if (requestId != null)
+			values.put("requestID", requestId);
 
 		if (command != null)
 			values.put("command", command);
