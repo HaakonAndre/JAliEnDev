@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -107,7 +108,7 @@ public class WebsocketEndpoint extends Endpoint {
 		}
 
 		@Override
-		public long getDelay(TimeUnit unit) {
+		public long getDelay(final TimeUnit unit) {
 			final long delay = getRunningDeadline() - System.currentTimeMillis();
 
 			return unit.convert(delay, TimeUnit.MILLISECONDS);
@@ -123,7 +124,7 @@ public class WebsocketEndpoint extends Endpoint {
 		public void run() {
 			while (true) {
 				try {
-					SessionContext context = sessionQueue.take();
+					final SessionContext context = sessionQueue.take();
 
 					if (context != null) {
 						if (context.getRunningDeadline() <= System.currentTimeMillis()) {
@@ -138,7 +139,7 @@ public class WebsocketEndpoint extends Endpoint {
 						}
 					}
 				}
-				catch (@SuppressWarnings("unused") InterruptedException e) {
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					// was told to exit
 					Thread.currentThread().interrupt(); // restore interrupt
 					return;
@@ -177,7 +178,11 @@ public class WebsocketEndpoint extends Endpoint {
 		else
 			setShellPrintWriter(os, "plain");
 
-		commander = new JAliEnCOMMander(userIdentity, null, getSite(getRemoteIP(session)), null);
+		final InetAddress remoteIP = getRemoteIP(session);
+
+		userIdentity.setRemoteEndpoint(remoteIP);
+
+		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteIP != null ? remoteIP.getHostAddress() : null), null);
 		commander.start();
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
@@ -191,7 +196,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 	/**
 	 * Get the client's closest site
-	 * 
+	 *
 	 * @param ip IP address of the client
 	 * @return the name of the closest site
 	 */
@@ -210,7 +215,7 @@ public class WebsocketEndpoint extends Endpoint {
 			if (site != null)
 				return site.trim();
 		}
-		catch (IOException ioe) {
+		catch (final IOException ioe) {
 			logger.log(Level.SEVERE, "Cannot get the closest site information for " + ip, ioe);
 		}
 
@@ -219,11 +224,11 @@ public class WebsocketEndpoint extends Endpoint {
 
 	/**
 	 * Get the IP address of the client using reflection of the socket object
-	 * 
+	 *
 	 * @param session websocket session which contains the socket
 	 * @return IP address
 	 */
-	private static String getRemoteIP(final Session session) {
+	private static InetAddress getRemoteIP(final Session session) {
 		try {
 			Object obj = session.getAsyncRemote();
 
@@ -234,7 +239,7 @@ public class WebsocketEndpoint extends Endpoint {
 					return null;
 			}
 
-			return ((InetSocketAddress) obj).getAddress().getHostAddress();
+			return ((InetSocketAddress) obj).getAddress();
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Cannot extract the remote IP address from a session", e);
@@ -243,7 +248,7 @@ public class WebsocketEndpoint extends Endpoint {
 		return null;
 	}
 
-	private static Object getField(Object obj, String fieldName) {
+	private static Object getField(final Object obj, final String fieldName) {
 		Class<?> objClass = obj.getClass();
 
 		for (; objClass != Object.class; objClass = objClass.getSuperclass()) {
@@ -253,7 +258,7 @@ public class WebsocketEndpoint extends Endpoint {
 				field.setAccessible(true);
 				return field.get(obj);
 			}
-			catch (@SuppressWarnings("unused") Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// ignore
 			}
 		}
@@ -266,20 +271,20 @@ public class WebsocketEndpoint extends Endpoint {
 	 */
 	private static void disableAccessWarnings() {
 		try {
-			Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-			Field field = unsafeClass.getDeclaredField("theUnsafe");
+			final Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+			final Field field = unsafeClass.getDeclaredField("theUnsafe");
 			field.setAccessible(true);
-			Object unsafe = field.get(null);
+			final Object unsafe = field.get(null);
 
-			Method putObjectVolatile = unsafeClass.getDeclaredMethod("putObjectVolatile", Object.class, long.class, Object.class);
-			Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
+			final Method putObjectVolatile = unsafeClass.getDeclaredMethod("putObjectVolatile", Object.class, long.class, Object.class);
+			final Method staticFieldOffset = unsafeClass.getDeclaredMethod("staticFieldOffset", Field.class);
 
-			Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
-			Field loggerField = loggerClass.getDeclaredField("logger");
-			Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
+			final Class<?> loggerClass = Class.forName("jdk.internal.module.IllegalAccessLogger");
+			final Field loggerField = loggerClass.getDeclaredField("logger");
+			final Long offset = (Long) staticFieldOffset.invoke(unsafe, loggerField);
 			putObjectVolatile.invoke(unsafe, loggerClass, offset, null);
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			logger.log(Level.FINE, "Could not disable warnings regarding access to sun.nio.ch.SocketChannelImpl.remoteAddress", e);
 		}
 	}
@@ -299,7 +304,7 @@ public class WebsocketEndpoint extends Endpoint {
 			if (os != null)
 				os.close();
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 		os = null;
@@ -318,7 +323,7 @@ public class WebsocketEndpoint extends Endpoint {
 				session.close();
 			}
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 
@@ -341,7 +346,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		private final SessionContext context;
 
-		WSMessageHandler(final SessionContext context, final JAliEnCOMMander commander, final UIPrintWriter out, OutputStream os) {
+		WSMessageHandler(final SessionContext context, final JAliEnCOMMander commander, final UIPrintWriter out, final OutputStream os) {
 			this.context = context;
 			this.remoteEndpointBasic = context.session.getBasicRemote();
 			this.commander = commander;
@@ -412,7 +417,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		/**
 		 * Parse incoming JSON command
-		 * 
+		 *
 		 * @param message a string in JSON format
 		 * @return command and it's arguments as an array
 		 */
@@ -420,13 +425,13 @@ public class WebsocketEndpoint extends Endpoint {
 			final ArrayList<String> fullCmd = new ArrayList<>();
 			Object pobj;
 			JSONObject jsonObject;
-			JSONParser parser = new JSONParser();
+			final JSONParser parser = new JSONParser();
 
 			try {
 				pobj = parser.parse(new StringReader(message));
 				jsonObject = (JSONObject) pobj;
 			}
-			catch (@SuppressWarnings("unused") ParseException e) {
+			catch (@SuppressWarnings("unused") final ParseException e) {
 				synchronized (remoteEndpointBasic) {
 					remoteEndpointBasic.sendText("{\"metadata\":{\"exitcode\":\"-1\",\"error\":\"Incoming JSON not ok\"},\"results\":[]}", true);
 				}
@@ -446,10 +451,10 @@ public class WebsocketEndpoint extends Endpoint {
 			fullCmd.add(jsonObject.get("command").toString());
 
 			if (jsonObject.get("options") != null) {
-				JSONArray mArray = (JSONArray) jsonObject.get("options");
+				final JSONArray mArray = (JSONArray) jsonObject.get("options");
 
-				for (int i = 0; i < mArray.size(); i++)
-					fullCmd.add(mArray.get(i).toString());
+				for (final Object element : mArray)
+					fullCmd.add(element.toString());
 			}
 
 			return fullCmd;
@@ -457,7 +462,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		/**
 		 * Parse incoming plain text command
-		 * 
+		 *
 		 * @param message whitespace-separated string that contains a command and args
 		 * @return command and it's arguments as an array
 		 */
@@ -491,7 +496,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 			if (!waitForCommand(true, 1)) {
 				// If a command takes too long to be executed, start a new thread
-				ExecutorService commandService = Executors.newSingleThreadExecutor();
+				final ExecutorService commandService = Executors.newSingleThreadExecutor();
 
 				commandService.execute(() -> {
 					waitForCommand(false, 1);
@@ -504,7 +509,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		/**
 		 * Check the command status to tell if it is done
-		 * 
+		 *
 		 * @param oneShot set to <code>true</code> if you want to check the status once and exit
 		 * @param seconds the interval of polling for the command status
 		 * @return <code>true</code> if the command is done
@@ -515,7 +520,7 @@ public class WebsocketEndpoint extends Endpoint {
 					try {
 						commander.status.wait(seconds * 1000);
 					}
-					catch (@SuppressWarnings("unused") InterruptedException e) {
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						Thread.currentThread().interrupt();
 					}
 				}
@@ -525,7 +530,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 			return commander.status.get() == 0;
 		}
-		
+
 		/**
 		 * Send the result string to the remote client
 		 */
