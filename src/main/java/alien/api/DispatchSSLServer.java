@@ -1,6 +1,7 @@
 package alien.api;
 
 import java.io.EOFException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -32,6 +33,7 @@ import javax.net.ssl.TrustManagerFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.config.ConfigUtils;
+import alien.log.RequestEvent;
 import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -180,10 +182,17 @@ public class DispatchSSLServer extends Thread {
 					if (o instanceof Request) {
 						Request r = (Request) o;
 
-						try (Timing timing = new Timing()) {
-							r.setPartnerIdentity(remoteIdentity);
+						r.setPartnerIdentity(remoteIdentity);
 
-							r.setPartnerCertificate(partnerCerts);
+						r.setPartnerCertificate(partnerCerts);
+
+						final double requestProcessingDuration;
+
+						try (RequestEvent event = new RequestEvent(getAccessLog())) {
+							event.clientAddress = remoteIdentity.getRemoteEndpoint();
+							event.command = r.getClass().getTypeName();
+							event.clientID = r.getVMUUID();
+							event.requestId = r.getRequestID();
 
 							try {
 								r = Dispatcher.execute(r, forwardRequest);
@@ -192,14 +201,20 @@ public class DispatchSSLServer extends Thread {
 								logger.log(Level.WARNING, "Returning an exception to the client", e);
 
 								r.setException(new ServerException(e.getMessage(), e));
+
+								event.exception = e;
 							}
 
-							final double requestProcessingDuration = timing.getMillis();
+							event.identity = r.getEffectiveRequester();
 
-							lLasted += requestProcessingDuration;
+							requestProcessingDuration = event.timing.getMillis();
+						}
 
-							timing.startTiming();
+						lLasted += requestProcessingDuration;
 
+						final double serializationTime;
+
+						try (Timing timing = new Timing()) {
 							// System.err.println("When returning the object, ex is "+r.getException());
 
 							oos.writeObject(r);
@@ -211,16 +226,16 @@ public class DispatchSSLServer extends Thread {
 
 							oos.flush();
 
-							final double serializationTime = timing.getMillis();
+							serializationTime = timing.getMillis();
+						}
 
-							lSerialization += serializationTime;
+						lSerialization += serializationTime;
 
-							logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
+						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
-							if (monitor != null) {
-								monitor.addMeasurement("request_processing", requestProcessingDuration);
-								monitor.addMeasurement("serialization", serializationTime);
-							}
+						if (monitor != null) {
+							monitor.addMeasurement("request_processing", requestProcessingDuration);
+							monitor.addMeasurement("serialization", serializationTime);
 						}
 
 						requestCount++;
@@ -229,7 +244,9 @@ public class DispatchSSLServer extends Thread {
 						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
 			}
 		}
-		catch (@SuppressWarnings("unused") final EOFException e) {
+		catch (
+
+		@SuppressWarnings("unused") final EOFException e) {
 			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted) + " to process and "
 					+ Format.toInterval((long) lSerialization) + " to serialize");
 		}
@@ -263,6 +280,31 @@ public class DispatchSSLServer extends Thread {
 				// ignore
 			}
 		}
+	}
+
+	private static OutputStream accessLogStream = null;
+
+	private static synchronized OutputStream getAccessLog() {
+		if (accessLogStream == null) {
+			final String accessLogFile = ConfigUtils.getConfig().gets("alien.api.DispatchSSLServer.access_log");
+
+			if (accessLogFile.length() > 0) {
+				try {
+					accessLogStream = new FileOutputStream(accessLogFile, true);
+				}
+				catch (final IOException ioe) {
+					logger.log(Level.WARNING, "Cannot write to access log " + accessLogFile + ", will write to stderr instead", ioe);
+				}
+			}
+			else {
+				System.err.println("Define alien.api.DispatchSSLServer.access_log to a writable location, otherwise logs will go to stderr");
+			}
+
+			if (accessLogStream == null)
+				accessLogStream = System.err;
+		}
+
+		return accessLogStream;
 	}
 
 	private static boolean isHostCertValid() {
@@ -318,7 +360,7 @@ public class DispatchSSLServer extends Thread {
 
 			logger.log(Level.INFO, "Running JCentral with host cert: " + ((java.security.cert.X509Certificate) JAKeyStore.getKeyStore().getCertificateChain("User.cert")[0]).getSubjectDN());
 
-			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1.2,TLSv1.3");
 
 			final SSLContext sc = SSLContext.getInstance("TLS");
 
