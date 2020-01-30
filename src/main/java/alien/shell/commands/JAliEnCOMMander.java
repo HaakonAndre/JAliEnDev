@@ -142,6 +142,8 @@ public class JAliEnCOMMander extends Thread {
 
 	private static JAliEnCOMMander lastInstance = null;
 
+	private long commandCount = 0;
+
 	/**
 	 * @return a commander instance
 	 */
@@ -397,6 +399,7 @@ public class JAliEnCOMMander extends Thread {
 				try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
 					event.identity = getUser();
 					event.site = getSite();
+					event.requestId = Long.valueOf(++commandCount);
 
 					try {
 						status.set(1);
