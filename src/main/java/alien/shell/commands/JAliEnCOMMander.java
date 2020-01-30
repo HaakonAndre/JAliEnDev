@@ -501,7 +501,7 @@ public class JAliEnCOMMander extends Thread {
 				nokeys = true;
 				args.remove(arg[i]);
 			}
-			else if (("-h".equals(arg[i]) && !comm.equals("du")) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
+			else if (("-h".equals(arg[i]) && !comm.equals("du") && !comm.equals("ls")) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
 				help = true;
 				args.remove(arg[i]);
 			}
