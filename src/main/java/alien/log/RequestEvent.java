@@ -40,6 +40,11 @@ public class RequestEvent implements Closeable {
 	public UUID clientID = null;
 
 	/**
+	 * Server thread ID (commander sequence)
+	 */
+	public Long serverThreadID = null;
+
+	/**
 	 * Request ID of that client, if available
 	 */
 	public Long requestId = null;
@@ -105,6 +110,9 @@ public class RequestEvent implements Closeable {
 
 		if (site != null)
 			values.put("site", site);
+
+		if (serverThreadID != null)
+			values.put("serverThreadID", serverThreadID);
 
 		if (clientID != null)
 			values.put("clientID", clientID);

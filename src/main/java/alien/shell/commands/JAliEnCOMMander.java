@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -96,12 +96,12 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	private static final String[] commandList;
 
-	private static final AtomicInteger commanderIDSequence = new AtomicInteger();
+	private static final AtomicLong commanderIDSequence = new AtomicLong();
 
 	/**
 	 * Unique identifier of the commander
 	 */
-	public final int commanderId = commanderIDSequence.incrementAndGet();
+	public final long commanderId = commanderIDSequence.incrementAndGet();
 
 	static {
 		final List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));
@@ -399,6 +399,7 @@ public class JAliEnCOMMander extends Thread {
 				try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
 					event.identity = getUser();
 					event.site = getSite();
+					event.serverThreadID = Long.valueOf(commanderId);
 					event.requestId = Long.valueOf(++commandCount);
 
 					try {
