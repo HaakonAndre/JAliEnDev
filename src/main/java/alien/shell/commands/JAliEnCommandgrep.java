@@ -42,8 +42,10 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 
 			final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-			if (expandedPaths != null)
+			if (expandedPaths != null && !expandedPaths.isEmpty())
 				filesToProcess.addAll(expandedPaths);
+			else
+				commander.setReturnCode(1, "No such file or directory: " + path);
 		}
 
 		if (filesToProcess.size() > 1)

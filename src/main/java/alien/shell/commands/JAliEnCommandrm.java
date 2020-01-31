@@ -51,7 +51,10 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
 			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-			expandedPaths.addAll(sources);
+			if (sources != null && !sources.isEmpty())
+				expandedPaths.addAll(sources);
+			else
+				commander.setReturnCode(1, "No such file or directory: " + path);
 		}
 
 		for (final String sPath : expandedPaths) {

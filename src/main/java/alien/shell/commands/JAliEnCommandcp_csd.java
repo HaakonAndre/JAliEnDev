@@ -428,7 +428,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 		final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-		if (expandedPaths.size() == 0) {
+		if (expandedPaths == null || expandedPaths.isEmpty()) {
 			commander.setReturnCode(107, "No such file: " + sourceLFN);
 			return null;
 		}

@@ -107,7 +107,7 @@ public final class FileSystemUtils {
 	/**
 	 * @param sourcename
 	 * @param user
-	 * @return the matching lfns from the catalogue
+	 * @return the matching lfns from the catalogue or <code>null</code> if failed to expand path
 	 */
 	public static List<String> expandPathWildCards(final String sourcename, final AliEnPrincipal user) {
 		final List<String> result = new ArrayList<>();
@@ -140,35 +140,42 @@ public final class FileSystemUtils {
 			// List all files and folders in the path (e.g. /alice/cern.ch/user/v/vyurchen/)
 			final LFNListingfromString listing = Dispatcher.execute(new LFNListingfromString(user, path));
 
-			// If the pattern is complex (e.g. 01*/*Trig?er*.root - contains many wildcards in different directories)
-			// then expand paths recursively
-			if (pattern.contains("/")) {
-				// Strip the pattern and forget about everything after "/" for now
-				final String processedPattern = Format.replace(Format.replace(pattern.substring(0, pattern.indexOf("/")), "*", ".*"), "?", ".");
-				final Pattern p = Pattern.compile("^" + processedPattern + "$");
-				for (final LFN l : listing.getLFNs()) {
-					// Check only directories (because we have "/" in pattern)
-					if (l.isDirectory()) {
-						final Matcher m = p.matcher(l.getFileName());
-						if (m.matches()) {
-							result.addAll(expandPathWildCards(l.getCanonicalName() + pattern.substring(pattern.indexOf("/") + 1), user));
+			if (listing != null) {
+				// If the pattern is complex (e.g. 01*/*Trig?er*.root - contains many wildcards in different directories)
+				// then expand paths recursively
+				if (pattern.contains("/")) {
+					// Strip the pattern and forget about everything after "/" for now
+					final String processedPattern = Format.replace(Format.replace(pattern.substring(0, pattern.indexOf("/")), "*", ".*"), "?", ".");
+					final Pattern p = Pattern.compile("^" + processedPattern + "$");
+					for (final LFN l : listing.getLFNs()) {
+						// Check only directories (because we have "/" in pattern)
+						if (l.isDirectory()) {
+							final Matcher m = p.matcher(l.getFileName());
+							if (m.matches()) {
+								final List<String> expandMore = expandPathWildCards(l.getCanonicalName() + pattern.substring(pattern.indexOf("/") + 1), user);
+								if (expandMore != null && !expandMore.isEmpty())
+									result.addAll(expandMore);
+							}
 						}
 					}
 				}
-			}
-			else {
-				// If the pattern contains only one wildcard in the filename - just find a match for it
-				final String processedPattern = Format.replace(Format.replace(pattern, "*", ".*"), "?", ".");
+				else {
+					// If the pattern contains only one wildcard in the filename - just find a match for it
+					final String processedPattern = Format.replace(Format.replace(pattern, "*", ".*"), "?", ".");
 
-				final Pattern p = Pattern.compile("^" + processedPattern + "$");
+					final Pattern p = Pattern.compile("^" + processedPattern + "$");
 
-				for (final LFN l : listing.getLFNs()) {
-					final Matcher m = p.matcher(l.getFileName());
+					for (final LFN l : listing.getLFNs()) {
+						final Matcher m = p.matcher(l.getFileName());
 
-					if (m.matches())
-						result.add(l.getCanonicalName());
+						if (m.matches())
+							result.add(l.getCanonicalName());
+					}
 				}
 			}
+			else
+				// Failed to get listing for the directory - probably it doesn't exist
+				return null;
 
 			// TODO: This piece of code is here to remind you, that probably FindfromString would show better performance
 			// in some cases, so you need to run benchmarks and find out what are those cases

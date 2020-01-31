@@ -81,7 +81,10 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 
 			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-			expandedPaths.addAll(sources);
+			if (sources != null && !sources.isEmpty())
+				expandedPaths.addAll(sources);
+			else
+				commander.setReturnCode(1, "No such file or directory: " + sPath);
 		}
 
 		for (final String sPath : expandedPaths) {

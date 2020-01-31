@@ -473,9 +473,9 @@ public class ArchiveMemberDelete {
 			if (commander.c_api.getLFN(registerPath) != null) {
 				// Move everything from registertemp to parent
 				System.out.println("[" + new Date() + "] " + "registertemp found, moving out its content");
-
-				List<LFN> listing = commander.c_api.getLFNs(registerPath);
-				if (listing.isEmpty()) {
+				
+				final List<LFN> listing = commander.c_api.getLFNs(registerPath);
+				if (listing == null || listing.isEmpty()) {
 					System.err.println("[" + new Date() + "] " + "Failed to get directory listing for " + registerPath + ". Abort.");
 					return false;
 				}

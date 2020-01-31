@@ -123,7 +123,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 					toMirrorEntries = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-					if (toMirrorEntries.size() == 0) {
+					if (toMirrorEntries == null || toMirrorEntries.isEmpty()) {
 						commander.setReturnCode(2, "No such file: " + this.lfn);
 						return;
 					}

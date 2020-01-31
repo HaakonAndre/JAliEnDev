@@ -48,7 +48,7 @@ public class LFNListingfromString extends Request {
 	}
 
 	/**
-	 * @return the requested LFN
+	 * @return the requested LFN or the file listing for a directory or <code>null</code> if LFN doesn't exist
 	 */
 	public List<LFN> getLFNs() {
 		return this.lfns;

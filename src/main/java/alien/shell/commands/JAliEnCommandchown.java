@@ -38,7 +38,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 
 			final List<String> chownTargets = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
-			if (chownTargets.size() == 0) {
+			if (chownTargets == null || chownTargets.isEmpty()) {
 				commander.setReturnCode(2, "No such file: " + file);
 				return;
 			}
