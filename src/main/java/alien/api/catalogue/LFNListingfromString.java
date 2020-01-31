@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,6 +43,8 @@ public class LFNListingfromString extends Request {
 				this.lfns = entry.list();
 			else
 				this.lfns = Arrays.asList(entry);
+		else
+			this.lfns = new ArrayList<>();
 	}
 
 	/**
