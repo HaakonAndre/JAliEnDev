@@ -72,7 +72,7 @@ public class CatalogueApiUtils {
 	 */
 	public LFN getLFN(final String slfn, final boolean evenIfDoesntExist) {
 		final Collection<LFN> ret = getLFNs(Arrays.asList(slfn), false, evenIfDoesntExist);
-		return ret != null && ret.size() > 0 ? ret.iterator().next() : null;
+		return !ret.isEmpty() ? ret.iterator().next() : null;
 	}
 
 	/**

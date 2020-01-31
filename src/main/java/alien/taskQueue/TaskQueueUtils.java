@@ -1355,7 +1355,7 @@ public class TaskQueueUtils {
 
 				final List<LFN> lfns = answer.getLFNs();
 
-				if (lfns != null)
+				if (!lfns.isEmpty())
 					for (final LFN l : lfns)
 						if (l.isFile()) {
 							found = true;

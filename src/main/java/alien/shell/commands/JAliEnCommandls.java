@@ -85,7 +85,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath);
 
 			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
-
 			expandedPaths.addAll(sources);
 		}
 
@@ -94,7 +93,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
 
-			if (subdirectory != null) {
+			if (!subdirectory.isEmpty()) {
 				if (directory == null)
 					directory = new ArrayList<>(subdirectory);
 				else
