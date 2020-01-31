@@ -16,6 +16,7 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -168,6 +169,22 @@ public class DispatchSSLServer extends Thread {
 
 		remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
 
+		try (RequestEvent event = new RequestEvent(getAccessLog())) {
+			event.command = "login";
+			event.identity = remoteIdentity;
+			event.clientPort = connection.getPort();
+
+			final ArrayList<String> certificates = new ArrayList<>();
+
+			for (X509Certificate cert : partnerCerts)
+				certificates.add(cert.getSubjectX500Principal().getName());
+
+			event.arguments = certificates;
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
+			// ignore any exception in writing out the event
+		}
+
 		double lLasted = 0;
 
 		int requestCount = 0;
@@ -190,7 +207,7 @@ public class DispatchSSLServer extends Thread {
 
 						try (RequestEvent event = new RequestEvent(getAccessLog())) {
 							event.clientAddress = remoteIdentity.getRemoteEndpoint();
-							event.command = r.getClass().getTypeName();
+							event.command = r.getClass().getSimpleName();
 							event.clientID = r.getVMUUID();
 							event.requestId = r.getRequestID();
 
@@ -205,6 +222,7 @@ public class DispatchSSLServer extends Thread {
 								event.exception = e;
 							}
 
+							// TODO fill event.arguments with some data from the request
 							event.identity = r.getEffectiveRequester();
 
 							requestProcessingDuration = event.timing.getMillis();
