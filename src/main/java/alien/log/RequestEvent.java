@@ -30,6 +30,11 @@ public class RequestEvent implements Closeable {
 	public InetAddress clientAddress = null;
 
 	/**
+	 * Remote port number, if known
+	 */
+	public int clientPort = -1;
+
+	/**
 	 * Client site mapping, if known
 	 */
 	public String site = null;
@@ -105,8 +110,19 @@ public class RequestEvent implements Closeable {
 				clientAddress = identity.getRemoteEndpoint();
 		}
 
-		if (clientAddress != null)
-			values.put("address", clientAddress.getHostAddress());
+		if (clientAddress != null) {
+			String address = clientAddress.getHostAddress();
+
+			if (address.indexOf(':') > 0)
+				address = "[" + address + "]";
+
+			if (clientPort > 0)
+				values.put("address", address + ":" + clientPort);
+			else
+				values.put("address", address);
+		}
+		else if (clientPort > 0)
+			values.put("address", ":" + clientPort);
 
 		if (site != null)
 			values.put("site", site);
