@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.KeyStoreException;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +25,7 @@ import alien.config.ConfigUtils;
 import alien.log.RequestEvent;
 import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
+import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
 import joptsimple.OptionException;
 import lazyj.Format;
@@ -382,6 +385,24 @@ public class JAliEnCOMMander extends Thread {
 
 			if (accessLogStream == null)
 				accessLogStream = System.err;
+
+			try (RequestEvent event = new RequestEvent(accessLogStream)) {
+				event.command = "boot";
+				event.identity = AuthorizationFactory.getDefaultUser();
+
+				event.arguments = new ArrayList<>();
+
+				if (JAKeyStore.getKeyStore().getCertificateChain("User.cert") != null)
+					for (final Certificate cert : JAKeyStore.getKeyStore().getCertificateChain("User.cert")) {
+						final X509Certificate x509cert = (java.security.cert.X509Certificate) cert;
+						event.arguments.add(x509cert.getSubjectX500Principal().getName() + " (expires " + x509cert.getNotAfter() + ")");
+					}
+				else
+					event.errorMessage = "Local identity doesn't have a certificate chain associated";
+			}
+			catch (@SuppressWarnings("unused") IOException | KeyStoreException e) {
+				// ignore exception in logging the startup message
+			}
 		}
 
 		return accessLogStream;
@@ -394,11 +415,12 @@ public class JAliEnCOMMander extends Thread {
 		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
 			event.command = "login";
 			event.identity = getUser();
+			event.serverThreadID = Long.valueOf(commanderId);
 
 			final ArrayList<String> certificates = new ArrayList<>();
 
-			for (X509Certificate cert : event.identity.getUserCert())
-				certificates.add(cert.getSubjectX500Principal().getName());
+			for (final X509Certificate cert : event.identity.getUserCert())
+				certificates.add(cert.getSubjectX500Principal().getName() + " (expires " + cert.getNotAfter() + ")");
 
 			event.arguments = certificates;
 		}

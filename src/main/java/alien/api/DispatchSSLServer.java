@@ -33,6 +33,7 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.log.RequestEvent;
 import alien.monitoring.CacheMonitor;
@@ -97,6 +98,9 @@ public class DispatchSSLServer extends Thread {
 	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS);
 
 	private static CacheMonitor ipv6Connections = null;
+
+	private static InetAddress actualServerAddress = null;
+	private static int actualServerPort = -1;
 
 	static {
 		if (monitor != null) {
@@ -174,12 +178,10 @@ public class DispatchSSLServer extends Thread {
 			event.identity = remoteIdentity;
 			event.clientPort = connection.getPort();
 
-			final ArrayList<String> certificates = new ArrayList<>();
+			event.arguments = new ArrayList<>();
 
-			for (X509Certificate cert : partnerCerts)
-				certificates.add(cert.getSubjectX500Principal().getName());
-
-			event.arguments = certificates;
+			for (final X509Certificate cert : partnerCerts)
+				event.arguments.add(cert.getSubjectX500Principal().getName() + " (expires " + cert.getNotAfter() + ")");
 		}
 		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore any exception in writing out the event
@@ -320,6 +322,26 @@ public class DispatchSSLServer extends Thread {
 
 			if (accessLogStream == null)
 				accessLogStream = System.err;
+
+			try (RequestEvent event = new RequestEvent(accessLogStream)) {
+				event.command = "boot";
+				event.identity = AuthorizationFactory.getDefaultUser();
+				event.clientAddress = actualServerAddress;
+				event.clientPort = actualServerPort;
+
+				event.arguments = new ArrayList<>();
+
+				if (JAKeyStore.getKeyStore().getCertificateChain("User.cert") != null)
+					for (final Certificate cert : JAKeyStore.getKeyStore().getCertificateChain("User.cert")) {
+						final X509Certificate x509cert = (java.security.cert.X509Certificate) cert;
+						event.arguments.add(x509cert.getSubjectX500Principal().getName() + " (expires " + x509cert.getNotAfter() + ")");
+					}
+				else
+					event.errorMessage = "Local identity doesn't have a certificate chain associated";
+			}
+			catch (@SuppressWarnings("unused") IOException | KeyStoreException e) {
+				// ignore exception in logging the startup message
+			}
 		}
 
 		return accessLogStream;
@@ -401,6 +423,9 @@ public class DispatchSSLServer extends Thread {
 			server.setNeedClientAuth(true);
 
 			server.setUseClientMode(false);
+
+			actualServerAddress = server.getInetAddress();
+			actualServerPort = server.getLocalPort();
 
 			System.out.println("JCentral listening on " + server.getLocalSocketAddress());
 
