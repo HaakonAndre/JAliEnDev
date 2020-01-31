@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -389,6 +390,21 @@ public class JAliEnCOMMander extends Thread {
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting Commander");
+
+		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
+			event.command = "login";
+			event.identity = getUser();
+
+			final ArrayList<String> certificates = new ArrayList<>();
+
+			for (X509Certificate cert : event.identity.getUserCert())
+				certificates.add(cert.getSubjectX500Principal().getName());
+
+			event.arguments = certificates;
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
+			// ignore any exception in writing out the event
+		}
 
 		try {
 			while (!kill) {
