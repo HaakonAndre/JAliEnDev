@@ -409,11 +409,11 @@ public class TaskQueueApiUtils {
 
 	/**
 	 * Resubmit a job
-	 * 
+	 *
 	 * @param queueId
 	 * @return true for success, false for failure
 	 */
-	public ResubmitJob resubmitJob(long queueId) {
+	public ResubmitJob resubmitJob(final long queueId) {
 		try {
 			final ResubmitJob j = Dispatcher.execute(new ResubmitJob(commander.getUser(), queueId));
 			return j;
@@ -426,9 +426,9 @@ public class TaskQueueApiUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 * Submit resultsJdl for given queueId
-	 * 
+	 *
 	 * @param jdl
 	 * @param queueId
 	 * @return <code>AddResultsJDL</code> from which the database update status can be retrieved

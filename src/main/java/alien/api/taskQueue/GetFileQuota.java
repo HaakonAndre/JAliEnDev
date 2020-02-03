@@ -1,5 +1,8 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
@@ -19,6 +22,11 @@ public class GetFileQuota extends Request {
 	 */
 	public GetFileQuota(final AliEnPrincipal user) {
 		this.username = user.getName();
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.username);
 	}
 
 	@Override

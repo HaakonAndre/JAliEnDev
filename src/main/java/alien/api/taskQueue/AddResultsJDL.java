@@ -1,5 +1,8 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.taskQueue.JDL;
 import alien.taskQueue.TaskQueueUtils;
@@ -12,7 +15,7 @@ import alien.taskQueue.TaskQueueUtils;
  */
 public class AddResultsJDL extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	/**
@@ -30,6 +33,11 @@ public class AddResultsJDL extends Request {
 	public AddResultsJDL(final JDL jdl, final long queueId) {
 		this.jdl = jdl;
 		this.queueId = queueId;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(jdl != null ? jdl.toString() : null, String.valueOf(queueId));
 	}
 
 	@Override

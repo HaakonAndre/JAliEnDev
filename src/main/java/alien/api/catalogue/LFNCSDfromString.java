@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -43,6 +44,11 @@ public class LFNCSDfromString extends Request {
 		this.ignoreFolders = ignoreFolders;
 		this.evenIfDoesntExist = evenIfDoesntExist;
 		this.lfns_are_uuids = lfns_are_uuids;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path != null ? this.path.toString() : null, String.valueOf(this.ignoreFolders), String.valueOf(this.evenIfDoesntExist), String.valueOf(lfns_are_uuids));
 	}
 
 	@Override

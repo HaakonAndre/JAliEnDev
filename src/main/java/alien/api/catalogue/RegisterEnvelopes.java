@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +27,7 @@ import alien.user.AliEnPrincipal;
  */
 public class RegisterEnvelopes extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -5833071635420290042L;
 
@@ -73,6 +74,14 @@ public class RegisterEnvelopes extends Request {
 		this.size = size;
 		this.md5 = md5;
 		this.targetState = state;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		if (signedEnvelopes != null)
+			return Arrays.asList(targetState.toString(), signedEnvelopes.toString());
+
+		return Arrays.asList(targetState.toString(), md5, String.valueOf(size), encryptedEnvelope);
 	}
 
 	private boolean flagEntry(final PFN onePFN) {

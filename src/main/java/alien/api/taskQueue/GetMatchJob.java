@@ -1,6 +1,8 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import alien.api.Request;
 import alien.taskQueue.JobBroker;
@@ -28,6 +30,14 @@ public class GetMatchJob extends Request {
 	public GetMatchJob(final AliEnPrincipal user, final HashMap<String, Object> siteMap) {
 		setRequestUser(user);
 		this.matchRequest = siteMap;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		if (matchRequest != null)
+			return Arrays.asList(matchRequest.toString());
+
+		return null;
 	}
 
 	@Override

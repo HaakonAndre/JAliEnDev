@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFNCSDUtils;
 import alien.catalogue.LFN_CSD;
@@ -30,6 +33,11 @@ public class CreateCsdCatDirfromString extends Request {
 		setRequestUser(user);
 		this.path = path;
 		this.createNonExistentParents = createNonExistentParents;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, String.valueOf(this.createNonExistentParents));
 	}
 
 	@Override

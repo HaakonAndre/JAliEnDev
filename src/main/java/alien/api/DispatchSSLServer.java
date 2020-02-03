@@ -212,6 +212,7 @@ public class DispatchSSLServer extends Thread {
 							event.command = r.getClass().getSimpleName();
 							event.clientID = r.getVMUUID();
 							event.requestId = r.getRequestID();
+							event.arguments = r.getArguments();
 
 							try {
 								r = Dispatcher.execute(r, forwardRequest);

@@ -1,5 +1,6 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
 import java.util.List;
 
 import alien.api.Request;
@@ -37,6 +38,11 @@ public class GetNumberFreeSlots extends Request {
 		this.port = port;
 		this.ceName = ce;
 		this.version = version;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(host, String.valueOf(port), ceName, version);
 	}
 
 	@Override

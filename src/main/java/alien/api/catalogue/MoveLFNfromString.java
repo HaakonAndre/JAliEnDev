@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -32,6 +35,11 @@ public class MoveLFNfromString extends Request {
 		setRequestUser(user);
 		this.path = path;
 		this.newpath = newpath;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, this.newpath);
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -65,6 +66,12 @@ public class GetPS extends Request {
 		this.jobid = jobid;
 		this.limit = limit;
 		this.orderByKey = orderByKey;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(states != null ? states.toString() : null, users != null ? users.toString() : null, sites != null ? sites.toString() : null, nodes != null ? nodes.toString() : null,
+				mjobs != null ? mjobs.toString() : null, jobid != null ? jobid.toString() : null, String.valueOf(limit), orderByKey);
 	}
 
 	@Override

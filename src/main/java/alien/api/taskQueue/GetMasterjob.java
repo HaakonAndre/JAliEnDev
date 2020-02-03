@@ -1,5 +1,6 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -58,6 +59,11 @@ public class GetMasterjob extends Request {
 		this.status = status;
 		this.id = id;
 		this.site = site;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(String.valueOf(jobId), status != null ? status.toString() : null, id != null ? id.toString() : null, site != null ? site.toString() : null);
 	}
 
 	@Override

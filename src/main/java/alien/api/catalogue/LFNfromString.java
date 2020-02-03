@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +45,11 @@ public class LFNfromString extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path != null ? this.path.toString() : null, String.valueOf(this.ignoreFolders), String.valueOf(this.evenIfDoesntExist));
+	}
+
+	@Override
 	public void run() {
 		if (evenIfDoesntExist) {
 			if (this.lfns == null)
@@ -72,7 +78,7 @@ public class LFNfromString extends Request {
 	 */
 	public List<LFN> getRealLFNs() {
 		final List<LFN> ret = new ArrayList<>();
-		Iterator<LFN> it = this.lfns.iterator();
+		final Iterator<LFN> it = this.lfns.iterator();
 		while (it.hasNext())
 			ret.add(LFNUtils.getRealLFN(it.next()));
 

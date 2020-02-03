@@ -1,5 +1,8 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
@@ -25,6 +28,11 @@ public class KillJob extends Request {
 	public KillJob(final AliEnPrincipal user, final long queueId) {
 		setRequestUser(user);
 		this.queueId = queueId;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(String.valueOf(queueId));
 	}
 
 	@Override

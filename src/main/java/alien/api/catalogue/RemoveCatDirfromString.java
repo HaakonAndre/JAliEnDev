@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -28,6 +31,11 @@ public class RemoveCatDirfromString extends Request {
 	public RemoveCatDirfromString(final AliEnPrincipal user, final String path) {
 		setRequestUser(user);
 		this.path = path;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(path);
 	}
 
 	@Override

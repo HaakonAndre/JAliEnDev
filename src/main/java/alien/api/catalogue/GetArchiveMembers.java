@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.List;
 
 import alien.api.Request;
@@ -10,23 +11,23 @@ import alien.user.AliEnPrincipal;
 /**
  * @author vyurchen
  * @since 2018-05-29
- * 
+ *
  */
 public class GetArchiveMembers extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 6542969312522391743L;
 
 	private LFN archive;
-	private String sArchive;
+	private final String sArchive;
 
 	private List<LFN> members = null;
 
 	/**
 	 * Resolve the archive member and the real LFN of it
-	 * 
+	 *
 	 * @param user
 	 *            user who makes the request
 	 * @param sArchive
@@ -36,6 +37,11 @@ public class GetArchiveMembers extends Request {
 		setRequestUser(user);
 		this.sArchive = sArchive;
 		this.archive = null;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.sArchive, archive != null ? archive.getCanonicalName() : null);
 	}
 
 	@Override

@@ -8,6 +8,8 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAmount;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -137,6 +139,11 @@ public class GetTokenCertificate extends Request {
 		this.requestedUser = requestedUser;
 	}
 
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.certificateType.toString(), this.extension, String.valueOf(this.validity), this.requestedUser);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -172,7 +179,7 @@ public class GetTokenCertificate extends Request {
 
 				/*
 				 * Set the email addresses known for this user as extensions, similar to what CERN does (though the actual extension is different, i.e.:
-				 * 
+				 *
 				 * (ours)
 				 * X509v3 Subject Alternative Name:
 				 * email:Costin.Grigoras@cern.ch
@@ -185,7 +192,7 @@ public class GetTokenCertificate extends Request {
 
 				final GeneralName[] nameArray = new GeneralName[4 + (emailAddresses != null ? emailAddresses.size() : 0)];
 
-				// Token certificates can be used by JBox to listen on, so only localhost should validate 
+				// Token certificates can be used by JBox to listen on, so only localhost should validate
 				nameArray[0] = new GeneralName(GeneralName.dNSName, "localhost");
 				nameArray[1] = new GeneralName(GeneralName.dNSName, "localhost.localdomain");
 				nameArray[2] = new GeneralName(GeneralName.dNSName, "127.0.0.1");

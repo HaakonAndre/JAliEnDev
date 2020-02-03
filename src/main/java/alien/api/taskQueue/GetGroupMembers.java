@@ -1,5 +1,7 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 
 import alien.api.Request;
@@ -23,6 +25,11 @@ public class GetGroupMembers extends Request {
 	public GetGroupMembers(final AliEnPrincipal user, final String group) {
 		setRequestUser(user);
 		this.groupname = group;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.groupname);
 	}
 
 	@Override

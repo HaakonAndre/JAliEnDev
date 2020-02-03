@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -25,6 +28,11 @@ public class TouchLFNfromString extends Request {
 		setRequestUser(user);
 		this.path = path;
 		// this.createNonExistentParents = createNonExistentParents;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(path);
 	}
 
 	@Override

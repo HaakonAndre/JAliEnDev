@@ -1,6 +1,7 @@
 package alien.api.taskQueue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import alien.api.Request;
@@ -31,6 +32,14 @@ public class GetJobs extends Request {
 	public GetJobs(final AliEnPrincipal user, final List<Long> queueIds) {
 		setRequestUser(user);
 		this.queueIds = queueIds;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		if (queueIds != null)
+			return Arrays.asList(queueIds.toString());
+
+		return null;
 	}
 
 	@Override

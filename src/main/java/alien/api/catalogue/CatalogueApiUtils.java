@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.CatalogEntity;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
@@ -21,7 +22,6 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.catalogue.Package;
-import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.TransferDetails;
@@ -462,7 +462,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Find an LFN based on pattern and save to XmlCollection
-	 * 
+	 *
 	 * @param path
 	 * @param pattern
 	 * @param query
@@ -526,7 +526,7 @@ public class CatalogueApiUtils {
 	/**
 	 * Get the SEs matching the given set of names. The argument can be null or empty, in which case all defined SEs are returned. Invalid SEs are silently skipped, so the returned list could have a
 	 * different size (and order) than the given argument.
-	 * 
+	 *
 	 * @param ses
 	 * @return the SEs matching the request or <code>null</code> if failed to get the SE
 	 */
@@ -676,7 +676,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Register the LFNs contained in the OutputEntry in the catalogue
-	 * 
+	 *
 	 * @param entry
 	 * @param outputDir
 	 * @param user
@@ -695,7 +695,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Upload a local file to the Grid
-	 * 
+	 *
 	 * @param localFile
 	 *            full path to local file
 	 * @param toLFN
@@ -728,9 +728,9 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Download a remote file from the Grid
-	 * 
+	 *
 	 * @param fromLFN
-	 * 
+	 *
 	 * @param localFile
 	 *            full path to local file
 	 * @param args
@@ -758,9 +758,9 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Find files that are members of this archive
-	 * 
+	 *
 	 * @param archive
-	 * 
+	 *
 	 * @return list of archive members LFNs or <code>null</code> if failed to get it
 	 */
 	public List<LFN> getArchiveMembers(final String archive) {
@@ -795,7 +795,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Find an LFNCSD based on pattern and save to XmlCollection
-	 * 
+	 *
 	 * @param path
 	 * @param pattern
 	 * @param metadata
@@ -804,7 +804,7 @@ public class CatalogueApiUtils {
 	 * @param queueid
 	 * @return result LFNCSDs or <code>null</code> if failed to get them
 	 */
-	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, Long queueid) {
+	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, final Long queueid) {
 		try {
 			return Dispatcher.execute(new FindCsdfromString(commander.getUser(), path, pattern, metadata, flags, xmlCollectionName, queueid)).getLFNs();
 		}
@@ -869,7 +869,7 @@ public class CatalogueApiUtils {
 	 * @return the LFNCSD object or <code>null</code> if failed to get it
 	 */
 	public LFN_CSD getLFNCSD(final String lfn_path) {
-		ArrayList<String> slfn = new ArrayList<>();
+		final ArrayList<String> slfn = new ArrayList<>();
 		slfn.add(lfn_path);
 		Collection<LFN_CSD> slfn_res = new ArrayList<>();
 
@@ -969,7 +969,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs for reading by LFNCSD
-	 * 
+	 *
 	 *
 	 * @param entity
 	 *            LFN or GUID to get access to
@@ -993,7 +993,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Register the output of a given job ID
-	 * 
+	 *
 	 * @param jobId job ID to register the output of
 	 * @return the list of booked (so written but not yet committed) LFNs for this (normally failed) job ID or <code>null</code> if failed to get them
 	 */

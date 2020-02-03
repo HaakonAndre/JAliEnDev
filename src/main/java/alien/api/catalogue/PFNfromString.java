@@ -1,5 +1,7 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -32,6 +34,11 @@ public class PFNfromString extends Request implements Cacheable {
 	public PFNfromString(final AliEnPrincipal user, final String sguid) {
 		setRequestUser(user);
 		this.sguid = sguid;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.sguid);
 	}
 
 	@Override

@@ -35,6 +35,11 @@ public class LFNListingfromString extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path);
+	}
+
+	@Override
 	public void run() {
 		final LFN entry = LFNUtils.getLFN(path, false);
 

@@ -1,5 +1,7 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import alien.api.Request;
@@ -37,6 +39,11 @@ public class GUIDfromString extends Request {
 		this.sguid = sguid;
 		this.evenIfDoesNotExist = evenIfDoesNotExist;
 		this.resolveLFNs = resolveLFNs;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.sguid, String.valueOf(this.evenIfDoesNotExist), String.valueOf(this.resolveLFNs));
 	}
 
 	@Override

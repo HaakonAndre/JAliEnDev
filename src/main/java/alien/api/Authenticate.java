@@ -4,19 +4,21 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.util.Arrays;
+import java.util.List;
 
 import alien.user.AuthenticationChecker;
 
 /**
  * Authenticate a client with challenge/response on his private key possession
- * 
+ *
  * @author ron
  * @since Jun 17, 2011
  */
 public class Authenticate extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -3521063493699779404L;
 	private final String challenge;
@@ -37,16 +39,16 @@ public class Authenticate extends Request {
 			pubCert = AuthenticationChecker.readPubCert();
 
 		}
-		catch (InvalidKeyException e) {
+		catch (final InvalidKeyException e) {
 			e.printStackTrace();
 		}
-		catch (SignatureException e) {
+		catch (final SignatureException e) {
 			e.printStackTrace();
 		}
-		catch (NoSuchAlgorithmException e) {
+		catch (final NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -68,5 +70,10 @@ public class Authenticate extends Request {
 	@Override
 	public String toString() {
 		return "Asked for : " + this.challenge + ", reply is: " + this.response;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.challenge);
 	}
 }

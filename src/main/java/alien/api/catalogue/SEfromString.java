@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Cacheable;
 import alien.api.Request;
 import alien.se.SE;
@@ -29,6 +32,11 @@ public class SEfromString extends Request implements Cacheable {
 		setRequestUser(user);
 		sSE = se;
 		seNo = 0;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(sSE);
 	}
 
 	/**

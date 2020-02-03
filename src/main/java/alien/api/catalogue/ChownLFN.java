@@ -1,7 +1,9 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 
 import alien.api.Request;
 import alien.catalogue.CatalogEntity;
@@ -38,6 +40,11 @@ public class ChownLFN extends Request {
 		chown_user = chuser;
 		chown_group = chgroup;
 		this.recursive = recursive;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(path, chown_user, chown_group, String.valueOf(this.recursive));
 	}
 
 	@Override

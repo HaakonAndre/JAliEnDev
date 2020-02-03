@@ -1,6 +1,8 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import alien.api.Request;
 import alien.taskQueue.JobStatus;
@@ -40,6 +42,11 @@ public class SetJobStatus extends Request {
 		this.jobnumber = jobnumber;
 		this.status = status;
 		this.extrafields = extrafields;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(String.valueOf(jobnumber), status != null ? status.toString() : null, extrafields != null ? extrafields.toString() : null);
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import alien.api.Request;
@@ -32,6 +33,11 @@ public class PackagesfromString extends Request {
 	public PackagesfromString(final AliEnPrincipal user, final String platform) {
 		setRequestUser(user);
 		this.platform = platform;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.platform);
 	}
 
 	@Override

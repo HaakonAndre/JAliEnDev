@@ -1,5 +1,8 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.taskQueue.TaskQueueUtils;
 
@@ -27,6 +30,11 @@ public class PutJobLog extends Request {
 		this.jobnumber = jobnumber;
 		this.tag = tag;
 		this.message = message;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(String.valueOf(jobnumber), tag, message);
 	}
 
 	@Override

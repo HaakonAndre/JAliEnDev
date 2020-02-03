@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -68,13 +69,18 @@ public class PFNforReadOrDelCsd extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(entity.toString(), site, access.toString(), ses != null ? ses.toString() : null, exses != null ? exses.toString() : null);
+	}
+
+	@Override
 	public void run() {
-		boolean setArchiveAnchor = false;
+		final boolean setArchiveAnchor = false;
 
 		pfns = new LinkedList<>();
 
-		LFN_CSD lfnc = (LFN_CSD) entity;
-		Set<PFN> pfns_lfnc = lfnc.getPFNs(); // TODO resolve whereis recursively
+		final LFN_CSD lfnc = (LFN_CSD) entity;
+		final Set<PFN> pfns_lfnc = lfnc.getPFNs(); // TODO resolve whereis recursively
 
 		if (pfns_lfnc != null) {
 			try {

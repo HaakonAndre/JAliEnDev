@@ -1,6 +1,8 @@
 package alien.api.catalogue;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,8 +23,8 @@ public class RegisterEntry extends Request {
 	static transient final Logger logger = ConfigUtils.getLogger(RegisterEntry.class.getCanonicalName());
 
 	private static final long serialVersionUID = -2004904530203513524L;
-	private OutputEntry entry;
-	private String outputDir;
+	private final OutputEntry entry;
+	private final String outputDir;
 	private boolean wasRegistered;
 
 	/**
@@ -38,12 +40,17 @@ public class RegisterEntry extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.outputDir, this.entry != null ? this.entry.toString() : null);
+	}
+
+	@Override
 	public void run() {
 		if (entry != null && outputDir != null && outputDir.length() != 0) {
 			try {
 				wasRegistered = Register.register(entry, outputDir, getEffectiveRequester());
 			}
-			catch (IOException e) {
+			catch (final IOException e) {
 				logger.log(Level.SEVERE, "Could not register entry " + entry.getName());
 				e.printStackTrace();
 			}

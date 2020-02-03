@@ -1,6 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import alien.api.Request;
 import alien.catalogue.LFNCSDUtils;
@@ -30,6 +32,11 @@ public class LFNCSDListingfromString extends Request {
 	public LFNCSDListingfromString(final AliEnPrincipal user, final String path) {
 		setRequestUser(user);
 		this.path = path;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path);
 	}
 
 	@Override

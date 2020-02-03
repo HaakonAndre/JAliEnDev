@@ -1,5 +1,7 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map.Entry;
 
 import alien.api.Request;
@@ -27,6 +29,11 @@ public class ResubmitJob extends Request {
 	public ResubmitJob(final AliEnPrincipal user, final long queueId) {
 		setRequestUser(user);
 		this.queueId = queueId;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(String.valueOf(queueId));
 	}
 
 	@Override

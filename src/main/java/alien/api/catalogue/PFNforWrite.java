@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,6 +71,12 @@ public class PFNforWrite extends Request {
 			logger.log(Level.FINE, "got neg: " + exses);
 			logger.log(Level.FINE, "got qos: " + qos);
 		}
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(site, lfn != null ? lfn.getCanonicalName() : null, guid != null ? guid.guid.toString() : null, ses != null ? ses.toString() : null,
+				exses != null ? exses.toString() : null, qos != null ? qos.toString() : null);
 	}
 
 	@Override

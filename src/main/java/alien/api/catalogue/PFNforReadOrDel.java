@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -67,6 +68,11 @@ public class PFNforReadOrDel extends Request {
 		this.access = access;
 		this.ses = ses;
 		this.exses = exses;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(entity.toString(), site, access.toString(), ses != null ? ses.toString() : null, exses != null ? exses.toString() : null);
 	}
 
 	@Override

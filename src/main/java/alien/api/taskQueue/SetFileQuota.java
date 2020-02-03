@@ -1,14 +1,17 @@
 package alien.api.taskQueue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.quotas.QuotaUtilities;
 import alien.user.AliEnPrincipal;
 
 /**
  * Set the file quota for a given account
- * 
+ *
  * @author costing
- * 
+ *
  */
 public class SetFileQuota extends Request {
 
@@ -27,6 +30,11 @@ public class SetFileQuota extends Request {
 		this.field = fld;
 		this.value = val;
 		this.username = user.getName();
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(username, field, value);
 	}
 
 	@Override

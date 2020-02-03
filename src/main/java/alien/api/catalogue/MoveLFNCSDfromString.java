@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFNCSDUtils;
 import alien.user.AliEnPrincipal;
@@ -34,9 +37,13 @@ public class MoveLFNCSDfromString extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, this.newpath);
+	}
+
+	@Override
 	public void run() {
 		code = LFNCSDUtils.mv(getEffectiveRequester(), path, newpath);
-
 	}
 
 	/**

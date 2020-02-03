@@ -1,6 +1,8 @@
 package alien.api.taskQueue;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import alien.api.Request;
 import alien.api.ServerException;
@@ -31,6 +33,14 @@ public class SubmitJob extends Request {
 	public SubmitJob(final AliEnPrincipal user, final JDL jdl) {
 		setRequestUser(user);
 		this.jdl = jdl;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		if (jdl != null)
+			return Arrays.asList(jdl.toString());
+
+		return null;
 	}
 
 	@Override

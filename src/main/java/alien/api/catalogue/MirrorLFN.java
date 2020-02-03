@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -45,6 +46,12 @@ public class MirrorLFN extends Request {
 		this.ses = ses;
 		this.exses = exses;
 		this.qos = qos;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, String.valueOf(this.useGUID), String.valueOf(this.attempts), this.ses != null ? this.ses.toString() : null, this.exses != null ? this.exses.toString() : null,
+				this.qos != null ? this.qos.toString() : null);
 	}
 
 	@Override

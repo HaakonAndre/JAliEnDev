@@ -15,10 +15,10 @@ import alien.user.AliEnPrincipal;
  */
 public class ListSEs extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 4476411896853649872L;
-	private List<String> requestedSEs;
+	private final List<String> requestedSEs;
 	private List<SE> ses;
 
 	/**
@@ -28,6 +28,11 @@ public class ListSEs extends Request {
 	public ListSEs(final AliEnPrincipal user, final List<String> requestedSEs) {
 		setRequestUser(user);
 		this.requestedSEs = requestedSEs;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return requestedSEs;
 	}
 
 	/**

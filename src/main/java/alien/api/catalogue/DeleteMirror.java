@@ -1,5 +1,7 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import alien.api.Request;
@@ -34,6 +36,11 @@ public class DeleteMirror extends Request {
 		path = fpath;
 		this.isGuid = isGuid;
 		this.se = se;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, String.valueOf(this.isGuid), this.se);
 	}
 
 	@Override

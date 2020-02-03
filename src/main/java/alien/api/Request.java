@@ -3,12 +3,12 @@ package alien.api;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import java.security.cert.X509Certificate;
 
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
@@ -240,16 +240,22 @@ public abstract class Request implements Serializable, Runnable {
 
 	/**
 	 * Custom deserialization, making sure the transient fields are not set
-	 * 
+	 *
 	 * @param stream
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
+	private void readObject(final java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		stream.defaultReadObject();
 
 		this.partner_address = null;
 		this.partner_identity = null;
 		this.partner_certificate = null;
 	}
+
+	/**
+	 * @return the arguments to this object, for logging purposes.
+	 *         Please override this method and return any parameter that is relevant to build the object. To be used in activity logging.
+	 */
+	public abstract List<String> getArguments();
 }

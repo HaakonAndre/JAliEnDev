@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -15,13 +18,13 @@ public class RealLFN extends Request {
 	private static final long serialVersionUID = 8631851052133487066L;
 
 	private LFN lfn;
-	private String sLFN;
+	private final String sLFN;
 
 	private LFN realLFN = null;
 
 	/**
 	 * Resolve the real LFN of an existing LFN object
-	 * 
+	 *
 	 * @param user
 	 *            user who makes the request
 	 * @param lfn
@@ -33,9 +36,14 @@ public class RealLFN extends Request {
 		this.sLFN = null;
 	}
 
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.lfn != null ? this.lfn.getCanonicalName() : null);
+	}
+
 	/**
 	 * Resolve the archive member and the real LFN of it
-	 * 
+	 *
 	 * @param user
 	 *            user who makes the request
 	 * @param sLFN

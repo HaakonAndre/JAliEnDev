@@ -1,7 +1,9 @@
 package alien.api.catalogue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import alien.api.Request;
@@ -40,12 +42,17 @@ public class LFNListCollectionFromString extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, String.valueOf(this.onlyAliEnCollections));
+	}
+
+	@Override
 	public void run() {
 		final LFN entry = LFNUtils.getLFN(path, false);
 
 		if (entry != null) {
 			if (entry.isCollection()) {
-				Set<String> entries = entry.listCollection();
+				final Set<String> entries = entry.listCollection();
 
 				this.lfns = new LinkedHashSet<>(entries.size());
 

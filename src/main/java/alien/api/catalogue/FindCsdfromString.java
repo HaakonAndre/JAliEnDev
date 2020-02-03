@@ -1,6 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import alien.api.Request;
 import alien.catalogue.LFNCSDUtils;
@@ -55,6 +57,11 @@ public class FindCsdfromString extends Request {
 		this.flags = flags;
 		// this.xmlCollectionName = xmlCollectionName;
 		// this.queueid = queueid;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, this.pattern, this.metadata, String.valueOf(this.flags));
 	}
 
 	// /**

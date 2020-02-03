@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import alien.api.Request;
@@ -41,6 +42,11 @@ public class ListTransfer extends Request {
 		this.id = id;
 		this.count = count;
 		this.sort_desc = desc;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.status, this.toSE, this.user, String.valueOf(this.id), String.valueOf(this.count), String.valueOf(this.sort_desc));
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package alien.api;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import alien.config.ConfigUtils;
@@ -27,11 +28,15 @@ public class Ping extends Request {
 
 	/**
 	 * Server side returns some information on its status.
-	 * 
+	 *
 	 * @return some server provided information
 	 */
 	public Map<String, String> getServerInfo() {
 		return serverInfo;
 	}
 
+	@Override
+	public List<String> getArguments() {
+		return null;
+	}
 }

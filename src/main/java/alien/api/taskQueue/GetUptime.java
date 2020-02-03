@@ -2,6 +2,7 @@ package alien.api.taskQueue;
 
 import java.io.Serializable;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -12,24 +13,24 @@ import alien.taskQueue.TaskQueueUtils;
 
 /**
  * Get the "uptime" or "w" statistics
- * 
+ *
  * @author costing
  * @since Nov 4, 2011
  */
 public class GetUptime extends Request implements Cacheable {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 766147136470300455L;
 
 	/**
 	 * Statistics for one user
-	 * 
+	 *
 	 * @author costing
 	 */
 	public static final class UserStats implements Serializable {
 		/**
-		 * 
+		 *
 		 */
 		private static final long serialVersionUID = 7614077240613964647L;
 
@@ -45,7 +46,7 @@ public class GetUptime extends Request implements Cacheable {
 
 		/**
 		 * Sum up the values (for computing totals)
-		 * 
+		 *
 		 * @param other
 		 */
 		public void add(final UserStats other) {
@@ -60,6 +61,11 @@ public class GetUptime extends Request implements Cacheable {
 	 */
 	public GetUptime() {
 		// nothing
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return null;
 	}
 
 	private static EnumSet<JobStatus> activeJobsSet = EnumSet.range(JobStatus.ASSIGNED, JobStatus.SAVING);

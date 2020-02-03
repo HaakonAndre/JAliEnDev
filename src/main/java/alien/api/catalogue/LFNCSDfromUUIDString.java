@@ -1,5 +1,7 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import alien.api.Request;
@@ -20,12 +22,12 @@ public class LFNCSDfromUUIDString extends Request {
 	private static final long serialVersionUID = -3670065132137151045L;
 
 	private LFN_CSD lfnc;
-	private String uuid;
+	private final String uuid;
 
 	/**
 	 * @param user
 	 * @param uuid
-	 * 
+	 *
 	 */
 	public LFNCSDfromUUIDString(final AliEnPrincipal user, final String uuid) {
 		setRequestUser(user);
@@ -34,12 +36,17 @@ public class LFNCSDfromUUIDString extends Request {
 	}
 
 	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.uuid);
+	}
+
+	@Override
 	public void run() {
 		try {
-			UUID id = UUID.fromString(uuid);
+			final UUID id = UUID.fromString(uuid);
 			this.lfnc = LFNCSDUtils.guid2lfn(id);
 		}
-		catch (@SuppressWarnings("unused") Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			this.lfnc = null;
 		}
 	}

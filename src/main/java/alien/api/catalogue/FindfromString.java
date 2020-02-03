@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -43,6 +44,11 @@ public class FindfromString extends Request implements Cacheable {
 		this.query = null;
 		this.flags = flags;
 		this.xmlCollectionName = "";
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(this.path, this.pattern, this.query, String.valueOf(this.flags), this.xmlCollectionName);
 	}
 
 	/**

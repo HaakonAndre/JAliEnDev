@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFNCSDUtils;
 import alien.user.AliEnPrincipal;
@@ -31,6 +34,11 @@ public class RemoveLFNCSDfromString extends Request {
 		this.path = path;
 		this.recursive = recursive;
 		this.purge = true;
+	}
+
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(path, String.valueOf(recursive), String.valueOf(purge));
 	}
 
 	/**
