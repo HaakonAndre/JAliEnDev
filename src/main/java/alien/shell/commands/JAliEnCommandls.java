@@ -96,7 +96,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
 
-			if (!subdirectory.isEmpty()) {
+			if (subdirectory!= null) {
 				if (directory == null)
 					directory = new ArrayList<>(subdirectory);
 				else

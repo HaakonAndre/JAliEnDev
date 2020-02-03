@@ -52,14 +52,15 @@ public class LFNfromString extends Request {
 	@Override
 	public void run() {
 		if (evenIfDoesntExist) {
-			if (this.lfns == null)
-				this.lfns = new ArrayList<>();
-
 			for (final String s : path) {
 				final LFN l = LFNUtils.getLFN(s, evenIfDoesntExist);
 
-				if (l != null && !(l.isDirectory() && ignoreFolders))
+				if (l != null && !(l.isDirectory() && ignoreFolders)) {
+					if (this.lfns == null)
+						this.lfns = new ArrayList<>();
+
 					this.lfns.add(l);
+				}
 			}
 		}
 		else

@@ -48,8 +48,6 @@ public class LFNListingfromString extends Request {
 				this.lfns = entry.list();
 			else
 				this.lfns = Arrays.asList(entry);
-		else
-			this.lfns = new ArrayList<>();
 	}
 
 	/**
