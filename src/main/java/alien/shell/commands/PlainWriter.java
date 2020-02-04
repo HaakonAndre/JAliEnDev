@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,6 +58,11 @@ public class PlainWriter extends UIPrintWriter {
 	 */
 	protected boolean bColour = true;
 
+	/**
+	 * Metainfo of the command
+	 */
+	private HashMap<String, String> metadataResult;
+
 	@Override
 	protected void blackwhitemode() {
 		bColour = false;
@@ -84,6 +90,7 @@ public class PlainWriter extends UIPrintWriter {
 	 */
 	public PlainWriter(final OutputStream os) {
 		this.os = os;
+		metadataResult = new HashMap<>();
 	}
 
 	private void print(final String line) {
@@ -105,6 +112,7 @@ public class PlainWriter extends UIPrintWriter {
 	@Override
 	protected void printErr(final String line) {
 		print(errTag + line);
+		setMetaInfo("error", line);
 	}
 
 	@Override
@@ -123,24 +131,47 @@ public class PlainWriter extends UIPrintWriter {
 	}
 
 	@Override
-	void nextResult() {
+	protected void nextResult() {
 		// ignored
 	}
 
 	@Override
-	void setField(final String key, final String value) {
+	public void setField(final String key, final String value) {
 		// ignored
 	}
 
 	@Override
 	public void setMetaInfo(final String key, final String value) {
-		//
+		if (key != null && !key.isEmpty() && value != null) {
+			// If there was an error message, append string with a new line
+			if (key.equals("error") && metadataResult.containsKey(key) && !metadataResult.get(key).equals(""))
+				metadataResult.put(key, metadataResult.get(key) + "\n" + value);
+			else
+				metadataResult.put(key, value);
+		}
 	}
 
 	@Override
-	void setReturnCode(final int exitCode, final String errorMessage) {
-		if (!errorMessage.isEmpty())
+	public void setReturnCode(final int exitCode, final String errorMessage) {
+		if (!errorMessage.isEmpty()) {
 			printErr(errorMessage);
+		}
+		setMetaInfo("exitcode", String.valueOf(exitCode));
+		setMetaInfo("error", errorMessage);
 	}
 
+	@Override
+	public String getMetaInfo(String key) {
+		return key != null && !key.isEmpty() ? metadataResult.get(key).toString() : "";
+	}
+
+	@Override
+	public int getReturnCode() {
+		return Integer.parseInt(getMetaInfo("exitcode"));
+	}
+
+	@Override
+	public String getErrorMessage() {
+		return getMetaInfo("error");
+	}
 }

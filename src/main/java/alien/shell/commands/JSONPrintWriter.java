@@ -40,17 +40,17 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 	@Override
 	protected void blackwhitemode() {
-		// TODO Auto-generated method stub
+		// ignore
 	}
 
 	@Override
 	protected void colourmode() {
-		// TODO Auto-generated method stub
+		// ignore
 	}
 
 	@Override
 	protected boolean colour() {
-		// TODO Auto-generated method stub
+		// ignore
 		return false;
 	}
 
@@ -105,12 +105,12 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 	@Override
 	protected void pending() {
-		// TODO Auto-generated method stub
+		// ignore
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void nextResult() {
+	protected void nextResult() {
 		if (currentResult != null) {
 			// The ROOT client doesn't expect a newline character at the end of a JSON string, remove it
 			if (currentResult.get("message") != null)
@@ -122,7 +122,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	void setField(final String key, final String value) {
+	public void setField(final String key, final String value) {
 		if (currentResult == null)
 			currentResult = new LinkedHashMap<>();
 
@@ -138,7 +138,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void setMetaInfo(final String key, final String value) {
-		if (value != null) {
+		if (key != null && !key.isEmpty() && value != null) {
 			// If there was an error message, append string with a new line
 			if (key.equals("error") && metadataResult.containsKey(key) && !metadataResult.get(key).equals(""))
 				metadataResult.put(key, metadataResult.get(key) + "\n" + value);
@@ -147,10 +147,30 @@ public class JSONPrintWriter extends UIPrintWriter {
 		}
 	}
 
+	/**
+	 * Get a value from metainfo
+	 *
+	 * @param key the field you are interested in
+	 */
 	@Override
-	void setReturnCode(final int exitCode, final String errorMessage) {
+	public String getMetaInfo(final String key) {
+		return key != null && !key.isEmpty() ? metadataResult.get(key).toString() : "";
+	}
+
+	@Override
+	public void setReturnCode(final int exitCode, final String errorMessage) {
 		setMetaInfo("exitcode", String.valueOf(exitCode));
 		setMetaInfo("error", errorMessage);
+	}
+
+	@Override
+	public int getReturnCode() {
+		return Integer.parseInt(getMetaInfo("exitcode"));
+	}
+
+	@Override
+	public String getErrorMessage() {
+		return getMetaInfo("error");
 	}
 
 	@Override

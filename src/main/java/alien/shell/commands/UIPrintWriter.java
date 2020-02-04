@@ -102,14 +102,14 @@ public abstract class UIPrintWriter {
 	 *
 	 * @param args
 	 */
-	protected void setReturnArgs(@SuppressWarnings("unused") final String args) {
+	protected void setReturnArgs(final String args) {
 		// void
 	}
 
 	/**
 	 * Move to the next result
 	 */
-	abstract void nextResult();
+	abstract protected void nextResult();
 
 	/**
 	 * Set the value for one field
@@ -117,15 +117,22 @@ public abstract class UIPrintWriter {
 	 * @param key
 	 * @param value
 	 */
-	abstract void setField(final String key, final String value);
+	abstract public void setField(final String key, final String value);
 
 	/**
-	 * Command exit code
+	 * Set command exit code
 	 * 
 	 * @param exitCode
 	 * @param errorMessage
 	 */
-	abstract void setReturnCode(final int exitCode, final String errorMessage);
+	abstract public void setReturnCode(final int exitCode, final String errorMessage);
+
+	/**
+	 * Get the exit code of the command
+	 * 
+	 * @return the exit code
+	 */
+	abstract public int getReturnCode();
 
 	/**
 	 * Set metadata information
@@ -135,4 +142,17 @@ public abstract class UIPrintWriter {
 	 */
 	abstract public void setMetaInfo(String key, String value);
 
+	/**
+	 * Get a value from metainfo
+	 *
+	 * @param key the field you are interested in
+	 */
+	abstract public String getMetaInfo(String key);
+
+	/**
+	 * Get the command's error message if any
+	 * 
+	 * @return the error string
+	 */
+	abstract public String getErrorMessage();
 }

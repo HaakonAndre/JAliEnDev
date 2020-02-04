@@ -136,7 +136,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	void nextResult() {
+	protected void nextResult() {
 		if (currentResult != null) {
 			results.add(currentResult);
 			currentResult = null;
@@ -144,7 +144,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	void setField(final String key, final String value) {
+	public void setField(final String key, final String value) {
 		if (currentResult == null)
 			currentResult = new TreeMap<>();
 
@@ -166,8 +166,25 @@ public class XMLPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	void setReturnCode(final int exitCode, final String errorMessage) {
+	public void setReturnCode(final int exitCode, final String errorMessage) {
 		setMetaInfo("exitcode", String.valueOf(exitCode));
 		setMetaInfo("message", errorMessage);
+	}
+
+	@Override
+	public String getMetaInfo(String key) {
+		return "";
+	}
+
+	@Override
+	public int getReturnCode() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public String getErrorMessage() {
+		// TODO Auto-generated method stub
+		return "";
 	}
 }

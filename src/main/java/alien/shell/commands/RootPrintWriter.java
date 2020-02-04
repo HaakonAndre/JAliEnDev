@@ -248,23 +248,41 @@ public class RootPrintWriter extends UIPrintWriter {
 	// testcode end
 
 	@Override
-	void nextResult() {
+	protected void nextResult() {
 		// ignored
 	}
 
 	@Override
-	void setField(final String key, final String value) {
+	public void setField(final String key, final String value) {
 		// ignored
 	}
 
 	@Override
-	void setReturnCode(final int exitCode, final String errorMessage) {
+	public void setReturnCode(final int exitCode, final String errorMessage) {
 		// ignored
 	}
 
 	@Override
 	public void setMetaInfo(final String key, final String value) {
 		//
+	}
+
+	@Override
+	public String getMetaInfo(String key) {
+		// TODO Auto-generated method stub
+		return "";
+	}
+
+	@Override
+	public int getReturnCode() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public String getErrorMessage() {
+		// TODO Auto-generated method stub
+		return "";
 	}
 
 	//

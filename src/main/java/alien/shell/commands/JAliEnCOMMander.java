@@ -616,6 +616,9 @@ public class JAliEnCOMMander extends Thread {
 				out.setReturnCode(-5, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
 			}
 		}
+
+		event.exitCode = out.getReturnCode();
+		event.errorMessage = out.getErrorMessage();
 		flush();
 	}
 
