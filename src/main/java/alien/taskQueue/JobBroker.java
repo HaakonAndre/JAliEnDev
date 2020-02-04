@@ -30,12 +30,12 @@ public class JobBroker {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JobBroker.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobBroker.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(JobBroker.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(JobBroker.class.getCanonicalName());
 
 	/**
 	 * @param matchRequest

@@ -40,7 +40,7 @@ public class JBoxServer extends Thread {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
 	// this triggers to ask for the user home LFN before doing anything else
 	private static boolean preemptJCentralConnection = true;
@@ -399,7 +399,7 @@ public class JBoxServer extends Thread {
 
 	}
 
-	private transient boolean alive = true;
+	private boolean alive = true;
 
 	/**
 	 * Kill the JBox instance

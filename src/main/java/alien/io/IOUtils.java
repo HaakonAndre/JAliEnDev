@@ -57,7 +57,7 @@ public class IOUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
 
 	private static PrintWriter activityLog;
 

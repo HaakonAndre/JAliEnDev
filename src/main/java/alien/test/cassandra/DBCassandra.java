@@ -22,7 +22,7 @@ public class DBCassandra {
 	private static DBCassandra dbc = null;
 	private static Session session = null;
 	private static Cluster cluster = null;
-	private static transient final Logger logger = ConfigUtils.getLogger(DBCassandra.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(DBCassandra.class.getCanonicalName());
 
 	private DBCassandra() {
 	}

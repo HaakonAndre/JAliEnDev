@@ -40,12 +40,12 @@ public final class CatalogueUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
 
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;

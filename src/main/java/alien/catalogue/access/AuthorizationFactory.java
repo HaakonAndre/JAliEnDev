@@ -27,7 +27,7 @@ public final class AuthorizationFactory {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(AuthorizationFactory.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(AuthorizationFactory.class.getCanonicalName());
 
 	private static AliEnPrincipal defaultAccount = null;
 

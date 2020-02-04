@@ -17,7 +17,7 @@ public class JBox {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
 	private static void logLoud(Level l, String msg) {
 		logger.log(l, msg);

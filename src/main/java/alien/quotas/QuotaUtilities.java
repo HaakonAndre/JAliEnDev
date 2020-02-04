@@ -30,7 +30,7 @@ public final class QuotaUtilities {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(QuotaUtilities.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(QuotaUtilities.class.getCanonicalName());
 
 	private static Map<String, Quota> jobQuotas = null;
 	private static long jobQuotasLastUpdated = 0;

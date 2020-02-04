@@ -93,10 +93,10 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
 	}
 
-	static transient final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
 
-	static transient final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+	static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
+	static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	private Integer RES_NOCPUS = Integer.valueOf(1);
 	private String RES_CPUMHZ = "";

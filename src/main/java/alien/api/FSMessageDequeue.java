@@ -26,7 +26,7 @@ public class FSMessageDequeue {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(FSMessageDequeue.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(FSMessageDequeue.class.getCanonicalName());
 
 	private final File inboxFolder;
 

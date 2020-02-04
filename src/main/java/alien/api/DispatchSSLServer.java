@@ -60,12 +60,12 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLServer.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(DispatchSSLServer.class.getCanonicalName());
 
 	/**
 	 * Service monitoring
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(DispatchSSLServer.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(DispatchSSLServer.class.getCanonicalName());
 
 	/**
 	 * The entire connection

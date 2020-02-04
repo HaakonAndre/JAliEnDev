@@ -47,7 +47,7 @@ public class DispatchSSLClient {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
 
 	private static final int defaultPort = 8098;
 	private static final String defaultHost = "alice-jcentral.cern.ch";
@@ -102,7 +102,7 @@ public class DispatchSSLClient {
 		return this.connection.getInetAddress().toString();
 	}
 
-	private transient static DispatchSSLClient instance = null;
+	private static DispatchSSLClient instance = null;
 
 	private static void connectTo(final List<InetAddress> allAddresses, final int targetPort, final SSLSocketFactory factory, final Object callback, final AtomicInteger connectionState) {
 		// connect timeout in config should be given in seconds

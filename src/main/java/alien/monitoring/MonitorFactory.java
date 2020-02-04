@@ -65,7 +65,7 @@ public final class MonitorFactory {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(MonitorFactory.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(MonitorFactory.class.getCanonicalName());
 
 	private static MonitorDataSender senderInstance = null;
 

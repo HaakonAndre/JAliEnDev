@@ -74,7 +74,7 @@ public class JAKeyStore {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 
 	/**
 	 * length for the password generator

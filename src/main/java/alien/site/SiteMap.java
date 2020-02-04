@@ -25,7 +25,7 @@ import alien.user.UserFactory;
  */
 public class SiteMap {
 
-	static transient final Logger logger = ConfigUtils.getLogger(SiteMap.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(SiteMap.class.getCanonicalName());
 
 	private HashMap<String, Object> siteMap = new HashMap<>();
 

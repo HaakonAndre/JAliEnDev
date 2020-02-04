@@ -93,7 +93,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	/**
 	 * logger object
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
 
 	/**
 	 * Streams for data transfer

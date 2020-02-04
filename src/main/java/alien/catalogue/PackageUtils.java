@@ -29,12 +29,12 @@ public class PackageUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(IndexTableEntry.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(IndexTableEntry.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(IndexTableEntry.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(IndexTableEntry.class.getCanonicalName());
 
 	private static long lastCacheCheck = 0;
 

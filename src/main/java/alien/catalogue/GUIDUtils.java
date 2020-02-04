@@ -40,12 +40,12 @@ public final class GUIDUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(GUIDUtils.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(GUIDUtils.class.getCanonicalName());
 
 	/**
 	 * Get the host where this entry should be located

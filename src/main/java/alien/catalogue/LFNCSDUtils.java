@@ -50,12 +50,12 @@ public class LFNCSDUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(LFNCSDUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(LFNCSDUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(LFNCSDUtils.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(LFNCSDUtils.class.getCanonicalName());
 
 	/** Thread pool */
 	static ThreadPoolExecutor tPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());

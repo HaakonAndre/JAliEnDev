@@ -42,12 +42,12 @@ public class LFNUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(LFNUtils.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(LFNUtils.class.getCanonicalName());
 
 	/**
 	 * Get an LFN which corresponds to the given GUID

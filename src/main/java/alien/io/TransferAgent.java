@@ -20,7 +20,7 @@ public class TransferAgent extends Thread {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(TransferAgent.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(TransferAgent.class.getCanonicalName());
 
 	private final Integer transferAgentID;
 

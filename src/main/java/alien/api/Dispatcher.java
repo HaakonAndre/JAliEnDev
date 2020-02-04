@@ -24,12 +24,12 @@ public class Dispatcher {
 
 	private static final ExpirationCache<String, WeakReference<Request>> cache = new ExpirationCache<>(10240);
 
-	static transient final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
 
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Dispatcher.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(Dispatcher.class.getCanonicalName());
 
 	static {
 		monitor.addMonitoring("object_cache_status", (names, values) -> {

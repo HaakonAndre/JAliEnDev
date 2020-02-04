@@ -138,7 +138,7 @@ public class CatalogueToCassandraThreads {
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueToCassandraThreads.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(CatalogueToCassandraThreads.class.getCanonicalName());
 
 	/**
 	 * @param args

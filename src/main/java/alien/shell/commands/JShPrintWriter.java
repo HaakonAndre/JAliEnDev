@@ -3,7 +3,6 @@ package alien.shell.commands;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,7 +17,7 @@ public class JShPrintWriter extends UIPrintWriter {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JShPrintWriter.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JShPrintWriter.class.getCanonicalName());
 
 	/**
 	 *

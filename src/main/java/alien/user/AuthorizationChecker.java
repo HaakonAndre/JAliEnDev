@@ -19,7 +19,7 @@ public final class AuthorizationChecker {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(AuthorizationChecker.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(AuthorizationChecker.class.getCanonicalName());
 
 	private AuthorizationChecker() {
 		// utility class

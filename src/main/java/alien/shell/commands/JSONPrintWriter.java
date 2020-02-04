@@ -20,7 +20,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JSONPrintWriter.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JSONPrintWriter.class.getCanonicalName());
 
 	private final OutputStream os;
 

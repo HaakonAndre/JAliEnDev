@@ -43,7 +43,7 @@ public class LDAPHelper {
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(LDAPHelper.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(LDAPHelper.class.getCanonicalName());
 
 	/**
 	 * For statistics, get the number of cached query results

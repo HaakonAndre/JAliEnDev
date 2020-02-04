@@ -16,7 +16,7 @@ public abstract class JAliEnBaseCommand implements Runnable {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
 
 	/**
 	 * The JAliEnCOMMander

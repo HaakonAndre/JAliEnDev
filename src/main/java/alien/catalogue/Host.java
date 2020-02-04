@@ -18,7 +18,7 @@ public class Host implements Comparable<Host> {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Host.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(Host.class.getCanonicalName());
 
 	/**
 	 * host index

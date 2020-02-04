@@ -20,7 +20,7 @@ public final class UserFactory {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(UserFactory.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(UserFactory.class.getCanonicalName());
 
 	private UserFactory() {
 		// factory

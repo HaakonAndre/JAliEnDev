@@ -18,7 +18,7 @@ public class LTables extends Optimizer {
 	/**
 	 * Logging facility
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(LTables.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(LTables.class.getCanonicalName());
 
 	/**
 	 * At which point to send a warning by mail

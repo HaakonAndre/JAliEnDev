@@ -28,7 +28,7 @@ public class Monitor implements Runnable {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Monitor.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(Monitor.class.getCanonicalName());
 
 	private final String component;
 

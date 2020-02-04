@@ -40,10 +40,10 @@ public class ComputingElement extends Thread {
 	/**
 	 * ApMon sender
 	 */
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+	static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	// Logger object
-	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
+	static Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 

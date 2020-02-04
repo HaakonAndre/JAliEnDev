@@ -23,7 +23,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(XMLPrintWriter.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(XMLPrintWriter.class.getCanonicalName());
 
 	private XMLStreamWriter writer;
 

@@ -31,12 +31,12 @@ public final class FileSystemUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
 
 	/**
 	 * @param user

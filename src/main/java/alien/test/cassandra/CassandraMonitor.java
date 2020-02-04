@@ -49,12 +49,12 @@ public class CassandraMonitor {
 	 */
 	static MBeanServerConnection mbsConnection = null;
 
-	private static transient final Logger logger = ConfigUtils.getLogger(CassandraMonitor.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(CassandraMonitor.class.getCanonicalName());
 
 	/**
 	 * The JVM-wide ApMon sender (jAliEn configured)
 	 */
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+	static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	/**
 	 * My host name

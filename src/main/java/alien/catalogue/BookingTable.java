@@ -31,7 +31,7 @@ public class BookingTable {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
 
 	private static final DBFunctions getDB() {
 		final DBFunctions db = ConfigUtils.getDB("alice_users");

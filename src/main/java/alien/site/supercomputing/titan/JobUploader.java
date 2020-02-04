@@ -71,9 +71,9 @@ public class JobUploader extends Thread {
 	 */
 	public static String defaultOutputDirPrefix;
 
-	static transient final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
-	static transient final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+	static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
+	static final ApMon apmon = MonitorFactory.getApMonSender();
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 

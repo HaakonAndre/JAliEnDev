@@ -48,7 +48,7 @@ public class TransferBroker {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(TransferBroker.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(TransferBroker.class.getCanonicalName());
 
 	private TransferBroker() {
 		// just hide it

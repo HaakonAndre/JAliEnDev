@@ -20,7 +20,7 @@ public class GuidTable extends Optimizer {
 	/**
 	 * Logging facility
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(GuidTable.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(GuidTable.class.getCanonicalName());
 
 	/**
 	 * When to switch to a new G table

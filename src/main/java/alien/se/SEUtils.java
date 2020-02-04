@@ -55,7 +55,7 @@ public final class SEUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(SEUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(SEUtils.class.getCanonicalName());
 
 	private static Map<Integer, SE> seCache = null;
 

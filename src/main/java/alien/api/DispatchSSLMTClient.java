@@ -42,7 +42,7 @@ public class DispatchSSLMTClient extends Thread {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLMTClient.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(DispatchSSLMTClient.class.getCanonicalName());
 
 	private static final int defaultPort = 5282;
 	private static final String defaultHost = "localhost";

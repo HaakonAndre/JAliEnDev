@@ -20,7 +20,7 @@ public class Tester {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 
 	// static{
 	// ConfigUtils.getVersion();

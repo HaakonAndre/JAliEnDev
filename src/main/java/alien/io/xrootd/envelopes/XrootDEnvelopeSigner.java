@@ -36,7 +36,7 @@ public class XrootDEnvelopeSigner {
 	/**
 	 * logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(XrootDEnvelopeSigner.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(XrootDEnvelopeSigner.class.getCanonicalName());
 
 	private static final String JAuthZPrivLocation;
 	private static final String JAuthZPubLocation;

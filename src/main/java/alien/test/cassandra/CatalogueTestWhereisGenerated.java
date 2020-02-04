@@ -125,7 +125,7 @@ public class CatalogueTestWhereisGenerated {
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueTestWhereisGenerated.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(CatalogueTestWhereisGenerated.class.getCanonicalName());
 
 	/**
 	 * Signal to stop

@@ -15,7 +15,7 @@ public abstract class Containerizer {
 	final String CONTAINER_JOBDIR = "/workdir";
 	final String envSetup = "source <( " + ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion() + " ); ";
 
-	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 	final String containerImgPath;
 
 	String workdir = null;

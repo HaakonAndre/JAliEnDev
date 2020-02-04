@@ -35,12 +35,12 @@ public final class TransferUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(TransferUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(TransferUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(TransferUtils.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(TransferUtils.class.getCanonicalName());
 
 	/**
 	 * @return database connection to the transfers

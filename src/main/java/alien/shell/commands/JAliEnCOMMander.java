@@ -73,7 +73,7 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
 	/**
 	 *

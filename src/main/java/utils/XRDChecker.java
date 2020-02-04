@@ -37,7 +37,7 @@ public class XRDChecker {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(XRDChecker.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(XRDChecker.class.getCanonicalName());
 
 	/**
 	 * @param guid

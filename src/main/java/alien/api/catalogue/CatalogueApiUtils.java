@@ -41,7 +41,7 @@ public class CatalogueApiUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(CatalogueApiUtils.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(CatalogueApiUtils.class.getCanonicalName());
 
 	private final JAliEnCOMMander commander;
 

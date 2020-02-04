@@ -24,7 +24,7 @@ public class CVMFS extends PackMan {
 	/**
 	 * logger object
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	private String alienv_bin = "/cvmfs/alice.cern.ch/bin";
 	private boolean havePath = true;

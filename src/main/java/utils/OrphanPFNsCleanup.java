@@ -50,12 +50,12 @@ public class OrphanPFNsCleanup {
 	/**
 	 * logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(OrphanPFNsCleanup.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(OrphanPFNsCleanup.class.getCanonicalName());
 
 	/**
 	 * ML monitor object
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(OrphanPFNsCleanup.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(OrphanPFNsCleanup.class.getCanonicalName());
 
 	/**
 	 * Thread pool per SE

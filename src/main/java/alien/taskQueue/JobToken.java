@@ -20,12 +20,12 @@ public class JobToken implements Comparable<JobToken> {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JobToken.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobToken.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(JobToken.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(JobToken.class.getCanonicalName());
 
 	/**
 	 * jobId

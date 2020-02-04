@@ -22,7 +22,7 @@ public class JCentral {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JCentral.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JCentral.class.getCanonicalName());
 
 	/**
 	 * @param args

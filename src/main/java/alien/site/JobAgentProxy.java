@@ -129,10 +129,10 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
 	}
 
-	static transient final Logger logger = ConfigUtils.getLogger(JobAgentProxy.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobAgentProxy.class.getCanonicalName());
 
-	static transient final Monitor monitor = MonitorFactory.getMonitor(JobAgentProxy.class.getCanonicalName());
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+	static final Monitor monitor = MonitorFactory.getMonitor(JobAgentProxy.class.getCanonicalName());
+	static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	// Resource monitoring vars
 

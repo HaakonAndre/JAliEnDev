@@ -35,7 +35,7 @@ public class XrootdListing {
 	/**
 	 * Logger object
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(XrootdListing.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(XrootdListing.class.getCanonicalName());
 
 	/**
 	 * Server host and port

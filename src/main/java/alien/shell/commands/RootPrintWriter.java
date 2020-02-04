@@ -63,7 +63,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(RootPrintWriter.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(RootPrintWriter.class.getCanonicalName());
 
 	/**
 	 * OutputSteam that will contain the information in Root format

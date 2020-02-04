@@ -25,8 +25,6 @@ import lazyj.Log;
  *        -c : print canonical paths <br />
  */
 
-// FIXME: freezes on passing incorrect arguments, I tried ls -R
-
 public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**

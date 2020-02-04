@@ -114,16 +114,16 @@ public class JobAgent implements Runnable {
 	/**
 	 * logger object
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	/**
 	 * ML monitor object
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+	static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
 	/**
 	 * ApMon sender
 	 */
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+	static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	// _ource monitoring vars
 

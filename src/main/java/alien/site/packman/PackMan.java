@@ -13,7 +13,7 @@ import alien.site.JobAgent;
  */
 public abstract class PackMan {
 
-	private static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	/**
 	 * @return ?

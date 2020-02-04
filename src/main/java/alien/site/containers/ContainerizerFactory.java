@@ -7,7 +7,7 @@ import alien.site.JobAgent;
 
 public class ContainerizerFactory {
 	
-	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	enum Containerizers {
 		Singularity,
