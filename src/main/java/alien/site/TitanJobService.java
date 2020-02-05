@@ -1,6 +1,5 @@
 package alien.site;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -412,7 +411,7 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		if (extrasites != null && extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
-		siteMap.put("Disk", Long.valueOf(new File(globalWorkdir).getFreeSpace() / 1024));
+		siteMap.put("Disk", Long.valueOf(JobAgent.getFreeSpace(globalWorkdir) / 1024));
 
 		if (!partition.equals(""))
 			siteMap.put("Partition", partition);
@@ -440,7 +439,7 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
 
 		// free disk recalculation
-		final long space = new File(globalWorkdir).getFreeSpace() / 1024;
+		final long space = JobAgent.getFreeSpace(globalWorkdir) / 1024;
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();

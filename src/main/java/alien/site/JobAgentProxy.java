@@ -588,7 +588,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		if (extrasites != null && extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
-		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
+		siteMap.put("Disk", Long.valueOf(JobAgent.getFreeSpace(workdir) / 1024));
 
 		if (!partition.equals(""))
 			siteMap.put("Partition", partition);
@@ -616,7 +616,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
 
 		// free disk recalculation
-		final long space = new File(workdir).getFreeSpace() / 1024;
+		final long space = JobAgent.getFreeSpace(workdir) / 1024;
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();

@@ -349,21 +349,17 @@ public class JobAgent implements Runnable {
 	}
 
 	/**
-	 * updates jobagent parameters that change between job requests
-	 *
-	 * @return false if we can't run because of current conditions, true if positive
+	 * @param folder
+	 * @return amount of free space (in bytes) in the given folder. Or zero if there was a problem (or no free space).
 	 */
-	private boolean updateDynamicParameters() {
-		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
-
-		// free disk recalculation
-		long space = new File(workdir).getFreeSpace() / 1024;
+	public static long getFreeSpace(final String folder) {
+		long space = new File(folder).getFreeSpace();
 
 		if (space <= 0) {
 			// 32b JRE returns 0 when too much space is available
 
 			try {
-				final String output = ExternalProcesses.getCmdOutput(Arrays.asList("df", "-P", "-B", "1024", workdir), true, 30L, TimeUnit.SECONDS);
+				final String output = ExternalProcesses.getCmdOutput(Arrays.asList("df", "-P", "-B", "1024", folder), true, 30L, TimeUnit.SECONDS);
 
 				try (BufferedReader br = new BufferedReader(new StringReader(output))) {
 					String sLine = br.readLine();
@@ -378,7 +374,7 @@ public class JobAgent implements Runnable {
 							st.nextToken();
 							st.nextToken();
 
-							space = Long.parseLong(st.nextToken()) / 1024;
+							space = Long.parseLong(st.nextToken());
 						}
 					}
 				}
@@ -387,6 +383,20 @@ public class JobAgent implements Runnable {
 				logger.log(Level.WARNING, "Could not extract the space information from `df`", ioe);
 			}
 		}
+
+		return space;
+	}
+
+	/**
+	 * updates jobagent parameters that change between job requests
+	 *
+	 * @return false if we can't run because of current conditions, true if positive
+	 */
+	private boolean updateDynamicParameters() {
+		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
+
+		// free disk recalculation
+		final long space = getFreeSpace(workdir) / 1024;
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = System.currentTimeMillis();
