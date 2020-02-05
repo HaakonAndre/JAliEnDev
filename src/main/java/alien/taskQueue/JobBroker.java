@@ -330,7 +330,7 @@ public class JobBroker {
 
 			db.query("update QUEUEPROC set lastupdate=CURRENT_TIMESTAMP where queueId=?", false, Long.valueOf(queueId));
 
-			db.query("update SITEQUEUES set ASSIGNED=ASSIGNED+1, WAITING=WAITING-1 where siteid=?", false, Integer.valueOf(siteId));
+			db.query("update SITEQUEUES set ASSIGNED=GREATEST(ASSIGNED,0)+1, WAITING=GREATEST(WAITING-1,0) where siteid=?", false, Integer.valueOf(siteId));
 
 			TaskQueueUtils.deleteJobAgent(Long.parseLong(agentId), queueId);
 
