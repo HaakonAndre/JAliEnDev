@@ -27,6 +27,8 @@ import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
+import alien.site.containers.Containerizer;
+import alien.site.containers.Docker;
 import alien.test.utils.Functions;
 import apmon.ApMon;
 import apmon.ApMonException;
@@ -55,6 +57,7 @@ public class ComputingElement extends Thread {
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
+	private final String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin/alienv";
 
 	/**
 	 *
@@ -240,7 +243,6 @@ public class ComputingElement extends Thread {
 			startup_script = System.getenv("JALIEN_ROOT") + "/jalien ";
 		}
 		String before = "";
-		String after = "";
 
 		final long time = new Timestamp(System.currentTimeMillis()).getTime();
 		String host_tempdir = (String) config.get("host_tmpdir");
@@ -284,15 +286,16 @@ public class ComputingElement extends Thread {
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
 
-		// cleanup jar
-		after += "rm -f alien.jar\n";
-
-		if (config.containsKey("ce_installmethod") && config.get("ce_installmethod").equals("CVMFS"))
-			startup_script = runFromCVMFS();
-		else
-			startup_script = runFromDefault();
-
-		final String content_str = before + startup_script + after;
+		Containerizer cont = new Docker(); //Containers within containers only supported by Docker
+		if(cont.isSupported())
+			startup_script = String.join(" ", cont.containerize(getStartup() + "'\n"));
+		else {
+			if(!System.getenv("LOADEDMODULES").contains("JALIEN"))
+				before += "source <( " + ALIENV_DIR + " printenv JAliEn ); " + "'\n"; //TODO: Same call within the containerizer. And plenty of similar calls all around jAliEn. Put in common class?
+			startup_script = getStartup()+ "'\n";
+		}
+		
+		final String content_str = before + startup_script;
 
 		final String agent_startup_path = host_tempdir_resolved + "/agent.startup." + time;
 		final File agent_startup_file = new File(agent_startup_path);
@@ -336,26 +339,8 @@ public class ComputingElement extends Thread {
 		return null;
 	}
 
-	private static String runFromCVMFS() {
-		logger.info("The worker node will install with the CVMFS method");
-		// String alien_version = System.getenv("ALIEN_VERSION");
-		// String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
-		//
-		// alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : ""); // TODO: uncomment
-		//
-		// if (ce_environment.containsKey("CVMFS_PATH"))
-		// cvmfs_path = ce_environment.get("CVMFS_PATH");
-		//
-		// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
-
-		// return System.getenv("HOME") + "/jalien/jalien"; //TODO: local version
-		return "curl -k -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\n"
-				+ "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -cp alien.jar alien.site.JobAgent\n";
-	}
-
-	private static String runFromDefault() {
-		logger.info("The worker node will install with the no method");
-		return "curl -k -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\njava -cp alien.jar alien.site.JobAgent\n";
+	private static String getStartup() {
+		return "java -cp $((which jalien)//jalien)../lib/alien-users.jar alien.site.JobAgent";
 	}
 
 	// Prepares a hash to create the sitemap
