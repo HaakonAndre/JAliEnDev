@@ -1,6 +1,5 @@
 package alien.site;
 
-import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -175,7 +174,7 @@ public class SiteMap {
 		if (env.containsKey("Disk"))
 			siteMap.put("Disk", env.get("Disk"));
 		else
-			siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
+			siteMap.put("Disk", Long.valueOf(JobAgent.getFreeSpace(workdir) / 1024));
 
 		if (!partition.equals(""))
 			siteMap.put("Partition", partition);

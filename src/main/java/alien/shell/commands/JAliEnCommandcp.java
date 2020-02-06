@@ -1195,6 +1195,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("w");
 			parser.accepts("W");
 			parser.accepts("d");
+			parser.accepts("v");
 			parser.accepts("j").withRequiredArg().ofType(Long.class);
 			parser.accepts("T").withRequiredArg().ofType(Integer.class);
 			parser.accepts("silent");

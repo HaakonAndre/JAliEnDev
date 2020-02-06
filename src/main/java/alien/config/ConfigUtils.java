@@ -44,6 +44,7 @@ import alien.user.UserFactory;
 import alien.user.UsersHelper;
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
+import lazyj.Format;
 import lazyj.Utils;
 import lazyj.cache.ExpirationCache;
 import lazyj.commands.SystemCommand;
@@ -424,6 +425,8 @@ public class ConfigUtils {
 		if (hostName == null || hostName.length() == 0 || !hostName.contains(".")) {
 			final Set<String> hostNameCandidates = new HashSet<>();
 
+			final Set<String> ipAddresses = new HashSet<>();
+
 			try {
 				final Enumeration<NetworkInterface> cards = NetworkInterface.getNetworkInterfaces();
 
@@ -434,6 +437,8 @@ public class ConfigUtils {
 						final InetAddress addr = iface.getAddress();
 
 						if (!addr.isAnyLocalAddress() && !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && !addr.isMulticastAddress()) {
+							ipAddresses.add(addr.getHostAddress());
+
 							final String someHostName = addr.getCanonicalHostName();
 
 							if (!addr.getHostAddress().equals(someHostName))
@@ -448,14 +453,26 @@ public class ConfigUtils {
 
 			if (hostNameCandidates.size() > 1) {
 				// try to connect outside and see if any of the local addresses is used
-				final String externalAddress = getExternalVisibleAddress(true);
+				final String externalAddress = getExternalVisibleAddress(true, null);
 
 				if (hostNameCandidates.contains(externalAddress))
 					// great, one matches exactly!
 					hostName = externalAddress;
-				else
+				else {
 					// no good idea on which one to choose, pick one of them ...
-					hostName = hostNameCandidates.iterator().next();
+
+					for (final String address : ipAddresses) {
+						final String candidate = getExternalVisibleAddress(true, address);
+
+						if (hostNameCandidates.contains(candidate)) {
+							hostName = candidate;
+							break;
+						}
+					}
+
+					if (hostName == null || hostName.length() == 0 || !hostName.contains("."))
+						hostName = hostNameCandidates.iterator().next();
+				}
 			}
 			else if (hostNameCandidates.size() == 1)
 				hostName = hostNameCandidates.iterator().next();
@@ -479,11 +496,12 @@ public class ConfigUtils {
 	 *
 	 * @param hostname
 	 *            <code>true</code> to return the FQDN (if known), or <code>false</code> to return the IP
+	 * @param address optionally pass the address that should be resolved, default is to resolve the default IP address of where the client connects from
 	 * @return the IP or FQDN (if known)
 	 */
-	public static String getExternalVisibleAddress(final boolean hostname) {
+	public static String getExternalVisibleAddress(final boolean hostname, final String address) {
 		try {
-			final String content = Utils.download("http://alimonitor.cern.ch/services/ip.jsp", null);
+			final String content = Utils.download("http://alimonitor.cern.ch/services/ip.jsp" + (address != null ? "?address=" + Format.encode(address) : ""), null);
 
 			final String key = hostname ? "FQDN:" : "IP:";
 
@@ -495,7 +513,10 @@ public class ConfigUtils {
 				if (idxTo < 0)
 					idxTo = content.length();
 
-				return content.substring(idx + key.length(), idxTo).toLowerCase();
+				final String fqdn = content.substring(idx + key.length(), idxTo).toLowerCase();
+
+				if (fqdn.indexOf('.') >= 0)
+					return fqdn;
 			}
 		}
 		catch (@SuppressWarnings("unused") final IOException ioe) {
@@ -741,7 +762,7 @@ public class ConfigUtils {
 	/**
 	 * Write the configuration file that is used by JAliEn-ROOT and JSh <br />
 	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
-	 * 
+	 *
 	 * @param vars key-value map to dump to the file
 	 *
 	 * @return true if the file was written, false if not
@@ -764,7 +785,7 @@ public class ConfigUtils {
 					try {
 						fw.write(key + "=" + value + "\n");
 					}
-					catch (IOException e) {
+					catch (final IOException e) {
 						logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e);
 					}
 				});

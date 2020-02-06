@@ -1,17 +1,20 @@
 package alien.site;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -20,6 +23,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import alien.api.Request;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
@@ -45,6 +50,7 @@ import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
 import lazyj.ExtProperties;
+import lia.util.process.ExternalProcesses;
 
 /**
  * Gets matched jobs, and launches JobWrapper for executing them
@@ -343,6 +349,45 @@ public class JobAgent implements Runnable {
 	}
 
 	/**
+	 * @param folder
+	 * @return amount of free space (in bytes) in the given folder. Or zero if there was a problem (or no free space).
+	 */
+	public static long getFreeSpace(final String folder) {
+		long space = new File(folder).getFreeSpace();
+
+		if (space <= 0) {
+			// 32b JRE returns 0 when too much space is available
+
+			try {
+				final String output = ExternalProcesses.getCmdOutput(Arrays.asList("df", "-P", "-B", "1024", folder), true, 30L, TimeUnit.SECONDS);
+
+				try (BufferedReader br = new BufferedReader(new StringReader(output))) {
+					String sLine = br.readLine();
+
+					if (sLine != null) {
+						sLine = br.readLine();
+
+						if (sLine != null) {
+							final StringTokenizer st = new StringTokenizer(sLine);
+
+							st.nextToken();
+							st.nextToken();
+							st.nextToken();
+
+							space = Long.parseLong(st.nextToken());
+						}
+					}
+				}
+			}
+			catch (IOException | InterruptedException ioe) {
+				logger.log(Level.WARNING, "Could not extract the space information from `df`", ioe);
+			}
+		}
+
+		return space;
+	}
+
+	/**
 	 * updates jobagent parameters that change between job requests
 	 *
 	 * @return false if we can't run because of current conditions, true if positive
@@ -351,7 +396,7 @@ public class JobAgent implements Runnable {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
 
 		// free disk recalculation
-		final long space = new File(workdir).getFreeSpace() / 1024;
+		final long space = getFreeSpace(workdir) / 1024;
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = System.currentTimeMillis();
@@ -475,12 +520,12 @@ public class JobAgent implements Runnable {
 					}
 				}
 			}
-			
+
 			// Check if Singularity is present on site. If yes, add singularity to launchCmd
 			Containerizer cont = ContainerizerFactory.getContainerizer();
-			if(cont != null) {
+			if (cont != null) {
 				cont.setWorkdir(jobWorkdir);
-				return cont.containerize(String.join(" ", launchCmd)); 
+				return cont.containerize(String.join(" ", launchCmd));
 			}
 
 			return launchCmd;

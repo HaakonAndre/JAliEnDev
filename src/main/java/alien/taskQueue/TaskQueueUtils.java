@@ -2112,11 +2112,13 @@ public class TaskQueueUtils {
 					// job stats was updated correctly, let's update the queue table too
 
 					if (j.site != null) {
-						int siteId = getSiteId(j.site);
+						final int siteId = getSiteId(j.site);
 
 						if (siteId > 0)
-							db.query("UPDATE SITEQUEUES SET " + j.status().toSQL() + "=GREATEST(" + j.status().toSQL() + "-1,0), " + newStatus.toSQL() + "=" + newStatus + "+1 WHERE siteId=?", false,
-									Integer.valueOf(siteId));
+							db.query(
+									"UPDATE SITEQUEUES SET " + j.status().toSQL() + "=GREATEST(" + j.status().toSQL() + "-1,0), " + newStatus.toSQL() + "=GREATEST(" + newStatus
+											+ ",0)+1 WHERE siteId=?",
+									false, Integer.valueOf(siteId));
 					}
 				}
 				else
@@ -3083,7 +3085,8 @@ public class TaskQueueUtils {
 				logger.info("Resubmit: update SITEQUEUES");
 
 				// update queue counters
-				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=" + j.getStatusName() + "-1, " + targetStatus.name() + "=" + targetStatus.name() + "+1 where siteid=?", false,
+				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0) " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
+						false,
 						Integer.valueOf(j.siteid));
 
 				// if the job was attached to a node, we tell him to hara-kiri
@@ -3414,7 +3417,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Set the QUEUEJDL.resultsJdl field for a completed job
-	 * 
+	 *
 	 * @param jdl
 	 * @param queueId
 	 * @return <code>true</code> if the update could be done

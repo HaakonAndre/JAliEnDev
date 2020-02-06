@@ -277,6 +277,7 @@ public class ComputingElement extends Thread {
 		before += "export CE='" + siteMap.get("CE") + "'\n";
 		before += "export CEhost='" + siteMap.get("Localhost") + "'\n";
 		before += "export TTL='" + siteMap.get("TTL") + "'\n";
+		before += "export APMON_CONFIG='"+ConfigUtils.getLocalHostname()+"'\n";
 		if (config.containsKey("ce_installationmethod"))
 			before += "export installationMethod='" + config.get("ce_installationmethod") + "'\n";
 		if (config.containsKey("ce_cerequirements"))
