@@ -7,13 +7,13 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.site.JobAgent;
+import alien.site.packman.CVMFS;
 
 public abstract class Containerizer {
 	
 	final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
-	final String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin/alienv";
 	final String CONTAINER_JOBDIR = "/workdir";
-	final String envSetup = "source <( " + ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion() + " ); ";
+	final String envSetup = "source <( " + CVMFS.getAlienvForSource() + " ); ";
 
 	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 	final String containerImgPath;
@@ -63,25 +63,4 @@ public abstract class Containerizer {
 	public String getContainerizerName() {
 		return this.getClass().getName();
 	}
-	
-	private String getJAliEnVersion() {
-		try {
-			final String loadedmodules = System.getenv().get("LOADEDMODULES");
-			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
-
-			String jalienVersionString = "";
-			if (jalienModulePos > 0) {
-				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
-
-				if (jalienVersionString.contains(":"))
-					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
-			}
-			return jalienVersionString;
-		}
-		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get jAliEn version", e);
-			return "";
-		}
-	}
-
 }

@@ -26,9 +26,13 @@ public class CVMFS extends PackMan {
 	 */
 	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
-	private String alienv_bin = "/cvmfs/alice.cern.ch/bin";
 	private boolean havePath = true;
-
+	/**
+	 * CVMFS setup specifics
+	 */
+	
+	static String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin";
+	
 	/**
 	 * Constructor just checks CVMFS bin exist
 	 * 
@@ -36,16 +40,16 @@ public class CVMFS extends PackMan {
 	 */
 	public CVMFS(String location) {
 		if (location != null && location.length() > 0)
-			alienv_bin = location;
+			ALIENV_DIR = location;
 
 		try {
-			alienv_bin = SystemCommand.bash("which " + alienv_bin + "/alienv").stdout.trim();
+			ALIENV_DIR = SystemCommand.bash("which " + ALIENV_DIR + "/alienv").stdout.trim();
 		}
 		catch (final Exception e) {
 			logger.info("which alienv not ok: " + e.toString());
 		}
 
-		if (alienv_bin == null || alienv_bin.equals(""))
+		if (ALIENV_DIR == null || ALIENV_DIR.equals(""))
 			havePath = false;
 
 	}
@@ -66,7 +70,7 @@ public class CVMFS extends PackMan {
 		logger.log(Level.INFO, "PackMan-CVMFS: Getting list of packages ");
 
 		if (this.getHavePath()) {
-			final String listPackages = SystemCommand.bash(alienv_bin + " q --packman").stdout;
+			final String listPackages = SystemCommand.bash(ALIENV_DIR + " q --packman").stdout;
 			return Arrays.asList(listPackages.split("\n"));
 		}
 
@@ -81,7 +85,7 @@ public class CVMFS extends PackMan {
 		logger.log(Level.INFO, "PackMan-CVMFS: Getting list of packages ");
 
 		if (this.getHavePath()) {
-			final String listPackages = SystemCommand.bash(alienv_bin + " q --packman").stdout;
+			final String listPackages = SystemCommand.bash(ALIENV_DIR + " q --packman").stdout;
 			return Arrays.asList(listPackages.split("\n"));
 		}
 		return null;
@@ -100,7 +104,7 @@ public class CVMFS extends PackMan {
 		if (version != null)
 			args += "/" + version;
 
-		final String source = SystemCommand.bash(alienv_bin + " printenv " + args).stdout;
+		final String source = SystemCommand.bash(ALIENV_DIR + " printenv " + args).stdout;
 
 		final ArrayList<String> parts = new ArrayList<>(Arrays.asList(source.split(";")));
 		parts.remove(parts.size() - 1);
@@ -117,5 +121,28 @@ public class CVMFS extends PackMan {
 
 		return environment;
 	}
+	
+	public static String getAlienvForSource() {
+		return ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion();
+	}
+	
+	private static String getJAliEnVersion() {
+		try {
+			final String loadedmodules = System.getenv().get("LOADEDMODULES");
+			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn /");
 
+			String jalienVersionString = "";
+			if (jalienModulePos > 0) {
+				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
+
+				if (jalienVersionString.contains(":"))
+					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
+			}
+			return jalienVersionString;
+		}
+		catch (StringIndexOutOfBoundsException | NullPointerException e) {
+			logger.log(Level.WARNING, "Could not get jAliEn version", e);
+			return "";
+		}
+	}
 }

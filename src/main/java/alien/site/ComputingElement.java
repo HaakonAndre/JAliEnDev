@@ -29,6 +29,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
 import alien.site.containers.Containerizer;
 import alien.site.containers.Docker;
+import alien.site.packman.CVMFS;
 import alien.test.utils.Functions;
 import apmon.ApMon;
 import apmon.ApMonException;
@@ -57,7 +58,6 @@ public class ComputingElement extends Thread {
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
-	private final String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin/alienv";
 
 	/**
 	 *
@@ -290,8 +290,8 @@ public class ComputingElement extends Thread {
 		if(cont.isSupported())
 			startup_script = String.join(" ", cont.containerize(getStartup() + "'\n"));
 		else {
-			if(!System.getenv("LOADEDMODULES").contains("JALIEN"))
-				before += "source <( " + ALIENV_DIR + " printenv JAliEn ); " + "'\n"; //TODO: Same call within the containerizer. And plenty of similar calls all around jAliEn. Put in common class?
+			if(System.getenv("LOADEDMODULES") == null || !System.getenv("LOADEDMODULES").contains("JALIEN"))
+				before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "'\n"; 
 			startup_script = getStartup()+ "'\n";
 		}
 		
