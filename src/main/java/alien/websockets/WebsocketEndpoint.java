@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.Principal;
@@ -34,6 +35,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import alien.config.ConfigUtils;
+import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.Timing;
@@ -54,6 +56,15 @@ public class WebsocketEndpoint extends Endpoint {
 	static final Logger logger = ConfigUtils.getLogger(WebsocketEndpoint.class.getCanonicalName());
 
 	static final Monitor monitor = MonitorFactory.getMonitor(WebsocketEndpoint.class.getCanonicalName());
+
+	private static final CacheMonitor ipv6Connections;
+
+	static {
+		if (monitor != null)
+			ipv6Connections = monitor.getCacheMonitor("ipv6_connections");
+		else
+			ipv6Connections = null;
+	}
 
 	AliEnPrincipal userIdentity = null;
 
@@ -180,6 +191,13 @@ public class WebsocketEndpoint extends Endpoint {
 			setShellPrintWriter(os, "plain");
 
 		final InetAddress remoteIP = getRemoteIP(session);
+
+		if (remoteIP != null && ipv6Connections != null) {
+			if (remoteIP instanceof Inet6Address)
+				ipv6Connections.incrementHits();
+			else
+				ipv6Connections.incrementMisses();
+		}
 
 		userIdentity.setRemoteEndpoint(remoteIP);
 
