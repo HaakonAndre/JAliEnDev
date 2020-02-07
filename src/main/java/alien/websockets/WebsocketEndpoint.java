@@ -36,6 +36,7 @@ import org.json.simple.parser.ParseException;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.monitoring.Timing;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JSONPrintWriter;
 import alien.shell.commands.JShPrintWriter;
@@ -401,16 +402,18 @@ public class WebsocketEndpoint extends Endpoint {
 				commander.start();
 			}
 
-			// Send the command to executor and send the result back to
-			// client via OutputStream
-			synchronized (commander) {
-				commander.status.set(1);
-				commander.setLine(out, fullCmd.toArray(new String[0]));
-				commander.notifyAll();
-			}
+			try (Timing t = new Timing(monitor, "execution_time")) {
+				// Send the command to executor and send the result back to
+				// client via OutputStream
+				synchronized (commander) {
+					commander.status.set(1);
+					commander.setLine(out, fullCmd.toArray(new String[0]));
+					commander.notifyAll();
+				}
 
-			// Wait and return the result back to the client
-			waitForResult();
+				// Wait and return the result back to the client
+				waitForResult();
+			}
 
 			context.touch();
 		}
