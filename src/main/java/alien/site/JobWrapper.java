@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -139,12 +140,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			}
 		}
 
-		hostName = (String) siteMap.get("Host");
-		ceHost = (String) siteMap.get("CEhost");
-		packMan = (PackMan) siteMap.get("PackMan");
-
-		if (packMan == null)
-			packMan = new CVMFS("");
+		hostName = (String) Objects.requireNonNullElse(siteMap.get("Host"), "");
+		ceHost = (String) Objects.requireNonNullElse(siteMap.get("CEhost"), hostName);
+		packMan = (PackMan) Objects.requireNonNullElse(siteMap.get("PackMan"), new CVMFS(""));
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
