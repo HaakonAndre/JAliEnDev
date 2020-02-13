@@ -264,7 +264,7 @@ public class JAKeyStore {
 	 */
 	public static String getClientCertPath() {
 		final String defaultCertPath = Paths.get(UserFactory.getUserHome(), ".globus", "usercert.pem").toString();
-		final String user_cert = selectPath("X509_USER_KEY", "user.cert.pub.location", defaultCertPath);
+		final String user_cert = selectPath("X509_USER_CERT", "user.cert.pub.location", defaultCertPath);
 		return user_cert;
 	}
 
