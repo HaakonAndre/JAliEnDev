@@ -176,7 +176,8 @@ public class JShPrintWriter extends UIPrintWriter {
 
 	@Override
 	public int getReturnCode() {
-		return Integer.parseInt(getMetaInfo("exitcode"));
+		final String exitCode = getMetaInfo("exitcode");
+		return !exitCode.isEmpty() ? Integer.parseInt(exitCode) : 0;
 	}
 
 	@Override
