@@ -156,7 +156,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 						}
 					}
 					else {
-						commander.printErrln("Couldn't execute the mirrror command, argument not found");
+						commander.printErrln("Failed to mirror " + toMirror);
 					}
 				}
 			}
