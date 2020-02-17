@@ -153,6 +153,7 @@ public class TomcatServer {
 		connector.setAttribute("truststoreFile", truststoreName);
 		connector.setAttribute("clientAuth", "true");
 		connector.setAttribute("sslProtocol", "TLS");
+		connector.setAttribute("sslEnabledProtocols", "TLSv1.2");
 		connector.setAttribute("SSLEnabled", "true");
 		connector.setAttribute("maxThreads", "200");
 		connector.setAttribute("connectionTimeout", "20000");
