@@ -292,8 +292,8 @@ public class ComputingElement extends Thread {
 			startup_script = String.join(" ", cont.containerize(getStartup() + "'\n"));
 		else {
 			if(System.getenv("LOADEDMODULES") == null || !System.getenv("LOADEDMODULES").contains("JALIEN"))
-				before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "'\n"; 
-			startup_script = getStartup()+ "'\n";
+				before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n"; 
+			startup_script = getStartup()+ "\n";
 		}
 		
 		final String content_str = before + startup_script;
@@ -341,7 +341,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return "java -cp $((which jalien)//jalien)../lib/alien-users.jar alien.site.JobAgent";
+		return "java -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
 	}
 
 	// Prepares a hash to create the sitemap
