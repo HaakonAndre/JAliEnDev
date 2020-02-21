@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import alien.catalogue.FileSystemUtils;
+import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
@@ -19,14 +20,19 @@ import joptsimple.OptionSet;
 public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 	/**
-	 * marker for -G argument
+	 * marker for -g argument
 	 */
 	private boolean bG = false;
 
 	/**
-	 * marker for -R argument
+	 * marker for -r argument
 	 */
 	private boolean bR = false;
+
+	/**
+	 * marker for the -l argument: try to locate the archive LFN to which a file belongs
+	 */
+	private boolean bL = false;
 
 	/**
 	 * entry the call is executed on, either representing a LFN or a GUID
@@ -68,51 +74,94 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			Set<PFN> pfns = commander.c_api.getPFNs(guid);
 
 			if (pfns != null && pfns.size() > 0) {
-				if (bR)
-					if (pfns.toArray()[0] != null) {
-						String archiveGUID = null;
+				String zipMember = null;
 
-						for (final PFN p : pfns)
-							if (p.pfn.startsWith("guid://"))
-								archiveGUID = p.pfn.substring(8, 44);
+				LFN archiveContainer = null;
 
-						if (archiveGUID != null) {
-							pfns = commander.c_api.getPFNs(archiveGUID);
+				if (bR) {
+					String archiveGUID = null;
 
-							if (pfns == null) {
-								commander.setReturnCode(3, "Archive with GUID " + archiveGUID + " doesn't exist");
-								return;
-							}
+					for (final PFN p : pfns)
+						if (p.pfn.startsWith("guid://")) {
+							archiveGUID = p.pfn.substring(8, 44);
 
-							if (pfns.size() == 0) {
-								commander.setReturnCode(4, "Archive with GUID " + archiveGUID + " doesn't have any replicas, this file cannot be used");
-								return;
-							}
+							final int idxQM = p.pfn.lastIndexOf("?ZIP");
+
+							if (idxQM >= 0)
+								zipMember = p.pfn.substring(idxQM);
 						}
-						else
-							bR = false; // disable the archive lookup flag because this file is not member of an archive
+
+					if (archiveGUID != null) {
+						pfns = commander.c_api.getPFNs(archiveGUID);
+
+						if (pfns == null) {
+							commander.setReturnCode(3, "Archive with GUID " + archiveGUID + " doesn't exist");
+							return;
+						}
+
+						if (bL) {
+							final GUID aGUID = commander.c_api.getGUID(archiveGUID, false, true);
+
+							if (aGUID != null && aGUID.getLFNs() != null && aGUID.getLFNs().size() > 0)
+								archiveContainer = aGUID.getLFNs().iterator().next();
+							else
+								commander.printErrln("Could not resolve the LFN for the archive guid " + archiveGUID);
+						}
+
+						if (pfns.size() == 0) {
+							commander.setReturnCode(4, "Archive with GUID " + archiveGUID + " doesn't have any replicas, this file cannot be used");
+							return;
+						}
 					}
+					else
+						bR = false; // disable the archive lookup flag because this file is not member of an archive
+				}
 
 				if (bG)
-					commander.printOutln("the GUID " + guid + " is in" + (bR ? "side this archive" : "") + "\n");
+					commander.printOutln("the GUID " + guid + " is in" + (bR ? "side a ZIP archive" : ""));
 				else
-					commander.printOutln("the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in" + (bR ? "side this archive" : "") + "\n");
+					commander.printOutln("the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in" + (bR ? "side a ZIP archive" : ""));
+
+				if (bR)
+					if (bL) {
+						if (archiveContainer != null)
+							commander.printOutln("    archive LFN: " + archiveContainer.getCanonicalName());
+					}
+					else
+						commander.printOutln("    pass `-l` to whereis to try to resolve the archive LFN (slow, expensive operation!)");
+
+				commander.printOutln();
 
 				for (final PFN pfn : pfns) {
 					String se;
 
 					if (pfn.seNumber > 0) {
+						commander.printOut("seNumber", String.valueOf(pfn.seNumber));
+
 						final SE theSE = commander.c_api.getSE(pfn.seNumber);
 
-						if (theSE != null)
+						if (theSE != null) {
 							se = "SE => " + theSE.seName;
-						else
+
+							commander.printOut("seName", theSE.seName);
+						}
+						else {
 							se = "SE #" + pfn.seNumber + " no longer exists";
+
+							commander.printOut("seName", "Unknown");
+						}
 					}
-					else
+					else {
 						se = "ZIP archive member";
 
-					commander.printOutln("\t " + padRight(se, 30) + " pfn => " + pfn.pfn + "\n");
+						commander.printOut("seName", "ArchiveMember");
+					}
+
+					commander.printOutln("\t " + padRight(se, 30) + " pfn => " + pfn.pfn + (zipMember != null ? zipMember : "") + "\n");
+
+					commander.printOut("pfn", pfn.pfn + (zipMember != null ? zipMember : ""));
+
+					commander.outNextResult();
 				}
 			}
 			else if (pfns == null)
@@ -135,6 +184,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-g", "use the lfn as guid"));
 		commander.printOutln(helpOption("-r", "resolve links (do not give back pointers to zip archives)"));
+		commander.printOutln(helpOption("-l", "lookup the LFN of the ZIP archive (slow and expensive IO operation, only use it sparingly!)"));
 		commander.printOutln();
 	}
 
@@ -163,11 +213,13 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("g");
 			parser.accepts("r");
+			parser.accepts("l");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			bG = options.has("g");
 			bR = options.has("r");
+			bL = options.has("l");
 
 			if (options.nonOptionArguments().iterator().hasNext())
 				lfnOrGuid = options.nonOptionArguments().iterator().next().toString();
