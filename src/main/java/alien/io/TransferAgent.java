@@ -72,6 +72,8 @@ public class TransferAgent extends Thread {
 		shouldStop = true;
 	}
 
+	private static final Object moreWorkNotification = new Object();
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -90,6 +92,11 @@ public class TransferAgent extends Thread {
 				if (work != null) {
 					if (!TransferBroker.touch(work, this))
 						return;
+
+					// hey, there is work to be done, wake up _one_ neighbour
+					synchronized (moreWorkNotification) {
+						moreWorkNotification.notify();
+					}
 
 					logger.log(Level.INFO, "Performing transfer " + work.getTransferId());
 
@@ -118,9 +125,11 @@ public class TransferAgent extends Thread {
 							firstTimeNoWork = false;
 						}
 
-						Thread.sleep(1000 * 30); // try in 30 seconds again to
-													// see if there is anything
-													// for it to do
+						synchronized (moreWorkNotification) {
+							// try in 30 seconds again to see if there is anything for it to do
+							// another thread picking up work might wake us up in the mean time
+							moreWorkNotification.wait(1000 * 30);
+						}
 					}
 					catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
