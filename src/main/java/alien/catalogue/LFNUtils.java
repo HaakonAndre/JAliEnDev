@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -763,12 +764,80 @@ public class LFNUtils {
 			db.setQueryTimeout(30);
 
 			if (includeParents)
-				db.query("SELECT tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc;", false, tag, path);
+				db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc;", false, tag, path);
 			else
 				db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND path LIKE ?", false, tag, path + "%");
 
 			while (db.moveNext())
 				ret.add(db.gets(1));
+		}
+
+		return ret;
+	}
+
+	/**
+	 * @param path
+	 * @return all tags that are defined for the given path
+	 */
+	public static Set<String> getTags(final String path) {
+		final Set<String> ret = new LinkedHashSet<>();
+
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.query("SELECT distinct tagName from TAG0 where ? like concat(path,'%');", false, path);
+
+			while (db.moveNext()) {
+				ret.add(db.gets(1));
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * @param path file or directory to get the tag values for
+	 * @param tag table to query
+	 * @param includeParents whether to look up the folder structure for anything that matches the path or this entry alone
+	 * @param columnConstraints ignore any column not present in this list. Can be <code>null</code> or empty, in which case everything will be taken in.
+	 * @return all columns from the respective tag table for this entry and potentially any parent folders too
+	 */
+	public static Map<String, String> getTagValues(final String path, final String tag, final boolean includeParents, final Set<String> columnConstraints) {
+		final Map<String, String> ret = new LinkedHashMap<>();
+
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setReadOnly(true);
+			db.setQueryTimeout(30);
+
+			for (final String tableName : getTagTableNames(path, tag, includeParents)) {
+				if (includeParents)
+					db.query("SELECT * FROM " + tableName + " WHERE ? LIKE concat(file, '%') ORDER BY length(file) ASC;", false, path);
+				else
+					db.query("SELECT * FROM " + tableName + " WHERE file=?", false, path);
+
+				while (db.moveNext()) {
+					final String file = db.gets("file");
+
+					final String oldFile = ret.get("file");
+
+					final boolean overwrite = oldFile == null || file.length() > oldFile.length();
+
+					for (final String columnName : db.getColumnNames()) {
+						if (columnConstraints != null && columnConstraints.size() > 0 && !columnConstraints.contains(columnName))
+							continue;
+
+						final String value = db.gets(columnName);
+
+						if (overwrite) {
+							ret.put(columnName, value);
+						}
+						else {
+							final String oldValue = ret.get(columnName);
+
+							if (oldValue == null || oldValue.length() == 0)
+								ret.put(columnName, value);
+						}
+					}
+				}
+			}
 		}
 
 		return ret;
