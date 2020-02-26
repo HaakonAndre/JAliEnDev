@@ -17,14 +17,20 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
 /**
- * @author ron
- * @since June 4, 2011
+ * Command for displaying metadata information
+ *
+ * @author costing
+ * @since 2020-02-25
  */
 public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 
 	private ArrayList<String> alPaths = null;
+
 	private Set<String> theseTagsOnly = null;
+
 	private Set<String> theseColumnsOnly = null;
+
+	private boolean bL = false;
 
 	@Override
 	public void run() {
@@ -54,7 +60,7 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 							continue;
 						}
 					}
-					catch (ServerException e) {
+					catch (final ServerException e) {
 						final String error = "Could not get the list of tags for " + file + ": " + e.getMessage();
 
 						commander.setReturnCode(1, error);
@@ -62,6 +68,29 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 
 						return;
 					}
+				}
+
+				if (bL) {
+					commander.printOut("  available tags: ");
+
+					boolean firstTag = true;
+
+					for (final String tag : tags) {
+						if (!firstTag)
+							commander.printOut(", ");
+
+						firstTag = false;
+
+						commander.printOut(tag);
+
+						commander.printOut("fileName", file);
+						commander.printOut("tagName", tag);
+						commander.outNextResult();
+					}
+
+					commander.printOutln();
+
+					continue;
 				}
 
 				for (final String tag : tags) {
@@ -78,9 +107,11 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 
 							commander.printOut("column", tagEntry.getKey());
 							commander.printOut("value", tagEntry.getValue());
+
+							commander.outNextResult();
 						}
 					}
-					catch (ServerException e) {
+					catch (final ServerException e) {
 						final String error = "Could not get the columns for " + file + " for tag " + tag + ": " + e.getMessage();
 
 						commander.setReturnCode(2, error);
@@ -101,8 +132,9 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 		commander.printOutln();
 		commander.printOutln(helpUsage("showtagValue", "[flags] <filename> [<filename>...]"));
 		commander.printOutln(helpStartOptions());
-		commander.printOutln(helpOption("-t", "restrict to this tag only (default is to return all available tags)"));
-		commander.printOutln(helpOption("-c", "restrict to these (comma separated) columns"));
+		commander.printOutln(helpOption("-t", "restrict to this (comma separated) tag list only (default is to return all available tags)"));
+		commander.printOutln(helpOption("-c", "restrict to these (comma separated) list of attributes"));
+		commander.printOutln(helpOption("-l", "list available tags only"));
 		commander.printOutln();
 	}
 
@@ -133,29 +165,34 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 
 			parser.accepts("t").withRequiredArg();
 			parser.accepts("c").withRequiredArg();
+			parser.accepts("l");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(optionToString(options.nonOptionArguments()));
 
-			if (options.has("t")) {
-				StringTokenizer st = new StringTokenizer(options.valueOf("t").toString(), ",;");
+			bL = options.has("l");
 
-				theseTagsOnly = new HashSet<>();
+			if (!bL) {
+				if (options.has("t")) {
+					final StringTokenizer st = new StringTokenizer(options.valueOf("t").toString(), ",;");
 
-				while (st.hasMoreTokens()) {
-					theseTagsOnly.add(st.nextToken());
+					theseTagsOnly = new HashSet<>();
+
+					while (st.hasMoreTokens()) {
+						theseTagsOnly.add(st.nextToken());
+					}
 				}
-			}
 
-			if (options.has("c")) {
-				StringTokenizer st = new StringTokenizer(options.valueOf("c").toString(), ",;");
+				if (options.has("c")) {
+					final StringTokenizer st = new StringTokenizer(options.valueOf("c").toString(), ",;");
 
-				theseColumnsOnly = new HashSet<>();
+					theseColumnsOnly = new HashSet<>();
 
-				while (st.hasMoreTokens()) {
-					theseColumnsOnly.add(st.nextToken());
+					while (st.hasMoreTokens()) {
+						theseColumnsOnly.add(st.nextToken());
+					}
 				}
 			}
 		}
