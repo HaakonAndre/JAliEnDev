@@ -36,9 +36,19 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 	public void run() {
 		boolean first = true;
 
+		if (alPaths == null || alPaths.size() == 0) {
+			commander.setReturnCode(1, "No paths were indicated");
+			return;
+		}
+
 		for (final String eachFileName : alPaths) {
 			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), eachFileName);
 			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
+
+			if (sources == null || sources.size() == 0) {
+				commander.printErrln("Could not resolve this path: " + eachFileName);
+				continue;
+			}
 
 			for (final String file : sources) {
 				if (!first)
@@ -56,15 +66,12 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 						tags = availableTags.getTags();
 
 						if (tags == null || tags.size() == 0) {
-							commander.printErrln("No tags for " + file);
+							commander.printOutln("  no tags defined for this path");
 							continue;
 						}
 					}
 					catch (final ServerException e) {
-						final String error = "Could not get the list of tags for " + file + ": " + e.getMessage();
-
-						commander.setReturnCode(1, error);
-						commander.printErrln(error);
+						commander.setReturnCode(1, "Could not get the list of tags for " + file + ": " + e.getMessage());
 
 						return;
 					}
@@ -82,13 +89,15 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 						firstTag = false;
 
 						commander.printOut(tag);
+					}
 
+					commander.printOutln();
+
+					for (final String tag : tags) {
 						commander.printOut("fileName", file);
 						commander.printOut("tagName", tag);
 						commander.outNextResult();
 					}
-
-					commander.printOutln();
 
 					continue;
 				}
@@ -112,10 +121,7 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 						}
 					}
 					catch (final ServerException e) {
-						final String error = "Could not get the columns for " + file + " for tag " + tag + ": " + e.getMessage();
-
-						commander.setReturnCode(2, error);
-						commander.printErrln(error);
+						commander.setReturnCode(2, "Could not get the columns for " + file + " for tag " + tag + ": " + e.getMessage());
 
 						return;
 					}
