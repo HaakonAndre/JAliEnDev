@@ -1116,7 +1116,37 @@ public final class SEUtils {
 		}
 	}
 
-	public static void getRandomPFNs(final int storageNumber, final int fileCount) throws IOException {
+	public static ArrayList<String> getRandomPFNs(final int storageNumber, final int fileCount) throws IOException {
 		SE se = getSE(storageNumber);
+		ArrayList<String> pfns = new ArrayList<>();
+		int remainingTries = 5;
+
+		while (pfns.size() < fileCount && remainingTries > 0) {
+
+			int filesFound = 0;
+
+			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
+				final Host h = CatalogueUtils.getHost(idx.hostIndex);
+				try (DBFunctions gdb = h.getDB()) {
+					gdb.setReadOnly(true);
+					gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + " ORDER BY rand() LIMIT" + fileCount + ";");
+
+					while (gdb.moveNext()) {
+						String pfn = gdb.gets(1);
+						pfns.add(pfn);
+						filesFound += 1;
+						if (pfns.size() == fileCount) {
+							return pfns;
+						}
+					}
+				}
+			}
+
+			if(filesFound == 0) {
+				remainingTries -= 1;
+			}
+		}
+
+		return pfns;
 	}
 }
