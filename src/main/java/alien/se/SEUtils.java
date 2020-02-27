@@ -1116,4 +1116,7 @@ public final class SEUtils {
 		}
 	}
 
+	public static void getRandomPFNs(final int storageNumber, final int fileCount) throws IOException {
+		SE se = getSE(storageNumber);
+	}
 }
