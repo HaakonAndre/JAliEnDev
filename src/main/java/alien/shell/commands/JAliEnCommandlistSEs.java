@@ -109,8 +109,6 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			commander.printOut("endpointUrl", se.generateProtocol());
 			commander.outNextResult();
 		}
-
-		commander.printOutln();
 	}
 
 	@Override
