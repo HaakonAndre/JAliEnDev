@@ -1125,21 +1125,30 @@ public final class SEUtils {
 
 			int filesFound = 0;
 
-			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
-				final Host h = CatalogueUtils.getHost(idx.hostIndex);
-				try (DBFunctions gdb = h.getDB()) {
-					gdb.setReadOnly(true);
-					gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + " ORDER BY rand() LIMIT" + fileCount + ";");
+			List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
+			if (guidIndices != null) {
+				for (final GUIDIndex idx : guidIndices) {
+					final Host h = CatalogueUtils.getHost(idx.hostIndex);
+					try (DBFunctions gdb = h.getDB()) {
+						gdb.setReadOnly(true);
+						gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber + " order by rand() limit " + fileCount + ";");
 
-					while (gdb.moveNext()) {
-						String pfn = gdb.gets(1);
-						pfns.add(pfn);
-						filesFound += 1;
-						if (pfns.size() == fileCount) {
-							return pfns;
+						while (gdb.moveNext()) {
+							String pfn = gdb.gets(1);
+							pfns.add(pfn);
+							filesFound += 1;
+							if (pfns.size() == fileCount) {
+								return pfns;
+							}
 						}
 					}
+					catch (Exception e) {
+						logger.log(Level.WARNING, "Exception occurred when trying to get random files from SE " + storageNumber + " " + e.getMessage());
+					}
 				}
+			}
+			else {
+				logger.log(Level.WARNING, "CatalogueUtils.GetAllGUIDIndexes returned null");
 			}
 
 			if(filesFound == 0) {
