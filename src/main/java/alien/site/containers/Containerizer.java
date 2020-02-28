@@ -16,12 +16,12 @@ public abstract class Containerizer {
 
 	final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
 	final String CONTAINER_JOBDIR = "/workdir";
-	final String envSetup = "source <( " + CVMFS.getAlienvForSource() + " ); ";
 
 	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 	final String containerImgPath;
 
 	String workdir = null;
+	String envSetup = "source <( " + CVMFS.getAlienvForSource() + " ); ";
 
 	/**
 	 * Simple constructor, initializing the container path from default location or from the environment (DEFAULT_JOB_CONTAINER_PATH key)
@@ -60,12 +60,26 @@ public abstract class Containerizer {
 	}
 
 	/**
-	 * Decorating arguments to run the given command under a container
+	 * Decorating arguments to run the given command under a container. Returns a
+	 * list for use with ProcessBuilders
 	 *
 	 * @param cmd
 	 * @return parameter
 	 */
 	public abstract List<String> containerize(String cmd);
+	
+	/**
+	 * Decorating arguments to run the given command under a container. Returns a
+	 * string for use within scripts
+	 *
+	 * @param cmd
+	 * @return parameter
+	 */
+	public String containerizeAsString(String cmd) {
+		String contCmd = String.join(" ", containerize(cmd));
+        contCmd = contCmd.replaceAll("-c ", "-c \"") + "\"";
+		return contCmd;
+	}
 
 	/**
 	 * @param newWorkdir
@@ -86,5 +100,12 @@ public abstract class Containerizer {
 	 */
 	public String getContainerizerName() {
 		return this.getClass().getName();
+	}
+	
+	/**
+	 * @param toEnv Additional string that will sourced within the container environment
+	 */
+	public void addToEnvironment(String toEnv) {
+		envSetup = "source <( " + CVMFS.getAlienvForSource() + "; " + toEnv +" ); ";
 	}
 }

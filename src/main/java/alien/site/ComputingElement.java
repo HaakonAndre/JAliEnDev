@@ -288,9 +288,10 @@ public class ComputingElement extends Thread {
 			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
 
 		Containerizer cont = new Docker(); //Containers within containers only supported by Docker
-		if(cont.isSupported())
-			startup_script = String.join(" ", cont.containerize(getStartup() + "'\n"));
-		else {
+		if (cont.isSupported()) {
+			cont.addToEnvironment("'$(env)'");
+			startup_script = cont.containerizeAsString(getStartup()) + "\n";
+		} else { 
 			if(System.getenv("LOADEDMODULES") == null || !System.getenv("LOADEDMODULES").contains("JALIEN"))
 				before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n"; 
 			startup_script = getStartup()+ "\n";
