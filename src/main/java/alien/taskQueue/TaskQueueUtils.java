@@ -1043,22 +1043,27 @@ public class TaskQueueUtils {
 					where += whe + ") ) and ";
 			}
 
-			if (mjobs != null && mjobs.size() > 0 && !mjobs.contains(Long.valueOf(0))) {
-				final StringBuilder whe = new StringBuilder(" ( split in (");
+			if (mjobs != null && mjobs.size() > 0) {
+				if (!mjobs.contains(Long.valueOf(0))) {
+					final StringBuilder whe = new StringBuilder(" ( split in (");
 
-				boolean first = true;
+					boolean first = true;
 
-				for (final Long m : mjobs) {
+					for (final Long m : mjobs) {
+						if (!first)
+							whe.append(',');
+						else
+							first = false;
+
+						whe.append(m);
+					}
+
 					if (!first)
-						whe.append(',');
-					else
-						first = false;
-
-					whe.append(m);
+						where += whe + ") ) and ";
 				}
-
-				if (!first)
-					where += whe + ") ) and ";
+				else {
+					where += " ( split = 0 ) and ";
+				}
 			}
 
 			if (jobids != null && jobids.size() > 0 && !jobids.contains(Long.valueOf(0))) {
@@ -1099,7 +1104,7 @@ public class TaskQueueUtils {
 			else
 				q = "SELECT " + ALL_BUT_JDL + " FROM QUEUE " + where + orderBy + " limit " + lim + ";";
 
-			System.out.println("SQL: " + q);
+			// System.out.println("SQL: " + q);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
