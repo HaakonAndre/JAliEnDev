@@ -1008,8 +1008,8 @@ public class CatalogueApiUtils {
 		return null;
 	}
 
-	public Collection<PFN> getRandomFilesFromSE(final int senNumber, final int fileCount) {
-		return new SERandomPFNS(senNumber, fileCount).getRandomPFNs();
+	public Collection<String> getRandomFilesFromSE(final int senNumber, final int fileCount) {
+		return new SERandomPFNS(senNumber, fileCount).getPFNS();
 //		try {
 //			return Dispatcher.execute(new SERandomPFNS(senNumber, fileCount)).getRandomPFNs();
 //		} catch (ServerException e) {

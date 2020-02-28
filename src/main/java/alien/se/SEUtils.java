@@ -1116,9 +1116,9 @@ public final class SEUtils {
 		}
 	}
 
-	public static ArrayList<String> getRandomPFNs(final int storageNumber, final int fileCount) throws IOException {
+	public static Collection<String> getRandomPFNs(final int storageNumber, final int fileCount) {
 		SE se = getSE(storageNumber);
-		ArrayList<String> pfns = new ArrayList<>();
+		Set<String> pfns = new HashSet<>();
 		int remainingTries = 5;
 
 		while (pfns.size() < fileCount && remainingTries > 0) {
