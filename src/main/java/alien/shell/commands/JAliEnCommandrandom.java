@@ -12,7 +12,7 @@ public class JAliEnCommandrandom extends JAliEnBaseCommand {
 
     @Override
     public void run() {
-        Collection<PFN> randomPFNs = commander.c_api.getRandomFilesFromSE(seNumber, fileCount);
+        Collection<String> randomPFNs = commander.c_api.getRandomFilesFromSE(seNumber, fileCount);
         commander.printOutln(randomPFNs.toString());
     }
 
