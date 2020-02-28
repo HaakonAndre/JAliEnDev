@@ -46,7 +46,7 @@ public class Job implements Comparable<Job>, Serializable {
 	/**
 	 * split
 	 */
-	public int split;
+	public long split;
 
 	/**
 	 * name - executable
@@ -256,7 +256,7 @@ public class Job implements Comparable<Job>, Serializable {
 		queueId = db.geti("queueId");
 		priority = db.geti("priority");
 		sent = db.getl("sent");
-		split = db.geti("split");
+		split = db.getl("split");
 		spyurl = StringFactory.get(db.gets("spyurl"));
 		commandArg = StringFactory.get(db.gets("commandArg", null));
 		finished = db.getl("finished");
