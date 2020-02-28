@@ -1,8 +1,10 @@
 package alien.shell.commands;
 
+import java.util.Iterator;
 import java.util.List;
 
 import alien.catalogue.GUID;
+import alien.catalogue.LFN;
 import joptsimple.OptionException;
 
 /**
@@ -23,11 +25,18 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	public void run() {
 		final GUID guid = commander.c_api.getGUID(guidName, false, true);
 
-		commander.outNextResult();
+		final Iterator<LFN> it;
+
 		if (guid == null)
 			commander.setReturnCode(1, "Could not get the GUID [" + guidName + "].");
-		else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-			commander.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
+		else if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
+			final LFN lfn = it.next();
+
+			commander.printOutln(padRight(guid.guid + "", 40) + lfn.getCanonicalName());
+
+			commander.printOut("guid", String.valueOf(guid.guid));
+			commander.printOut("lfn", String.valueOf(lfn.getCanonicalName()));
+		}
 		else
 			commander.setReturnCode(2, "No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
