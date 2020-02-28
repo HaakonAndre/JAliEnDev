@@ -5,7 +5,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
 
 import alien.shell.ShellColor;
 import alien.taskQueue.Job;
@@ -53,33 +52,36 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		logger.log(Level.INFO, "Starting ps");
-		logger.log(Level.INFO, "getJDL " + String.valueOf(getJDL));
-
 		if (getJDL != 0) {
 			final String jdl = commander.q_api.getJDL(getJDL, true);
-			if (jdl != null)
+			if (jdl != null) {
 				if (commander.bColour)
 					commander.printOutln(ShellColor.jobStateRed() + jdl + ShellColor.reset());
 				else
 					commander.printOutln(jdl);
+
+				commander.printOut("id", String.valueOf(getJDL));
+				commander.printOut("jdl", jdl);
+			}
 		}
 		else if (getTrace > 0) {
 			final String tracelog = commander.q_api.getTraceLog(getTrace);
-			logger.log(Level.FINE, "tracelog " + tracelog);
 
-			if (tracelog != null)
+			if (tracelog != null) {
 				if (commander.bColour)
 					commander.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
 				else
 					commander.printOutln(tracelog);
+
+				commander.printOut("id", String.valueOf(getJDL));
+				commander.printOut("trace", tracelog);
+			}
 		}
 		else {
 			if (users.size() == 0)
 				users.add(commander.getUsername());
 
 			final List<Job> ps = commander.q_api.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
-			logger.log(Level.INFO, "ps " + ps);
 
 			if (ps != null)
 				for (final Job j : ps) {
@@ -90,26 +92,25 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 					final String name = (j.name != null) ? j.name.substring(j.name.lastIndexOf('/') + 1) : "";
 
+					commander.printOut("owner ", owner);
+					commander.printOut("id ", String.valueOf(j.queueId));
+					commander.printOut("split", String.valueOf(j.split));
+					commander.printOut("priority", String.valueOf(j.priority));
+					commander.printOut("status", j.status().toString());
+					commander.printOut("name", name);
+
 					if (bL) {
 						final String site = (j.site != null) ? j.site : "";
 						final String node = (j.node != null) ? j.node : "";
-						commander.printOut("owner ", String.valueOf(owner));
-						commander.printOut("id ", jId.toString());
-						commander.printOut("site ", String.valueOf(site));
-						commander.printOut("node", String.valueOf(node));
-						commander.printOut("status", " " + j.status());
-						commander.printOut("name", String.valueOf(name));
+
+						commander.printOut("site ", site);
+						commander.printOut("node", node);
+
 						commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(4) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
 								+ padLeft(String.valueOf(site), 38) + padSpace(2) + padLeft(String.valueOf(node), 40) + padSpace(2) + abbrvStatus(j.status()) + padSpace(2)
 								+ padLeft(String.valueOf(name), 30));
 					}
 					else {
-
-						commander.printOut("owner ", String.valueOf(owner));
-						commander.printOut("id ", jId.toString());
-						commander.printOut("priority ", printPriority(j.status(), j.priority));
-						commander.printOut("status ", " " + j.status());
-						commander.printOut("name ", String.valueOf(name));
 						commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
 								+ abbrvStatus(j.status()) + padSpace(2) + padLeft(String.valueOf(name), 32));
 					}
@@ -426,7 +427,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		super(commander, alArguments);
 
 		try {
-
 			final OptionParser parser = new OptionParser();
 
 			parser.accepts("F").withRequiredArg();
