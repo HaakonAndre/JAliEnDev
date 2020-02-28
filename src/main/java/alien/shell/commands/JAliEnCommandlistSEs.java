@@ -97,6 +97,17 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			commander.printOutln(String.format("%1$" + maxSENameLength + "s", se.originalName) + "\t" + String.format("%3d", Integer.valueOf(se.seNumber)) + "\t" + padLeft(Format.size(totalSpace), 8)
 					+ "\t" + padLeft(Format.size(usedSpace), 8) + "\t" + padLeft(Format.size(freeSpace), 8) + "\t" + String.format("% .4f", Double.valueOf(se.demoteRead)) + " "
 					+ String.format("% .4f", Double.valueOf(se.demoteWrite)) + "\t" + qos + "\t  " + se.generateProtocol());
+
+			commander.printOut("seName", se.originalName);
+			commander.printOut("seNumber", String.valueOf(se.seNumber));
+			commander.printOut("totalSpace", String.valueOf(totalSpace));
+			commander.printOut("usedSpace", String.valueOf(usedSpace));
+			commander.printOut("freeSpace", String.valueOf(freeSpace));
+			commander.printOut("demoteRead", String.valueOf(se.demoteRead));
+			commander.printOut("demoteWrite", String.valueOf(se.demoteWrite));
+			commander.printOut("qos", String.join(",", se.qos));
+			commander.printOut("endpointUrl", se.generateProtocol());
+			commander.outNextResult();
 		}
 
 		commander.printOutln();
