@@ -168,10 +168,20 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				if (ses.size() > 0 && !ses.contains(se))
 					continue;
 
-				if (se != null)
-					commander.printOut("\t" + padRight(p.getSE().originalName, 20) + "\t" + p.getPFN() + "\t");
-				else
+				if (se != null) {
+					commander.printOut("\t" + padRight(se.originalName, 20) + "\t" + p.getPFN() + "\t");
+
+					commander.printOut("seName", se.seName);
+					commander.printOut("seNumber", String.valueOf(se.seNumber));
+				}
+				else {
 					commander.printOut("\t(unknown SE)\t" + p.getPFN() + "\t");
+
+					commander.printOut("seName", "UNKNOWN");
+					commander.printOut("seNumber", String.valueOf(p.seNumber));
+				}
+
+				commander.printOut("pfn", p.getPFN());
 
 				if (xrootd == null)
 					xrootd = (Xrootd) Factory.xrootd.clone();
@@ -182,6 +192,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					bringPFNOnline(xrootd, onePfnToCheck, p);
 				else
 					checkOnePFN(xrootd, referenceGUID, onePfnToCheck, p);
+
+				commander.outNextResult();
 			}
 		}
 	}
@@ -190,24 +202,38 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		try {
 			final boolean isOnline = xrootd.isOnline(onePfnToCheck != null ? onePfnToCheck : p);
 
-			if (isOnline)
+			if (isOnline) {
 				commander.printOutln(ShellColor.jobStateGreen() + "Online" + ShellColor.reset());
-			else
+
+				commander.printOut("status", "online");
+			}
+			else {
 				commander.printOutln(ShellColor.jobStateYellow() + "Offline" + ShellColor.reset());
+
+				commander.printOut("status", "offline");
+			}
 		}
 		catch (final Throwable t) {
 			final String error = t.getMessage();
 
 			commander.printOutln(ShellColor.jobStateRed() + "IO error" + ShellColor.reset());
 
-			if (verbose)
+			commander.printOut("status", "error");
+
+			if (verbose) {
 				commander.printOutln(error);
+
+				commander.printOut("errorMessage", error);
+			}
 
 			if (printCommand) {
 				final String cmd = xrootd.getFormattedLastCommand();
 
-				if (!error.contains(cmd))
+				if (!error.contains(cmd)) {
 					commander.printOutln(cmd);
+
+					commander.printOut("failedCommand", cmd);
+				}
 			}
 		}
 	}
@@ -216,12 +242,17 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		try {
 			final PFN targetPFN = onePfnToCheck != null ? onePfnToCheck : p;
 
-			if (xrootd.isOnline(targetPFN))
+			if (xrootd.isOnline(targetPFN)) {
 				commander.printOutln(ShellColor.jobStateGreen() + "Online" + ShellColor.reset());
+
+				commander.printOut("status", "online");
+			}
 			else {
 				xrootd.prepare(onePfnToCheck != null ? onePfnToCheck : p);
 
 				commander.printOutln(ShellColor.jobStateYellow() + "prepare request sent" + ShellColor.reset());
+
+				commander.printOut("status", "prepare_queued");
 			}
 		}
 		catch (final Throwable t) {
@@ -229,14 +260,22 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 			commander.printOutln(ShellColor.jobStateRed() + "prepare request failed" + ShellColor.reset());
 
-			if (verbose)
+			commander.printOut("status", "prepare_failed");
+
+			if (verbose) {
 				commander.printOutln(error);
+
+				commander.printOut("errorMessage", error);
+			}
 
 			if (printCommand) {
 				final String cmd = xrootd.getFormattedLastCommand();
 
-				if (!error.contains(cmd))
+				if (!error.contains(cmd)) {
 					commander.printOutln(cmd);
+
+					commander.printOut("failedCommand", cmd);
+				}
 			}
 		}
 	}
@@ -292,19 +331,31 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				if (warning != null) {
 					commander.printOutln(ShellColor.jobStateYellow() + "WARNING" + ShellColor.reset());
 					commander.printOutln("\t\t" + warning);
+
+					commander.printOut("status", "not_tested");
+					commander.printOut("warningMessage", warning);
 				}
 				else {
 					commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
 					commander.printOutln("\t\tDownloaded file matches the catalogue details"
 							+ (timing > 0 ? ", retrieving took " + Format.toInterval(timing) + " (" + Format.size(referenceGUID.size * 1000. / timing) + "/s)" : ""));
+
+					commander.printOut("status", "ok");
+					commander.printOut("dowloadedInMillis", String.valueOf(timing));
+					commander.printOut("downloadSize", String.valueOf(referenceGUID.size));
 				}
 			}
 			else {
 				// just namespace check, no actual IO
 				commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
 
-				if (verbose && status != null)
+				commander.printOut("status", "ok");
+
+				if (verbose && status != null) {
 					commander.printOutln(status);
+
+					commander.printOut("statResponse", status);
+				}
 			}
 		}
 		catch (final Throwable t) {
@@ -312,14 +363,22 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 			commander.printOutln(ShellColor.jobStateRed() + "ERR" + ShellColor.reset());
 
-			if (verbose)
+			commander.printOut("status", "error");
+
+			if (verbose) {
 				commander.printOutln(error);
+
+				commander.printOut("errorMessage", error);
+			}
 
 			if (printCommand) {
 				final String cmd = xrootd.getFormattedLastCommand();
 
-				if (!error.contains(cmd))
+				if (!error.contains(cmd)) {
 					commander.printOutln(cmd);
+
+					commander.printOut("failedCommand", cmd);
+				}
 			}
 		}
 	}
