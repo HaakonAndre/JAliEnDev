@@ -122,7 +122,7 @@ public class JAliEnCOMMander extends Thread {
 	 * Commands to let UI talk internally with us here
 	 */
 	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", "blackwhite", "color",
-			"setshell", "type" };
+			"setshell", "type", "randomPFNs" };
 
 	private UIPrintWriter out = null;
 
