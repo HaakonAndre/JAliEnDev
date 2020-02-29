@@ -1123,12 +1123,18 @@ public final class SEUtils {
 
 		while (pfns.size() < fileCount && remainingTries > 0) {
 
+			List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
 			int filesFound = 0;
 
-			List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
 			if (guidIndices != null) {
+
+				guidIndices = new ArrayList<>(guidIndices);
+				Collections.shuffle(guidIndices);
+
 				for (final GUIDIndex idx : guidIndices) {
+
 					final Host h = CatalogueUtils.getHost(idx.hostIndex);
+
 					try (DBFunctions gdb = h.getDB()) {
 						gdb.setReadOnly(true);
 						gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber + " order by rand() limit " + fileCount + ";");
