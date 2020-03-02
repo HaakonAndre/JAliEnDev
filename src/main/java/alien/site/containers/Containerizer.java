@@ -77,7 +77,8 @@ public abstract class Containerizer {
 	 */
 	public String containerizeAsString(String cmd) {
 		String contCmd = String.join(" ", containerize(cmd));
-        contCmd = contCmd.replaceAll("-c ", "-c \"") + "\"";
+		contCmd = contCmd.replaceAll(" \\$", " \\\\\\$"); //Prevent startup path from being expanded prematurely
+		contCmd = contCmd.replaceAll("-c ", "-c \"") + "\""; //Wrap the command to be executed as a string 
 		return contCmd;
 	}
 
