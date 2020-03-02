@@ -70,9 +70,9 @@ public class ComputingElement extends Thread {
 
 			final String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 
-			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
-
 			queue = getBatchQueue((String) config.get("ce_type"));
+			
+			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 		}
 		catch (final Exception e) {
