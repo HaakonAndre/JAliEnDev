@@ -1144,8 +1144,6 @@ public final class SEUtils {
 					final String q = "select pfn,binary2string(guid),size from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber
 							+ " order by rand() limit " + (fileCount - pfns.size());
 
-					System.err.println(q);
-
 					gdb.query(q);
 
 					while (gdb.moveNext()) {
