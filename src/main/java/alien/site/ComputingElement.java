@@ -342,7 +342,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return "java -cp \\$(dirname \\$(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
+		return "java -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
 	}
 
 	// Prepares a hash to create the sitemap
