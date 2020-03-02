@@ -1,34 +1,56 @@
 package alien.api.catalogue;
 
-import alien.api.Request;
-import alien.se.SEUtils;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import alien.api.Request;
+import alien.catalogue.PFN;
+import alien.se.SEUtils;
+import alien.user.AliEnPrincipal;
+
+/**
+ * @author anegru
+ * @since 2020-03-2
+ */
 public class SERandomPFNs extends Request {
 
-    private final Integer seNumber;
-    private final Integer fileCount;
+	/**
+	 * Generated value
+	 */
+	private static final long serialVersionUID = 5169310474130045510L;
 
-    private Collection<String> randomPFNs = null;
+	private final int seNumber;
+	private final int fileCount;
 
-    public SERandomPFNs(int seNumber, int fileCount) {
-        this.seNumber = seNumber;
-        this.fileCount = fileCount;
-    }
+	private Collection<PFN> randomPFNs = null;
 
-    @Override
-    public List<String> getArguments() {
-        return Arrays.asList(this.seNumber.toString(), this.fileCount.toString());
-    }
+	/**
+	 * @param user
+	 * @param seNumber SE number to extract random PFNs from
+	 * @param fileCount number of PFNs to return at max
+	 */
+	public SERandomPFNs(final AliEnPrincipal user, final int seNumber, final int fileCount) {
+		setRequestUser(user);
 
-    @Override
-    public void run() {
-        this.randomPFNs = SEUtils.getRandomPFNs(this.seNumber, this.fileCount);
-    }
+		this.seNumber = seNumber;
+		this.fileCount = fileCount;
+	}
 
-    public Collection<String> getPFNS() {
-        return randomPFNs;
-    }
+	@Override
+	public List<String> getArguments() {
+		return Arrays.asList(String.valueOf(this.seNumber), String.valueOf(this.fileCount));
+	}
+
+	@Override
+	public void run() {
+		this.randomPFNs = SEUtils.getRandomPFNs(this.seNumber, this.fileCount);
+	}
+
+	/**
+	 * @return the random PFNs
+	 */
+	public Collection<PFN> getPFNs() {
+		return randomPFNs;
+	}
 }
