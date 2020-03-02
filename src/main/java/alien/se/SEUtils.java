@@ -1116,50 +1116,49 @@ public final class SEUtils {
 		}
 	}
 
-	public static Collection<String> getRandomPFNs(final int storageNumber, final int fileCount) {
-		SE se = getSE(storageNumber);
-		Set<String> pfns = new HashSet<>();
-		int remainingTries = 5;
+	/**
+	 * @param storageNumber
+	 * @param fileCount
+	 * @return at most <code>fileCount</code> random PFNs associated to this storage ID
+	 */
+	public static Collection<PFN> getRandomPFNs(final int storageNumber, final int fileCount) {
+		final SE se = getSE(storageNumber);
+		final Set<PFN> pfns = new HashSet<>();
 
-		while (pfns.size() < fileCount && remainingTries > 0) {
+		List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
 
-			List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
-			int filesFound = 0;
+		if (guidIndices != null) {
+			guidIndices = new ArrayList<>(guidIndices);
+			Collections.shuffle(guidIndices);
 
-			if (guidIndices != null) {
+			final Iterator<GUIDIndex> it = guidIndices.iterator();
 
-				guidIndices = new ArrayList<>(guidIndices);
-				Collections.shuffle(guidIndices);
+			while (pfns.size() < fileCount && it.hasNext()) {
+				final GUIDIndex idx = it.next();
 
-				for (final GUIDIndex idx : guidIndices) {
+				final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
-					final Host h = CatalogueUtils.getHost(idx.hostIndex);
+				try (DBFunctions gdb = h.getDB()) {
+					gdb.setReadOnly(true);
 
-					try (DBFunctions gdb = h.getDB()) {
-						gdb.setReadOnly(true);
-						gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber + " order by rand() limit " + fileCount + ";");
+					final String q = "select pfn,binary2string(guid),size from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber
+							+ " order by rand() limit " + (fileCount - pfns.size());
 
-						while (gdb.moveNext()) {
-							String pfn = gdb.gets(1);
-							pfns.add(pfn);
-							filesFound += 1;
-							if (pfns.size() == fileCount) {
-								return pfns;
-							}
-						}
-					}
-					catch (Exception e) {
-						logger.log(Level.WARNING, "Exception occurred when trying to get random files from SE " + storageNumber + " " + e.getMessage());
+					System.err.println(q);
+
+					gdb.query(q);
+
+					while (gdb.moveNext()) {
+						pfns.add(new PFN(Integer.valueOf(se.seNumber), gdb.gets(1), UUID.fromString(gdb.gets(2)), gdb.getl(3)));
 					}
 				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Exception occurred when trying to get random files from SE " + storageNumber, e);
+				}
 			}
-			else {
-				logger.log(Level.WARNING, "CatalogueUtils.GetAllGUIDIndexes returned null");
-			}
-
-			if(filesFound == 0) {
-				remainingTries -= 1;
-			}
+		}
+		else {
+			logger.log(Level.WARNING, "CatalogueUtils.getAllGUIDIndexes returned null");
 		}
 
 		return pfns;
