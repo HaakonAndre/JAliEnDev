@@ -1116,4 +1116,51 @@ public final class SEUtils {
 		}
 	}
 
+	/**
+	 * @param storageNumber
+	 * @param fileCount
+	 * @return at most <code>fileCount</code> random PFNs associated to this storage ID
+	 */
+	public static Collection<PFN> getRandomPFNs(final int storageNumber, final int fileCount) {
+		final SE se = getSE(storageNumber);
+		final Set<PFN> pfns = new HashSet<>();
+
+		List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
+
+		if (guidIndices != null) {
+			guidIndices = new ArrayList<>(guidIndices);
+			Collections.shuffle(guidIndices);
+
+			final Iterator<GUIDIndex> it = guidIndices.iterator();
+
+			while (pfns.size() < fileCount && it.hasNext()) {
+				final GUIDIndex idx = it.next();
+
+				final Host h = CatalogueUtils.getHost(idx.hostIndex);
+
+				try (DBFunctions gdb = h.getDB()) {
+					gdb.setReadOnly(true);
+
+					final String q = "select pfn,binary2string(guid),size from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber
+							+ " order by rand() limit " + (fileCount - pfns.size());
+
+					System.err.println(q);
+
+					gdb.query(q);
+
+					while (gdb.moveNext()) {
+						pfns.add(new PFN(Integer.valueOf(se.seNumber), gdb.gets(1), UUID.fromString(gdb.gets(2)), gdb.getl(3)));
+					}
+				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Exception occurred when trying to get random files from SE " + storageNumber, e);
+				}
+			}
+		}
+		else {
+			logger.log(Level.WARNING, "CatalogueUtils.getAllGUIDIndexes returned null");
+		}
+
+		return pfns;
+	}
 }
