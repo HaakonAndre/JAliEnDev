@@ -1008,14 +1008,19 @@ public class CatalogueApiUtils {
 		return null;
 	}
 
-	public Collection<String> getRandomPFNsFromSE(final int senNumber, final int fileCount) {
-		return new SERandomPFNs(senNumber, fileCount).getPFNS();
-//		try {
-//			return Dispatcher.execute(new SERandomPFNS(senNumber, fileCount)).getRandomPFNs();
-//		} catch (ServerException e) {
-//			logger.log(Level.WARNING, "Could not get random PFNs for SE with number" + senNumber);
-//			e.getCause().printStackTrace();
-//		}
-//		return null;
+	/**
+	 * @param seNumber
+	 * @param fileCount
+	 * @return at most <code>fileCount</code> random PFNs that should be present on this SE
+	 */
+	public Collection<PFN> getRandomPFNsFromSE(final int seNumber, final int fileCount) {
+		try {
+			return Dispatcher.execute(new SERandomPFNs(commander.getUser(), seNumber, fileCount)).getPFNs();
+		}
+		catch (ServerException e) {
+			logger.log(Level.WARNING, "Could not get random PFNs for SE with number" + seNumber);
+			e.getCause().printStackTrace();
+		}
+		return null;
 	}
 }
