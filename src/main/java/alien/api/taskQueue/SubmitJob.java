@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import alien.api.Request;
-import alien.api.ServerException;
 import alien.taskQueue.JDL;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
@@ -49,8 +48,7 @@ public class SubmitJob extends Request {
 			jobID = TaskQueueUtils.submit(jdl, getEffectiveRequester());
 		}
 		catch (final IOException ioe) {
-			// System.out.println("ex: " + ioe.getMessage());
-			setException(new ServerException(ioe.getMessage(), ioe));
+			throw new IllegalArgumentException(ioe.getMessage());
 		}
 	}
 
@@ -58,8 +56,6 @@ public class SubmitJob extends Request {
 	 * @return jobID
 	 */
 	public long getJobID() {
-		System.out.println("job received ID:" + this.jobID);
-
 		return this.jobID;
 	}
 

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import alien.api.ServerException;
+import alien.catalogue.FileSystemUtils;
 import alien.io.protocols.TempFileManager;
 import alien.shell.ShellColor;
 import alien.taskQueue.JDL;
@@ -21,9 +22,12 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 	public void run() {
 
 		long queueId = 0;
-		commander.printOutln("Submitting " + alArguments.get(0));
 
-		final File fout = catFile(alArguments.get(0));
+		final String jdlName = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alArguments.get(0));
+
+		commander.printOutln("Submitting " + jdlName);
+
+		final File fout = catFile(jdlName);
 
 		try {
 			if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
@@ -38,10 +42,11 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							jdl = TaskQueueUtils.applyJDLArguments(content, args);
 						}
 						catch (final IOException ioe) {
-							commander.setReturnCode(1, "Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
+							commander.setReturnCode(1, "Passing arguments to " + jdlName + " failed:\n  " + ioe.getMessage());
 							return;
 						}
-						jdl.set("JDLPath", alArguments.get(0));
+
+						jdl.set("JDLPath", jdlName);
 
 						queueId = commander.q_api.submitJob(jdl);
 						if (queueId > 0) {
@@ -49,18 +54,17 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							commander.printOut("jobId", String.valueOf(queueId));
 						}
 						else
-							commander.setReturnCode(2, "Error submitting " + alArguments.get(0));
-
+							commander.setReturnCode(2, "Cannot submit " + jdlName);
 					}
 					catch (final ServerException e) {
-						commander.setReturnCode(2, "Error submitting " + alArguments.get(0) + ", " + e.getMessage());
+						commander.setReturnCode(2, "Task queue rejected " + jdlName + " due to:\n  " + e.getMessage());
 					}
 				}
 				else
 					commander.setReturnCode(3, "Could not read the contents of " + fout.getAbsolutePath());
 			}
 			else
-				commander.setReturnCode(4, "Not able to get the file " + alArguments.get(0));
+				commander.setReturnCode(4, "Not able to get the file " + jdlName);
 		}
 		finally {
 			TempFileManager.release(fout);
