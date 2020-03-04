@@ -134,6 +134,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							if (localFile != null)
 								TempFileManager.putTemp(g, localFile);
 						}
+						else {
+							commander.printOutln("Downloaded file to " + localFile.getAbsolutePath());
+						}
 					}
 				}
 			}
