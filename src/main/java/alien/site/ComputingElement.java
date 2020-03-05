@@ -264,6 +264,7 @@ public class ComputingElement extends Thread {
 		before += "export JALIEN_TOKEN_CERT=\"" + token_cert_str + "\";\n" + "export JALIEN_TOKEN_KEY=\"" + token_key_str + "\";\n";
 
 		// pass environment variables
+		before += "export HOME=$(pwd)" + "\n";
 		if (config.containsKey("host_logdir") || config.containsKey("site_logdir"))
 			before += "export LOGDIR='" + (config.containsKey("host_logdir") ? config.get("host_logdir") : config.get("site_logdir")) + "'\n";
 		if (config.containsKey("host_cachedir") || config.containsKey("site_cachedir"))
@@ -286,16 +287,9 @@ public class ComputingElement extends Thread {
 			before += "export partition='" + config.get("ce_partition") + "'\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
-
-		Containerizer cont = new Docker(); //Containers within containers only supported by Docker
-		if (cont.isSupported()) {
-			cont.addToEnvironment("'$(env)'");
-			startup_script = cont.containerizeAsString(getStartup()) + "\n";
-		} else { 
-			if(System.getenv("LOADEDMODULES") == null || !System.getenv("LOADEDMODULES").contains("JALIEN"))
-				before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n"; 
-			startup_script = getStartup()+ "\n";
-		}
+		before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n"; 
+		
+		startup_script = getStartup()+ "\n";
 		
 		final String content_str = before + startup_script;
 
@@ -312,6 +306,7 @@ public class ComputingElement extends Thread {
 
 		try (PrintWriter writer = new PrintWriter(agent_startup_path, "UTF-8")) {
 			writer.println("#!/bin/bash");
+			writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); //make sure we start with a clean env
 			writer.println(content_str);
 		}
 		catch (final FileNotFoundException e) {
@@ -342,7 +337,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return "java -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
+		return CVMFS.getJava32DirFromCVMFS() + "/java -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
 	}
 
 	// Prepares a hash to create the sitemap

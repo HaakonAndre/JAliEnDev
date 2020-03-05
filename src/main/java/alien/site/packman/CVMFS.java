@@ -32,6 +32,7 @@ public class CVMFS extends PackMan {
 	 */
 	
 	static String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin";
+	final static String JAVA32_DIR = "/cvmfs/alice.cern.ch/java/JDKs/i686/jdk-latest/bin";
 	
 	/**
 	 * Constructor just checks CVMFS bin exist
@@ -144,5 +145,9 @@ public class CVMFS extends PackMan {
 			logger.log(Level.WARNING, "Could not get jAliEn version", e);
 			return "";
 		}
+	}
+	
+	public static String getJava32DirFromCVMFS() {
+		return JAVA32_DIR;
 	}
 }

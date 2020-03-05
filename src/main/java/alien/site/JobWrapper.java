@@ -35,6 +35,8 @@ import alien.io.IOUtils;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.site.containers.Containerizer;
+import alien.site.containers.ContainerizerFactory;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
@@ -269,7 +271,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		logger.log(Level.INFO, "Starting execution of command: " + command);
 
-		final List<String> cmd = new LinkedList<>();
+		List<String> cmd = new LinkedList<>();
 
 		final int idx = command.lastIndexOf('/');
 
@@ -295,6 +297,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						cmd.add(st.nextToken());
 				}
 
+		//Check if we can put the payload in its own container
+		Containerizer cont = ContainerizerFactory.getContainerizer();
+		if (cont != null) {
+			cmd =  cont.containerize(String.join(" ", cmd));
+		}
+		
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);

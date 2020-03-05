@@ -521,7 +521,7 @@ public class JobAgent implements Runnable {
 				}
 			}
 
-			// Check if Singularity is present on site. If yes, add singularity to launchCmd
+			// Check if there is container support at present on site. If yes, add to launchCmd
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
 				cont.setWorkdir(jobWorkdir);
