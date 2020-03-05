@@ -12,6 +12,7 @@ import alien.user.UserFactory;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import lazyj.Format;
 
 /**
  * @author costing
@@ -30,7 +31,7 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void run() {
-		Set<String> usernames = new TreeSet<>();
+		final Set<String> usernames = new TreeSet<>();
 
 		for (final String s : searchFor)
 			if (search || fullNameSearch) {
@@ -48,7 +49,7 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 				usernames.add(s);
 			}
 
-		for (String s : usernames) {
+		for (final String s : usernames) {
 			final AliEnPrincipal principal = UserFactory.getByUsername(s);
 
 			if (principal == null)
@@ -60,37 +61,51 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 
 	private void printUser(final AliEnPrincipal principal) {
 		commander.printOutln("Username: " + principal.getName());
+		commander.printOut("username", principal.getName());
 
 		Set<String> names = LDAPHelper.checkLdapInformation("uid=" + principal.getName(), "ou=People,", "gecos");
 
 		if (names == null)
 			names = LDAPHelper.checkLdapInformation("uid=" + principal.getName(), "ou=People,", "cn");
 
-		printCollection("Full name", names);
+		printCollection("Full name", names, false);
 
-		printCollection("Roles", principal.getRoles());
+		printCollection("Roles", principal.getRoles(), false);
 
-		printCollection("Email", LDAPHelper.getEmails(principal.getName()));
+		printCollection("Email", LDAPHelper.getEmails(principal.getName()), true);
 
-		printCollection("Subject", LDAPHelper.checkLdapInformation("uid=" + principal.getName(), "ou=People,", "subject"));
+		printCollection("Subject", LDAPHelper.checkLdapInformation("uid=" + principal.getName(), "ou=People,", "subject"), true);
 
 		commander.printOutln();
+		commander.outNextResult();
 	}
 
-	private void printCollection(final String key, final Collection<?> collection) {
+	private void printCollection(final String key, final Collection<?> collection, final boolean newlines) {
 		if (collection != null && collection.size() > 0) {
 			commander.printOut("  " + key + ": ");
 
 			boolean first = true;
 
+			if (newlines && collection.size() > 1)
+				first = false;
+
+			final StringBuilder sb = new StringBuilder();
+
 			for (final Object o : collection) {
 				if (!first)
-					commander.printOut(", ");
+					commander.printOut(newlines ? "\n    " : ", ");
+
+				if (sb.length() > 0)
+					sb.append(", ");
+
+				sb.append(o.toString());
 
 				commander.printOut(o.toString());
 
 				first = false;
 			}
+
+			commander.printOut(Format.replace(key.toLowerCase(), " ", "_"), sb.toString());
 
 			commander.printOutln();
 		}
