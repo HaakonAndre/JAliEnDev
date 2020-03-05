@@ -102,11 +102,4 @@ public abstract class Containerizer {
 	public String getContainerizerName() {
 		return this.getClass().getName();
 	}
-	
-	/**
-	 * @param toEnv Additional string that will sourced within the container environment
-	 */
-	public void addToEnvironment(String toEnv) {
-		envSetup = "source <( " + CVMFS.getAlienvForSource() + "; " + toEnv +" ); ";
-	}
 }
