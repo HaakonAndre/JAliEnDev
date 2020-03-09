@@ -363,10 +363,15 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			String q = "SELECT * FROM L" + tableName + "L WHERE ";
 
 			if ((flags & LFNUtils.FIND_REGEXP) == 0) {
-				if (!sPattern.startsWith("%"))
-					sSearch += "%";
+				if (sSearch.length() == 0 && sPattern.startsWith("/")) {
+					sSearch += sPattern.substring(1);
+				}
+				else {
+					if (!sPattern.startsWith("%"))
+						sSearch += "%";
 
-				sSearch += sPattern;
+					sSearch += sPattern;
+				}
 
 				if (!sPattern.endsWith("%"))
 					sSearch += "%";
