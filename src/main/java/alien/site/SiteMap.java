@@ -51,14 +51,7 @@ public class SiteMap {
 		String cehost = null;
 
 		// Get hostname
-		String hostName = "";
-		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-			hostName = hostName.replace("/.$/", "");
-		}
-		catch (final UnknownHostException e) {
-			logger.severe("Couldn't get hostname: " + e.toString());
-		}
+		String hostName = ConfigUtils.getLocalHostname();
 		siteMap.put("Localhost", hostName);
 
 		// ALIEN_CM_AS_LDAP_PROXY to send messages upstream through VoBox (no really used anymore in JAliEn?)
