@@ -228,7 +228,7 @@ public class JDL implements Serializable {
 			throw new IOException("Key cannot be the empty string");
 
 		for (final char c : sKey.toCharArray())
-			if (!Character.isLetterOrDigit(c))
+			if (!Character.isLetterOrDigit(c) && c != '_')
 				throw new IOException("Illegal character '" + c + "' in key '" + sKey + "'");
 	}
 
