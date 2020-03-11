@@ -35,6 +35,8 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 			return;
 		}
 
+		commander.printOut("lfn", lfn.getCanonicalName());
+
 		String ret = "";
 		if (lfn.isFile()) {
 			ret += "file";
