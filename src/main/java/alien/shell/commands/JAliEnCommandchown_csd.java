@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -25,7 +26,7 @@ public class JAliEnCommandchown_csd extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.user == null || this.file == null) {
-			commander.setReturnCode(1, "No user or file entered");
+			commander.setReturnCode(ErrNo.EINVAL, "No user or file entered");
 			return;
 		}
 
@@ -35,7 +36,7 @@ public class JAliEnCommandchown_csd extends JAliEnBaseCommand {
 		final boolean result = commander.c_api.chownLFNCSD(path, this.user, this.group, this.recursive);
 
 		if (!result)
-			commander.setReturnCode(2, "Failed to chown file(s): " + path + (recursive ? "(recursive)" : "(non-recursive)"));
+			commander.setReturnCode(ErrNo.EIO, "Failed to chown file(s): " + path + (recursive ? "(recursive)" : "(non-recursive)"));
 	}
 
 	@Override

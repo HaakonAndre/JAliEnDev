@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.List;
 
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 
 /**
@@ -11,7 +12,7 @@ public class JAliEnCommanddf extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		commander.setReturnCode(1, "not implemented yet");
+		commander.setReturnCode(ErrNo.ENOSYS);
 	}
 
 	@Override

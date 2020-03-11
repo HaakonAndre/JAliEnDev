@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import alien.io.protocols.TempFileManager;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -80,10 +81,10 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 					}
 
 					else
-						commander.setReturnCode(1, "Could not read the contents of " + fout.getAbsolutePath());
+						commander.setReturnCode(ErrNo.EIO, "Could not read the contents of " + fout.getAbsolutePath());
 				}
 				else {
-					commander.setReturnCode(2, "Not able to get the file: " + eachFileName);
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Not able to get the file: " + eachFileName);
 				}
 			}
 			finally {

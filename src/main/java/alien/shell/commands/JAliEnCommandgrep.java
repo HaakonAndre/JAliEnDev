@@ -10,6 +10,7 @@ import java.util.List;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.io.protocols.TempFileManager;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
@@ -20,11 +21,11 @@ import lazyj.commands.SystemCommand;
  */
 public class JAliEnCommandgrep extends JAliEnBaseCommand {
 
-	private ArrayList<String> flags = new ArrayList<>();
+	private final ArrayList<String> flags = new ArrayList<>();
 
 	private String pattern = null;
 
-	private ArrayList<String> alPaths = new ArrayList<>();
+	private final ArrayList<String> alPaths = new ArrayList<>();
 
 	/**
 	 * Print the file name for each match. This is the default when there is more than one file to search.
@@ -45,7 +46,7 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 			if (expandedPaths != null && !expandedPaths.isEmpty())
 				filesToProcess.addAll(expandedPaths);
 			else
-				commander.setReturnCode(1, "No such file or directory: " + path);
+				commander.setReturnCode(ErrNo.ENOENT, path);
 		}
 
 		if (filesToProcess.size() > 1)
@@ -71,7 +72,7 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 					commandToExecute.add(pattern);
 					commandToExecute.add(fout.getAbsolutePath());
 
-					CommandOutput co = SystemCommand.executeCommand(commandToExecute, false);
+					final CommandOutput co = SystemCommand.executeCommand(commandToExecute, false);
 
 					if (!co.stderr.isEmpty()) {
 						if (bH)
@@ -87,7 +88,7 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 								while ((line = br.readLine()) != null)
 									commander.printOutln(eachFileName + ": " + line);
 							}
-							catch (@SuppressWarnings("unused") IOException e) {
+							catch (@SuppressWarnings("unused") final IOException e) {
 								// ignore, will not happen when reading from Strings
 							}
 						}
@@ -97,7 +98,7 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 					}
 				}
 				else {
-					commander.setReturnCode(2, "Not able to get the file: " + eachFileName);
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Not able to get the file: " + eachFileName);
 				}
 			}
 			finally {

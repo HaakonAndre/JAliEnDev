@@ -5,6 +5,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -26,7 +27,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.user == null || this.files == null || this.files.size() < 1) {
-			commander.setReturnCode(1, "No user or file entered");
+			commander.setReturnCode(ErrNo.EINVAL, "No user or file entered");
 			return;
 		}
 
@@ -39,17 +40,16 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 			final List<String> chownTargets = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 			if (chownTargets == null || chownTargets.isEmpty()) {
-				commander.setReturnCode(2, "No such file: " + file);
+				commander.setReturnCode(ErrNo.ENOENT, file);
 				return;
 			}
 
 			for (final String path : chownTargets) {
 				// run chown command
-				final HashMap<String, Boolean> results = commander.c_api.chownLFN(path, this.user, this.group,
-						this.recursive);
+				final HashMap<String, Boolean> results = commander.c_api.chownLFN(path, this.user, this.group, this.recursive);
 
 				if (results == null) {
-					commander.setReturnCode(3, "Failed to chown file " + path);
+					commander.setReturnCode(ErrNo.EIO, "Failed to chown file " + path);
 					continue;
 				}
 
@@ -57,7 +57,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 					final Boolean b = results.get(filename);
 
 					if (b == null || !b.booleanValue()) {
-						commander.setReturnCode(3, filename + ": unable to chown");
+						commander.setReturnCode(ErrNo.EIO, filename + ": unable to chown");
 					}
 				}
 			}

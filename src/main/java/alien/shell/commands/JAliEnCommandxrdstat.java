@@ -22,6 +22,7 @@ import alien.io.protocols.TempFileManager;
 import alien.io.protocols.Xrootd;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.shell.ErrNo;
 import alien.shell.ShellColor;
 import alien.taskQueue.JDL;
 import joptsimple.OptionException;
@@ -61,7 +62,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				final String jdl = commander.q_api.getJDL(jobID.longValue(), true);
 
 				if (jdl == null) {
-					commander.setReturnCode(1, "Cannot retrieve JDL of job ID " + jobID);
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot retrieve JDL of job ID " + jobID);
 				}
 				else {
 					try {
@@ -72,10 +73,10 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						if (dataFiles != null && dataFiles.size() > 0)
 							this.alPaths.addAll(dataFiles);
 						else
-							commander.setReturnCode(2, "Job ID " + jobID + " doesn't have input data, nothing to check for it");
+							commander.setReturnCode(ErrNo.ENODATA, "Job ID " + jobID + " doesn't have input data, nothing to check for it");
 					}
 					catch (final IOException ioe) {
-						commander.setReturnCode(3, "Cannot parse the JDL of job ID " + jobID + " : " + ioe.getMessage());
+						commander.setReturnCode(ErrNo.EILSEQ, "Cannot parse the JDL of job ID " + jobID + " : " + ioe.getMessage());
 					}
 				}
 			}
@@ -93,7 +94,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					referenceGUID = commander.c_api.getGUID(lfnName);
 
 					if (referenceGUID == null) {
-						commander.setReturnCode(4, "This GUID does not exist in the catalogue: " + lfnName);
+						commander.setReturnCode(ErrNo.ENOENT, "This GUID does not exist in the catalogue: " + lfnName);
 						continue;
 					}
 				}
@@ -134,7 +135,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						}
 					}
 					else {
-						commander.setReturnCode(5, "This LFN does not exist in the catalogue: " + lfnName);
+						commander.setReturnCode(ErrNo.ENOENT, "This LFN does not exist in the catalogue: " + lfnName);
 						continue;
 					}
 				}
@@ -142,7 +143,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			else if (lfn.guid != null)
 				referenceGUID = commander.c_api.getGUID(lfn.guid.toString());
 			else {
-				commander.setReturnCode(6, "Could not get the GUID of " + lfn.getCanonicalName());
+				commander.setReturnCode(ErrNo.ENODATA, "Could not get the GUID of " + lfn.getCanonicalName());
 				continue;
 			}
 
@@ -306,7 +307,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						timing = System.currentTimeMillis() - lStart;
 
 						if (f.length() != referenceGUID.size) {
-							commander.setReturnCode(7, "Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
+							commander.setReturnCode(ErrNo.EIO, "Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
 							throw new IOException("Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
 						}
 
@@ -314,7 +315,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 							final String fileMD5 = IOUtils.getMD5(f);
 
 							if (!fileMD5.equalsIgnoreCase(referenceGUID.md5)) {
-								commander.setReturnCode(8, "The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
+								commander.setReturnCode(ErrNo.EIO, "The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
 								throw new IOException("The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
 							}
 						}
@@ -446,10 +447,10 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						if (se != null)
 							ses.add(se);
 						else
-							commander.setReturnCode(9, "The SE you have indicated doesn't exist: " + tok);
+							commander.setReturnCode(ErrNo.ENXIO, "The SE you have indicated doesn't exist: " + tok);
 					}
 					catch (final Throwable t) {
-						commander.setReturnCode(10, "What's this? " + tok + " : " + t.getMessage());
+						commander.setReturnCode(ErrNo.EINVAL, "What's this? " + tok + " : " + t.getMessage());
 					}
 				}
 			}
@@ -462,7 +463,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						jobIDs.add(Long.valueOf(o.toString()));
 					}
 					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-						commander.setReturnCode(11, "Invalid job ID: " + o);
+						commander.setReturnCode(ErrNo.EILSEQ, "Invalid job ID: " + o);
 					}
 				}
 			}

@@ -5,6 +5,7 @@ import java.util.logging.Level;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import alien.user.AuthorizationChecker;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -31,23 +32,23 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 						if (bP) {
 							commander.printOutln("Inside Parent Directory");
 							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-								commander.setReturnCode(1, "Could not remove directory (or non-existing parents): " + path);
+								commander.setReturnCode(ErrNo.EIO, "Could not remove directory (or non-existing parents): " + path);
 								logger.log(Level.WARNING, "Could not remove directory (or non-existing parents): " + path);
 							}
 						}
 						else if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-							commander.setReturnCode(1, "Could not remove directory: " + path);
+							commander.setReturnCode(ErrNo.EIO, "Could not remove directory: " + path);
 							logger.log(Level.WARNING, "Could not remove directory: " + path);
 						}
 					}
 					else
-						commander.setReturnCode(2, "Permission denied on directory: [" + path + "]");
+						commander.setReturnCode(ErrNo.EPERM, path);
 				}
 				else
-					commander.setReturnCode(3, "Not a directory: [" + path + "]");
+					commander.setReturnCode(ErrNo.ENOTDIR, path);
 			}
 			else
-				commander.setReturnCode(4, "No such file or directory: [" + path + "]");
+				commander.setReturnCode(ErrNo.ENOENT, path);
 		}
 	}
 

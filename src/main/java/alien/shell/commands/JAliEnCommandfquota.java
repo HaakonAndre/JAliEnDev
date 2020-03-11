@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.quotas.FileQuota;
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
@@ -22,7 +23,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (!this.command.equals("list") && !(isAdmin && this.command.equals("set"))) {
-			commander.setReturnCode(1, "Wrong command passed");
+			commander.setReturnCode(ErrNo.EINVAL, this.command);
 			printHelp();
 			return;
 		}
@@ -32,7 +33,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		if (command.equals("list")) {
 			final FileQuota q = commander.q_api.getFileQuota();
 			if (q == null) {
-				commander.setReturnCode(1, "No file quota found for user " + username);
+				commander.setReturnCode(ErrNo.ENODATA, "File quota information not available for " + username);
 				return;
 			}
 
@@ -49,11 +50,11 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 
 		if (command.equals("set")) {
 			if (this.param_to_set == null) {
-				commander.setReturnCode(2, "Error in parameter name");
+				commander.setReturnCode(ErrNo.EINVAL, "Parameter name cannot be null");
 				return;
 			}
 			else if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
-				commander.setReturnCode(3, "Error in value");
+				commander.setReturnCode(ErrNo.EINVAL, "Value cannot be null");
 				printHelp();
 				return;
 			}
@@ -61,7 +62,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			if (TaskQueueApiUtils.setFileQuota(user_to_set, this.param_to_set, this.value_to_set.toString()))
 				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 			else
-				commander.setReturnCode(4, "Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 		}
 	}
 

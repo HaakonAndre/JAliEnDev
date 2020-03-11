@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.List;
 
 import alien.catalogue.LFN_CSD;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 
 /**
@@ -24,11 +25,11 @@ public class JAliEnCommandguid2lfn_csd extends JAliEnBaseCommand {
 		final LFN_CSD lfnc = commander.c_api.guid2lfncsd(guidName);
 
 		if (lfnc == null)
-			commander.setReturnCode(1, "Could not get the UUID [" + guidName + "].");
+			commander.setReturnCode(ErrNo.ENXIO, "Could not get the UUID [" + guidName + "].");
 		else if (lfnc.exists)
 			commander.printOutln("LFN: " + lfnc.getCanonicalName());
 		else
-			commander.setReturnCode(2, "No LFNs are associated to this UUID [" + guidName + "].");
+			commander.setReturnCode(ErrNo.ENOENT, "No LFNs are associated to this UUID [" + guidName + "].");
 	}
 
 	/**

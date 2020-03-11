@@ -9,6 +9,7 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -51,7 +52,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			if (GUIDUtils.isValidGUID(lfnOrGuid))
 				guid = lfnOrGuid;
 			else {
-				commander.setReturnCode(1, "This is not a valid GUID: " + lfnOrGuid);
+				commander.setReturnCode(ErrNo.EINVAL, "This is not a valid GUID: " + lfnOrGuid);
 				return;
 			}
 		}
@@ -65,7 +66,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				guid = lfnOrGuid;
 			}
 			else if (lfn != null && !lfn.isFile()) {
-				commander.setReturnCode(2, "The path you indicated is not a file: " + lfnOrGuid);
+				commander.setReturnCode(ErrNo.EINVAL, "The path you indicated is not a file: " + lfnOrGuid);
 				return;
 			}
 		}
@@ -95,7 +96,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 						pfns = commander.c_api.getPFNs(archiveGUID);
 
 						if (pfns == null) {
-							commander.setReturnCode(3, "Archive with GUID " + archiveGUID + " doesn't exist");
+							commander.setReturnCode(ErrNo.ENOENT, "Archive with GUID " + archiveGUID + " doesn't exist");
 							return;
 						}
 
@@ -109,7 +110,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 						}
 
 						if (pfns.size() == 0) {
-							commander.setReturnCode(4, "Archive with GUID " + archiveGUID + " doesn't have any replicas, this file cannot be used");
+							commander.setReturnCode(ErrNo.EBADFD, "Archive with GUID " + archiveGUID + " doesn't have any replicas, this file cannot be used");
 							return;
 						}
 					}
@@ -165,12 +166,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				}
 			}
 			else if (pfns == null)
-				commander.setReturnCode(5, "GUID " + guid + " does not exist in the catalogue");
+				commander.setReturnCode(ErrNo.ENOENT, "GUID " + guid + " does not exist in the catalogue");
 			else
-				commander.setReturnCode(6, "GUID " + guid + " has no replicas, this is a lost file");
+				commander.setReturnCode(ErrNo.ENOLINK, "GUID " + guid + " has no replicas, this is a lost file");
 		}
 		else
-			commander.setReturnCode(7, "This file doesn't exist in the catalogue: " + lfnOrGuid);
+			commander.setReturnCode(ErrNo.ENOENT, lfnOrGuid);
 
 	}
 

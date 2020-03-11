@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import alien.shell.ErrNo;
 import alien.shell.ShellColor;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
@@ -460,7 +461,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					getJDL = ((Long) options.valueOf("jdl")).longValue();
 				}
 				catch (@SuppressWarnings("unused") final NumberFormatException e) {
-					commander.setReturnCode(1, "Illegal job ID " + options.valueOf("jdl"));
+					commander.setReturnCode(ErrNo.EILSEQ, "Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
 				}
 			else if (options.has("trace") && options.hasArgument("trace"))
@@ -468,7 +469,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					getTrace = ((Long) options.valueOf("trace")).longValue();
 				}
 				catch (@SuppressWarnings("unused") final NumberFormatException e) {
-					commander.setReturnCode(2, "Illegal job ID " + options.valueOf("trace"));
+					commander.setReturnCode(ErrNo.EILSEQ, "Illegal job ID " + options.valueOf("trace"));
 					getTrace = -1;
 				}
 			else {

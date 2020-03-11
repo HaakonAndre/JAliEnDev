@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
+import alien.shell.ErrNo;
 
 /**
  *
@@ -14,7 +15,7 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 	public void run() {
 		for (final String path : this.filelist) {
 			if (commander.c_api.touchLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path)) == null) {
-				commander.setReturnCode(1, "Failed to touch the LFN: " + FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path));
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Failed to touch the LFN: " + FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path));
 			}
 		}
 	}

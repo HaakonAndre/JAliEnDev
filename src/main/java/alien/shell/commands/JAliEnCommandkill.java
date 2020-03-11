@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.shell.ErrNo;
 import alien.taskQueue.Job;
 import alien.user.AuthorizationChecker;
 import joptsimple.OptionException;
@@ -23,7 +24,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 		for (final Job job : jobs)
 			if (AuthorizationChecker.canModifyJob(job, commander.user))
 				if (!commander.q_api.killJob(job.queueId))
-					commander.setReturnCode(1, "Could not kill the job  with id: [" + job.queueId + "]");
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Could not kill the job with id: [" + job.queueId + "]");
 	}
 
 	/**

@@ -7,6 +7,7 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.RemoveLFNCSDfromString;
 import alien.catalogue.FileSystemUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -39,7 +40,7 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 			if (sources != null && !sources.isEmpty())
 				expandedPaths.addAll(sources);
 			else
-				commander.setReturnCode(1, "No such file or directory: " + path);
+				commander.setReturnCode(ErrNo.ENOENT, path);
 		}
 
 		for (final String sPath : expandedPaths) {
@@ -49,11 +50,11 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 				final RemoveLFNCSDfromString a = Dispatcher.execute(rlfn);
 
 				if (!a.wasRemoved())
-					commander.setReturnCode(1, "Failed to remove: " + sPath);
+					commander.setReturnCode(ErrNo.EIO, "Failed to remove: " + sPath);
 			}
 			catch (final ServerException e) {
 				e.getCause().printStackTrace();
-				commander.setReturnCode(1, "Failed to remove: " + sPath);
+				commander.setReturnCode(ErrNo.EIO, "Failed to remove: " + sPath);
 			}
 		}
 	}

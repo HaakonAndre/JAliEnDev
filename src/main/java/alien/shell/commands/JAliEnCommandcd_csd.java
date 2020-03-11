@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN_CSD;
+import alien.shell.ErrNo;
 import alien.user.UsersHelper;
 
 /**
@@ -27,13 +28,13 @@ public class JAliEnCommandcd_csd extends JAliEnBaseCommand {
 				commander.curDirCsd = newDir;
 			}
 			else
-				commander.setReturnCode(1, "Cannot cd: " + alArguments.get(0) + " is file, not a directory");
+				commander.setReturnCode(ErrNo.ENOTDIR, alArguments.get(0));
 		}
 		else
-			commander.setReturnCode(2, "No such file or directory");
+			commander.setReturnCode(ErrNo.ENOENT);
 
 		// TODO for now we do cd on both backends
-		JAliEnCommandcd cd = new JAliEnCommandcd(commander, alArguments);
+		final JAliEnCommandcd cd = new JAliEnCommandcd(commander, alArguments);
 		cd.run();
 	}
 

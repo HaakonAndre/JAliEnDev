@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.io.IOException;
 import java.util.List;
 
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import lazyj.Format;
 import lazyj.Utils;
@@ -27,34 +28,34 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 
 		if (targetSiteName.equalsIgnoreCase("auto")) {
 			try {
-				String autoSiteName = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
+				final String autoSiteName = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
 
 				if (autoSiteName != null && autoSiteName.length() > 0)
 					targetSiteName = autoSiteName.trim();
 				else {
-					commander.setReturnCode(1, "Could not map you to a site name at the moment, keeping previous value of " + commander.getSite());
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Could not map you to a site name at the moment, keeping previous value of " + commander.getSite());
 					return;
 				}
 			}
 			catch (final IOException ioe) {
-				commander.setReturnCode(2, "Could not retrieve the site name from the external service: " + ioe.getMessage());
+				commander.setReturnCode(ErrNo.EAGAIN, "Could not retrieve the site name from the external service: " + ioe.getMessage());
 				return;
 			}
 		}
 		else {
 			if (targetSiteName.indexOf(':') >= 0 || targetSiteName.indexOf('.') >= 0) {
 				try {
-					String autoSiteName = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp?ip=" + Format.encode(targetSiteName), null);
+					final String autoSiteName = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp?ip=" + Format.encode(targetSiteName), null);
 
 					if (autoSiteName != null && autoSiteName.length() > 0)
 						targetSiteName = autoSiteName.trim();
 					else {
-						commander.setReturnCode(1, "Could not map " + targetSiteName + " to a site name at the moment, keeping previous value of " + commander.getSite());
+						commander.setReturnCode(ErrNo.EREMOTEIO, "Could not map " + targetSiteName + " to a site name at the moment, keeping previous value of " + commander.getSite());
 						return;
 					}
 				}
 				catch (final IOException ioe) {
-					commander.setReturnCode(2, "Could not retrieve the site name for " + targetSiteName + " from the external service: " + ioe.getMessage());
+					commander.setReturnCode(ErrNo.EAGAIN, "Could not retrieve the site name for " + targetSiteName + " from the external service: " + ioe.getMessage());
 					return;
 				}
 			}

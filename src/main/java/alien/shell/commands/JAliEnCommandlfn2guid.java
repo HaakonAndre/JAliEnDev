@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 
 /**
@@ -25,20 +26,20 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
 		if (lfn == null)
-			commander.setReturnCode(1, "Could not get the LFN [" + lfnName + "].");
+			commander.setReturnCode(ErrNo.ENOENT, lfnName);
 		else {
 			commander.printOut("lfn", lfn.getCanonicalName());
 			commander.printOut("type", String.valueOf(lfn.type));
 
 			if (lfn.isDirectory())
-				commander.setReturnCode(2, "The LFN is a directory [" + lfn.getCanonicalName() + "].");
+				commander.setReturnCode(ErrNo.EISDIR, lfn.getCanonicalName());
 			else if (lfn.guid != null) {
 				commander.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
 
 				commander.printOut("guid", String.valueOf(lfn.guid));
 			}
 			else
-				commander.setReturnCode(3, "Could not get the GUID for [" + lfn.getCanonicalName() + "].");
+				commander.setReturnCode(ErrNo.ENODATA, "Could not get the GUID for [" + lfn.getCanonicalName() + "].");
 		}
 	}
 

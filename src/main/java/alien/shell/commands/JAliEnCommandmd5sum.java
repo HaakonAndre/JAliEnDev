@@ -7,6 +7,7 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -30,19 +31,19 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 						if (g.md5 != null && g.md5.length() > 0)
 							commander.printOutln(g.md5 + "\t" + lfnName);
 						else
-							commander.setReturnCode(1, "GUID " + lfnName + " doesn't have an associated MD5 checksum");
+							commander.setReturnCode(ErrNo.ENODATA, "GUID " + lfnName + " doesn't have an associated MD5 checksum");
 					else
-						commander.setReturnCode(2, "GUID " + lfnName + " does not exist in the catalogue");
+						commander.setReturnCode(ErrNo.ENOENT, lfnName);
 				}
 				else
-					commander.setReturnCode(3, "File does not exist: " + lfnName);
+					commander.setReturnCode(ErrNo.ENOENT, lfnName);
 			}
 			else if (lfn.md5 != null && lfn.md5.length() > 0)
 				commander.printOutln(lfn.md5 + "\t" + lfnName);
 			else if (!lfn.isFile())
-				commander.setReturnCode(4, "This entry is not a file: " + lfnName);
+				commander.setReturnCode(ErrNo.EINVAL, "This entry is not a file: " + lfnName);
 			else
-				commander.setReturnCode(5, "This file doesn't have a valid associated MD5 checksum: " + lfnName);
+				commander.setReturnCode(ErrNo.ENODATA, "This file doesn't have a valid associated MD5 checksum: " + lfnName);
 		}
 	}
 

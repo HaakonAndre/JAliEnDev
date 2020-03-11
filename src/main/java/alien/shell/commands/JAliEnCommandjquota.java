@@ -5,6 +5,7 @@ import java.util.List;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.quotas.FileQuota;
 import alien.quotas.Quota;
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
@@ -23,7 +24,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (!this.command.equals("list") && !(isAdmin && this.command.equals("set"))) {
-			commander.setReturnCode(1, "Wrong command passed");
+			commander.setReturnCode(ErrNo.EINVAL, "Wrong command passed: " + this.command);
 			printHelp();
 			return;
 		}
@@ -33,7 +34,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 		if (command.equals("list")) {
 			final Quota q = commander.q_api.getJobsQuota();
 			if (q == null) {
-				commander.setReturnCode(2, "No jobs quota found for user " + username);
+				commander.setReturnCode(ErrNo.ENODATA, "No jobs quota found for user " + username);
 				return;
 			}
 
@@ -55,11 +56,11 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 
 		if (command.equals("set")) {
 			if (this.param_to_set == null) {
-				commander.setReturnCode(3, "Error in parameter name");
+				commander.setReturnCode(ErrNo.EINVAL, "Error in parameter name");
 				return;
 			}
 			if (this.value_to_set == null || this.value_to_set.intValue() == 0) {
-				commander.setReturnCode(4, "Error in value");
+				commander.setReturnCode(ErrNo.EINVAL, "Error in value");
 				printHelp();
 				return;
 			}
@@ -67,7 +68,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 			if (TaskQueueApiUtils.setJobsQuota(user_to_set, this.param_to_set, this.value_to_set.toString()))
 				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 			else
-				commander.setReturnCode(5, "Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 		}
 	}
 

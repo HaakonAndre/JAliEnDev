@@ -12,6 +12,7 @@ import alien.api.ServerException;
 import alien.api.catalogue.GetTagValues;
 import alien.api.catalogue.GetTags;
 import alien.catalogue.FileSystemUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -37,7 +38,7 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 		boolean first = true;
 
 		if (alPaths == null || alPaths.size() == 0) {
-			commander.setReturnCode(1, "No paths were indicated");
+			commander.setReturnCode(ErrNo.EINVAL, "No paths were indicated");
 			return;
 		}
 
@@ -71,7 +72,7 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 						}
 					}
 					catch (final ServerException e) {
-						commander.setReturnCode(1, "Could not get the list of tags for " + file + ": " + e.getMessage());
+						commander.setReturnCode(ErrNo.ENODATA, "Could not get the list of tags for " + file + ": " + e.getMessage());
 
 						return;
 					}
@@ -121,7 +122,7 @@ public class JAliEnCommandshowTagValue extends JAliEnBaseCommand {
 						}
 					}
 					catch (final ServerException e) {
-						commander.setReturnCode(2, "Could not get the columns for " + file + " for tag " + tag + ": " + e.getMessage());
+						commander.setReturnCode(ErrNo.ENODATA, "Could not get the columns for " + file + " for tag " + tag + ": " + e.getMessage());
 
 						return;
 					}

@@ -46,6 +46,7 @@ import alien.monitoring.MonitorFactory;
 import alien.monitoring.Timing;
 import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
@@ -3016,18 +3017,18 @@ public class TaskQueueUtils {
 			final Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(user.getName(), 1);
 			final Integer code = quota.getKey();
 			if (code.intValue() != 0) {
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(1), "Resubmit: job quota problem: " + quota.getValue());
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()), "Resubmit: job quota problem: " + quota.getValue());
 			}
 
-			logger.info("Resubmit: quotas approved: " + queueId);
+			logger.fine("Resubmit: quotas approved: " + queueId);
 
 			// cleanup active jobtoken
 			if (!deleteJobToken(queueId)) {
 				logger.info("Cannot cleanup job token: " + queueId);
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(2), "Resubmit: cannot cleanup job token: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.ENOKEY.getErrorCode()), "Resubmit: cannot cleanup job token: " + queueId);
 			}
 
-			logger.info("Resubmit: token deleted for: " + queueId);
+			logger.fine("Resubmit: token deleted for: " + queueId);
 
 			// get the Path (folder of stored files) to cleanup if necessary
 			JDL jdl;
@@ -3036,7 +3037,7 @@ public class TaskQueueUtils {
 			}
 			catch (final IOException e) {
 				logger.severe("Resubmit: cannot create JDL for job: " + queueId + " Exception: " + e);
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(2), "Resubmit: cannot create JDL for job: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EILSEQ.getErrorCode()), "Resubmit: cannot create JDL for job: " + queueId);
 			}
 
 			JobStatus targetStatus = JobStatus.WAITING;
@@ -3050,7 +3051,8 @@ public class TaskQueueUtils {
 					// Cannot resubmit a masterjob if it has already split, what has to happen is resubmitting its subjobs
 					// but that's a different command that would iterate through the subjobs and act on each of them
 
-					return new AbstractMap.SimpleEntry<>(Integer.valueOf(6), "Resubmit: masterjob is not in an error state itself, will not split it again: " + queueId + " / " + j.status().name());
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()),
+							"Resubmit: masterjob is not in an error state itself, will not split it again: " + queueId + " / " + j.status().name());
 				}
 			}
 
@@ -3058,10 +3060,10 @@ public class TaskQueueUtils {
 
 			if (!clearPathAndResultsJDL(Long.valueOf(queueId))) {
 				logger.info("Cannot cleanup path and resultsJdl: " + queueId);
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(3), "Resubmit: cannot cleanup path and resultsJdl: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()), "Resubmit: cannot cleanup path and resultsJdl: " + queueId);
 			}
 
-			logger.info("Resubmit: cleanup of path and resultsJdl done: " + queueId);
+			logger.fine("Resubmit: cleanup of path and resultsJdl done: " + queueId);
 
 			if (j.status().equals(JobStatus.ERROR_I)) {
 				// If it could not be inserted before, retry that operation, otherwise go directly to WAITING
@@ -3073,30 +3075,29 @@ public class TaskQueueUtils {
 
 			try (DBFunctions db = getQueueDB()) {
 				if (db == null)
-					return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot get DB to finalise resubmission: " + queueId);
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EAGAIN.getErrorCode()), "Resubmit: cannot get DB to finalise resubmission: " + queueId);
 
 				db.setReadOnly(false);
 				db.setQueryTimeout(60);
 
-				logger.info("Resubmit: updating status to WAITING and initialize fields");
+				logger.fine("Resubmit: updating status to WAITING and initialize fields of " + queueId);
 
 				// job back to resubmitted status, restore fields
 				if (!db.query("UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started=null, finished=null, exechostid=null, siteid=? where queueId=?", false,
 						Integer.valueOf(targetStatus.getAliEnLevel()), Integer.valueOf(unassignedId), Long.valueOf(queueId))) {
 					logger.severe("Resubmit: cannot update job to WAITING: " + queueId);
-					return new AbstractMap.SimpleEntry<>(Integer.valueOf(5), "Resubmit: cannot update job to WAITING: " + queueId);
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot update job to WAITING: " + queueId);
 				}
 
-				logger.info("Resubmit: update SITEQUEUES");
+				logger.fine("Resubmit: update SITEQUEUES of " + queueId);
 
 				// update queue counters
 				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0) " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
-						false,
-						Integer.valueOf(j.siteid));
+						false, Integer.valueOf(j.siteid));
 
 				// if the job was attached to a node, we tell him to hara-kiri
 				if (j.node != null && (js == JobStatus.STARTED || js == JobStatus.RUNNING || js == JobStatus.ASSIGNED || js == JobStatus.ZOMBIE || js == JobStatus.SAVING)) {
-					logger.info("Resubmit: sending kill message to job");
+					logger.fine("Resubmit: sending kill message to job " + queueId);
 
 					final String target = j.node + "-" + queueId + "-" + j.resubmission;
 					final int expires = (int) (System.currentTimeMillis() / 1000) + 3600 * 3; // now + 3h
@@ -3105,14 +3106,14 @@ public class TaskQueueUtils {
 						logger.severe("Resubmit: could not insert kill message: " + queueId);
 				}
 
-				logger.info("Resubmit: update or insert JOBAGENT");
+				logger.fine("Resubmit: update or insert JOBAGENT of " + queueId);
 
 				// update the jobagent entry
 				if (targetStatus == JobStatus.WAITING) {
 					final int agentId = updateOrInsertJobAgent(j, jdl);
 					if (agentId == 0) {
 						logger.severe("Resubmit: could not update jobagent: " + queueId);
-						return new AbstractMap.SimpleEntry<>(Integer.valueOf(6), "Resubmit: cannot updateOrInsert jobagent: " + queueId);
+						return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot updateOrInsert jobagent: " + queueId);
 					}
 					else if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
 						db.setReadOnly(false);
@@ -3121,7 +3122,7 @@ public class TaskQueueUtils {
 						if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
 								|| db.getUpdateCount() == 0) {
 							logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
-							return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
 						}
 					}
 
@@ -3131,7 +3132,7 @@ public class TaskQueueUtils {
 						if (!db.query("UPDATE QUEUE set statusId=? where queueId=? and statusId!=?", false, Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split),
 								Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()))) {
 							logger.severe("Resubmit: cannot put masterjob back to SPLIT: " + queueId);
-							return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot put masterjob back to SPLIT: " + queueId);
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot put masterjob back to SPLIT: " + queueId);
 						}
 					}
 
@@ -3145,7 +3146,8 @@ public class TaskQueueUtils {
 								if (!LFNUtils.rmLFN(user, l, false)) {
 									logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
 									putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
-									return new AbstractMap.SimpleEntry<>(Integer.valueOf(5), "Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+									return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
+											"Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
 								}
 							}
 						}
@@ -3155,7 +3157,7 @@ public class TaskQueueUtils {
 						CatalogueUtils.cleanLfnBookedForJob(queueId);
 					}
 
-					logger.info("Resubmit: putting joblog and returning");
+					logger.fine("Resubmit: putting joblog and returning " + queueId);
 					putJobLog(queueId, "state", "Job resubmitted (back to WAITING)", null);
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: back to WAITING: " + queueId);
 				}
@@ -3165,8 +3167,8 @@ public class TaskQueueUtils {
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: job is a masterJob, ignore: " + queueId);
 			}
 		}
-		return new AbstractMap.SimpleEntry<>(Integer.valueOf(-1), "Resubmit: not authorized for : " + queueId);
 
+		return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EPERM.getErrorCode()), "Resubmit: not authorized for : " + queueId);
 	}
 
 	private static int updateOrInsertJobAgent(final Job j, final JDL jdl) {

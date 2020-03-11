@@ -12,6 +12,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -87,7 +88,7 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 					}
 				}
 				else
-					commander.setReturnCode(1, "This LFN does not exist in the catalogue: " + lfnName);
+					commander.setReturnCode(ErrNo.ENOENT, lfnName);
 			}
 			else {
 				commander.printOutln("File: " + lfn.getCanonicalName());

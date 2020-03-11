@@ -3,6 +3,8 @@ package alien.shell.commands;
 import java.util.List;
 import java.util.Set;
 
+import alien.shell.ErrNo;
+
 /**
  *
  */
@@ -11,14 +13,16 @@ public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		if (this.group == null || this.group.equals("")) {
-			commander.setReturnCode(1, "No group name passed");
+		if (this.group == null || this.group.isEmpty()) {
+			commander.setReturnCode(ErrNo.EINVAL, "No group name passed");
 			return;
 		}
+
 		final Set<String> users = commander.q_api.getGroupMembers(this.group);
 		commander.printOut("Members of " + this.group + ": ");
 		for (final String user : users)
 			commander.printOut(user + " ");
+
 		commander.printOutln();
 	}
 

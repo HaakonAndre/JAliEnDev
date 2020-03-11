@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import alien.api.taskQueue.ResubmitJob;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 
 /**
@@ -18,11 +19,11 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final long queueId : queueIds) {
-			ResubmitJob rj = commander.q_api.resubmitJob(queueId);
-			Entry<Integer, String> rc = (rj != null ? rj.resubmitEntry() : null);
+			final ResubmitJob rj = commander.q_api.resubmitJob(queueId);
+			final Entry<Integer, String> rc = (rj != null ? rj.resubmitEntry() : null);
 
 			if (rc == null) {
-				commander.setReturnCode(1, "Problem with the resubmit request" + queueId);
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Problem with the resubmit request" + queueId);
 			}
 			else {
 				switch (rc.getKey().intValue()) {
@@ -53,7 +54,7 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param alArguments
 	 * @throws OptionException

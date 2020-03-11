@@ -8,6 +8,7 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.token.GetTokenCertificate;
 import alien.api.token.TokenCertificateType;
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
@@ -77,27 +78,27 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 				if (options.has("jobid"))
 					extension = (String) options.valueOf("jobid");
 				else
-					commander.setReturnCode(1, "You should pass a job extension for this type of certificate request");
+					commander.setReturnCode(ErrNo.EINVAL, "You should pass a job extension for this type of certificate request");
 
 			if (tokentype == TokenCertificateType.HOST)
 				if (options.has("hostname")) {
 					extension = ((String) options.valueOf("hostname")).trim();
 
 					if (extension.length() == 0 || !extension.contains(".")) {
-						commander.setReturnCode(2, "Please pass a FQDN as hostname instead of `" + extension + "`");
+						commander.setReturnCode(ErrNo.EINVAL, "Please pass a FQDN as hostname instead of `" + extension + "`");
 						setArgumentsOk(false);
 					}
 					else
 						try {
 							InetAddress.getByName(extension);
 						}
-						catch (@SuppressWarnings("unused") Throwable t) {
-							commander.setReturnCode(3, "hostname `" + extension + "` cannot be resolved");
+						catch (@SuppressWarnings("unused") final Throwable t) {
+							commander.setReturnCode(ErrNo.ENXIO, "hostname `" + extension + "` cannot be resolved");
 							setArgumentsOk(false);
 						}
 				}
 				else {
-					commander.setReturnCode(4, "You must indicate the hostname for which to issue the certificate!");
+					commander.setReturnCode(ErrNo.EINVAL, "You must indicate the hostname for which to issue the certificate!");
 					setArgumentsOk(false);
 				}
 		}
@@ -116,7 +117,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		}
 		catch (final ServerException e1) {
 			logger.log(Level.WARNING, "Cannot get the token you asked for", e1);
-			commander.setReturnCode(5, "Server didn't execute your request, reason was: " + e1.getMessage());
+			commander.setReturnCode(ErrNo.EREMOTEIO, "Server didn't execute your request, reason was: " + e1.getMessage());
 			return;
 		}
 
@@ -132,13 +133,13 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 				else if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
 					commander.user = switchUser;
 				else
-					commander.setReturnCode(6, "User " + requestedUser + " cannot be found. Abort");
+					commander.setReturnCode(ErrNo.EINVAL, "User " + requestedUser + " cannot be found. Abort");
 
 				commander.user.setUserCert(cert);
 				commander.user.setDefaultUser(defaultuser);
 			}
 			else
-				commander.setReturnCode(7, "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				commander.setReturnCode(ErrNo.EPERM, "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 		}
 
 		// Return tokens
@@ -154,7 +155,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			commander.printOut(tokenreq.getPrivateKeyAsString());
 		}
 		else
-			commander.setReturnCode(6, "User " + requestedUser + " cannot be found. Abort");
+			commander.setReturnCode(ErrNo.EINVAL, "User " + requestedUser + " cannot be found. Abort");
 	}
 
 	@Override

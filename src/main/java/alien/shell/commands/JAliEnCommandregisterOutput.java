@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
@@ -72,22 +73,22 @@ public class JAliEnCommandregisterOutput extends JAliEnBaseCommand {
 		final Job j = commander.q_api.getJob(jobId);
 
 		if (j == null) {
-			commander.setReturnCode(1, "Job ID " + jobId + " was not found in the task queue");
+			commander.setReturnCode(ErrNo.ESRCH, "Job ID " + jobId + " was not found in the task queue");
 			return;
 		}
 
 		if (j.isMaster()) {
-			commander.setReturnCode(2, "Job ID " + jobId + " is a masterjob, you can only register the output of a failed (sub)job");
+			commander.setReturnCode(ErrNo.EINVAL, "Job ID " + jobId + " is a masterjob, you can only register the output of a failed (sub)job");
 			return;
 		}
 
 		if (!j.status().equals(JobStatus.ERROR_V) && !j.status().equals(JobStatus.ERROR_E)) {
-			commander.setReturnCode(3, "Job ID " + jobId + " is in state " + j.getStatusName() + ". You can only register ERROR_V jobs (or ERROR_E when OutputErrorE exists).");
+			commander.setReturnCode(ErrNo.EINVAL, "Job ID " + jobId + " is in state " + j.getStatusName() + ". You can only register ERROR_V jobs (or ERROR_E when OutputErrorE exists).");
 			return;
 		}
 
 		if (!commander.user.canBecome(j.user)) {
-			commander.setReturnCode(4, "You (" + commander.getUsername() + ") are not allowed to work on " + j.user + "'s jobs");
+			commander.setReturnCode(ErrNo.EPERM, "You (" + commander.getUsername() + ") are not allowed to work on " + j.user + "'s jobs");
 			return;
 		}
 
@@ -95,12 +96,12 @@ public class JAliEnCommandregisterOutput extends JAliEnBaseCommand {
 		final String sResultsJDL = commander.q_api.getJDL(jobId, false);
 
 		if (sOriginalJDL == null || sOriginalJDL.length() == 0) {
-			commander.setReturnCode(5, "Cannot retrieve the original JDL of " + jobId);
+			commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot retrieve the original JDL of " + jobId);
 			return;
 		}
 
 		if (sResultsJDL == null || sResultsJDL.length() == 0) {
-			commander.setReturnCode(6, "Cannot retrieve the results JDL of " + jobId);
+			commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot retrieve the results JDL of " + jobId);
 			return;
 		}
 
@@ -112,12 +113,12 @@ public class JAliEnCommandregisterOutput extends JAliEnBaseCommand {
 			physicalFiles = jdl.getOutputFileSet(j.status().equals(JobStatus.ERROR_E) ? "OutputErrorE" : null, false, false);
 
 			if (physicalFiles == null || physicalFiles.size() == 0) {
-				commander.setReturnCode(7, "No files are expected to be registered by job ID " + jobId + " according to its JDL");
+				commander.setReturnCode(ErrNo.ENODATA, "No files are expected to be registered by job ID " + jobId + " according to its JDL");
 				return;
 			}
 		}
 		catch (final IOException ioe) {
-			commander.setReturnCode(8, "Cannot parse the JDL of " + jobId + ". Check log for full error message");
+			commander.setReturnCode(ErrNo.EBADMSG, "Cannot parse the JDL of " + jobId + ". Check log for full error message");
 			logger.log(Level.WARNING, "Cannot parse the JDL of " + jobId + ":\n" + sOriginalJDL, ioe);
 		}
 

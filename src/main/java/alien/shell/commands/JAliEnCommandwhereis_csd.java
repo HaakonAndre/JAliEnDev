@@ -9,6 +9,7 @@ import java.util.Optional;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFNCSDUtils;
 import alien.catalogue.LFN_CSD;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -57,16 +58,16 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 
 		if (lfnco.isPresent()) {
 			final LFN_CSD lfnc = lfnco.get();
-			HashMap<Integer, String> wi = lfnc.whereis();
+			final HashMap<Integer, String> wi = lfnc.whereis();
 
 			// check for empty or null pfn set
 			if (wi == null || wi.size() == 0)
-				commander.setReturnCode(1, "Empty PFNs");
+				commander.setReturnCode(ErrNo.EBADFD, "Empty PFNs");
 			else {
 				Integer se = Integer.valueOf(0);
 				String pfn = "";
 
-				for (Integer senumber : wi.keySet()) {
+				for (final Integer senumber : wi.keySet()) {
 					se = senumber;
 					pfn = wi.get(se);
 				}
@@ -81,11 +82,11 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 						return;
 					}
 
-					commander.setReturnCode(2, "Following link chain led to incorrect LFN: " + pfn);
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Following link chain led to incorrect LFN: " + pfn);
 				}
 				else {
 					// PFNs for physical files with senumber-pfn map
-					for (Integer senumber : wi.keySet()) {
+					for (final Integer senumber : wi.keySet()) {
 						String seName = "no_se (link or zip member)";
 						if (senumber.intValue() != 0)
 							seName = commander.c_api.getSE(senumber.intValue()).seName;
@@ -96,7 +97,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 			}
 		}
 		else {
-			commander.setReturnCode(3, "Didn't find the LFN/UUID " + lfnOrGuid);
+			commander.setReturnCode(ErrNo.ENOENT, lfnOrGuid);
 		}
 
 	}

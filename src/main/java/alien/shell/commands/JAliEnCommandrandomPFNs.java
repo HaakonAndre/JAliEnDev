@@ -6,6 +6,7 @@ import java.util.List;
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.shell.ErrNo;
 import lazyj.Format;
 
 /**
@@ -63,7 +64,7 @@ public class JAliEnCommandrandomPFNs extends JAliEnBaseCommand {
 				seNumber = se.seNumber;
 			else {
 				setArgumentsOk(false);
-				commander.setReturnCode(2, "Unknown SE " + alArguments.get(0));
+				commander.setReturnCode(ErrNo.ENXIO, "Unknown SE " + alArguments.get(0));
 				return;
 			}
 		}

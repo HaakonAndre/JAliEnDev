@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.List;
 
 import alien.catalogue.Package;
+import alien.shell.ErrNo;
 
 /**
  * @author ron
@@ -25,7 +26,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 			}
 		}
 		else {
-			commander.setReturnCode(1, "Couldn't find any packages.");
+			commander.setReturnCode(ErrNo.ENODATA, "Couldn't find any packages.");
 		}
 	}
 

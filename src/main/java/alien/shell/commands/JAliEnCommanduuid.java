@@ -8,6 +8,7 @@ import java.util.UUID;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -30,15 +31,19 @@ public class JAliEnCommanduuid extends JAliEnBaseCommand {
 				try {
 					u = UUID.fromString(lfnName);
 				}
-				catch (@SuppressWarnings("unused") Throwable t) {
-					commander.setReturnCode(1, "File does not exist: " + lfnName);
+				catch (@SuppressWarnings("unused") final Throwable t) {
+					commander.setReturnCode(ErrNo.ENOENT, "File does not exist: " + lfnName);
 				}
 			}
 			else {
 				if (lfn.guid != null)
 					u = lfn.guid;
-				else
-					commander.setReturnCode(2, "This entry is not a file: " + lfnName);
+				else {
+					if (lfn.isDirectory())
+						commander.setReturnCode(ErrNo.EISDIR, lfnName);
+					else
+						commander.setReturnCode(ErrNo.EINVAL, lfnName + " is of type " + lfn.type);
+				}
 			}
 
 			if (u != null) {

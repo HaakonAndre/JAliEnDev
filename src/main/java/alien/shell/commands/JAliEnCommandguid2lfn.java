@@ -5,6 +5,7 @@ import java.util.List;
 
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 
 /**
@@ -28,7 +29,7 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 		final Iterator<LFN> it;
 
 		if (guid == null)
-			commander.setReturnCode(1, "Could not get the GUID [" + guidName + "].");
+			commander.setReturnCode(ErrNo.ENXIO, "Could not get the GUID [" + guidName + "].");
 		else if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
 			final LFN lfn = it.next();
 
@@ -38,7 +39,7 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 			commander.printOut("lfn", String.valueOf(lfn.getCanonicalName()));
 		}
 		else
-			commander.setReturnCode(2, "No LFNs are associated to this GUID [" + guid.guid + "].");
+			commander.setReturnCode(ErrNo.ENOENT, "No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
 
 	/**

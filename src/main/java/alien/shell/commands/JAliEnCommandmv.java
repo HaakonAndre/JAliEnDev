@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -38,7 +39,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 					if (sLFN.isFile() || sLFN.isDirectory()) {
 						if (commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName()) == null)
-							commander.setReturnCode(1, "Failed to move " + sources[i] + " to " + fullTarget);
+							commander.setReturnCode(ErrNo.EIO, "Failed to move " + sources[i] + " to " + fullTarget);
 					}
 				}
 			else if (tLFN == null) {
@@ -49,12 +50,13 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 					if (sLFN.isFile() || sLFN.isDirectory()) {
 						if (commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName()) == null)
-							commander.setReturnCode(2, "Failed to move " + sources[i] + " to " + fullTarget + "/" + sLFN.getFileName());
+							commander.setReturnCode(ErrNo.EIO, "Failed to move " + sources[i] + " to " + fullTarget + "/" + sLFN.getFileName());
 					}
 				}
 			}
 			else {
-				commander.setReturnCode(3, "If there are more than 2 arguments, then last one must be an existing direcetory OR a location that does not exist and can be made as new directory");
+				commander.setReturnCode(ErrNo.EINVAL,
+						"If there are more than 2 arguments, then last one must be an existing direcetory OR a location that does not exist and can be made as new directory");
 			}
 		}
 		else if (size == 2) {
@@ -70,7 +72,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 					tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
 				}
 				else {
-					commander.setReturnCode(4,
+					commander.setReturnCode(ErrNo.EINVAL,
 							"If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
 				}
 			}
@@ -84,7 +86,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 			}
 
 			if (tLFN == null)
-				commander.setReturnCode(5, "Failed to move " + sources[0] + " to " + fullTarget);
+				commander.setReturnCode(ErrNo.EIO, "Failed to move " + sources[0] + " to " + fullTarget);
 		}
 		else if (size == 0 || size == 1)
 			printHelp();

@@ -26,6 +26,7 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.TransferDetails;
 import alien.se.SE;
+import alien.shell.ErrNo;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JAliEnCommandcp;
 import alien.site.OutputEntry;
@@ -479,7 +480,7 @@ public class CatalogueApiUtils {
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();
-			commander.setReturnCode(1, e.getMessage());
+			commander.setReturnCode(ErrNo.EREMOTEIO, e.getMessage());
 		}
 
 		return null;
@@ -1017,7 +1018,7 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new SERandomPFNs(commander.getUser(), seNumber, fileCount)).getPFNs();
 		}
-		catch (ServerException e) {
+		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get random PFNs for SE with number" + seNumber);
 			e.getCause().printStackTrace();
 		}

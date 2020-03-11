@@ -8,6 +8,7 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.RemoveLFNfromString;
 import alien.catalogue.FileSystemUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -54,11 +55,11 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			if (sources != null && !sources.isEmpty())
 				expandedPaths.addAll(sources);
 			else
-				commander.setReturnCode(1, "No such file or directory: " + path);
+				commander.setReturnCode(ErrNo.ENOENT, path);
 		}
 
 		for (final String sPath : expandedPaths) {
-			String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath);
+			final String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath);
 
 			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), fullPath, bR);
 
@@ -66,11 +67,11 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 				final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
 
 				if (!a.wasRemoved())
-					commander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
+					commander.setReturnCode(ErrNo.EIO, "Failed to remove [" + fullPath + "]");
 			}
 			catch (final ServerException e) {
 				e.getCause().printStackTrace();
-				commander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
+				commander.setReturnCode(ErrNo.EIO, "Failed to remove [" + fullPath + "]");
 			}
 		}
 	}

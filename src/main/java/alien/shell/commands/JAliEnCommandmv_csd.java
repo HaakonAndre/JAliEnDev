@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN_CSD;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -37,7 +38,7 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 			final LFN_CSD lfnc_target = commander.c_api.getLFNCSD(fullTarget);
 
 			if (lfnc_target == null || !lfnc_target.isDirectory()) {
-				commander.setReturnCode(6, "When moving several sources, the destination must be a directory");
+				commander.setReturnCode(ErrNo.ENOTDIR, "When moving several sources, the destination must be a directory");
 				return;
 			}
 		}
@@ -48,26 +49,26 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 
 			commander.printOutln("mv " + fullSource + " -> " + fullTarget);
 
-			int code = commander.c_api.moveLFNCSD(fullSource, fullTarget);
+			final int code = commander.c_api.moveLFNCSD(fullSource, fullTarget);
 
 			switch (code) {
 				case 1:
-					commander.setReturnCode(code, "Source and destination are the same");
+					commander.setReturnCode(ErrNo.EINVAL, "Source and destination are the same");
 					break;
 				case 2:
-					commander.setReturnCode(code, "The destination parent doesn't exist");
+					commander.setReturnCode(ErrNo.ENOENT, "The destination parent doesn't exist");
 					break;
 				case 3:
-					commander.setReturnCode(code, "No permission to write on destination");
+					commander.setReturnCode(ErrNo.EPERM, "No permission to write on destination");
 					break;
 				case 4:
-					commander.setReturnCode(code, "Some entries failed to be moved");
+					commander.setReturnCode(ErrNo.EIO, "Some entries failed to be moved");
 					break;
 				case 5:
-					commander.setReturnCode(code, "No permission to move the source");
+					commander.setReturnCode(ErrNo.EPERM, "No permission to move the source");
 					break;
 				case 6:
-					commander.setReturnCode(code, "Cannot mv " + fullSource + "into " + fullTarget);
+					commander.setReturnCode(ErrNo.EIO, "Cannot mv " + fullSource + "into " + fullTarget);
 					break;
 				default:
 					break;

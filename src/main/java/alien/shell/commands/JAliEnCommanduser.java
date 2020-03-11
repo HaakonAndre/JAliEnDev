@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.List;
 
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
@@ -16,7 +17,7 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
+		final java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
 		AliEnPrincipal switchUser;
 		final String defaultuser = commander.user.getDefaultUser();
 
@@ -26,14 +27,14 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 			else if ((switchUser = UserFactory.getByRole(user)) != null)
 				commander.user = switchUser;
 			else {
-				commander.setReturnCode(1, "User " + user + " cannot be found. Abort");
+				commander.setReturnCode(ErrNo.EINVAL, "User " + user + " cannot be found. Abort");
 			}
 
 			commander.user.setUserCert(cert);
 			commander.user.setDefaultUser(defaultuser);
 		}
 		else {
-			commander.setReturnCode(2, "Switching user " + commander.user.getName() + " to [" + user + "] failed");
+			commander.setReturnCode(ErrNo.EPERM, "Switching user " + commander.user.getName() + " to [" + user + "] failed");
 		}
 	}
 

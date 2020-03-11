@@ -9,6 +9,7 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -118,9 +119,9 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
 
 			final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
-			
+
 			if (expandedPaths == null || expandedPaths.isEmpty()) {
-				commander.setReturnCode(4, "No such file: " + path);
+				commander.setReturnCode(ErrNo.ENOENT, path);
 				return;
 			}
 

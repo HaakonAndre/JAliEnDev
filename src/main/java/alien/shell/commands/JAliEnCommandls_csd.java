@@ -10,6 +10,7 @@ import java.util.logging.Level;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN_CSD;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -84,7 +85,7 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 			if (sources != null && !sources.isEmpty())
 				expandedPaths.addAll(sources);
 			else
-				commander.setReturnCode(1, "No such file or directory: " + sPath);
+				commander.setReturnCode(ErrNo.ENOENT, sPath);
 		}
 
 		for (final String sPath : expandedPaths) {
@@ -154,7 +155,7 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 
 		if (pathsNotFound.length() > 0) {
 			logger.log(Level.SEVERE, "No such file or directory: [" + pathsNotFound + "]");
-			commander.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
+			commander.setReturnCode(ErrNo.ENOENT, pathsNotFound.toString());
 		}
 	}
 

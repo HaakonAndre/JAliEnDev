@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import alien.user.UsersHelper;
 
 /**
@@ -29,10 +30,10 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 				commander.curDir = newDir;
 			}
 			else
-				commander.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
+				commander.setReturnCode(ErrNo.ENOTDIR, alArguments.get(0));
 		}
 		else
-			commander.setReturnCode(2, "No such file or directory");
+			commander.setReturnCode(ErrNo.ENOENT);
 	}
 
 	/**

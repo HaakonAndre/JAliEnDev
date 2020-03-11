@@ -7,6 +7,7 @@ import java.util.List;
 import alien.api.ServerException;
 import alien.catalogue.FileSystemUtils;
 import alien.io.protocols.TempFileManager;
+import alien.shell.ErrNo;
 import alien.shell.ShellColor;
 import alien.taskQueue.JDL;
 import alien.taskQueue.TaskQueueUtils;
@@ -42,7 +43,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							jdl = TaskQueueUtils.applyJDLArguments(content, args);
 						}
 						catch (final IOException ioe) {
-							commander.setReturnCode(1, "Passing arguments to " + jdlName + " failed:\n  " + ioe.getMessage());
+							commander.setReturnCode(ErrNo.EINVAL, "Passing arguments to " + jdlName + " failed:\n  " + ioe.getMessage());
 							return;
 						}
 
@@ -54,17 +55,17 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							commander.printOut("jobId", String.valueOf(queueId));
 						}
 						else
-							commander.setReturnCode(2, "Cannot submit " + jdlName);
+							commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot submit " + jdlName);
 					}
 					catch (final ServerException e) {
-						commander.setReturnCode(2, "Task queue rejected " + jdlName + " due to:\n  " + e.getMessage());
+						commander.setReturnCode(ErrNo.EREMOTEIO, "Task queue rejected " + jdlName + " due to:\n  " + e.getMessage());
 					}
 				}
 				else
-					commander.setReturnCode(3, "Could not read the contents of " + fout.getAbsolutePath());
+					commander.setReturnCode(ErrNo.EIO, "Could not read the contents of " + fout.getAbsolutePath());
 			}
 			else
-				commander.setReturnCode(4, "Not able to get the file " + jdlName);
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Not able to get the file " + jdlName);
 		}
 		finally {
 			TempFileManager.release(fout);

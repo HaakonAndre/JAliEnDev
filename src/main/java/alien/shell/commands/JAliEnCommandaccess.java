@@ -14,6 +14,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.se.SE;
+import alien.shell.ErrNo;
 
 /**
  * @author ron
@@ -67,7 +68,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		if (lfn == null) {
 			logger.log(Level.INFO, "Not able to retrieve LFN from Catalogue ");
-			commander.setReturnCode(1, "Not able to retrieve LFN from Catalogue [error in processing].");
+			commander.setReturnCode(ErrNo.ENOENT, lfnName);
 			return;
 		}
 
@@ -90,13 +91,13 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 		else {
 			logger.log(Level.SEVERE, "Unknown access type");
-			commander.setReturnCode(2, "Unknown access type [error in processing].");
+			commander.setReturnCode(ErrNo.EINVAL, accessRequest.toString());
 			return;
 		}
 
 		if (pfns == null || pfns.isEmpty()) {
 			logger.log(Level.SEVERE, "No PFNs for this LFN");
-			commander.setReturnCode(3, "No PFNs for this LFN");
+			commander.setReturnCode(ErrNo.EBADFD, "No PFNs for this LFN");
 			return;
 		}
 
@@ -232,7 +233,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				}
 			}
 			else
-				commander.setReturnCode(4, "Illegal Request type specified [error in request].");
+				commander.setReturnCode(ErrNo.EINVAL, "Invalid access type requested: " + access);
 		}
 	}
 }

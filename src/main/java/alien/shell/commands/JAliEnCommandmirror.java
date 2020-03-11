@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -104,7 +105,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.useLFNasGuid && !GUIDUtils.isValidGUID(this.lfn)) {
-			commander.setReturnCode(1, "Invalid GUID was specified");
+			commander.setReturnCode(ErrNo.EINVAL, "Invalid GUID value: " + this.lfn);
 			return;
 		}
 
@@ -124,7 +125,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 					toMirrorEntries = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 					if (toMirrorEntries == null || toMirrorEntries.isEmpty()) {
-						commander.setReturnCode(2, "No such file: " + this.lfn);
+						commander.setReturnCode(ErrNo.ENOENT, this.lfn);
 						return;
 					}
 				}
@@ -161,7 +162,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 				}
 			}
 			catch (final IllegalArgumentException e) {
-				commander.setReturnCode(3, e.getMessage());
+				commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
 			}
 		}
 	}

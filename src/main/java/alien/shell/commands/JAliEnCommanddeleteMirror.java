@@ -5,6 +5,7 @@ import java.util.List;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -26,12 +27,12 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 		}
 		if (useLFNasGuid) {
 			if (!GUIDUtils.isValidGUID(this.lfn)) {
-				commander.setReturnCode(1, "This is not a valid GUID");
+				commander.setReturnCode(ErrNo.EINVAL, this.lfn + " is not a valid GUID");
 				return;
 			}
 			final GUID guid = commander.c_api.getGUID(this.lfn);
 			if (guid == null) {
-				commander.setReturnCode(2, "No such GUID");
+				commander.setReturnCode(ErrNo.ENOENT, this.lfn);
 				return;
 			}
 		}
@@ -60,7 +61,7 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 					errline = "unknown result code " + result;
 					break;
 			}
-			commander.setReturnCode(3, "Error deleting mirror: " + errline);
+			commander.setReturnCode(ErrNo.EREMOTEIO, "Error deleting mirror: " + errline);
 		}
 		// check is PFN
 	}

@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.List;
 
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 
 // TODO : implement top command
@@ -15,7 +16,7 @@ public class JAliEnCommandtop extends JAliEnBaseCommand {
 		// final String username = commander.user.getName();
 
 		// TODO implement this
-		commander.setReturnCode(1, "not implemented yet");
+		commander.setReturnCode(ErrNo.ENOSYS, "not implemented yet");
 	}
 
 	@Override

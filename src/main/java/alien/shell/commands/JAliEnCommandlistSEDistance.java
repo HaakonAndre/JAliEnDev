@@ -6,6 +6,7 @@ import java.util.Set;
 
 import alien.catalogue.FileSystemUtils;
 import alien.se.SE;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -35,7 +36,7 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name, this.qos);
 
 		if (results == null) {
-			commander.setReturnCode(1, "No results from server");
+			commander.setReturnCode(ErrNo.ENODATA, "No results from server");
 			return;
 		}
 

@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -32,10 +33,10 @@ public class JAliEnCommandmkdir_csd extends JAliEnBaseCommand {
 
 		for (final String path : alPaths) {
 			if (commander.c_api.createCatalogueDirectoryCsd(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), bP) == null)
-				commander.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
+				commander.setReturnCode(ErrNo.ENOENT, "Could not create directory (or non-existing parents): " + path);
 		}
 
-		JAliEnCommandmkdir md = new JAliEnCommandmkdir(commander, alPaths);
+		final JAliEnCommandmkdir md = new JAliEnCommandmkdir(commander, alPaths);
 		md.run();
 	}
 

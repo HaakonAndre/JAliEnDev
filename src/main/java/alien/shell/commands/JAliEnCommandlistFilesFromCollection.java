@@ -7,6 +7,7 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNListCollectionFromString;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -63,7 +64,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		}
 
 		if (errorMessage != null) {
-			commander.setReturnCode(1, errorMessage);
+			commander.setReturnCode(ErrNo.EREMOTEIO, errorMessage);
 
 			return;
 		}
