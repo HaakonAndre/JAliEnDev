@@ -145,7 +145,7 @@ public abstract class UIPrintWriter {
 	 * @param errorMessage string to append to the default ErrNo message
 	 */
 	public void setReturnCode(final ErrNo errno, final String errorMessage) {
-		setReturnCode(errno.getErrorCode(), errno.getMessage() + " : " + errorMessage);
+		setReturnCode(errno.getErrorCode(), errno.getMessage() + (errorMessage != null && !errorMessage.isEmpty() ? " : " + errorMessage : ""));
 	}
 
 	/**
