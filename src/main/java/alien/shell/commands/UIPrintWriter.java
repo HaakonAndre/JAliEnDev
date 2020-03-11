@@ -1,5 +1,7 @@
 package alien.shell.commands;
 
+import alien.shell.ErrNo;
+
 /**
  * @author ron
  * @since July 15, 2011
@@ -102,7 +104,7 @@ public abstract class UIPrintWriter {
 	 *
 	 * @param args
 	 */
-	protected void setReturnArgs(final String args) {
+	protected void setReturnArgs(@SuppressWarnings("unused") final String args) {
 		// void
 	}
 
@@ -128,6 +130,25 @@ public abstract class UIPrintWriter {
 	abstract public void setReturnCode(final int exitCode, final String errorMessage);
 
 	/**
+	 * Set a standard return code
+	 * 
+	 * @param errno
+	 */
+	public void setReturnCode(final ErrNo errno) {
+		setReturnCode(errno.getErrorCode(), errno.getMessage());
+	}
+
+	/**
+	 * Set a standard return code with an additional message
+	 * 
+	 * @param errno
+	 * @param errorMessage string to append to the default ErrNo message
+	 */
+	public void setReturnCode(final ErrNo errno, final String errorMessage) {
+		setReturnCode(errno.getErrorCode(), errno.getMessage() + " : " + errorMessage);
+	}
+
+	/**
 	 * Get the exit code of the command
 	 * 
 	 * @return the exit code
@@ -146,6 +167,7 @@ public abstract class UIPrintWriter {
 	 * Get a value from metainfo
 	 *
 	 * @param key the field you are interested in
+	 * @return the meta info for this key
 	 */
 	abstract public String getMetaInfo(String key);
 

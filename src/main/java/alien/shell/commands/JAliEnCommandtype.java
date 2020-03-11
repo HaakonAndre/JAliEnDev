@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -26,13 +27,11 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void run() {
-
 		if (sPath != null)
-
 			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath));
 
 		if (lfn == null) {
-			commander.printOutln("No such file or directory: [" + sPath + "]");
+			commander.setReturnCode(ErrNo.ENOENT, sPath);
 			return;
 		}
 
@@ -99,7 +98,6 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 		}
 
 		sPath = options.nonOptionArguments().get(0).toString();
-
 	}
 
 }

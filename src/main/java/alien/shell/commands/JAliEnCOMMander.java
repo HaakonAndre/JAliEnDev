@@ -23,6 +23,7 @@ import alien.catalogue.LFN_CSD;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.log.RequestEvent;
+import alien.shell.ErrNo;
 import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
@@ -91,7 +92,8 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd", "find",
 			"find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user", "touch", "touch_csd",
 			"type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota", "jquota",
-			"listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep", "showTagValue", "randomPFNs"};
+			"listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep", "showTagValue",
+			"randomPFNs" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
@@ -755,6 +757,27 @@ public class JAliEnCOMMander extends Thread {
 	public void setReturnCode(final int exitCode, final String errorMessage) {
 		if (out != null)
 			out.setReturnCode(exitCode, errorMessage);
+	}
+
+	/**
+	 * Set the command's return code and print the default error message associated to it to the output stream
+	 *
+	 * @param errno
+	 */
+	public void setReturnCode(final ErrNo errno) {
+		if (out != null)
+			out.setReturnCode(errno);
+	}
+
+	/**
+	 * Set the command's return code and print the default error message associated to it plus an additional information string
+	 *
+	 * @param errno
+	 * @param additionalMessage 
+	 */
+	public void setReturnCode(final ErrNo errno, final String additionalMessage) {
+		if (out != null)
+			out.setReturnCode(errno, additionalMessage);
 	}
 
 	/**
