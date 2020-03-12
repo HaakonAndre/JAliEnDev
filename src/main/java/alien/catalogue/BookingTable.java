@@ -100,13 +100,19 @@ public class BookingTable {
 		}
 
 		try (DBFunctions db = getDB()) {
-			// check if the GUID is already booked in the catalogue
+			// check if the GUID is already registered in the catalogue
 			final GUID checkGUID = GUIDUtils.getGUID(requestedGUID.guid);
 
 			if (checkGUID != null) {
 				// first question, is the user allowed to write it ?
 				if (!AuthorizationChecker.canWrite(checkGUID, user))
 					throw new IOException("User " + user.getName() + " is not allowed to write GUID " + checkGUID);
+
+				if (checkGUID.size != requestedGUID.size)
+					throw new IOException("You want to upload a different content size");
+
+				if (checkGUID.md5 != null && requestedGUID.md5 != null && !checkGUID.md5.equalsIgnoreCase(requestedGUID.md5))
+					throw new IOException("You want to upload a different content");
 
 				// check if there isn't a replica already on this storage element
 				final Set<PFN> pfns = checkGUID.getPFNs();
