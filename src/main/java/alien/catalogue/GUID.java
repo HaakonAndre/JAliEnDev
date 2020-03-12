@@ -866,7 +866,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 */
 	public boolean addKnownLFN(final LFN lfn) {
 		if (lfnCache == null)
-			lfnCache = new LinkedHashSet<>();
+			lfnCache = new LinkedHashSet<>(1);
 
 		return lfnCache.add(lfn);
 	}
