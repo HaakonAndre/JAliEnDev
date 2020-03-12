@@ -2,7 +2,6 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -15,6 +14,9 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.se.SE;
 import alien.shell.ErrNo;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -49,13 +51,25 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	private List<PFN> pfns = null;
 
 	/**
+	 * For write envelopes the size, if known, can be embedded in the booking request
+	 */
+	private long size = -1;
+
+	/**
+	 * For write envelopes the MD5 checksum, if known, can be embedded in the booking request
+	 */
+	private String md5sum = null;
+
+	/**
+	 * For write envelopes you can also pass the job ID, when applicable
+	 */
+	private long jobId = -1;
+
+	/**
 	 * execute the access
 	 */
 	@Override
 	public void run() {
-
-		LFN lfn = null;
-		GUID guid = null;
 		boolean evenIfNotExists = false;
 
 		if (accessRequest.equals(AccessType.WRITE)) {
@@ -64,27 +78,63 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 
 		// obtaining LFN information for read or a new LFN for write
-		lfn = commander.c_api.getLFN(lfnName, evenIfNotExists);
+		final LFN lfn = commander.c_api.getLFN(lfnName, evenIfNotExists);
 
 		if (lfn == null) {
-			logger.log(Level.INFO, "Not able to retrieve LFN from Catalogue ");
+			logger.log(Level.INFO, "Not able to retrieve LFN from catalogue");
 			commander.setReturnCode(ErrNo.ENOENT, lfnName);
 			return;
 		}
 
-		// create a new guid in case needed
-		guid = GUIDUtils.createGuid(commander.user);
+		if (accessRequest == AccessType.WRITE) {
+			final GUID guid;
+			if (!lfn.exists || lfn.guid == null) {
+				guid = GUIDUtils.createGuid(commander.user);
 
-		if (lfn.guid == null) {
-			lfn.guid = guid.guid;
-			lfn.size = guid.size;
-			lfn.md5 = guid.md5;
-			guid.lfnCache = new LinkedHashSet<>(1);
-			guid.lfnCache.add(lfn);
-		}
+				if (size >= 0)
+					guid.size = size;
 
-		if (accessRequest == AccessType.WRITE)
+				if (md5sum != null)
+					guid.md5 = md5sum;
+
+				if (jobId >= 0)
+					lfn.jobid = jobId;
+
+				lfn.guid = guid.guid;
+				lfn.size = guid.size;
+				lfn.md5 = guid.md5;
+			}
+			else {
+				// check if the details match the existing entry, if they were provided
+				if ((size >= 0 && lfn.size != size) || (md5sum != null && lfn.md5 != null && !md5sum.equalsIgnoreCase(lfn.md5)) || (jobId >= 0 && lfn.jobid >= 0 && jobId != lfn.jobid)) {
+					commander.setReturnCode(ErrNo.EINVAL, "You seem to want to write a different file from the existing one in the catalogue");
+					return;
+				}
+
+				guid = commander.c_api.getGUID(lfn.guid.toString(), evenIfNotExists, false);
+
+				if (guid == null) {
+					commander.setReturnCode(ErrNo.EUCLEAN, "Could not retrieve the GUID entry for the existing file");
+					return;
+				}
+
+				if (md5sum != null) {
+					// could the existing entries be enhanced?
+					if (lfn.md5 == null)
+						lfn.md5 = md5sum;
+
+					if (guid.md5 == null)
+						guid.md5 = md5sum;
+				}
+
+				if (jobId >= 0 && lfn.jobid < 0)
+					lfn.jobid = jobId;
+			}
+
+			guid.addKnownLFN(lfn);
+
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
+		}
 		else if (accessRequest == AccessType.READ) {
 			logger.log(Level.INFO, "Access called for a read operation");
 			pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
@@ -148,7 +198,10 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("access", "<read|write> <lfn> [<specs>]"));
+		commander.printOutln(helpUsage("access", "[options] <read|write> <lfn> [<specs>]"));
+		commander.printOutln(helpOption("-s", "for write requests, size of the file to be uploaded, when known"));
+		commander.printOutln(helpOption("-m", "for write requests, MD5 checksum of the file to be uploaded, when known"));
+		commander.printOutln(helpOption("-j", "for write requests, the job ID that created these files, when applicable"));
 		commander.printOutln();
 	}
 
@@ -179,61 +232,83 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	public JAliEnCommandaccess(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 
-		logger.log(Level.INFO, "Access arguments are " + alArguments);
-		final java.util.ListIterator<String> arg = alArguments.listIterator();
+		try {
+			final OptionParser parser = new OptionParser();
 
-		if (arg.hasNext()) {
-			final String access = arg.next();
-			logger.log(Level.INFO, "Access = " + access);
-			if (access.startsWith("write")) {
-				logger.log(Level.INFO, "We got write accesss");
-				accessRequest = AccessType.WRITE;
-			}
-			else if (access.equals("read")) {
-				logger.log(Level.INFO, "We got read accesss");
-				accessRequest = AccessType.READ;
-			}
-			else
-				logger.log(Level.INFO, "We got unknown accesss");
+			parser.accepts("s").withRequiredArg().ofType(Long.class);
+			parser.accepts("j").withRequiredArg().ofType(Long.class);
+			parser.accepts("m").withRequiredArg();
 
-			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
-				lfnName = arg.next();
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
-				if (arg.hasNext()) {
-					final StringTokenizer st = new StringTokenizer(arg.next(), ",");
-					while (st.hasMoreElements()) {
+			final java.util.ListIterator<String> arg = optionToString(options.nonOptionArguments()).listIterator();
 
-						final String spec = st.nextToken();
-						if (spec.contains("::")) {
-							if (spec.indexOf("::") != spec.lastIndexOf("::"))
-								if (spec.startsWith("!")) // an exSE spec
-									exses.add(spec.toUpperCase().substring(1));
-								else {// an SE spec
-									ses.add(spec.toUpperCase());
-									referenceCount++;
+			if (arg.hasNext()) {
+				final String access = arg.next();
+				logger.log(Level.INFO, "Access = " + access);
+				if (access.startsWith("write")) {
+					logger.log(Level.INFO, "We got write accesss");
+					accessRequest = AccessType.WRITE;
+				}
+				else if (access.equals("read")) {
+					logger.log(Level.INFO, "We got read accesss");
+					accessRequest = AccessType.READ;
+				}
+				else
+					logger.log(Level.INFO, "We got unknown accesss request: " + access);
+
+				if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
+					lfnName = arg.next();
+
+					if (arg.hasNext()) {
+						final StringTokenizer st = new StringTokenizer(arg.next(), ",");
+						while (st.hasMoreElements()) {
+
+							final String spec = st.nextToken();
+							if (spec.contains("::")) {
+								if (spec.indexOf("::") != spec.lastIndexOf("::"))
+									if (spec.startsWith("!")) // an exSE spec
+										exses.add(spec.toUpperCase().substring(1));
+									else {// an SE spec
+										ses.add(spec.toUpperCase());
+										referenceCount++;
+									}
+							}
+							else if (spec.contains(":"))
+								try {
+									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+									if (c > 0) {
+										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+										referenceCount = referenceCount + c;
+									}
+									else
+										throw new JAliEnCommandException("The number replicas has to be stricly positive");
+
 								}
+								catch (final Exception e) {
+									throw new JAliEnCommandException("Exception parsing the QoS string", e);
+								}
+							else if (!spec.equals(""))
+								throw new JAliEnCommandException();
 						}
-						else if (spec.contains(":"))
-							try {
-								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-								if (c > 0) {
-									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-									referenceCount = referenceCount + c;
-								}
-								else
-									throw new JAliEnCommandException("The number replicas has to be stricly positive");
-
-							}
-							catch (final Exception e) {
-								throw new JAliEnCommandException("Exception parsing the QoS string", e);
-							}
-						else if (!spec.equals(""))
-							throw new JAliEnCommandException();
 					}
 				}
+				else
+					commander.setReturnCode(ErrNo.EINVAL, "Invalid access type requested: " + access);
 			}
-			else
-				commander.setReturnCode(ErrNo.EINVAL, "Invalid access type requested: " + access);
+
+			if (options.has("s"))
+				size = ((Long) options.valueOf("s")).longValue();
+
+			if (options.has("m"))
+				md5sum = options.valueOf("m").toString();
+
+			if (options.has("j"))
+				jobId = ((Long) options.valueOf("j")).longValue();
+		}
+		catch (final OptionException e) {
+			printHelp();
+			throw e;
 		}
 	}
 }
