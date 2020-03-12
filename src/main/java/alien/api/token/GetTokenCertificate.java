@@ -154,7 +154,7 @@ public class GetTokenCertificate extends Request {
 		if (certificateType == null)
 			throw new IllegalArgumentException("Certificate type cannot be null");
 
-		DnBuilder builder = CA.dn().setC("ch").setO("AliEn");
+		DnBuilder builder = CA.dn().setC("ch").setO("AliEn2");
 
 		final String requester = getEffectiveRequester().getDefaultUser();
 
