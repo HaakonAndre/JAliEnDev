@@ -3,6 +3,8 @@
  */
 package alien.site.packman;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,20 +41,16 @@ public class CVMFS extends PackMan {
 	 * 
 	 * @param location
 	 */
-	public CVMFS(String location) {
-		if (location != null && !location.isBlank())
-			ALIENV_DIR = location;
-
-		try {
-			ALIENV_DIR = SystemCommand.bash("which " + ALIENV_DIR + "/alienv").stdout.trim();
+	public CVMFS(String location) {		
+		if (location != null && !location.isBlank()) {
+			location.replaceAll("/$", ""); //Remove trailing '/' if exists
+			if (Files.exists(Paths.get(location + "/alienv")))
+				ALIENV_DIR = location;
+			else {
+				havePath = false;
+				ALIENV_DIR = null;
+			}
 		}
-		catch (final Exception e) {
-			logger.info("which alienv not ok: " + e.toString());
-			ALIENV_DIR = null;
-		}
-
-		if (ALIENV_DIR == null || ALIENV_DIR.isBlank())
-			havePath = false;
 	}
 
 	/**
@@ -71,7 +69,7 @@ public class CVMFS extends PackMan {
 		logger.log(Level.INFO, "PackMan-CVMFS: Getting list of packages ");
 
 		if (this.getHavePath()) {
-			final String listPackages = SystemCommand.bash(ALIENV_DIR + " q --packman").stdout;
+			final String listPackages = SystemCommand.bash(ALIENV_DIR + "/alienv q --packman").stdout;
 			return Arrays.asList(listPackages.split("\n"));
 		}
 
@@ -86,7 +84,7 @@ public class CVMFS extends PackMan {
 		logger.log(Level.INFO, "PackMan-CVMFS: Getting list of packages ");
 
 		if (this.getHavePath()) {
-			final String listPackages = SystemCommand.bash(ALIENV_DIR + " q --packman").stdout;
+			final String listPackages = SystemCommand.bash(ALIENV_DIR + "/alienv q --packman").stdout;
 			return Arrays.asList(listPackages.split("\n"));
 		}
 		return null;
@@ -105,7 +103,7 @@ public class CVMFS extends PackMan {
 		if (version != null)
 			args += "/" + version;
 
-		final String source = SystemCommand.bash(ALIENV_DIR + " printenv " + args).stdout;
+		final String source = SystemCommand.bash(ALIENV_DIR + "/alienv printenv " + args).stdout;
 
 		final ArrayList<String> parts = new ArrayList<>(Arrays.asList(source.split(";")));
 		parts.remove(parts.size() - 1);
@@ -127,13 +125,13 @@ public class CVMFS extends PackMan {
 	 * @return the command to get the full environment to run JAliEn components
 	 */
 	public static String getAlienvForSource() {
-		return ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion();
+		return ALIENV_DIR + "/alienv printenv JAliEn" + getJAliEnVersion();
 	}
 
 	private static String getJAliEnVersion() {
 		try {
 			final String loadedmodules = System.getenv().get("LOADEDMODULES");
-			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn /");
+			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
 
 			String jalienVersionString = "";
 			if (jalienModulePos > 0) {
