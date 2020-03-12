@@ -1287,9 +1287,24 @@ public class LFNUtils {
 		if (lfn == null)
 			return null;
 
+		final List<String> excludedSEs = new ArrayList<>();
+
+		if (exses != null)
+			excludedSEs.addAll(exses);
+
+		final Set<PFN> existingReplicas = lfn.whereisReal();
+
+		if (existingReplicas != null)
+			for (final PFN p : existingReplicas) {
+				final SE se = p.getSE();
+
+				if (se != null)
+					excludedSEs.add(se.getName());
+			}
+
 		// find closest SE
 		final String site = ConfigUtils.getCloseSite();
-		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
+		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, excludedSEs, qos, true);
 		final HashMap<String, Long> resmap = new HashMap<>();
 		for (final SE s : found_ses) {
 			final long transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
