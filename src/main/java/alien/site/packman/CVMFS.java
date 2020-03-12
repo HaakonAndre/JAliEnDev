@@ -30,17 +30,17 @@ public class CVMFS extends PackMan {
 	/**
 	 * CVMFS setup specifics
 	 */
-	
+
 	static String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin";
 	final static String JAVA32_DIR = "/cvmfs/alice.cern.ch/java/JDKs/i686/jdk-latest/bin";
-	
+
 	/**
 	 * Constructor just checks CVMFS bin exist
 	 * 
 	 * @param location
 	 */
 	public CVMFS(String location) {
-		if (location != null && location.length() > 0)
+		if (location != null && !location.isBlank())
 			ALIENV_DIR = location;
 
 		try {
@@ -48,11 +48,11 @@ public class CVMFS extends PackMan {
 		}
 		catch (final Exception e) {
 			logger.info("which alienv not ok: " + e.toString());
+			ALIENV_DIR = null;
 		}
 
-		if (ALIENV_DIR == null || ALIENV_DIR.equals(""))
+		if (ALIENV_DIR == null || ALIENV_DIR.isBlank())
 			havePath = false;
-
 	}
 
 	/**
@@ -122,11 +122,14 @@ public class CVMFS extends PackMan {
 
 		return environment;
 	}
-	
+
+	/**
+	 * @return the command to get the full environment to run JAliEn components
+	 */
 	public static String getAlienvForSource() {
 		return ALIENV_DIR + " printenv JAliEn" + getJAliEnVersion();
 	}
-	
+
 	private static String getJAliEnVersion() {
 		try {
 			final String loadedmodules = System.getenv().get("LOADEDMODULES");
@@ -146,7 +149,10 @@ public class CVMFS extends PackMan {
 			return "";
 		}
 	}
-	
+
+	/**
+	 * @return 32b JRE location in CVMFS, to be used for all WN activities due to its much lower virtual memory footprint
+	 */
 	public static String getJava32DirFromCVMFS() {
 		return JAVA32_DIR;
 	}

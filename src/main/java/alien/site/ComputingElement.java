@@ -28,8 +28,6 @@ import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
-import alien.site.containers.Containerizer;
-import alien.site.containers.Docker;
 import alien.site.packman.CVMFS;
 import alien.test.utils.Functions;
 import apmon.ApMon;
@@ -72,13 +70,12 @@ public class ComputingElement extends Thread {
 			final String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 
 			queue = getBatchQueue((String) config.get("ce_type"));
-			
+
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			if (config.containsKey("proxy_cache_file")) {
 				int ttl = ((Integer) siteMap.get("TTL")).intValue();
-				TokenFileGenerationThread tk = new TokenFileGenerationThread((String) config.get("proxy_cache_file"),
-						this.logger, ttl);
+				TokenFileGenerationThread tk = new TokenFileGenerationThread((String) config.get("proxy_cache_file"), logger, ttl);
 				tk.start();
 			}
 
@@ -273,11 +270,11 @@ public class ComputingElement extends Thread {
 		if (config.containsKey("proxy_cache_file")) {
 			String resolvedPath = Functions.resolvePathWithEnv((String) (config.get("proxy_cache_file")));
 			before += "if test -f \'"
-				+ resolvedPath
-				+ "\' ; then\n";
+					+ resolvedPath
+					+ "\' ; then\n";
 			before += "source "
-				+ resolvedPath
-				+ "\n";
+					+ resolvedPath
+					+ "\n";
 			before += "fi\n";
 		}
 
@@ -296,7 +293,7 @@ public class ComputingElement extends Thread {
 		before += "export CE='" + siteMap.get("CE") + "'\n";
 		before += "export CEhost='" + siteMap.get("Localhost") + "'\n";
 		before += "export TTL='" + siteMap.get("TTL") + "'\n";
-		before += "export APMON_CONFIG='"+ConfigUtils.getLocalHostname()+"'\n";
+		before += "export APMON_CONFIG='" + ConfigUtils.getLocalHostname() + "'\n";
 		if (config.containsKey("ce_installationmethod"))
 			before += "export installationMethod='" + config.get("ce_installationmethod") + "'\n";
 		if (config.containsKey("ce_cerequirements"))
@@ -305,10 +302,10 @@ public class ComputingElement extends Thread {
 			before += "export partition='" + config.get("ce_partition") + "'\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
-		before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n"; 
-		
-		startup_script = getStartup()+ "\n";
-		
+		before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n";
+
+		startup_script = getStartup() + "\n";
+
 		final String content_str = before + startup_script;
 
 		final String agent_startup_path = host_tempdir_resolved + "/agent.startup." + time;
@@ -324,7 +321,7 @@ public class ComputingElement extends Thread {
 
 		try (PrintWriter writer = new PrintWriter(agent_startup_path, "UTF-8")) {
 			writer.println("#!/bin/bash");
-			writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); //make sure we start with a clean env
+			writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); // make sure we start with a clean env
 			writer.println(content_str);
 		}
 		catch (final FileNotFoundException e) {
@@ -363,13 +360,13 @@ public class ComputingElement extends Thread {
 		Logger log;
 		final int ttlDays;
 
-		public TokenFileGenerationThread(String tokenFilePath, Logger logr, int ttl) {
+		public TokenFileGenerationThread(final String tokenFilePath, final Logger logr, final int ttl) {
 			this.resolvedPath = Functions.resolvePathWithEnv(tokenFilePath);
-			ttl = ttl / 3600 / 24 + 1;
-			this.ttlDays = ttl;
+			this.ttlDays = ttl / 3600 / 24 + 1;
 			this.log = logr;
 		}
 
+		@Override
 		public void run() {
 			log.info("Starting");
 
@@ -383,14 +380,16 @@ public class ComputingElement extends Thread {
 						String keyCmd = "export JALIEN_TOKEN_KEY=\""
 								+ certs[1].trim() + "\";\n";
 						writer.write((certCmd + keyCmd).getBytes());
-					} catch (Exception e) {
-						log.log(Level.WARNING, "Exception writing token to "+resolvedPath, e);
+					}
+					catch (Exception e) {
+						log.log(Level.WARNING, "Exception writing token to " + resolvedPath, e);
 						break;
 					}
 				}
 				try {
 					Thread.sleep(5 * 60 * 1000);
-				} catch (InterruptedException e) {
+				}
+				catch (InterruptedException e) {
 					logger.log(Level.WARNING, "Getting JobAgent TokenCertificate failed", e);
 				}
 			}
