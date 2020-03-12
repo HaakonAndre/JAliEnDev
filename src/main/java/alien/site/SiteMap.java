@@ -1,7 +1,5 @@
 package alien.site;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,7 +24,7 @@ public class SiteMap {
 
 	static final Logger logger = ConfigUtils.getLogger(SiteMap.class.getCanonicalName());
 
-	private HashMap<String, Object> siteMap = new HashMap<>();
+	private final HashMap<String, Object> siteMap = new HashMap<>();
 
 	/**
 	 * @param env
@@ -45,13 +43,13 @@ public class SiteMap {
 		String ceRequirements = "";
 		List<String> packages;
 		List<String> installedPackages;
-		ArrayList<String> extrasites = new ArrayList<>();
+		final ArrayList<String> extrasites = new ArrayList<>();
 		String site = null;
 		String ce = null;
 		String cehost = null;
 
 		// Get hostname
-		String hostName = ConfigUtils.getLocalHostname();
+		final String hostName = ConfigUtils.getLocalHostname();
 		siteMap.put("Localhost", hostName);
 
 		// ALIEN_CM_AS_LDAP_PROXY to send messages upstream through VoBox (no really used anymore in JAliEn?)
@@ -92,7 +90,7 @@ public class SiteMap {
 
 		// Close storage
 		if (env.containsKey("closeSE")) {
-			ArrayList<String> temp_sites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
+			final ArrayList<String> temp_sites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
 			for (String st : temp_sites) {
 				st = st.split("::")[1];
 				extrasites.add(st);
@@ -176,7 +174,7 @@ public class SiteMap {
 	}
 
 	// Gets a PackMan instance depending on configuration (env coming from LDAP)
-	private PackMan getPackman(String installationMethod, Map<String, String> envi) {
+	private PackMan getPackman(final String installationMethod, final Map<String, String> envi) {
 		switch (installationMethod) {
 			case "CVMFS":
 				siteMap.put("CVMFS", Integer.valueOf(1));
