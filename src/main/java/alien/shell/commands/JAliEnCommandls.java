@@ -189,7 +189,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-F", "add trailing / to directory names"));
 		commander.printOutln(helpOption("-b", "print in guid format"));
 		commander.printOutln(helpOption("-c", "print canonical paths"));
-		commander.printOutln(helpOption("-H", "human readable file sizes (1024-based)"));
+		commander.printOutln(helpOption("-H", "human readable file sizes (1024-based); implies '-l'"));
 		commander.printOutln();
 	}
 
@@ -215,7 +215,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	public JAliEnCommandls(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 		try {
-
 			final OptionParser parser = new OptionParser();
 
 			parser.accepts("l");
@@ -230,13 +229,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			alPaths = optionToString(options.nonOptionArguments());
 
-			bL = options.has("l");
 			// bBulk = options.has("bulk");
 			bB = options.has("b");
 			bA = options.has("a");
 			bF = options.has("F");
 			bC = options.has("c");
 			bH = options.has("H");
+			bL = options.has("l") || bH;
 		}
 		catch (final OptionException e) {
 			printHelp();
