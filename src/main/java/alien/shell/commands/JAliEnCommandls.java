@@ -54,7 +54,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	private boolean bB = false;
 
 	/**
-	 * marker for -h argument : human readable sizes
+	 * marker for -H argument : human readable sizes
 	 */
 	private boolean bH = false;
 
@@ -224,7 +224,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			parser.accepts("a");
 			parser.accepts("F");
 			parser.accepts("c");
-			parser.accepts("h");
+			parser.accepts("H");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -236,7 +236,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			bA = options.has("a");
 			bF = options.has("F");
 			bC = options.has("c");
-			bH = options.has("h");
+			bH = options.has("H");
 		}
 		catch (final OptionException e) {
 			printHelp();
