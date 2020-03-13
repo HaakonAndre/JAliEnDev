@@ -502,16 +502,14 @@ public class JAliEnCOMMander extends Thread {
 			return;
 		}
 
-		final String comm = arg[0];
-
 		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
 
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE, "Received JSh call " + args);
 
-		args.remove(arg[0]);
+		final String comm = args.remove(0);
 
-		event.command = arg[0];
+		event.command = comm;
 		event.arguments = new ArrayList<>(args);
 
 		// Set default return code and error message
@@ -543,7 +541,7 @@ public class JAliEnCOMMander extends Thread {
 				nokeys = true;
 				args.remove(arg[i]);
 			}
-			else if (("-h".equals(arg[i]) && !comm.equals("du") && !comm.equals("ls")) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
+			else if ("-h".equals(arg[i]) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
 				help = true;
 				args.remove(arg[i]);
 			}
@@ -567,7 +565,7 @@ public class JAliEnCOMMander extends Thread {
 			else {
 				event.errorMessage = "Command [" + comm + "] not found!";
 
-				out.setReturnCode(-1, event.errorMessage);
+				out.setReturnCode(ErrNo.ENOENT, event.errorMessage);
 			}
 			// }
 		}
@@ -582,13 +580,13 @@ public class JAliEnCOMMander extends Thread {
 				if (e.getCause() instanceof OptionException || e.getCause() instanceof NumberFormatException) {
 					event.errorMessage = "Illegal command options";
 
-					out.setReturnCode(-2, event.errorMessage);
+					out.setReturnCode(ErrNo.EINVAL, event.errorMessage);
 				}
 				else {
 					event.exception = e;
 
 					e.printStackTrace();
-					out.setReturnCode(-3, "Error executing command [" + comm + "] : \n" + Format.stackTraceToString(e));
+					out.setReturnCode(ErrNo.EREMOTEIO, "Error executing command [" + comm + "] : \n" + Format.stackTraceToString(e));
 				}
 
 				out.flush();
@@ -597,7 +595,7 @@ public class JAliEnCOMMander extends Thread {
 
 			try {
 				if (jcommand == null)
-					out.setReturnCode(-6, "No such command or not implemented yet. ");
+					out.setReturnCode(ErrNo.ENOENT.getErrorCode(), "Command not found or not implemented yet");
 				else {
 					if (help) {
 						// Force enable stdout message
@@ -608,7 +606,7 @@ public class JAliEnCOMMander extends Thread {
 						jcommand.run();
 					}
 					else {
-						out.setReturnCode(-4, "Command requires an argument");
+						out.setReturnCode(ErrNo.EINVAL, "Command requires an argument");
 						jcommand.printHelp();
 					}
 				}
@@ -617,7 +615,7 @@ public class JAliEnCOMMander extends Thread {
 				event.exception = e;
 				e.printStackTrace();
 
-				out.setReturnCode(-5, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
+				out.setReturnCode(ErrNo.EREMOTEIO, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
 			}
 		}
 
@@ -773,7 +771,7 @@ public class JAliEnCOMMander extends Thread {
 	 * Set the command's return code and print the default error message associated to it plus an additional information string
 	 *
 	 * @param errno
-	 * @param additionalMessage 
+	 * @param additionalMessage
 	 */
 	public void setReturnCode(final ErrNo errno, final String additionalMessage) {
 		if (out != null)
