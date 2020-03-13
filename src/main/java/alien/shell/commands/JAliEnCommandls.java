@@ -189,7 +189,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-F", "add trailing / to directory names"));
 		commander.printOutln(helpOption("-b", "print in guid format"));
 		commander.printOutln(helpOption("-c", "print canonical paths"));
-		commander.printOutln(helpOption("-h", "human readable file sizes (1024-based)"));
+		commander.printOutln(helpOption("-H", "human readable file sizes (1024-based)"));
 		commander.printOutln();
 	}
 
