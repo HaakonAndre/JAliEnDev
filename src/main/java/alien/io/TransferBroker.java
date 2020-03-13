@@ -907,6 +907,12 @@ public class TransferBroker {
 				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: " + target);
 				return;
 			}
+
+			// cleanup of potentially booked PFNs that are otherwise going to be garbage collected and removed from the storage
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				if (db != null)
+					db.query("DELETE FROM LFN_BOOKED WHERE pfn=?", false, target.getPFN());
+			}
 		}
 
 		if (t.getSuccessfulTransfers().size() > 0 && t.onCompleteRemoveReplica != null && t.onCompleteRemoveReplica.length() > 0) {
