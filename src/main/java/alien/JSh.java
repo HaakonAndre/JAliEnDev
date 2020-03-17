@@ -78,12 +78,9 @@ public class JSh {
 		osName = getOsName();
 
 		try {
-			sun.misc.Signal.handle(new sun.misc.Signal("INT"), new sun.misc.SignalHandler() {
-				@Override
-				public void handle(final sun.misc.Signal sig) {
-					if (boombox != null)
-						boombox.callJBoxGetString("SIGINT");
-				}
+			sun.misc.Signal.handle(new sun.misc.Signal("INT"), sig -> {
+				if (boombox != null)
+					boombox.callJBoxGetString("SIGINT");
 			});
 		}
 		catch (@SuppressWarnings("unused") final Throwable t) {
@@ -189,7 +186,7 @@ public class JSh {
 			boolean memorySettings = false;
 
 			if (javaOpts != null) {
-				StringTokenizer st = new StringTokenizer(javaOpts);
+				final StringTokenizer st = new StringTokenizer(javaOpts);
 				while (st.hasMoreTokens()) {
 					final String tok = st.nextToken();
 
@@ -236,8 +233,8 @@ public class JSh {
 		}
 
 		try (BufferedReader out = new BufferedReader(new InputStreamReader(p.getInputStream())); PrintWriter pw = new PrintWriter(p.getOutputStream())) {
-			String user_key = JAKeyStore.getClientKeyPath();
-			char[] certificate_password = JAKeyStore.requestPassword(user_key);
+			final String user_key = JAKeyStore.getClientKeyPath();
+			final char[] certificate_password = JAKeyStore.requestPassword(user_key);
 			if (certificate_password != null) {
 				pw.println(certificate_password);
 				pw.flush();
@@ -311,28 +308,28 @@ public class JSh {
 	/*
 	 * private static void startJBox() {
 	 * if (!JSh.JBoxRunning()) {
-	 * 
+	 *
 	 * // APIServer.startJBox();
-	 * 
+	 *
 	 * final List<String> command = new ArrayList<>();
-	 * 
+	 *
 	 * command.add("nohup");
 	 * command.add("./run.sh");
-	 * 
+	 *
 	 * command.add("-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"));
-	 * 
+	 *
 	 * final String confDir = System.getProperty("AliEnConfig");
-	 * 
+	 *
 	 * if (confDir != null && confDir.length() > 0)
 	 * command.add("-DAliEnConfig=" + confDir);
-	 * 
+	 *
 	 * command.add("alien.JBox");
 	 * command.add("&");
-	 * 
+	 *
 	 * final ProcessBuilder pBuilder = new ProcessBuilder(command);
-	 * 
+	 *
 	 * pBuilder.redirectErrorStream(false);
-	 * 
+	 *
 	 * // try {
 	 * // pBuilder.start();
 	 * // } catch (Exception e) {
@@ -452,7 +449,7 @@ public class JSh {
 					}
 				}
 			}
-			catch (@SuppressWarnings("unused") IOException e) {
+			catch (@SuppressWarnings("unused") final IOException e) {
 				System.err.println("Cannot read token configuration file " + f.getAbsolutePath());
 			}
 

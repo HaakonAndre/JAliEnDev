@@ -13,7 +13,7 @@ public class JOptimizers {
 	 * @throws Exception
 	 */
 	public static void main(final String[] args) throws Exception {
-		Optimizer opt = new Optimizer();
+		final Optimizer opt = new Optimizer();
 		opt.start();
 	}
 }

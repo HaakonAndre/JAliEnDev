@@ -350,7 +350,7 @@ public class ArchiveMemberDelete {
 	/**
 	 * Extracts a zip file specified by the zipFilePath to a directory specified by
 	 * destDirectory (will be created if does not exists)
-	 * 
+	 *
 	 * @param jobID
 	 * @throws IOException
 	 */
@@ -409,14 +409,14 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Extracts a zip entry (file entry)
-	 * 
+	 *
 	 * @param zipIn
 	 * @param filePath
 	 * @throws IOException
 	 */
 	private static void extractFile(final ZipInputStream zipIn, final String filePath) throws IOException {
 		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
-			byte[] bytesIn = new byte[BUFFER_SIZE];
+			final byte[] bytesIn = new byte[BUFFER_SIZE];
 			int read = 0;
 			while ((read = zipIn.read(bytesIn)) != -1) {
 				bos.write(bytesIn, 0, read);
@@ -426,7 +426,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Get list of files in a directory recursively while saving relative paths
-	 * 
+	 *
 	 * @param folderName
 	 *            folder to look inside
 	 */
@@ -448,7 +448,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Delete local file using <code>java.nio.Files#delete</code>, catch any <code>IOException</code>
-	 * 
+	 *
 	 * @param path
 	 *            path of the local file or directory to delete
 	 */
@@ -463,7 +463,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Delete any leftovers from the previous iterations. Returns <code>true</code> if it is ok to continue member removal procedure
-	 * 
+	 *
 	 */
 	private static boolean cleanUpRegistertemp(final String xmlEntry, final String registerPath, final LFN remoteLFN, final String parentdir) {
 		if (remoteLFN == null || !remoteLFN.exists) {
@@ -473,7 +473,7 @@ public class ArchiveMemberDelete {
 			if (commander.c_api.getLFN(registerPath) != null) {
 				// Move everything from registertemp to parent
 				System.out.println("[" + new Date() + "] " + "registertemp found, moving out its content");
-				
+
 				final List<LFN> listing = commander.c_api.getLFNs(registerPath);
 				if (listing == null || listing.isEmpty()) {
 					System.err.println("[" + new Date() + "] " + "Failed to get directory listing for " + registerPath + ". Abort.");
@@ -533,7 +533,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Delete an archive and it's member from the catalogue
-	 * 
+	 *
 	 */
 	private static boolean deleteRemoteArchive(final String remoteFile, final String remoteArchive, final List<LFN> remoteArchiveMembers, final String registerPath, final List<PFN> remoteArchivePFN,
 			final PrintWriter validation) {
@@ -575,7 +575,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Physically delete the remote file using xrootd utils
-	 * 
+	 *
 	 */
 	private static void xrdDeleteRemoteFile(final String remoteFile, final List<PFN> remotePFN) {
 		if (remotePFN != null && !remotePFN.isEmpty()) {
@@ -603,7 +603,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Create directory structure and register archive and members in the Catalogue. Returns <code>true</code> if it is ok to continue member removal procedure
-	 * 
+	 *
 	 */
 	private static boolean registerFiles(final OutputEntry entry, final String registerPath, final String remoteFile, final PrintWriter validation) {
 		// Create subdirs (like BKG/)
@@ -650,7 +650,7 @@ public class ArchiveMemberDelete {
 
 	/**
 	 * Move new files to the parent directory. Returns <code>true</code> if it is ok to continue member removal procedure
-	 * 
+	 *
 	 */
 	private static boolean renameFiles(final String remoteArchive, final ArrayList<String> listOfFiles, final String archiveName, final String registerPath, final String remoteFile,
 			final PrintWriter validation, final String parentdir) {

@@ -19,7 +19,7 @@ public class JBox {
 	 */
 	static final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
-	private static void logLoud(Level l, String msg) {
+	private static void logLoud(final Level l, final String msg) {
 		logger.log(l, msg);
 		System.err.println("> " + msg); // Prepend stderr messages with ">" to make JShell print them
 	}
