@@ -39,7 +39,10 @@ public class TomcatServer {
 	 */
 	static final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
-	static final Monitor monitor = MonitorFactory.getMonitor(TomcatServer.class.getCanonicalName());
+	/**
+	 * Activity monitoring
+	 */
+	private static final Monitor monitor = MonitorFactory.getMonitor(TomcatServer.class.getCanonicalName());
 
 	/**
 	 * Web server instance

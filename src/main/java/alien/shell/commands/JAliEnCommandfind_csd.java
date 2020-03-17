@@ -26,8 +26,6 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 	private boolean bX = false;
 	private boolean bH = false;
 
-	private String xmlCollectionName = null;
-
 	/**
 	 * marker for -a argument : show hidden .files
 	 */
@@ -61,8 +59,6 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 	private List<String> alPaths = null;
 
 	private Collection<LFN_CSD> lfns = null;
-
-	private Long queueid = Long.valueOf(0);
 
 	private String metadata = null;
 
@@ -101,10 +97,7 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 		if (bJ)
 			flags = flags | LFNUtils.FIND_FILTER_JOBID;
 
-		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
-
-		lfns = commander.c_api.find_csd(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), metadata, flags, xmlCollectionPath,
-				queueid);
+		lfns = commander.c_api.find_csd(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), metadata, flags);
 
 		if (lfns != null) {
 			if (bX) {
@@ -198,19 +191,9 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
-			if (options.has("x") && options.hasArgument("x")) {
-				bX = true;
-				xmlCollectionName = (String) options.valueOf("x");
-			}
-
 			if (options.has("m") && options.hasArgument("m")) {
 				bM = true;
 				metadata = (String) options.valueOf("m");
-			}
-
-			if (options.has("j") && options.hasArgument("j")) {
-				bJ = true;
-				queueid = (Long) options.valueOf("j");
 			}
 
 			alPaths = optionToString(options.nonOptionArguments());

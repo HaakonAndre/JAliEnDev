@@ -442,7 +442,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 				if (l.isFile())
 					sources.add(expandedPath);
 				else if (l.isDirectory()) {
-					final Collection<LFN_CSD> findresult = commander.c_api.find_csd(expandedPath, "*", null, 0, null, null);
+					final Collection<LFN_CSD> findresult = commander.c_api.find_csd(expandedPath, "*", null, 0);
 
 					logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
 

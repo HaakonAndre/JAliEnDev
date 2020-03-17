@@ -292,6 +292,9 @@ public class JAliEnCOMMander extends Thread {
 		return site;
 	}
 
+	/**
+	 * @param newSiteName site name to set the affinity to
+	 */
 	void setSite(final String newSiteName) {
 		site = newSiteName;
 	}

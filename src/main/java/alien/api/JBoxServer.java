@@ -83,7 +83,7 @@ public class JBoxServer extends Thread {
 		lastOperation = System.currentTimeMillis();
 	}
 
-	static final class ShutdownThread extends Thread {
+	private static final class ShutdownThread extends Thread {
 		public ShutdownThread() {
 			setName("Idle server watcher");
 		}

@@ -30,26 +30,31 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	/**
 	 * commit request permissions
 	 */
+	@SuppressWarnings("unused")
 	private String perm = "";
 
 	/**
 	 * commit request expiration
 	 */
+	@SuppressWarnings("unused")
 	private String expire = "";
 
 	/**
 	 * commit request PFN
 	 */
+	@SuppressWarnings("unused")
 	private String pfn = "";
 
 	/**
 	 * commit request SE
 	 */
+	@SuppressWarnings("unused")
 	private String se = "";
 
 	/**
 	 * commit request GUID
 	 */
+	@SuppressWarnings("unused")
 	private String guid = "";
 
 	/**

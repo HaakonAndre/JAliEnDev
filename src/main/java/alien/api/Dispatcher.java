@@ -24,7 +24,7 @@ public class Dispatcher {
 
 	private static final ExpirationCache<String, WeakReference<Request>> cache = new ExpirationCache<>(10240);
 
-	static final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
+	private static final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
 
 	/**
 	 * Logger

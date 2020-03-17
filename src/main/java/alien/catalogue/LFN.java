@@ -736,6 +736,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		return null;
 	}
 
+	/**
+	 * Permission bits regex
+	 */
 	static final Pattern PERMISSIONS = Pattern.compile("^[0-7]{3}$");
 
 	/**

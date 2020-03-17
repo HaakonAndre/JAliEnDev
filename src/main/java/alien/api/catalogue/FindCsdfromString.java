@@ -46,10 +46,8 @@ public class FindCsdfromString extends Request {
 	 * @param pattern
 	 * @param metadata
 	 * @param flags
-	 * @param xmlCollectionName
-	 * @param queueid
 	 */
-	public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, final Long queueid) {
+	public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final String metadata, final int flags) {
 		setRequestUser(user);
 		this.path = path;
 		this.pattern = pattern;

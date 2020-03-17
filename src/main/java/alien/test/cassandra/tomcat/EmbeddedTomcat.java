@@ -27,9 +27,9 @@ public class EmbeddedTomcat extends Tomcat {
 		System.setProperty(Globals.CATALINA_HOME_PROP, System.getProperty("java.io.tmpdir"));
 	}
 
-	final int debugLevel;
-	final String address;
-	final StandardContext ctx;
+	private final int debugLevel;
+	private final String address;
+	private final StandardContext ctx;
 
 	/**
 	 * @param defaultAddress
