@@ -59,18 +59,17 @@ public class IOUtils {
 	 */
 	static final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
 
-	private static PrintWriter activityLog;
+	private static PrintWriter activityLog = null;
 
 	static {
-		try {
-			String logPath = ConfigUtils.getConfig().gets("alien.io.IOUtils.logPath");
+		final String logPath = ConfigUtils.getConfig().gets("alien.io.IOUtils.logPath");
 
-			if (logPath != null && logPath.length() > 0)
-				activityLog = new PrintWriter("/tmp/IOUtils.log");
+		try {
+			if (logPath != null && !logPath.isBlank())
+				activityLog = new PrintWriter(logPath);
 		}
-		catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		catch (final FileNotFoundException e) {
+			logger.log(Level.WARNING, "Cannot create detailed activity log file " + logPath, e);
 		}
 	}
 
