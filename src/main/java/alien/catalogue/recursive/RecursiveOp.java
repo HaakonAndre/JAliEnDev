@@ -11,14 +11,35 @@ import alien.user.AliEnPrincipal;
  *
  */
 public abstract class RecursiveOp {
+	/**
+	 * Entries that were ok
+	 */
 	final Set<LFN_CSD> lfns_ok = new TreeSet<>();
+	/**
+	 * Entries that the operation could not be applied on
+	 */
 	final Set<LFN_CSD> lfns_error = new TreeSet<>();
-	boolean recurse_infinitely = false;
-	boolean onlyAppend = false;
+	private boolean recurse_infinitely = false;
+	private boolean onlyAppend = false;
+	/**
+	 * Identity to set
+	 */
 	AliEnPrincipal user = null;
+	/**
+	 * Target
+	 */
 	LFN_CSD lfnc_target = null;
+	/**
+	 * Parent
+	 */
 	LFN_CSD lfnc_target_parent = null;
+	/**
+	 * Change to this owner
+	 */
 	String new_owner = null;
+	/**
+	 * And this group
+	 */
 	String new_group = null;
 
 	/**
