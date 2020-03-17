@@ -34,7 +34,7 @@ public class CVMFS extends PackMan {
 	 */
 
 	static String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin";
-	final static String JAVA32_DIR = "/cvmfs/alice.cern.ch/java/JDKs/i686/jdk-latest/bin";
+	private final static String JAVA32_DIR = "/cvmfs/alice.cern.ch/java/JDKs/i686/jdk-latest/bin";
 
 	/**
 	 * Constructor just checks CVMFS bin exist
