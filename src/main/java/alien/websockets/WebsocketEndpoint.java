@@ -53,9 +53,9 @@ import lazyj.Utils;
  *         Implementation of websocket endpoint, that supports plain text and JSON clients
  */
 public class WebsocketEndpoint extends Endpoint {
-	static final Logger logger = ConfigUtils.getLogger(WebsocketEndpoint.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(WebsocketEndpoint.class.getCanonicalName());
 
-	static final Monitor monitor = MonitorFactory.getMonitor(WebsocketEndpoint.class.getCanonicalName());
+	private static final Monitor monitor = MonitorFactory.getMonitor(WebsocketEndpoint.class.getCanonicalName());
 
 	private static final CacheMonitor ipv6Connections;
 
@@ -66,7 +66,7 @@ public class WebsocketEndpoint extends Endpoint {
 			ipv6Connections = null;
 	}
 
-	AliEnPrincipal userIdentity = null;
+	private AliEnPrincipal userIdentity = null;
 
 	/**
 	 * Commander
@@ -85,7 +85,7 @@ public class WebsocketEndpoint extends Endpoint {
 			out = new XMLPrintWriter(os);
 	}
 
-	static final DelayQueue<SessionContext> sessionQueue = new DelayQueue<>();
+	private static final DelayQueue<SessionContext> sessionQueue = new DelayQueue<>();
 
 	private static final class SessionContext implements Delayed {
 		final Session session;
@@ -131,7 +131,7 @@ public class WebsocketEndpoint extends Endpoint {
 		}
 	}
 
-	static final Thread sessionCheckingThread = new Thread() {
+	private static final Thread sessionCheckingThread = new Thread() {
 		@Override
 		public void run() {
 			while (true) {
