@@ -9,9 +9,15 @@ import java.util.Map;
 import alien.user.UserFactory;
 import lazyj.ExtProperties;
 
+/**
+ * Configuration is loaded from files found in a set (via the AliEnConfig java parameter), or default ($HOME/.alien/config), configuration folder
+ */
 class ConfigurationFolders implements ConfigSource {
 	private Map<String, ExtProperties> oldConfig;
 
+	/**
+	 * @param oldConfig to inherit
+	 */
 	public ConfigurationFolders(final Map<String, ExtProperties> oldConfig) {
 		this.oldConfig = oldConfig;
 	}

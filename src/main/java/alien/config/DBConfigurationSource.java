@@ -7,10 +7,17 @@ import lazyj.DBFunctions;
 import lazyj.DBProperties;
 import lazyj.ExtProperties;
 
+/**
+ * Extra configuration can be loaded directly from the database, on central services
+ */
 class DBConfigurationSource implements ConfigSource {
 	private Map<String, ExtProperties> oldConfig;
 	private boolean isCentralService;
 
+	/**
+	 * @param oldConfig
+	 * @param isCentralService
+	 */
 	public DBConfigurationSource(final Map<String, ExtProperties> oldConfig, boolean isCentralService) {
 		this.oldConfig = oldConfig;
 		this.isCentralService = isCentralService;
