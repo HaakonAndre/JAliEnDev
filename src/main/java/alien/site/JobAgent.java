@@ -799,7 +799,7 @@ public class JobAgent implements Runnable {
 		return true;
 	}
 
-	void setupJobWrapperLogging() {
+	private void setupJobWrapperLogging() {
 		Properties props = new Properties();
 		try {
 			ExtProperties ep = ConfigUtils.getConfiguration("logging");

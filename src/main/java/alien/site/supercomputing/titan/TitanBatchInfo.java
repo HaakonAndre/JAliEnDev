@@ -18,14 +18,26 @@ import lia.util.Utils;
  *
  */
 public class TitanBatchInfo {
+	/**
+	 * BQ job ID
+	 */
 	final Long pbsJobId;
+
+	/**
+	 * DB name
+	 */
+
 	final String dbName;
-	final String clearDbName;
+	private final String clearDbName;
 	private final String monitoringDbName;
+
+	/**
+	 * Job workdir
+	 */
 	final String jobWorkdir;
-	Integer origTtl;
-	Integer numCores;
-	Long startTimestamp;
+	private Integer origTtl;
+	private Integer numCores;
+	private Long startTimestamp;
 
 	private static final String dbFilename = "jobagent.db";
 	private static final String dbProtocol = "jdbc:sqlite:";

@@ -5,15 +5,33 @@ package alien.site.supercomputing.titan;
  *
  */
 public class TitanJobStatus {
+	/**
+	 * rank?
+	 */
 	final int rank;
 	/**
 	 * Job that is executed
 	 */
 	public Long queueId;
+	/**
+	 * folder
+	 */
 	String jobFolder;
+	/**
+	 * status
+	 */
 	String status;
+	/**
+	 * exec code
+	 */
 	int executionCode;
+	/**
+	 * validation code
+	 */
 	int validationCode;
+	/**
+	 * batch instance
+	 */
 	final TitanBatchInfo batch;
 
 	/**

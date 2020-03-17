@@ -50,7 +50,7 @@ import apmon.ApMon;
  * @author psvirin
  */
 public class JobDownloader extends Thread {
-	TitanJobStatus js;
+	private TitanJobStatus js;
 	private String dbname;
 	private JDL jdl;
 	private Long queueId;
@@ -83,9 +83,9 @@ public class JobDownloader extends Thread {
 	// private static List<String> fetchedJobs = new List<>();
 	// private static List<Long> idleRanksToMark = new List<>();
 
-	static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
-	static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
-	static final ApMon apmon = MonitorFactory.getApMonSender();
+	private static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
+	private static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
+	private static final ApMon apmon = MonitorFactory.getApMonSender();
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 

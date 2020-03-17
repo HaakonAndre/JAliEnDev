@@ -25,16 +25,16 @@ public class FileDownloadController extends Thread {
 	private final HashMap<LFN, LinkedList<FileDownloadApplication>> lfnRequested;
 	// private Set<LFN> lfnQueueInProcess;
 
-	BlockingQueue<LFN> lfnToServe;
+	private BlockingQueue<LFN> lfnToServe;
 
 	private static String cacheFolder;
 	private final int maxDownloaderSleep = 10000;
 	private final int maxParallelDownloads = 10;
 
-	static final Object poolSyncObject = new Object();
+	private static final Object poolSyncObject = new Object();
 
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
+	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 	private final ArrayList<Thread> dlPool;
 
 	static private FileDownloadController instance = null;
@@ -106,6 +106,9 @@ public class FileDownloadController extends Thread {
 		}
 	}
 
+	/**
+	 * @return singleton
+	 */
 	static synchronized FileDownloadController getInstance() {
 		try {
 			if (instance == null)
@@ -137,6 +140,10 @@ public class FileDownloadController extends Thread {
 
 	}
 
+	/**
+	 * @param inputFiles
+	 * @return
+	 */
 	synchronized FileDownloadApplication applyForDownload(final List<LFN> inputFiles) {
 		final FileDownloadApplication fda = new FileDownloadApplication(inputFiles);
 		for (final LFN l : inputFiles)
@@ -176,7 +183,7 @@ public class FileDownloadController extends Thread {
 		}
 	}
 
-	synchronized void notifyCompleted(final LFN l, final String filename) {
+	private synchronized void notifyCompleted(final LFN l, final String filename) {
 		for (final FileDownloadApplication fda : lfnRequested.get(l)) {
 			System.out.println("Putting " + filename + " to FDA: " + fda);
 			fda.putResult(l, filename);
@@ -200,11 +207,11 @@ public class FileDownloadController extends Thread {
 		}
 	}
 
-	static boolean fileIsInCache(final LFN l) {
+	private static boolean fileIsInCache(final LFN l) {
 		return new File(getCachedFilename(l)).exists();
 	}
 
-	static String getCachedFilename(final LFN l) {
+	private static String getCachedFilename(final LFN l) {
 		return cacheFolder + "/" + l.getCanonicalName();
 	}
 
@@ -221,7 +228,7 @@ public class FileDownloadController extends Thread {
 	 * }
 	 */
 
-	static void createCacheFolders(final String f) {
+	private static void createCacheFolders(final String f) {
 		final File file = new File(f);
 		file.getParentFile().mkdirs();
 	}

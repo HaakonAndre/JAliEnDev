@@ -72,10 +72,10 @@ public class TitanJobService implements MonitoringObject, Runnable {
 
 	// Other
 	private PackMan packMan = null;
-	String hostName = null;
+	private String hostName = null;
 	private String alienCm = null;
 
-	final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
 	static {
@@ -92,10 +92,10 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
 	}
 
-	static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
 
-	static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
-	static final ApMon apmon = MonitorFactory.getApMonSender();
+	private static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
+	private static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	private Integer RES_NOCPUS = Integer.valueOf(1);
 	private String RES_CPUMHZ = "";
@@ -104,7 +104,7 @@ public class TitanJobService implements MonitoringObject, Runnable {
 	// EXPERIMENTAL
 	// for ORNL Titan
 
-	TitanBatchController batchController;
+	private TitanBatchController batchController;
 
 	/**
 	 */

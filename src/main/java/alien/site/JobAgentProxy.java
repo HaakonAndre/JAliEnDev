@@ -58,7 +58,6 @@ import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import apmon.ApMon;
 import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
@@ -129,10 +128,9 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
 	}
 
-	static final Logger logger = ConfigUtils.getLogger(JobAgentProxy.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(JobAgentProxy.class.getCanonicalName());
 
-	static final Monitor monitor = MonitorFactory.getMonitor(JobAgentProxy.class.getCanonicalName());
-	static final ApMon apmon = MonitorFactory.getApMonSender();
+	private static final Monitor monitor = MonitorFactory.getMonitor(JobAgentProxy.class.getCanonicalName());
 
 	// Resource monitoring vars
 
@@ -922,7 +920,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	 * }
 	 */
 
-	void sendProcessResources() {
+	private void sendProcessResources() {
 		// EXPERIMENTAL
 		// for ORNL Titan
 		class ProcInfoPair {
@@ -963,7 +961,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		}
 	}
 
-	static String checkProcessResources() {
+	private static String checkProcessResources() {
 		String error = null;
 		// EXPERIMENTAL
 		// for ORNL Titan

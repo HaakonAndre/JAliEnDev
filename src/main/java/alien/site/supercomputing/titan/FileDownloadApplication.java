@@ -10,14 +10,24 @@ import alien.catalogue.LFN;
  *
  */
 public class FileDownloadApplication {
+	/**
+	 * List of LFNs to download
+	 */
 	List<LFN> fileList;
-	List<Pair<LFN, String>> dlResult;
+	private List<Pair<LFN, String>> dlResult;
 
+	/**
+	 * @param inputFiles
+	 */
 	FileDownloadApplication(final List<LFN> inputFiles) {
 		fileList = inputFiles;
 		dlResult = new LinkedList<>();
 	}
 
+	/**
+	 * @param l
+	 * @param s
+	 */
 	synchronized void putResult(final LFN l, final String s) {
 		// System.out.println("Really putting: " + s);
 		final Pair<LFN, String> p = new Pair<>(l, s);

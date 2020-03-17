@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -24,16 +23,13 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
-import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
-import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.OutputEntry;
 import alien.site.ParsedOutput;
-import alien.site.TitanJobService;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
@@ -45,14 +41,13 @@ import lia.util.Utils;
  * @author psvirin
  */
 public class JobUploader extends Thread {
-	TitanJobStatus js;
+	private TitanJobStatus js;
 	private String dbname;
 	private Long queueId;
 	private JDL jdl;
 
 	private String jobWorkdir;
 	private JobStatus jobStatus;
-	FileDownloadController fdc;
 
 	private final String username;
 
@@ -71,9 +66,7 @@ public class JobUploader extends Thread {
 	 */
 	public static String defaultOutputDirPrefix;
 
-	static final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
-	static final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
-	static final ApMon apmon = MonitorFactory.getApMonSender();
+	private static final ApMon apmon = MonitorFactory.getApMonSender();
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 
@@ -81,7 +74,6 @@ public class JobUploader extends Thread {
 	 * @param js
 	 */
 	public JobUploader(final TitanJobStatus js) {
-		fdc = FileDownloadController.getInstance();
 		this.js = js;
 		if (js.executionCode != 0)
 			jobStatus = JobStatus.ERROR_E;

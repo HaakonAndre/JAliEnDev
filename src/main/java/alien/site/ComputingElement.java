@@ -45,7 +45,7 @@ public class ComputingElement extends Thread {
 	static final ApMon apmon = MonitorFactory.getApMonSender();
 
 	// Logger object
-	static Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
+	private static Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
@@ -355,11 +355,19 @@ public class ComputingElement extends Thread {
 		return CVMFS.getJava32DirFromCVMFS() + "/java -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
 	}
 
+	/**
+	 * Class to periodically update the JA token in a shared folder, for long waiting JAs in the queue to find a fresh one at startup
+	 */
 	final class TokenFileGenerationThread extends Thread {
-		String resolvedPath;
-		Logger log;
-		final int ttlDays;
+		private final String resolvedPath;
+		private final Logger log;
+		private final int ttlDays;
 
+		/**
+		 * @param tokenFilePath location where to store the refreshed token files
+		 * @param logr an instance of the logger to write important stuff to
+		 * @param ttl in seconds
+		 */
 		public TokenFileGenerationThread(final String tokenFilePath, final Logger logr, final int ttl) {
 			this.resolvedPath = Functions.resolvePathWithEnv(tokenFilePath);
 			this.ttlDays = ttl / 3600 / 24 + 1;
@@ -396,7 +404,9 @@ public class ComputingElement extends Thread {
 		}
 	}
 
-	// Prepares a hash to create the sitemap
+	/**
+	 * Prepares a hash to create the sitemap
+	 */
 	void getSiteMap() {
 		final HashMap<String, String> smenv = new HashMap<>();
 
@@ -462,8 +472,11 @@ public class ComputingElement extends Thread {
 		return map;
 	}
 
-	/*
+	/**
 	 * Get queue class with reflection
+	 * 
+	 * @param type batch queue base class name
+	 * @return an instance of that class, if found
 	 */
 	BatchQueue getBatchQueue(final String type) {
 		Class<?> cl = null;
