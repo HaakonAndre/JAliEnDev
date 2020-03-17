@@ -10,10 +10,20 @@ import alien.site.JobAgent;
  * @author mstoretv
  */
 public class ContainerizerFactory {
-	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
+	/**
+	 * @author mstoretv
+	 */
 	enum Containerizers {
-		Docker, Singularity
+		/**
+		 * Entry for Docker
+		 */
+		Docker, 
+		/**
+		 * Entry for Singularity
+		 */
+		Singularity
 	}
 
 	/**

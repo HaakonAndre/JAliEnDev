@@ -14,14 +14,29 @@ import alien.site.packman.CVMFS;
  */
 public abstract class Containerizer {
 
-	final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
-	final String CONTAINER_JOBDIR = "/workdir";
+	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
+	
+	/**
+	 * Sandbox location
+	 */
+	protected static final String CONTAINER_JOBDIR = "/workdir";
 
-	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
-	final String containerImgPath;
+	private static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	
+	/**
+	 * Location of the container
+	 */
+	protected final String containerImgPath;
 
+	/**
+	 * Working directory
+	 */
 	String workdir = null;
-	String envSetup = "source <( " + CVMFS.getAlienvForSource() + " ); ";
+	
+	/**
+	 * Command to set the environment for payload execution
+	 */
+	protected static final String envSetup = "source <( " + CVMFS.getAlienvForSource() + " ); ";
 
 	/**
 	 * Simple constructor, initializing the container path from default location or from the environment (DEFAULT_JOB_CONTAINER_PATH key)
