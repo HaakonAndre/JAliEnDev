@@ -23,7 +23,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	private TokenCertificateType tokentype = TokenCertificateType.USER_CERTIFICATE;
 	private String requestedUser = null; // user1 can ask for token for user2
-	private int validity = 2; // Default validity is two days
+	private int validity; // Default validity depends on token type
 	private String extension = null; // Token extension (jobID for job tokens)
 
 	/**
@@ -46,6 +46,13 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 			if (options.has("u"))
 				requestedUser = (String) options.valueOf("u");
+
+			// set token type defaults if hostname or jobid was passed as option, don't require '-t' explicitly
+			if (options.has("hostname"))
+				tokentype = TokenCertificateType.HOST;
+
+			if (options.has("jobid"))
+				tokentype = TokenCertificateType.JOB_TOKEN;
 
 			if (options.has("t")) {
 				switch ((String) options.valueOf("t")) {
@@ -74,11 +81,19 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 				validity = tokentype.getMaxValidity();
 			}
 
-			if (tokentype == TokenCertificateType.JOB_TOKEN)
+			if (tokentype == TokenCertificateType.JOB_TOKEN) {
 				if (options.has("jobid"))
 					extension = (String) options.valueOf("jobid");
-				else
+				else {
 					commander.setReturnCode(ErrNo.EINVAL, "You should pass a job extension for this type of certificate request");
+					setArgumentsOk(false);
+				}
+
+				if (requestedUser == null) {
+					commander.setReturnCode(ErrNo.EINVAL, "You also have to pass the user for which to run this job id");
+					setArgumentsOk(false);
+				}
+			}
 
 			if (tokentype == TokenCertificateType.HOST)
 				if (options.has("hostname")) {
