@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,7 +151,7 @@ public class RequestEvent implements Closeable {
 
 		if (exception != null) {
 			values.put("exceptionMessage", exception.getMessage());
-			values.put("exceptionTrace", exception.getStackTrace());
+			values.put("exceptionTrace", Arrays.toString(exception.getStackTrace()));
 		}
 
 		values.put("duration", Double.valueOf(timing.getMillis()));
