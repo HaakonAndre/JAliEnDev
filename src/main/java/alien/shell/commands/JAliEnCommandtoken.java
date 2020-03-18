@@ -162,7 +162,19 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			commander.printOut("tokencert", tokenreq.getCertificateAsString());
 			commander.printOut("tokenkey", tokenreq.getPrivateKeyAsString());
 
-			commander.printOutln("DN: " + UserFactory.transformDN(tokenreq.getCertificate().getSubjectX500Principal().getName()));
+			final String dn = UserFactory.transformDN(tokenreq.getCertificate().getSubjectX500Principal().getName());
+			commander.printOutln("DN: " + dn);
+
+			if (tokentype == TokenCertificateType.HOST) {
+				// Print a warning in case the VoBox hostnames are not associated to an account in LDAP
+				final AliEnPrincipal account = UserFactory.getByDN(dn);
+
+				if (account == null)
+					commander.printOutln("  No user is mapped to this DN");
+				else
+					commander.printOutln("  Mapped to " + account.getDefaultUser());
+			}
+
 			commander.printOutln("Expires: " + tokenreq.getCertificate().getNotAfter());
 			commander.printOutln();
 			commander.printOut(tokenreq.getCertificateAsString());
