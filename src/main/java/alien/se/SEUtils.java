@@ -1132,7 +1132,7 @@ public final class SEUtils {
 			return null;
 		}
 
-		if(fileCount <= 0) {
+		if (fileCount <= 0) {
 			return null;
 		}
 
