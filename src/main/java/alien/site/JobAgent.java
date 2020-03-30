@@ -542,6 +542,7 @@ public class JobAgent implements Runnable {
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
+		pBuilder.environment().put("TMPDIR", jobWorkdir + "/tmp");
 		pBuilder.redirectError(Redirect.INHERIT);
 		pBuilder.directory(tempDir);
 
@@ -789,6 +790,8 @@ public class JobAgent implements Runnable {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
 				return false;
 			}
+			File tempTmpDir = new File(jobWorkdir + "/tmp");
+			tempTmpDir.mkdir();
 		}
 
 		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
