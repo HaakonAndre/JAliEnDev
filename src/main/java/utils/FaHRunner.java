@@ -54,6 +54,8 @@ public class FaHRunner {
 
 		final String baseFolder = UsersHelper.getDefaultUserDir(account.getDefaultUser() + "/fah/" + task.getSequenceId());
 
+		System.err.println("I was assigned this slot: " + baseFolder);
+
 		final String snapshotArchive = baseFolder + "/snapshot.tar.gz";
 
 		final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
@@ -61,27 +63,47 @@ public class FaHRunner {
 		final LFN lSnapshot = commander.c_api.getLFN(snapshotArchive);
 
 		if (lSnapshot != null) {
+			System.err.println("A previous snapshot exists: " + lSnapshot.getCanonicalName());
+
 			try {
 				commander.c_api.downloadFile(snapshotArchive, new File("snapshot.tar.gz"));
+
+				System.err.println("  snapshot downloaded successfully");
 			}
 			catch (final IOException ioe) {
-				System.err.println("Snapshot cannot be retrieved due to " + ioe.getMessage());
-				System.err.println("Continuing with an empty sandbox");
+				System.err.println("  snapshot cannot be retrieved due to " + ioe.getMessage());
+				System.err.println("  continuing with an empty sandbox");
 			}
 		}
 
-		final ProcessBuilder pBuilder = new ProcessBuilder("./fah.sh");
-		final Process p = pBuilder.start();
-		p.waitFor();
+		try {
+			final ProcessBuilder pBuilder = new ProcessBuilder("./fah.sh");
+			final Process p = pBuilder.start();
+			p.waitFor();
+		}
+		catch (final IOException ioe) {
+			System.err.println("I couldn't run the payload, execution of ./fah.sh failed with:\n" + ioe.getMessage());
+			return;
+		}
 
 		// ok, now we have to upload the results, if any
 		final File outputSnapshot = new File("snapshot.tar.gz");
 
-		if (outputSnapshot.exists() && outputSnapshot.length() > 0) {
-			if (lSnapshot != null)
-				commander.c_api.removeLFN(snapshotArchive);
+		if (outputSnapshot.exists() && outputSnapshot.length() > 100000) {
+			System.err.println("Uploading intermediate work to " + outputSnapshot);
 
-			commander.c_api.uploadFile(outputSnapshot, snapshotArchive);
+			if (lSnapshot != null) {
+				if (commander.c_api.removeLFN(snapshotArchive))
+					System.err.println("  removal of previous archive was successful");
+				else
+					System.err.println("  could not remove the previous archive");
+			}
+
+			System.err.println("  uploading " + outputSnapshot.length() + " bytes");
+			commander.c_api.uploadFile(outputSnapshot, snapshotArchive, "-w", "-T", "2", "-d");
+			System.err.println("  upload complete");
 		}
+		else
+			System.err.println("No output to upload");
 	}
 }
