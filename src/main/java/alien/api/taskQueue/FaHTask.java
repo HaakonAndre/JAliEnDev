@@ -55,6 +55,8 @@ public class FaHTask extends Request {
 					return;
 				}
 			}
+			
+			db2.setLastGeneratedKey(true);
 
 			// no slot was available, we have to insert a new one
 			if (db2.query("insert into FAH_WORKDIR (queueId) VALUES (?);", false, Long.valueOf(jobId)))
