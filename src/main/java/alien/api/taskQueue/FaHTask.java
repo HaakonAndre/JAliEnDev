@@ -41,7 +41,7 @@ public class FaHTask extends Request {
 			db.setReadOnly(true);
 
 			// all jobs that are in a final state are free to take
-			db.query("select F.fah_uid,F.queueId from FAH_WORKDIR F left outer join QUEUE Q on F.queueId = Q.queueId AND (statusId<6 OR statusId>12);");
+			db.query("select F.fah_uid,F.queueId from FAH_WORKDIR F left outer join QUEUE Q using(queueId) WHERE statusId is null or (statusId<6 OR statusId>12);");
 
 			while (db.moveNext()) {
 				final int fah_uid = db.geti(1);
