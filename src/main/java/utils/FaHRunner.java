@@ -38,7 +38,7 @@ public class FaHRunner {
 
 		final AliEnPrincipal account = AuthorizationFactory.getDefaultUser();
 
-		final long currentJobID = ConfigUtils.getConfig().getl("", -1);
+		final long currentJobID = ConfigUtils.getConfig().getl("ALIEN_PROC_ID", -1);
 
 		if (currentJobID < 0) {
 			System.err.println("Cannot get the job ID, exiting");
