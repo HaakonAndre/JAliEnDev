@@ -49,7 +49,7 @@ public class FaHTask extends Request {
 
 				db2.query("update FAH_WORKDIR set queueId=" + jobId + " WHERE fah_uid=" + fah_uid + " AND queueId=" + oldJobID);
 
-				if (db2.getUpdateCount() > 1) {
+				if (db2.getUpdateCount() > 0) {
 					// found a slot that was not taken yet, was booked for us, return it
 					sequenceId = fah_uid;
 					return;
@@ -57,8 +57,8 @@ public class FaHTask extends Request {
 			}
 
 			// no slot was available, we have to insert a new one
-			if (db.query("insert into FAH_WORKDIR (queueId) VALUES (?);", false, Long.valueOf(jobId)))
-				sequenceId = db.getLastGeneratedKey().intValue();
+			if (db2.query("insert into FAH_WORKDIR (queueId) VALUES (?);", false, Long.valueOf(jobId)))
+				sequenceId = db2.getLastGeneratedKey().intValue();
 		}
 	}
 
