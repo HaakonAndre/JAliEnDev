@@ -400,10 +400,8 @@ public class JAKeyStore {
 		final String sUserId = UserFactory.getUserID();
 		final String tmpDir = System.getProperty("java.io.tmpdir");
 
-		if (sUserId == null && (tokenKeyString == null || tokenCertString == null)) {
+		if (sUserId == null && (tokenKeyString == null || tokenCertString == null))
 			logger.log(Level.SEVERE, "Cannot get the current user's ID");
-			return false;
-		}
 
 		final String tokenKeyFilename = "tokenkey_" + sUserId + ".pem";
 		final String defaultTokenKeyPath = Paths.get(tmpDir, tokenKeyFilename).toString();
