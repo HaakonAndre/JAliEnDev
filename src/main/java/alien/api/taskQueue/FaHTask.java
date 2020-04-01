@@ -40,8 +40,10 @@ public class FaHTask extends Request {
 		try (DBFunctions db = ConfigUtils.getDB("processes"); DBFunctions db2 = ConfigUtils.getDB("processes")) {
 			db.setReadOnly(true);
 
+			final String username = getEffectiveRequester().getName();
+
 			// all jobs that are in a final state are free to take
-			db.query("select F.fah_uid,F.queueId from FAH_WORKDIR F left outer join QUEUE Q using(queueId) WHERE statusId is null or (statusId<6 OR statusId>12);");
+			db.query("select F.fah_uid,F.queueId from FAH_WORKDIR F left outer join QUEUE Q using(queueId) WHERE username=? AND (statusId is null or statusId<6 OR statusId>12);", false, username);
 
 			while (db.moveNext()) {
 				final int fah_uid = db.geti(1);
@@ -55,11 +57,11 @@ public class FaHTask extends Request {
 					return;
 				}
 			}
-			
+
 			db2.setLastGeneratedKey(true);
 
 			// no slot was available, we have to insert a new one
-			if (db2.query("insert into FAH_WORKDIR (queueId) VALUES (?);", false, Long.valueOf(jobId)))
+			if (db2.query("insert into FAH_WORKDIR (username, queueId) VALUES (?, ?);", false, username, Long.valueOf(jobId)))
 				sequenceId = db2.getLastGeneratedKey().intValue();
 		}
 	}
