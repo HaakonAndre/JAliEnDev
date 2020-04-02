@@ -122,6 +122,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 			legacyToken = (String) inputFromJobAgent.readObject();
 
+			// use same tmpdir everywhere
+			System.setProperty("java.io.tmpdir", System.getenv("TMPDIR"));
+
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
