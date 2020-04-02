@@ -409,7 +409,7 @@ public class JobAgent implements Runnable {
 		final int proxy = getRemainingProxyTime();
 		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
 		if (proxy > 0 && proxy < timeleft)
-			timeleft = proxy;
+			timeleft = proxy - 900; //(-15min)
 
 		// safety time for saving, etc
 		timeleft -= 600;
@@ -419,9 +419,6 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
 			return false;
 		}
-
-		// set timeleft to time until certificate expires (-15min)
-		timeleft = getRemainingProxyTime() - 900;
 
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
