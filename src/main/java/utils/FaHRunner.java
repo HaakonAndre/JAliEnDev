@@ -43,8 +43,6 @@ public class FaHRunner {
 	 * @throws Exception
 	 */
 	public static void main(final String[] args) throws Exception {
-		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
-
 		ConfigUtils.setApplicationName("FaH");
 
 		if (!JAKeyStore.loadKeyStore()) {
@@ -93,6 +91,10 @@ public class FaHRunner {
 
 		try {
 			final ProcessBuilder pBuilder = new ProcessBuilder("./fah.sh");
+
+			pBuilder.redirectErrorStream(true);
+			pBuilder.redirectOutput(new File("fah.log"));
+
 			final Process p = pBuilder.start();
 			p.waitFor();
 		}
