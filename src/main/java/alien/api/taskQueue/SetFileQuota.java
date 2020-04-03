@@ -39,7 +39,7 @@ public class SetFileQuota extends Request {
 
 	@Override
 	public void run() {
-		if (!AliEnPrincipal.roleIsAdmin(getEffectiveRequester().getName()))
+		if (!getEffectiveRequester().canBecome("admin"))
 			throw new SecurityException("Only administrators can do it");
 
 		this.succeeded = QuotaUtilities.saveFileQuota(this.username, this.field, this.value);

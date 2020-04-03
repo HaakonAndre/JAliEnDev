@@ -36,7 +36,7 @@ public class SetJobsQuota extends Request {
 
 	@Override
 	public void run() {
-		if (!AliEnPrincipal.roleIsAdmin(getEffectiveRequester().getName()))
+		if (!getEffectiveRequester().canBecome("admin"))
 			throw new SecurityException("Only administrators can do it");
 
 		this.succeeded = QuotaUtilities.saveJobQuota(this.username, this.field, this.value);
