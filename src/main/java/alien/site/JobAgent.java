@@ -405,11 +405,11 @@ public class JobAgent implements Runnable {
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
-		// we check if the proxy timeleft is smaller than the ttl itself
-		final int proxy = getRemainingProxyTime();
-		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
-		if (proxy > 0 && proxy < timeleft)
-			timeleft = proxy - 900; //(-15min)
+		// we check if the cert timeleft is smaller than the ttl itself
+		final int certTime = getCertTime();
+		logger.log(Level.INFO, "Certificate timeleft is " + certTime);
+		if (certTime > 0 && certTime < timeleft)
+			timeleft = certTime - 900; //(-15min)
 
 		// safety time for saving, etc
 		timeleft -= 600;
@@ -432,9 +432,9 @@ public class JobAgent implements Runnable {
 	}
 
 	/**
-	 * @return the time in seconds that proxy is still valid for
+	 * @return the time in seconds that the certificate is still valid for
 	 */
-	private int getRemainingProxyTime() {
+	private int getCertTime() {
 		return (int) TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - System.currentTimeMillis());
 	}
 
