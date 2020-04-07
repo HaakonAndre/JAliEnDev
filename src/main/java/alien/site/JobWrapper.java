@@ -128,9 +128,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 			legacyToken = (String) inputFromJobAgent.readObject();
 
-			// use same tmpdir everywhere
-			System.setProperty("java.io.tmpdir", System.getenv("TMPDIR"));
-
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
@@ -157,6 +154,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
+		
+		// use same tmpdir everywhere
+		String tmpdir = System.getenv("TMPDIR");
+		if(tmpdir != null)
+			System.setProperty("java.io.tmpdir", tmpdir);
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
