@@ -32,6 +32,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
@@ -102,6 +103,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * Streams for data transfer
 	 */
 	private ObjectInputStream inputFromJobAgent;
+	
+	/**
+	 * ML monitor object
+	 */
+	static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
 
 	/**
 	 */
@@ -303,6 +309,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		//Check if we can put the payload in its own container
 		Containerizer cont = ContainerizerFactory.getContainerizer();
 		if (cont != null) {
+			monitor.sendParameter("containerType", cont.getContainerizerName());
 			cmd =  cont.containerize(String.join(" ", cmd));
 		}
 		

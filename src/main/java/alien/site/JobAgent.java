@@ -521,10 +521,12 @@ public class JobAgent implements Runnable {
 			// Check if there is container support at present on site. If yes, add to launchCmd
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
+				monitor.sendParameter("canRunContainers", 1);
+				monitor.sendParameter("containerType", cont.getContainerizerName());
 				cont.setWorkdir(jobWorkdir);
 				return cont.containerize(String.join(" ", launchCmd));
 			}
-
+			monitor.sendParameter("canRunContainers", 0);
 			return launchCmd;
 		}
 		catch (final IOException e) {
