@@ -121,10 +121,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		if (bR)
 			flags = flags | LFNUtils.FIND_REGEXP;
 
-		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
+		final String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid,
-				-1);
+		final String path = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0), false);
+
+		lfns = commander.c_api.find(path, alPaths.get(1), query, flags, xmlCollectionPath, queueid, -1);
 
 		if (lfns != null) {
 			if (offset >= lfns.size())
