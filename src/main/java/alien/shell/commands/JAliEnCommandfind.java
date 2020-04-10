@@ -9,6 +9,7 @@ import java.util.List;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -129,6 +130,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		if (lPath != null && lPath.isDirectory())
 			path += "/";
+		else {
+			commander.setReturnCode(ErrNo.ENOTDIR, alPaths.get(0));
+			return;
+		}
 
 		lfns = commander.c_api.find(path, alPaths.get(1), query, flags, xmlCollectionPath, queueid, -1);
 
