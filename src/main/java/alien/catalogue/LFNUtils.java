@@ -696,15 +696,15 @@ public class LFNUtils {
 		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
 		for (final IndexTableEntry ite : matchingTables) {
-			final List<LFN> findResults = ite.find(path, processedPattern, flags, queueid);
+			final List<LFN> findResults = ite.find(path, processedPattern, flags, queueid, queryLimit > 0 ? queryLimit - ret.size() : 0);
 
 			if (findResults == null)
 				return null;
 
 			ret.addAll(findResults);
 
-			if (queryLimit > 0 && ret.size() > queryLimit)
-				throw new IllegalArgumentException("Too many results in the `find` command. Restrict your search and try again.");
+			if (queryLimit > 0 && ret.size() >= queryLimit)
+				break;
 		}
 
 		if ((flags & FIND_SAVE_XML) != 0) {

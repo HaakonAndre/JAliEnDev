@@ -135,7 +135,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			return;
 		}
 
-		lfns = commander.c_api.find(path, alPaths.get(1), query, flags, xmlCollectionPath, queueid, -1);
+		lfns = commander.c_api.find(path, alPaths.get(1), query, flags, xmlCollectionPath, queueid, xmlCollectionPath != null && limit != Long.MAX_VALUE ? limit : -1);
 
 		if (lfns != null) {
 			if (offset >= lfns.size())
