@@ -255,7 +255,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	@Override
 	public int hashCode() {
-		return (this.indexTableEntry != null ? this.indexTableEntry.hashCode() * 7 : 0) + (int) dir * 13 + lfn.hashCode() * 17;
+		return getCanonicalName().hashCode();
 	}
 
 	private void init(final DBFunctions db) {
@@ -464,14 +464,20 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (this == o)
 			return 0;
 
-		if (indexTableEntry != null) {
+		if (indexTableEntry != null && o.indexTableEntry != null) {
 			final int diff = indexTableEntry.compareTo(o.indexTableEntry);
 
 			if (diff != 0)
 				return diff;
+
+			// in the same indextable the relative path can be compared directly
+			return lfn.compareTo(o.lfn);
 		}
 
-		return lfn.compareTo(o.lfn);
+		System.err.println("Comparing " + getCanonicalName() + " to " + o.getCanonicalName());
+
+		// in the general case we compare full paths
+		return getCanonicalName().compareTo(o.getCanonicalName());
 	}
 
 	@Override
