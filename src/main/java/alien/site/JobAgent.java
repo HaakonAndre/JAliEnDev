@@ -409,7 +409,7 @@ public class JobAgent implements Runnable {
 		final int certTime = getCertTime();
 		logger.log(Level.INFO, "Certificate timeleft is " + certTime);
 		if (certTime > 0 && certTime < timeleft)
-			timeleft = certTime - 900; //(-15min)
+			timeleft = certTime - 900; // (-15min)
 
 		// safety time for saving, etc
 		timeleft -= 600;
@@ -521,12 +521,12 @@ public class JobAgent implements Runnable {
 			// Check if there is container support at present on site. If yes, add to launchCmd
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
-				monitor.sendParameter("canRunContainers", 1);
+				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
 				monitor.sendParameter("containerType", cont.getContainerizerName());
 				cont.setWorkdir(jobWorkdir);
 				return cont.containerize(String.join(" ", launchCmd));
 			}
-			monitor.sendParameter("canRunContainers", 0);
+			monitor.sendParameter("canRunContainers", Integer.valueOf(0));
 			return launchCmd;
 		}
 		catch (final IOException e) {
