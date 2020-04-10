@@ -279,19 +279,6 @@ public final class FileSystemUtils {
 	 * @return absolute path, or <code>null</code> if none could be found
 	 */
 	public static String getAbsolutePath(final String user, final String currentDirectory, final String cataloguePath) {
-		return getAbsolutePath(user, currentDirectory, cataloguePath, true);
-	}
-
-	/**
-	 * Get the absolute path, currentDir can be <code>null</code> then currentDir is set to user's home
-	 *
-	 * @param user
-	 * @param currentDirectory
-	 * @param cataloguePath
-	 * @param stripTrailingSlash whether or not to remove the trailing "/" from path. By default it should be stripped, but for the `find` command where it breaks the processing by expanding the search too much.
-	 * @return absolute path, or <code>null</code> if none could be found
-	 */
-	public static String getAbsolutePath(final String user, final String currentDirectory, final String cataloguePath, final boolean stripTrailingSlash) {
 		String currentDir = currentDirectory != null ? currentDirectory : UsersHelper.getHomeDir(user);
 
 		if (!currentDir.endsWith("/"))
@@ -310,7 +297,7 @@ public final class FileSystemUtils {
 			path = path.replace("//", "/");
 		}
 
-		if (stripTrailingSlash && path.endsWith("/") && path.length() != 1)
+		if (path.endsWith("/") && path.length() != 1)
 			path = path.substring(0, path.lastIndexOf('/'));
 
 		while (path.contains("/./"))
