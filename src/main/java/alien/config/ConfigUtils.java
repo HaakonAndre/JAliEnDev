@@ -158,8 +158,13 @@ public class ConfigUtils {
 			logger.log(Level.FINE, "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
 	}
 
+	private static void setSystemDefaults() {
+		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
+	}
+
 	static {
 		init(getDefaultConfigManager());
+		setSystemDefaults();
 	}
 
 	private static String userDefinedAppName = null;

@@ -9,6 +9,7 @@ import java.util.List;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -121,10 +122,20 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		if (bR)
 			flags = flags | LFNUtils.FIND_REGEXP;
 
-		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
+		final String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid,
-				-1);
+		String path = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0));
+
+		final LFN lPath = commander.c_api.getLFN(path);
+
+		if (lPath != null && lPath.isDirectory())
+			path += "/";
+		else {
+			commander.setReturnCode(ErrNo.ENOTDIR, alPaths.get(0));
+			return;
+		}
+
+		lfns = commander.c_api.find(path, alPaths.get(1), query, flags, xmlCollectionPath, queueid, xmlCollectionPath != null && limit != Long.MAX_VALUE ? limit : -1);
 
 		if (lfns != null) {
 			if (offset >= lfns.size())

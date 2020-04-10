@@ -405,11 +405,11 @@ public class JobAgent implements Runnable {
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
-		// we check if the proxy timeleft is smaller than the ttl itself
-		final int proxy = getRemainingProxyTime();
-		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
-		if (proxy > 0 && proxy < timeleft)
-			timeleft = proxy;
+		// we check if the cert timeleft is smaller than the ttl itself
+		final int certTime = getCertTime();
+		logger.log(Level.INFO, "Certificate timeleft is " + certTime);
+		if (certTime > 0 && certTime < timeleft)
+			timeleft = certTime - 900; // (-15min)
 
 		// safety time for saving, etc
 		timeleft -= 600;
@@ -419,9 +419,6 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
 			return false;
 		}
-
-		// set timeleft to time until certificate expires (-15min)
-		timeleft = getRemainingProxyTime() - 900;
 
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
@@ -435,9 +432,9 @@ public class JobAgent implements Runnable {
 	}
 
 	/**
-	 * @return the time in seconds that proxy is still valid for
+	 * @return the time in seconds that the certificate is still valid for
 	 */
-	private int getRemainingProxyTime() {
+	private int getCertTime() {
 		return (int) TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - System.currentTimeMillis());
 	}
 
@@ -524,10 +521,12 @@ public class JobAgent implements Runnable {
 			// Check if there is container support at present on site. If yes, add to launchCmd
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
+				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
+				monitor.sendParameter("containerType", cont.getContainerizerName());
 				cont.setWorkdir(jobWorkdir);
 				return cont.containerize(String.join(" ", launchCmd));
 			}
-
+			monitor.sendParameter("canRunContainers", Integer.valueOf(0));
 			return launchCmd;
 		}
 		catch (final IOException e) {
@@ -542,6 +541,7 @@ public class JobAgent implements Runnable {
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
+		pBuilder.environment().put("TMPDIR", jobWorkdir + "/tmp");
 		pBuilder.redirectError(Redirect.INHERIT);
 		pBuilder.directory(tempDir);
 
@@ -789,6 +789,8 @@ public class JobAgent implements Runnable {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
 				return false;
 			}
+			File tempTmpDir = new File(jobWorkdir + "/tmp");
+			tempTmpDir.mkdir();
 		}
 
 		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);

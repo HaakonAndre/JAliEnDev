@@ -328,7 +328,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @return the LFNs from this table that match
 	 */
 	public List<LFN> find(final String sPath, final String sPattern, final int flags) {
-		return find(sPath, sPattern, flags, Long.valueOf(0));
+		return find(sPath, sPattern, flags, Long.valueOf(0), 0);
 	}
 
 	/**
@@ -340,9 +340,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 *            a combination of {@link LFNUtils}.FIND_* fields
 	 * @param queueid
 	 *            a job id to filter for its files
+	 * @param limit if strictly positive, restrict the number of returned entries to at most this number
 	 * @return the LFNs from this table that match
 	 */
-	public List<LFN> find(final String sPath, final String sPattern, final int flags, final Long queueid) {
+	public List<LFN> find(final String sPath, final String sPattern, final int flags, final Long queueid, final long limit) {
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -389,6 +390,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 			if ((flags & LFNUtils.FIND_NO_SORT) != 0)
 				q += " ORDER BY lfn";
+
+			if (limit > 0)
+				q += " LIMIT " + limit;
 
 			db.setReadOnly(true);
 

@@ -136,6 +136,9 @@ public class FindfromString extends Request implements Cacheable {
 		// small find results, typically the result of OCDB queries, can be cached for longer time
 		// larger ones, results of job finds that have to be iterated over, can only be cached for a short period
 
+		if (xmlCollectionName != null)
+			return 0;
+
 		return (this.lfns != null && this.lfns.size() < 500) ? 300000 : 60000;
 	}
 }

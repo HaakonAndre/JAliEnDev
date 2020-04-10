@@ -420,7 +420,6 @@ public class DispatchSSLServer extends Thread {
 			else
 				server = (SSLServerSocket) ssf.createServerSocket(port);
 
-			server.setWantClientAuth(true);
 			server.setNeedClientAuth(true);
 
 			server.setUseClientMode(false);

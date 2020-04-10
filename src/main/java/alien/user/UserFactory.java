@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 import javax.servlet.ServletRequest;
 
 import alien.config.ConfigUtils;
+import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
 /**
@@ -288,7 +289,10 @@ public final class UserFactory {
 			return sUserId;
 		}
 
-		sUserId = SystemCommand.bash("id -u").stdout;
+		final CommandOutput idOutput = SystemCommand.bash("id -u");
+
+		if (idOutput != null)
+			sUserId = idOutput.stdout;
 
 		if (isUserKeyOk(sUserId)) {
 			System.setProperty("userid", sUserId);

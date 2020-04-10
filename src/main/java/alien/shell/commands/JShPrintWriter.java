@@ -146,13 +146,11 @@ public class JShPrintWriter extends UIPrintWriter {
 
 	@Override
 	public void setMetaInfo(final String key, final String value) {
-		if (key != null && !key.isEmpty() && value != null) {
-			// If there was an error message, append string with a new line
-			if (key.equals("error") && metadataResult.containsKey(key) && !metadataResult.get(key).equals(""))
-				metadataResult.put(key, metadataResult.get(key) + "\n" + value);
-			else
+		if (key != null && !key.isEmpty())
+			if (value != null)
 				metadataResult.put(key, value);
-		}
+			else
+				metadataResult.remove(value);
 	}
 
 	@Override
