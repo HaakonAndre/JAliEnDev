@@ -16,6 +16,9 @@ import org.apache.catalina.authenticator.SSLAuthenticator;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.coyote.http11.Http11NioProtocol;
+import org.apache.coyote.ProtocolHandler;
+
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
@@ -50,6 +53,11 @@ public class TomcatServer {
 	final Tomcat tomcat;
 
 	private final int websocketPort;
+
+	/**
+	 * The expiration date of the certificate, used as server cert in tomcat
+	 */
+	private static long expirationTime;
 
 	/**
 	 * Start the Tomcat server on a given port
@@ -138,6 +146,7 @@ public class TomcatServer {
 		else
 			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
 
+		expirationTime = JAKeyStore.getExpirationTime(ConfigUtils.isCentralService() ? JAKeyStore.getKeyStore() : JAKeyStore.tokenCert);
 		JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
 
 		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
@@ -161,6 +170,17 @@ public class TomcatServer {
 		connector.setAttribute("maxThreads", "200");
 		connector.setAttribute("connectionTimeout", "20000");
 		return connector;
+	}
+
+	/**
+	 * Reload the key and trust stores
+	 */
+	public static void reload(final Connector connector) {
+		final ProtocolHandler protocolHandler = connector.getProtocolHandler();
+		if (protocolHandler instanceof Http11NioProtocol) {
+			final Http11NioProtocol http11NioProtocol = (Http11NioProtocol)protocolHandler;
+			http11NioProtocol.reloadSslHostConfigs();
+		}
 	}
 
 	/**
@@ -246,5 +266,28 @@ public class TomcatServer {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Check tomcat's server certificate every 12 hour. Load fresh token if current one is going to expire
+	 */
+	public static void startConnectorReloader() {
+		new Thread() {
+			@Override
+			public void run() {
+				try {
+					while (true) {
+						sleep(12 * 60 * 60 * 1000);
+						if (JAKeyStore.expireSoon(expirationTime)) {
+							reload(tomcatServer.tomcat.getConnector());
+							expirationTime = JAKeyStore.getExpirationTime(ConfigUtils.isCentralService() ? JAKeyStore.getKeyStore() : JAKeyStore.tokenCert);
+						}
+					}
+				}
+				catch (final InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}.start();
 	}
 }
