@@ -141,13 +141,15 @@ public class TomcatServer {
 		final String keystoreName = dirName + "keystore.jks_" + UserFactory.getUserID();
 		final String truststoreName = dirName + "truststore.jks_" + UserFactory.getUserID();
 
-		if (ConfigUtils.isCentralService())
-			JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
-		else
-			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
-
-		expirationTime = JAKeyStore.getExpirationTime(ConfigUtils.isCentralService() ? JAKeyStore.getKeyStore() : JAKeyStore.tokenCert);
-		JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
+		if (ConfigUtils.isCentralService()) {
+                        JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
+                        expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.getKeyStore());
+		}
+                else {
+                        JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
+			expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.tokenCert);
+                }
+                JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
 
 		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 
@@ -275,12 +277,27 @@ public class TomcatServer {
 		new Thread() {
 			@Override
 			public void run() {
+				final String keystorePass = new String(JAKeyStore.pass);
+
+		                final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
+				final String keystoreName = dirName + "keystore.jks_" + UserFactory.getUserID();
+		                final String truststoreName = dirName + "truststore.jks_" + UserFactory.getUserID();
+
 				try {
 					while (true) {
 						sleep(12 * 60 * 60 * 1000);
 						if (JAKeyStore.expireSoon(expirationTime)) {
+							if (ConfigUtils.isCentralService()) {
+								JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
+								expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.getKeyStore());
+							}
+							else {
+								JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
+								expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.tokenCert);
+							}
+							JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
+
 							reload(tomcatServer.tomcat.getConnector());
-							expirationTime = JAKeyStore.getExpirationTime(ConfigUtils.isCentralService() ? JAKeyStore.getKeyStore() : JAKeyStore.tokenCert);
 						}
 					}
 				}
