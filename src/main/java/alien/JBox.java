@@ -57,6 +57,7 @@ public class JBox {
 		TomcatServer.startTomcatServer();
 
 		JAKeyStore.startTokenUpdater();
+		TomcatServer.startConnectorReloader();
 
 		// Create /tmp/jclient_token file and export env variables
 		if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables()))

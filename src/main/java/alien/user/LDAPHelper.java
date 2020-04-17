@@ -156,11 +156,16 @@ public class LDAPHelper {
 					while (enumeration.hasMore()) {
 						final SearchResult result = enumeration.next();
 
+						if (sKey.equals("dn")) {
+							tsResult.add(result.getName());
+							continue;
+						}
+						
 						final Attributes attribs = result.getAttributes();
 
 						if (attribs == null)
 							continue;
-
+						
 						final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
 
 						if (ba == null)
@@ -175,7 +180,6 @@ public class LDAPHelper {
 							final String s = values.nextElement().toString();
 							tsResult.add(s);
 						}
-
 					}
 				}
 				finally {
