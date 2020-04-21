@@ -16,9 +16,8 @@ import org.apache.catalina.authenticator.SSLAuthenticator;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.coyote.ProtocolHandler;
-
+import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
@@ -177,10 +176,10 @@ public class TomcatServer {
 	/**
 	 * Reload the key and trust stores
 	 */
-	public static void reload(final Connector connector) {
+	private static void reload(final Connector connector) {
 		final ProtocolHandler protocolHandler = connector.getProtocolHandler();
 		if (protocolHandler instanceof Http11NioProtocol) {
-			final Http11NioProtocol http11NioProtocol = (Http11NioProtocol)protocolHandler;
+			final Http11NioProtocol http11NioProtocol = (Http11NioProtocol) protocolHandler;
 			http11NioProtocol.reloadSslHostConfigs();
 		}
 	}
