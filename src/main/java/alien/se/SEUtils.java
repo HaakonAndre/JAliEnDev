@@ -97,7 +97,7 @@ public final class SEUtils {
 		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
 	}
 
-	private static final void updateSECache() {
+	private static void updateSECache() {
 		if (!ConfigUtils.isCentralService())
 			return;
 
@@ -249,6 +249,24 @@ public final class SEUtils {
 
 		final List<SE> ret = new ArrayList<>();
 		for (final String seName : ses) {
+			try {
+				// if the request was a number, get the storage by ID number
+				final int seNo = Integer.parseInt(seName);
+
+				final SE se = getSE(seNo);
+
+				if (se != null) {
+					if (!ret.contains(se))
+						ret.add(se);
+
+					// matched the number exactly, return as is
+					continue;
+				}
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				// ignore, go forward
+			}
+
 			final SE maybeSE = SEUtils.getSE(seName);
 
 			if (maybeSE != null) {
