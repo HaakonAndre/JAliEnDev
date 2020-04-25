@@ -698,21 +698,36 @@ public class ConfigUtils {
 			System.out.println("    " + key + " : " + p.getProperty(key));
 	}
 
+	private static String closeSiteCacheValue = null;
+	private static long closeSiteLastSet = 0;
+
 	/**
 	 * Get the closest site mapped to current location of the client.
 	 *
 	 * @return the close site (or where the job runs), as pointed by the env variable <code>ALIEN_SITE</code>, or, if not defined, the configuration key <code>alice_close_site</code>
 	 */
 	public static String getCloseSite() {
+		if (System.currentTimeMillis() - closeSiteLastSet > 1000 * 60 * 15)
+			closeSiteCacheValue = null;
+
+		if (closeSiteCacheValue != null)
+			return closeSiteCacheValue;
+
 		final String envSite = ConfigUtils.getConfig().gets("ALIEN_SITE");
 
-		if (envSite.length() > 0)
-			return envSite;
+		if (envSite.length() > 0) {
+			closeSiteCacheValue = envSite;
+			closeSiteLastSet = System.currentTimeMillis();
+			return closeSiteCacheValue;
+		}
 
 		final String configKey = ConfigUtils.getConfig().gets("alice_close_site");
 
-		if (configKey.length() > 0)
-			return configKey;
+		if (configKey.length() > 0) {
+			closeSiteCacheValue = configKey;
+			closeSiteLastSet = System.currentTimeMillis();
+			return closeSiteCacheValue;
+		}
 
 		try {
 			final String closeSiteByML = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
@@ -727,9 +742,12 @@ public class ConfigUtils {
 					idx = closeSiteByML.indexOf(' ');
 
 				if (idx > 0)
-					return closeSiteByML.substring(0, idx);
+					closeSiteCacheValue = closeSiteByML.substring(0, idx);
+				else
+					closeSiteCacheValue = closeSiteByML;
 
-				return closeSiteByML;
+				closeSiteLastSet = System.currentTimeMillis();
+				return closeSiteCacheValue;
 			}
 		}
 		catch (final IOException ioe) {
