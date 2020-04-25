@@ -159,7 +159,8 @@ public class ConfigUtils {
 	}
 
 	private static void setSystemDefaults() {
-		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
+		if (!isCentralService())
+			System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
 	}
 
 	static {
