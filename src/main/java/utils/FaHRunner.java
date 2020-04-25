@@ -114,7 +114,7 @@ public class FaHRunner {
 			return;
 		}
 
-		if (outputSnapshot.exists() && outputSnapshot.length() > 100000) {
+		if (outputSnapshot.exists()) {
 			logger.log(Level.INFO, "Uploading intermediate work to " + outputSnapshot);
 
 			if (lSnapshot != null) {
