@@ -116,6 +116,8 @@ public class ComputingElement extends Thread {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		ConfigUtils.setApplicationName("CE");
+		
 		final ComputingElement CE = new ComputingElement();
 		CE.run();
 	}

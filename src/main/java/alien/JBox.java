@@ -30,6 +30,8 @@ public class JBox {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		ConfigUtils.setApplicationName("JBox");
+
 		logLoud(Level.FINE, "Starting JBox");
 
 		// Load certificates

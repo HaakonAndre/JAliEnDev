@@ -483,6 +483,8 @@ public class JobAgent implements Runnable {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
+		ConfigUtils.setApplicationName("JobAgent");
+		
 		final JobAgent jao = new JobAgent();
 		jao.run();
 	}

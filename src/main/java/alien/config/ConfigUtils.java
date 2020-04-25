@@ -198,6 +198,8 @@ public class ConfigUtils {
 
 		userDefinedAppName = appName;
 
+		System.setProperty("http.agent", appName);
+
 		return oldValue;
 	}
 
