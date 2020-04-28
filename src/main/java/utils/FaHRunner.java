@@ -44,6 +44,7 @@ public class FaHRunner {
 	 */
 	public static void main(final String[] args) throws Exception {
 		ConfigUtils.setApplicationName("FaH");
+		ConfigUtils.switchToForkProcessLaunching();
 
 		if (!JAKeyStore.loadKeyStore()) {
 			logger.log(Level.SEVERE, "No identity found, exiting");

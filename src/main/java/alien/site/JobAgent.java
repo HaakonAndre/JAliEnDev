@@ -484,6 +484,7 @@ public class JobAgent implements Runnable {
 	 */
 	public static void main(final String[] args) throws IOException {
 		ConfigUtils.setApplicationName("JobAgent");
+		ConfigUtils.switchToForkProcessLaunching();
 		
 		final JobAgent jao = new JobAgent();
 		jao.run();

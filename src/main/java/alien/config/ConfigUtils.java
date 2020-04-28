@@ -158,14 +158,15 @@ public class ConfigUtils {
 			logger.log(Level.FINE, "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
 	}
 
-	private static void setSystemDefaults() {
-		if (!isCentralService())
-			System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
+	/**
+	 * Explicitly configure JVM to use the FORK method of launching processes. WARNING: this is impacting a *lot* the performance. Only set it for leaf services that don't process much anyway.
+	 */
+	public static void switchToForkProcessLaunching() {
+		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
 	}
 
 	static {
 		init(getDefaultConfigManager());
-		setSystemDefaults();
 	}
 
 	private static String userDefinedAppName = null;
