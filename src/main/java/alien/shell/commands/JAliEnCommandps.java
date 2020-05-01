@@ -68,7 +68,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		else if (getTrace > 0) {
 			final String tracelog = commander.q_api.getTraceLog(getTrace);
 
-			if (tracelog != null) {
+			if (tracelog != null && !tracelog.isBlank()) {
 				if (commander.bColour)
 					commander.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
 				else
@@ -77,6 +77,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				commander.printOut("id", String.valueOf(getJDL));
 				commander.printOut("trace", tracelog);
 			}
+			else
+				commander.setReturnCode(ErrNo.ENODATA, "No trace information for " + getTrace);
 		}
 		else {
 			if (users.size() == 0)
