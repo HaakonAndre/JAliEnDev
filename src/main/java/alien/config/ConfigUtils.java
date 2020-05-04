@@ -703,25 +703,23 @@ public class ConfigUtils {
 	}
 
 	private static String closeSiteCacheValue = null;
-	private static long closeSiteLastSet = 0;
+	private static long closeSiteExpirationTimestamp = 0;
 
 	/**
 	 * Get the closest site mapped to current location of the client.
 	 *
 	 * @return the close site (or where the job runs), as pointed by the env variable <code>ALIEN_SITE</code>, or, if not defined, the configuration key <code>alice_close_site</code>
 	 */
-	public static String getCloseSite() {
-		if (System.currentTimeMillis() - closeSiteLastSet > 1000 * 60 * 15)
-			closeSiteCacheValue = null;
-
-		if (closeSiteCacheValue != null)
+	public static synchronized String getCloseSite() {
+		if (closeSiteExpirationTimestamp > System.currentTimeMillis() && closeSiteCacheValue != null)
 			return closeSiteCacheValue;
 
 		final String envSite = ConfigUtils.getConfig().gets("ALIEN_SITE");
 
 		if (envSite.length() > 0) {
 			closeSiteCacheValue = envSite;
-			closeSiteLastSet = System.currentTimeMillis();
+			// environment variable is set by jobs, in this case there can be no reconfiguration during the execution (assumed to be 2 days)
+			closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 60 * 48;
 			return closeSiteCacheValue;
 		}
 
@@ -729,9 +727,34 @@ public class ConfigUtils {
 
 		if (configKey.length() > 0) {
 			closeSiteCacheValue = configKey;
-			closeSiteLastSet = System.currentTimeMillis();
+			// environment variable is set by jobs, in this case there can be no reconfiguration during the execution (assumed to be 2 days)
+			closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 60 * 48;
 			return closeSiteCacheValue;
 		}
+
+		if (closeSiteCacheValue != null) {
+			closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60;
+			// extend the validity for one minute but refresh the value in background
+
+			new Thread("AsyncSiteMapping") {
+				@Override
+				public void run() {
+					closeSiteCacheValue = getSiteMappingFromAlimonitor();
+					closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 30;
+				}
+			}.start();
+
+			return closeSiteCacheValue;
+		}
+
+		closeSiteCacheValue = getSiteMappingFromAlimonitor();
+		closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 30;
+
+		return closeSiteCacheValue;
+	}
+
+	private static String getSiteMappingFromAlimonitor() {
+		String ret = "CERN";
 
 		try {
 			final String closeSiteByML = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
@@ -746,19 +769,16 @@ public class ConfigUtils {
 					idx = closeSiteByML.indexOf(' ');
 
 				if (idx > 0)
-					closeSiteCacheValue = closeSiteByML.substring(0, idx);
+					ret = closeSiteByML.substring(0, idx);
 				else
-					closeSiteCacheValue = closeSiteByML;
-
-				closeSiteLastSet = System.currentTimeMillis();
-				return closeSiteCacheValue;
+					ret = closeSiteByML;
 			}
 		}
 		catch (final IOException ioe) {
 			logger.log(Level.WARNING, "Cannot contact alimonitor to map you to the closest site", ioe);
 		}
 
-		return "CERN";
+		return ret;
 	}
 
 	/**
