@@ -47,6 +47,7 @@ import lazyj.ExtProperties;
 import lazyj.Format;
 import lazyj.Utils;
 import lazyj.cache.ExpirationCache;
+import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 import lia.Monitor.monitor.AppConfig;
 
@@ -384,13 +385,40 @@ public class ConfigUtils {
 		return jAliEnVersion;
 	}
 
+	private static final String getBashOutput(final String command) {
+		final CommandOutput co = SystemCommand.bash(command);
+
+		if (co != null) {
+			final String stdout = co.stdout;
+
+			if (stdout != null)
+				return stdout.trim();
+
+			return null;
+		}
+
+		return null;
+	}
+
 	/**
 	 * @return machine platform
 	 */
 	public static final String getPlatform() {
-		final String unameS = SystemCommand.bash("uname -s").stdout.trim();
-		final String unameM = SystemCommand.bash("uname -m").stdout.trim();
-		return unameS + "-" + unameM;
+		final String unameS = getBashOutput("uname -s");
+
+		final String unameM = getBashOutput("uname -m");
+
+		if (unameS == null && unameM == null)
+			return null;
+
+		if (unameS != null) {
+			if (unameM != null)
+				return unameS + "-" + unameM;
+
+			return unameS + "-Unknown";
+		}
+
+		return "Unknown-" + unameM;
 	}
 
 	/**
