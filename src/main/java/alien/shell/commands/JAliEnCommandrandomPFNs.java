@@ -37,8 +37,6 @@ public class JAliEnCommandrandomPFNs extends JAliEnBaseCommand {
 		commander.printOutln();
 		commander.printOutln("Extract <fileCount> random PFNs from the SE identified by its unique ID or its name");
 		commander.printOutln(helpUsage("randomPFNs", "<seNumber or name> <fileCount>"));
-//		LFN lfn = commander.c_api.getLFN("/alice/cern.ch/user/a/anegru/submit.sh");//commander.getCurrentDirName() + "crawl_output/" + outputDirectoryName + "/" + "ALICE_FZK_SE/output.json");
-		commander.printOutln("HERE " + IOUtils.getContents("/alice/cern.ch/user/a/anegru/submit.sh"));
 		commander.printOutln();
 	}
 
