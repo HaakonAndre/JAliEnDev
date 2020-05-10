@@ -46,6 +46,7 @@ import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 import lazyj.Utils;
+import lazyj.cache.ExpirationCache;
 
 /**
  * @author vyurchen
@@ -213,6 +214,8 @@ public class WebsocketEndpoint extends Endpoint {
 		monitor.incrementCounter("new_sessions");
 	}
 
+	private static ExpirationCache<String, String> closeSiteCache = new ExpirationCache<>(2000);
+
 	/**
 	 * Get the client's closest site
 	 *
@@ -225,14 +228,24 @@ public class WebsocketEndpoint extends Endpoint {
 			return null;
 		}
 
+		final String cacheValue = closeSiteCache.get(ip);
+
+		if (cacheValue != null)
+			return cacheValue;
+
 		try {
 			final String site = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp?ip=" + ip, null);
 
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "Client IP address " + ip + " mapped to " + site);
 
-			if (site != null)
-				return site.trim();
+			if (site != null) {
+				final String newValue = site.trim();
+
+				closeSiteCache.put(ip, newValue, 1000L * 60 * 15);
+
+				return newValue;
+			}
 		}
 		catch (final IOException ioe) {
 			logger.log(Level.SEVERE, "Cannot get the closest site information for " + ip, ioe);

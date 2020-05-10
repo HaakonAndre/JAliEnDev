@@ -125,7 +125,10 @@ public class SiteMap {
 		siteMap.put("workdir", workdir);
 
 		// Setting values of the map
-		siteMap.put("Platform", ConfigUtils.getPlatform());
+		final String platform = ConfigUtils.getPlatform();
+
+		if (platform != null)
+			siteMap.put("Platform", platform);
 
 		// Only include packages if "CVMFS=1" is not present
 		if (!siteMap.containsKey("CVMFS") || !siteMap.get("CVMFS").equals(Integer.valueOf(1))) {

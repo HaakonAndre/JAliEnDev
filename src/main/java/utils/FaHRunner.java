@@ -44,6 +44,7 @@ public class FaHRunner {
 	 */
 	public static void main(final String[] args) throws Exception {
 		ConfigUtils.setApplicationName("FaH");
+		ConfigUtils.switchToForkProcessLaunching();
 
 		if (!JAKeyStore.loadKeyStore()) {
 			logger.log(Level.SEVERE, "No identity found, exiting");
@@ -114,7 +115,7 @@ public class FaHRunner {
 			return;
 		}
 
-		if (outputSnapshot.exists() && outputSnapshot.length() > 100000) {
+		if (outputSnapshot.exists()) {
 			logger.log(Level.INFO, "Uploading intermediate work to " + outputSnapshot);
 
 			if (lSnapshot != null) {

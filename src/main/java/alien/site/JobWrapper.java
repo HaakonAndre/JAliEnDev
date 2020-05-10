@@ -680,6 +680,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
+		ConfigUtils.setApplicationName("JobWrapper");
+		ConfigUtils.switchToForkProcessLaunching();
+		
 		final JobWrapper jw = new JobWrapper();
 		jw.run();
 	}

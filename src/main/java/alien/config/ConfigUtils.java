@@ -47,6 +47,7 @@ import lazyj.ExtProperties;
 import lazyj.Format;
 import lazyj.Utils;
 import lazyj.cache.ExpirationCache;
+import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 import lia.Monitor.monitor.AppConfig;
 
@@ -158,13 +159,15 @@ public class ConfigUtils {
 			logger.log(Level.FINE, "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
 	}
 
-	private static void setSystemDefaults() {
+	/**
+	 * Explicitly configure JVM to use the FORK method of launching processes. WARNING: this is impacting a *lot* the performance. Only set it for leaf services that don't process much anyway.
+	 */
+	public static void switchToForkProcessLaunching() {
 		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
 	}
 
 	static {
 		init(getDefaultConfigManager());
-		setSystemDefaults();
 	}
 
 	private static String userDefinedAppName = null;
@@ -197,6 +200,8 @@ public class ConfigUtils {
 		final String oldValue = userDefinedAppName;
 
 		userDefinedAppName = appName;
+
+		System.setProperty("http.agent", appName);
 
 		return oldValue;
 	}
@@ -380,13 +385,40 @@ public class ConfigUtils {
 		return jAliEnVersion;
 	}
 
+	private static final String getBashOutput(final String command) {
+		final CommandOutput co = SystemCommand.bash(command);
+
+		if (co != null) {
+			final String stdout = co.stdout;
+
+			if (stdout != null)
+				return stdout.trim();
+
+			return null;
+		}
+
+		return null;
+	}
+
 	/**
 	 * @return machine platform
 	 */
 	public static final String getPlatform() {
-		final String unameS = SystemCommand.bash("uname -s").stdout.trim();
-		final String unameM = SystemCommand.bash("uname -m").stdout.trim();
-		return unameS + "-" + unameM;
+		final String unameS = getBashOutput("uname -s");
+
+		final String unameM = getBashOutput("uname -m");
+
+		if (unameS == null && unameM == null)
+			return null;
+
+		if (unameS != null) {
+			if (unameM != null)
+				return unameS + "-" + unameM;
+
+			return unameS + "-Unknown";
+		}
+
+		return "Unknown-" + unameM;
 	}
 
 	/**
@@ -698,21 +730,59 @@ public class ConfigUtils {
 			System.out.println("    " + key + " : " + p.getProperty(key));
 	}
 
+	private static String closeSiteCacheValue = null;
+	private static long closeSiteExpirationTimestamp = 0;
+
 	/**
 	 * Get the closest site mapped to current location of the client.
 	 *
 	 * @return the close site (or where the job runs), as pointed by the env variable <code>ALIEN_SITE</code>, or, if not defined, the configuration key <code>alice_close_site</code>
 	 */
-	public static String getCloseSite() {
+	public static synchronized String getCloseSite() {
+		if (closeSiteExpirationTimestamp > System.currentTimeMillis() && closeSiteCacheValue != null)
+			return closeSiteCacheValue;
+
 		final String envSite = ConfigUtils.getConfig().gets("ALIEN_SITE");
 
-		if (envSite.length() > 0)
-			return envSite;
+		if (envSite.length() > 0) {
+			closeSiteCacheValue = envSite;
+			// environment variable is set by jobs, in this case there can be no reconfiguration during the execution (assumed to be 2 days)
+			closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 60 * 48;
+			return closeSiteCacheValue;
+		}
 
 		final String configKey = ConfigUtils.getConfig().gets("alice_close_site");
 
-		if (configKey.length() > 0)
-			return configKey;
+		if (configKey.length() > 0) {
+			closeSiteCacheValue = configKey;
+			// environment variable is set by jobs, in this case there can be no reconfiguration during the execution (assumed to be 2 days)
+			closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 60 * 48;
+			return closeSiteCacheValue;
+		}
+
+		if (closeSiteCacheValue != null) {
+			closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60;
+			// extend the validity for one minute but refresh the value in background
+
+			new Thread("AsyncSiteMapping") {
+				@Override
+				public void run() {
+					closeSiteCacheValue = getSiteMappingFromAlimonitor();
+					closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 30;
+				}
+			}.start();
+
+			return closeSiteCacheValue;
+		}
+
+		closeSiteCacheValue = getSiteMappingFromAlimonitor();
+		closeSiteExpirationTimestamp = System.currentTimeMillis() + 1000L * 60 * 30;
+
+		return closeSiteCacheValue;
+	}
+
+	private static String getSiteMappingFromAlimonitor() {
+		String ret = "CERN";
 
 		try {
 			final String closeSiteByML = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
@@ -727,16 +797,16 @@ public class ConfigUtils {
 					idx = closeSiteByML.indexOf(' ');
 
 				if (idx > 0)
-					return closeSiteByML.substring(0, idx);
-
-				return closeSiteByML;
+					ret = closeSiteByML.substring(0, idx);
+				else
+					ret = closeSiteByML;
 			}
 		}
 		catch (final IOException ioe) {
 			logger.log(Level.WARNING, "Cannot contact alimonitor to map you to the closest site", ioe);
 		}
 
-		return "CERN";
+		return ret;
 	}
 
 	/**

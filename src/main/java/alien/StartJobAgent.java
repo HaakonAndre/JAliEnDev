@@ -1,5 +1,6 @@
 package alien;
 
+import alien.config.ConfigUtils;
 import alien.site.JobAgent;
 
 /**
@@ -13,6 +14,7 @@ public class StartJobAgent {
 	 * @throws Exception
 	 */
 	public static void main(final String[] args) throws Exception {
+		ConfigUtils.switchToForkProcessLaunching();
 
 		// try {
 		// JAKeyStore.loadPilotKeyStorage();
