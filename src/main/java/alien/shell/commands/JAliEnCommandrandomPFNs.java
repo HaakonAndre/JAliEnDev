@@ -2,8 +2,12 @@ package alien.shell.commands;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
 
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.io.IOUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.ErrNo;
@@ -33,6 +37,8 @@ public class JAliEnCommandrandomPFNs extends JAliEnBaseCommand {
 		commander.printOutln();
 		commander.printOutln("Extract <fileCount> random PFNs from the SE identified by its unique ID or its name");
 		commander.printOutln(helpUsage("randomPFNs", "<seNumber or name> <fileCount>"));
+//		LFN lfn = commander.c_api.getLFN("/alice/cern.ch/user/a/anegru/submit.sh");//commander.getCurrentDirName() + "crawl_output/" + outputDirectoryName + "/" + "ALICE_FZK_SE/output.json");
+		commander.printOutln("HERE " + IOUtils.getContents("/alice/cern.ch/user/a/anegru/submit.sh"));
 		commander.printOutln();
 	}
 
