@@ -40,6 +40,7 @@ import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.Timing;
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
@@ -216,6 +217,7 @@ public class DispatchSSLServer extends Thread {
 
 							try {
 								r = Dispatcher.execute(r, forwardRequest);
+								event.exitCode = 0;
 							}
 							catch (final Exception e) {
 								logger.log(Level.WARNING, "Returning an exception to the client", e);
@@ -223,9 +225,10 @@ public class DispatchSSLServer extends Thread {
 								r.setException(new ServerException(e.getMessage(), e));
 
 								event.exception = e;
+								event.exitCode = ErrNo.EBADE.getErrorCode();
+								event.errorMessage = "Exception executing request";
 							}
 
-							// TODO fill event.arguments with some data from the request
 							event.identity = r.getEffectiveRequester();
 
 							requestProcessingDuration = event.timing.getMillis();
@@ -337,8 +340,10 @@ public class DispatchSSLServer extends Thread {
 						final X509Certificate x509cert = (java.security.cert.X509Certificate) cert;
 						event.arguments.add(x509cert.getSubjectX500Principal().getName() + " (expires " + x509cert.getNotAfter() + ")");
 					}
-				else
+				else {
+					event.exitCode = ErrNo.ENOMSG.getErrorCode();
 					event.errorMessage = "Local identity doesn't have a certificate chain associated";
+				}
 			}
 			catch (@SuppressWarnings("unused") IOException | KeyStoreException e) {
 				// ignore exception in logging the startup message
