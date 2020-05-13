@@ -14,10 +14,7 @@ import lazyj.Utils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,10 +65,19 @@ public class JobOutputMerger {
         }
 
         try {
-            List<String> sesToQuery = new ArrayList<>();
-            List<SE> ses = commander.c_api.getSEs(sesToQuery);
+
+            HashMap<String, Boolean> sesToExclude = JobSubmitter.getExcludedSEs();
+            List<SE> ses = commander.c_api.getSEs(null);
+
             if(ses != null) {
-                File merged = mergeFiles(ses);
+                List<SE> filteredSEs = new ArrayList<>();
+                for(SE se : ses) {
+                    if(sesToExclude.get(se.seName) == null) {
+                        filteredSEs.add(se);
+                    }
+                }
+
+                File merged = mergeFiles(filteredSEs);
                 uploadMergedFile(merged);
             } else {
                 logger.log(Level.INFO, "SES is NULL");

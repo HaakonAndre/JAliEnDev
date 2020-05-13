@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class JobSubmitter {
 
-    static final Integer ARGUMENT_COUNT = 4;
+    static final Integer ARGUMENT_COUNT = 5;
 
     /**
      * logger
@@ -43,9 +43,14 @@ public class JobSubmitter {
     static String initialFileCount;
 
     /**
-     * The total expected job duration in seconds
+     * The maximum time allowed for a job to stay in the running state
      */
-    static String jobDurationSeconds;
+    static String maxRunningTimeSeconds;
+
+    /**
+     * The maximum time allowed for a job to stay in the waiting queue
+     */
+    static String maxWaitingTimeSeconds;
 
     /**
      * The job output file type
@@ -68,13 +73,22 @@ public class JobSubmitter {
 
             parseArguments(args);
 
-            List<String> sesToQuery = new ArrayList<>();
-            List<SE> ses = commander.c_api.getSEs(sesToQuery);
-
             HashMap<Long, Boolean> mapJobIdToIsFinished = new HashMap<>();
+            HashMap<String, Boolean> sesToExclude = getExcludedSEs();
+            List<SE> ses = commander.c_api.getSEs(null);
+
+            if(ses == null) {
+                logger.log(Level.INFO, "Cannot retreive SEs.");
+                return;
+            }
 
             //submitting jobs to all available SEs
             for (SE se : ses) {
+                if(sesToExclude.get(se.seName) != null) {
+                    logger.log(Level.INFO, "SE " + se.seName + " is excluded from search. Skipping.");
+                    continue;
+                }
+
                 logger.log(Level.INFO, "Crawling " + se.seName);
                 JDL jdl = getJDLCrawlSE(se);
                 try {
@@ -129,8 +143,20 @@ public class JobSubmitter {
 
         outputDirectoryName = args[0];
         initialFileCount = args[1];
-        jobDurationSeconds = args[2];
-        outputFileType = args[3];
+        maxRunningTimeSeconds = args[2];
+        maxWaitingTimeSeconds = args[3];
+        outputFileType = args[4];
+    }
+
+    /**
+     * Returns a hashmap whose keys are SE names that must be excluded from search
+     * It returns a hashmap to provide efficient lookup for SE names.
+     * @return
+     */
+    public static HashMap<String, Boolean> getExcludedSEs() {
+        HashMap<String, Boolean> excludedSEs = new HashMap<>();
+        excludedSEs.put("NO_SE", true);
+        return excludedSEs;
     }
 
     /**
@@ -143,8 +169,9 @@ public class JobSubmitter {
         jdl.append("JobTag", "FileCrawler");
         jdl.set("OutputDir", commander.getCurrentDirName() + "/crawl_output/" + outputDirectoryName + "/" + se.seName.replace("::", "_"));
         jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "/" + "alien-users.jar");
-        jdl.set("Arguments", outputDirectoryName + " " +se.seNumber + " " + initialFileCount + " " + jobDurationSeconds + " " + outputFileType);
+        jdl.set("Arguments", outputDirectoryName + " " +se.seNumber + " " + initialFileCount + " " + maxRunningTimeSeconds + " " + outputFileType);
         jdl.set("Executable", commander.getCurrentDirName() + "/" + "crawl.sh");
+        jdl.set("MaxWaitingTime", maxWaitingTimeSeconds + "s");
         jdl.set("TTL", 3600);
         jdl.set("Price", 1);
         jdl.append("JDLVariables", "FilesToCheck");
