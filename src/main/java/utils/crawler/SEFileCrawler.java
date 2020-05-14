@@ -96,7 +96,7 @@ public class SEFileCrawler {
     public static void main(String[] args) {
         logger.log(Level.INFO, "Start crawling");
 
-        ConfigUtils.setApplicationName("ChecksumFileCrawler");
+        ConfigUtils.setApplicationName("SEFileCrawler");
 
         if (!JAKeyStore.loadKeyStore()) {
             logger.log(Level.SEVERE, "No identity found, exiting");

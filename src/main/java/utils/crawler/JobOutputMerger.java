@@ -45,7 +45,7 @@ public class JobOutputMerger {
      */
     public static void main(String[] args) {
 
-        ConfigUtils.setApplicationName("RandomPFNOutputMerger");
+        ConfigUtils.setApplicationName("JobOutputMerger");
 
         if (!JAKeyStore.loadKeyStore()) {
             logger.log(Level.SEVERE, "No identity found, exiting");

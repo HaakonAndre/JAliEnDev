@@ -68,7 +68,7 @@ public class JobSubmitter {
      */
     public static void main(String[] args) {
         try {
-            ConfigUtils.setApplicationName("SubmitJobs");
+            ConfigUtils.setApplicationName("JobSubmitter");
 
             if (!JAKeyStore.loadKeyStore()) {
                 logger.log(Level.SEVERE, "No identity found, exiting");
