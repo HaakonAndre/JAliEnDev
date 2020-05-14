@@ -173,7 +173,7 @@ public class JobOutputMerger {
                         logger.log(Level.INFO, "File contents is null. Something went wrong with file read for SE " + se.seName);
                     }
 
-                    if(!downloadedFile.delete()) {
+                    if(downloadedFile != null && downloadedFile.exists() && !downloadedFile.delete()) {
                         logger.log(Level.INFO, "Downloaded file cannot be deleted for SE " + se.seName);
                     }
                 }
