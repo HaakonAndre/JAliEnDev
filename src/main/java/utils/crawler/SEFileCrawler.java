@@ -84,17 +84,12 @@ public class SEFileCrawler {
 
 
     /**
-     * Command line arguments:
-     *
-     * integer seNumber
-     * integer fileCount
-     * integer maxRunningTimeSeconds
-     * String outputType
-     *
-     * Extract random PFNs from storage element with number seNumber. The job can last for at most
-     * maxRunningTimeSeconds seconds. Initially extract fileCount elements. If the duration is not exceeded
+     * Extract random PFNs from storage element with number seNumber. The job can stay in the running queue for
+     * at most maxRunningTimeSeconds seconds. Initially extract fileCount elements. If the duration is not exceeded
      * and there is enough time for more files to be extracted, the fileCount is doubled at each iteration.
-     * If outputType = "json", the output of the job is written in JSON format, otherwise CSV format is used
+     * If outputType = "json", the output of the job is written in JSON format, otherwise CSV format is used.
+     * The crawling process can be either single threaded or multi threaded, the number of threads being specified
+     * in threadCount.
      *
      * @param args
      */
@@ -145,7 +140,8 @@ public class SEFileCrawler {
 
         try {
             writeJobOutputToFile(outputFileType);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage());
         }
     }
@@ -210,11 +206,13 @@ public class SEFileCrawler {
             }
 
             executorService.shutdown();
+
             try {
                 if (!executorService.awaitTermination(maxRunningTimeSeconds, TimeUnit.SECONDS)) {
                     executorService.shutdownNow();
                 }
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 executorService.shutdownNow();
             }
         }

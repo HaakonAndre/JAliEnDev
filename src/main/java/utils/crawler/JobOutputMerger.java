@@ -1,16 +1,12 @@
 package utils.crawler;
 
-import alien.catalogue.GUID;
 import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
-import alien.io.protocols.TempFileManager;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.user.JAKeyStore;
 import lazyj.Utils;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -79,8 +75,9 @@ public class JobOutputMerger {
 
                 File merged = mergeFiles(filteredSEs);
                 uploadMergedFile(merged);
-            } else {
-                logger.log(Level.INFO, "SES is NULL");
+            }
+            else {
+                logger.log(Level.INFO, "Cannot get all SEs");
             }
         }
         catch (Exception exception) {
