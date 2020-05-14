@@ -19,7 +19,10 @@ import java.util.logging.Logger;
  * @since Apr 25, 2020
  */
 public class JobOutputMerger {
-     /**
+
+    static final Integer ARGUMENT_COUNT = 2;
+
+    /**
      * logger
      */
     static final Logger logger = ConfigUtils.getLogger(JobOutputMerger.class.getCanonicalName());
@@ -92,7 +95,7 @@ public class JobOutputMerger {
      */
     static void parseArguments(String []args) throws Exception {
 
-        if(args.length != 2) {
+        if(args.length != ARGUMENT_COUNT) {
             throw new Exception("Number of arguments supplied is incorrect");
         }
 
