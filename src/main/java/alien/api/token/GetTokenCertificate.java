@@ -171,7 +171,15 @@ public class GetTokenCertificate extends Request {
 
 				final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
 
-				builder = builder.setCn("Users").setCn(requester).setOu(requested);
+				final String cn;
+
+				// if an admin requests a user token for a role that it doesn't directly have, switch to that identity
+				if (isAdmin && !getEffectiveRequester().hasRole(requested))
+					cn = requested;
+				else
+					cn = requester;
+
+				builder = builder.setCn("Users").setCn(cn).setOu(requested);
 
 				// User token can be used as both client identity and local (JBox) server identity
 				// CERN also adds "E-mail Protection" and "Microsoft Encrypted File System" (the later one doesn't have a corresponding value yet)
