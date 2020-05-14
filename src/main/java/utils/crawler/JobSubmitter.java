@@ -8,7 +8,6 @@ import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
-import utils.RandomPFNCrawler;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -20,12 +19,12 @@ import java.util.logging.Logger;
  */
 public class JobSubmitter {
 
-    static final Integer ARGUMENT_COUNT = 5;
+    static final Integer ARGUMENT_COUNT = 6;
 
     /**
      * logger
      */
-    static final Logger logger = ConfigUtils.getLogger(RandomPFNCrawler.class.getCanonicalName());
+    static final Logger logger = ConfigUtils.getLogger(JobSubmitter.class.getCanonicalName());
 
     /**
      * JAlienCOMMander object
@@ -56,6 +55,11 @@ public class JobSubmitter {
      * The job output file type
      */
     static String outputFileType;
+
+    /**
+     * The number of threads used when crawling files
+     */
+    static String crawlingThreadCount;
 
     /**
      * Entry point where the Submit job starts
@@ -146,6 +150,7 @@ public class JobSubmitter {
         maxRunningTimeSeconds = args[2];
         maxWaitingTimeSeconds = args[3];
         outputFileType = args[4];
+        crawlingThreadCount = args[5];
     }
 
     /**
@@ -169,7 +174,7 @@ public class JobSubmitter {
         jdl.append("JobTag", "FileCrawler");
         jdl.set("OutputDir", commander.getCurrentDirName() + "/crawl_output/" + outputDirectoryName + "/" + se.seName.replace("::", "_"));
         jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "/" + "alien-users.jar");
-        jdl.set("Arguments", outputDirectoryName + " " +se.seNumber + " " + initialFileCount + " " + maxRunningTimeSeconds + " " + outputFileType);
+        jdl.set("Arguments", outputDirectoryName + " " + se.seNumber + " " + initialFileCount + " " + maxRunningTimeSeconds + " " + outputFileType + " " + crawlingThreadCount);
         jdl.set("Executable", commander.getCurrentDirName() + "/" + "crawl.sh");
         jdl.set("MaxWaitingTime", maxWaitingTimeSeconds + "s");
         jdl.set("TTL", 3600);

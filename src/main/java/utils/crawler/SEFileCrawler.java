@@ -13,9 +13,12 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.user.JAKeyStore;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.simple.JSONObject;
+import utils.CachedThreadPool;
 
 /**
  * @author anegru
@@ -27,7 +30,7 @@ public class SEFileCrawler {
     private static final String OUTPUT_FORMAT_CSV = "csv";
     private static final String OUTPUT_FILE_NAME = "output";
     private static final Integer OUTPUT_LFN_REPLICA_COUNT = 3;
-    private static final Integer ARGUMENT_COUNT = 5;
+    private static final Integer ARGUMENT_COUNT = 6;
 
     /**
      * logger
@@ -55,6 +58,11 @@ public class SEFileCrawler {
     static SE se;
 
     /**
+     * Output directory name
+     */
+    static String outputDirectoryName;
+
+    /**
      * The initial number of files to crawl from the SE
      */
     static int fileCount = 0;
@@ -70,9 +78,10 @@ public class SEFileCrawler {
     static String outputFileType;
 
     /**
-     * Output directory name
+     * The number of threads used during the crawling process
      */
-    static String outputDirectoryName;
+    static int threadCount;
+
 
     /**
      * Command line arguments:
@@ -115,7 +124,7 @@ public class SEFileCrawler {
 
             long chunkStartTimestamp = System.currentTimeMillis();
 
-            crawlPFNs(fileCount);
+            startCrawler(fileCount, threadCount);
 
             long chunkEndTimestamp = System.currentTimeMillis();
             long chunkDuration = chunkEndTimestamp - chunkStartTimestamp;
@@ -159,6 +168,7 @@ public class SEFileCrawler {
         fileCount = Integer.parseInt(args[2]);
         maxRunningTimeSeconds = Integer.parseInt(args[3]);
         outputFileType = args[4];
+        threadCount = Integer.parseInt(args[5]);
 
         if (maxRunningTimeSeconds < 0) {
             logger.log(Level.INFO, "Job duration must be a positive integer");
@@ -176,19 +186,52 @@ public class SEFileCrawler {
      * Crawl fileCount random files from the SE
      * @param fileCount
      */
-    public static void crawlPFNs(int fileCount) {
+    public static void startCrawler(int fileCount, int threadCount) {
 
         Collection<PFN> randomPFNs = commander.c_api.getRandomPFNsFromSE(se.seNumber, fileCount);
 
-        for (PFN currentPFN : randomPFNs) {
+        //single threaded
+        if(threadCount == 1) {
+            for (PFN currentPFN : randomPFNs) {
+                crawlPFN(currentPFN);
+            }
+        }
+        else {
+            ExecutorService executorService = new CachedThreadPool(threadCount, maxRunningTimeSeconds, TimeUnit.SECONDS);
+
+            for (PFN currentPFN : randomPFNs) {
+                //new DownloadPFN(currentPFN, xrootd, commander, se, logger));s
+                executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        crawlPFN(currentPFN);
+                    }
+                });
+            }
+
+            executorService.shutdown();
             try {
-                PFN pfnToRead = getPFNWithAccessToken(currentPFN);
-                boolean checksumValid = validateChecksum(pfnToRead);
-                updateJobOutput(pfnToRead, checksumValid);
+                if (!executorService.awaitTermination(maxRunningTimeSeconds, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
             }
-            catch (Exception exception) {
-                logger.log(Level.INFO,  exception.getMessage());
-            }
+        }
+    }
+
+    /**
+     * Download the PFN and validate its checksum
+     * @param currentPFN
+     */
+    public static void crawlPFN(PFN currentPFN) {
+        try {
+            PFN pfnToRead = getPFNWithAccessToken(currentPFN);
+            boolean checksumValid = validateChecksum(pfnToRead);
+            updateJobOutput(pfnToRead, checksumValid);
+        }
+        catch (Exception exception) {
+            logger.log(Level.INFO,  exception.getMessage());
         }
     }
 
