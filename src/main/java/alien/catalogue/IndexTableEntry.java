@@ -356,28 +356,47 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			String sSearch = sPath;
 
 			if (sSearch.startsWith("/"))
-				if (lfn.length() <= sSearch.length())
+				if (lfn.length() <= sSearch.length()) {
 					sSearch = sSearch.substring(lfn.length());
+
+					if (sSearch.startsWith("/"))
+						sSearch = sSearch.substring(1);
+				}
 				else
 					sSearch = "";
 
 			String q = "SELECT * FROM L" + tableName + "L WHERE ";
 
 			if ((flags & LFNUtils.FIND_REGEXP) == 0) {
+				String sSearchAlternate = null;
+
 				if (sSearch.length() == 0 && sPattern.startsWith("/")) {
 					sSearch += sPattern.substring(1);
 				}
 				else {
-					if (!sPattern.startsWith("%"))
+					if (!sPattern.startsWith("%")) {
+						if (sSearch.endsWith("/") && sPattern.startsWith("/"))
+							sSearchAlternate = sSearch + sPattern.substring(1);
+
 						sSearch += "%";
+					}
 
 					sSearch += sPattern;
 				}
 
-				if (!sPattern.endsWith("%"))
+				if (!sPattern.endsWith("%")) {
 					sSearch += "%";
 
-				q += "lfn LIKE '" + Format.escSQL(sSearch) + "' AND replicated=0";
+					if (sSearchAlternate != null)
+						sSearchAlternate += "%";
+				}
+
+				if (sSearchAlternate == null)
+					q += "lfn LIKE '" + Format.escSQL(sSearch) + "'";
+				else
+					q += "(lfn LIKE '" + Format.escSQL(sSearch) + "' OR lfn LIKE '" + Format.escSQL(sSearchAlternate) + "')";
+
+				q += " AND replicated=0";
 			}
 			else
 				q += "lfn RLIKE '" + Format.escSQL(sSearch + sPattern) + "' AND replicated=0";
