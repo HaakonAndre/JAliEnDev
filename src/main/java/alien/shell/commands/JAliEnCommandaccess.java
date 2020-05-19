@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
+import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -78,13 +79,27 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 
 		// obtaining LFN information for read or a new LFN for write
-		final LFN lfn = commander.c_api.getLFN(lfnName, evenIfNotExists);
+		final LFN lfn = lfnName.startsWith("/") ? commander.c_api.getLFN(lfnName, evenIfNotExists) : null;
+
+		final CatalogEntity referenceEntity;
 
 		if (lfn == null) {
-			logger.log(Level.INFO, "Not able to retrieve LFN from catalogue");
-			commander.setReturnCode(ErrNo.ENOENT, lfnName);
-			return;
+			GUID referenceGUID = null;
+
+			if (accessRequest == AccessType.READ && GUIDUtils.isValidGUID(lfnName)) {
+				referenceGUID = commander.c_api.getGUID(lfnName);
+			}
+
+			if (referenceGUID == null) {
+				logger.log(Level.INFO, "Not able to retrieve LFN from catalogue");
+				commander.setReturnCode(ErrNo.ENOENT, lfnName);
+				return;
+			}
+
+			referenceEntity = referenceGUID;
 		}
+		else
+			referenceEntity = lfn;
 
 		if (accessRequest == AccessType.WRITE) {
 			final GUID guid;
@@ -137,7 +152,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 		else if (accessRequest == AccessType.READ) {
 			logger.log(Level.INFO, "Access called for a read operation");
-			pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
+			pfns = commander.c_api.getPFNsToRead(referenceEntity, ses, exses);
 		}
 		else {
 			logger.log(Level.SEVERE, "Unknown access type");
@@ -184,8 +199,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					commander.printOut("se", pfn.getSE().getName());
 					commander.printOut("tags", pfn.getSE().qos.toString());
 					commander.printOut("nSEs", String.valueOf(pfns.size()));
-					commander.printOut("md5", lfn.md5);
-					commander.printOut("size", String.valueOf(lfn.getSize()));
+					commander.printOut("md5", referenceEntity.getMD5());
+					commander.printOut("size", String.valueOf(referenceEntity.getSize()));
 					commander.printOutln();
 				}
 			}
