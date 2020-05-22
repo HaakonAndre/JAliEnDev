@@ -161,14 +161,12 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				commander.printOut("lfn", lfn.getCanonicalName());
 
 				if (bW || bF) {
-					commander.printOut("perm", FileSystemUtils.getFormatedTypeAndPerm(lfn));
+					commander.printOut("perm", lfn.perm);
 					commander.printOut("owner", lfn.owner);
 					commander.printOut("gowner", lfn.gowner);
 					commander.printOut("size", String.valueOf(lfn.size));
-					commander.printOut("ctime", String.valueOf(lfn.ctime));
-
-					if (lfn.guid != null)
-						commander.printOut("guid", lfn.guid.toString());
+					commander.printOut("ctime", lfn.ctime != null ? String.valueOf(lfn.ctime.getTime()) : "");
+					commander.printOut("guid", lfn.guid != null ? lfn.guid.toString() : "");
 				}
 
 				if (bF) {
@@ -177,15 +175,9 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 					commander.printOut("broken", lfn.broken ? "1" : "0");
 					commander.printOut("dir", String.valueOf(lfn.dir));
 					commander.printOut("entryId", String.valueOf(lfn.entryId));
-
-					if (lfn.expiretime != null)
-						commander.printOut("expiretime", String.valueOf(lfn.expiretime.getTime()));
-
+					commander.printOut("expiretime", lfn.expiretime != null ? String.valueOf(lfn.expiretime.getTime()) : "");
 					commander.printOut("guidtime", lfn.guidtime);
-
-					if (lfn.md5 != null)
-						commander.printOut("md5", lfn.md5);
-
+					commander.printOut("md5", lfn.md5 != null ? lfn.md5 : "");
 					commander.printOut("jobid", String.valueOf(lfn.jobid));
 					commander.printOut("replicated", lfn.replicated ? "1" : "0");
 					commander.printOut("type", String.valueOf(lfn.type));
