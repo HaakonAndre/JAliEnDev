@@ -173,7 +173,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 				if (bF) {
 					// the remaining fields that are needed in particular for preparing XML collections
-					commander.printOut("aclId", String.valueOf(lfn.aclId));
+					commander.printOut("aclId", lfn.aclId >= 0 ? String.valueOf(lfn.aclId) : "");
 					commander.printOut("broken", lfn.broken ? "1" : "0");
 					commander.printOut("dir", String.valueOf(lfn.dir));
 					commander.printOut("entryId", String.valueOf(lfn.entryId));
