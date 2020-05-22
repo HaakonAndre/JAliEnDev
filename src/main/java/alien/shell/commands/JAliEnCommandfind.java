@@ -161,9 +161,9 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				commander.printOut("lfn", lfn.getCanonicalName());
 
 				if (bW || bF) {
-					commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(lfn));
-					commander.printOut("user", lfn.owner);
-					commander.printOut("group", lfn.gowner);
+					commander.printOut("perm", FileSystemUtils.getFormatedTypeAndPerm(lfn));
+					commander.printOut("owner", lfn.owner);
+					commander.printOut("gowner", lfn.gowner);
 					commander.printOut("size", String.valueOf(lfn.size));
 					commander.printOut("ctime", String.valueOf(lfn.ctime));
 
