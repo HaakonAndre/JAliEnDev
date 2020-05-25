@@ -133,8 +133,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		final LFN lPath = commander.c_api.getLFN(path);
 
-		if (lPath != null && lPath.isDirectory())
-			path += "/";
+		if (lPath != null && lPath.isDirectory()) {
+			if (path.lastIndexOf("/") + 1 != path.length())
+				path += "/";
+		}
 		else {
 			commander.setReturnCode(ErrNo.ENOTDIR, alPaths.get(0));
 			return;
