@@ -311,7 +311,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		//Check if we can put the payload in its own container
 		Containerizer cont = ContainerizerFactory.getContainerizer();
 		if (cont != null) {
-			monitor.sendParameter("containerType", cont.getContainerizerName());
+			monitor.sendParameter("containerLayer", 2);
 			cmd =  cont.containerize(String.join(" ", cmd));
 		}
 		
