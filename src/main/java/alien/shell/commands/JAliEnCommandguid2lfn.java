@@ -42,6 +42,7 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 
 				commander.printOut("guid", String.valueOf(guid.guid));
 				commander.printOut("lfn", String.valueOf(lfn.getCanonicalName()));
+				commander.outNextResult();
 			}
 			else
 				commander.setReturnCode(ErrNo.ENOENT, "No LFNs are associated to this GUID [" + guid.guid + "].");
