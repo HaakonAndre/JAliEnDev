@@ -96,10 +96,10 @@ public class PFNforReadOrDel extends Request {
 
 						setArchiveAnchor = true;
 
-						final int hashIndex = pfn.pfn.lastIndexOf('#');
+						final int index = pfn.pfn.lastIndexOf("?ZIP=");
 
-						if (hashIndex > 0)
-							archiveMemberFileName = pfn.pfn.substring(hashIndex + 1);
+						if (index > 0)
+							archiveMemberFileName = pfn.pfn.substring(index + 5);
 
 						if (!AuthorizationChecker.canRead(archiveguid, getEffectiveRequester())) {
 							logger.log(Level.WARNING, "Access refused because: Not allowed to read sub-archive");
@@ -152,8 +152,10 @@ public class PFNforReadOrDel extends Request {
 
 					if (entity instanceof LFN)
 						archiveAnchor = (LFN) entity;
-					else
+					else if (archiveMemberFileName != null)
 						archiveAnchor = LFNUtils.getLFN("/archive/member/" + archiveMemberFileName, true);
+					else
+						archiveAnchor = null;
 
 					for (final PFN pfn : pfns)
 						if (pfn.ticket.envelope == null)
