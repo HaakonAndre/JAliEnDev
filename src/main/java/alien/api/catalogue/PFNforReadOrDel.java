@@ -12,6 +12,7 @@ import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
@@ -81,6 +82,8 @@ public class PFNforReadOrDel extends Request {
 
 		boolean setArchiveAnchor = false;
 
+		String archiveMemberFileName = null;
+
 		pfns = new LinkedList<>();
 
 		if (guid.getPFNs() != null && !guid.getPFNs().isEmpty()) {
@@ -92,6 +95,11 @@ public class PFNforReadOrDel extends Request {
 						final GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo, false);
 
 						setArchiveAnchor = true;
+
+						final int hashIndex = pfn.pfn.lastIndexOf('#');
+
+						if (hashIndex > 0)
+							archiveMemberFileName = pfn.pfn.substring(hashIndex + 1);
 
 						if (!AuthorizationChecker.canRead(archiveguid, getEffectiveRequester())) {
 							logger.log(Level.WARNING, "Access refused because: Not allowed to read sub-archive");
@@ -139,12 +147,20 @@ public class PFNforReadOrDel extends Request {
 			if (pfns.size() > 0) {
 				pfns = SEUtils.sortBySiteSpecifySEs(pfns, site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
 
-				if (setArchiveAnchor)
+				if (setArchiveAnchor) {
+					final LFN archiveAnchor;
+
+					if (entity instanceof LFN)
+						archiveAnchor = (LFN) entity;
+					else
+						archiveAnchor = LFNUtils.getLFN("/archive/member/" + archiveMemberFileName, true);
+
 					for (final PFN pfn : pfns)
 						if (pfn.ticket.envelope == null)
 							logger.log(Level.WARNING, "Can't set archive anchor on " + pfn.pfn + " since the envelope is null");
-						else if (entity instanceof LFN)
-							pfn.ticket.envelope.setArchiveAnchor((LFN) entity);
+						else
+							pfn.ticket.envelope.setArchiveAnchor(archiveAnchor);
+				}
 			}
 			else
 				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");
