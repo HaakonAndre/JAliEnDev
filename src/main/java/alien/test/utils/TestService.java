@@ -5,6 +5,8 @@ import alien.api.JBoxServer;
 import alien.test.chapters.TestJShOverJBox;
 import alien.user.JAKeyStore;
 
+import alien.config.ConfigUtils;
+
 /**
  * @author ron
  * @since Oct 25, 2011
@@ -74,7 +76,14 @@ public class TestService extends Thread {
 
 		try {
 			JAKeyStore.loadKeyStore();
+      if (!JAKeyStore.bootstrapFirstToken()) {
+          return;
+      }
 			JBoxServer.startJBoxServer();
+
+      // Create /tmp/jclient_token file and export env variables
+      if (!ConfigUtils.writeJClientFile(ConfigUtils.exportJBoxVariables()))
+          System.out.println("Failed to export JBox variables");
 		}
 
 		catch (Exception e) {

@@ -39,6 +39,7 @@ public final class CreateCertificates {
 		commands.add(new TestCommand(
 				new String[] { TestBrain.cOpenssl, "req", "-new", "-batch", "-key", TestConfig.ca_key, "-x509", "-days", "365", "-out", TestConfig.ca_cert, "-subj", TestConfig.certSubjectCA }));
 		commands.add(new TestCommand(new String[] { TestBrain.cChmod, "440", TestConfig.ca_cert }));
+		commands.add(new TestCommand(new String[] { TestBrain.cOpenssl, "rehash", TestConfig.tvo_certs }));
 
 		Functions.execShell(commands, verbose);
 		commands.clear();
@@ -80,6 +81,9 @@ public final class CreateCertificates {
 
 		commands.add(
 				new TestCommand(new String[] { TestBrain.cOpenssl, "x509", "-inform", "PEM", "-in", TestConfig.host_cert, "-outform", "DER", "-out", TestConfig.tvo_trusts + "/" + hash + ".der" }));
+
+    commands.add(new TestCommand(new String[] { TestBrain.cOpenssl, "pkcs12", "-password" , "pass:", "-export", "-in", TestConfig.ca_cert, "-name", "alien", "-inkey", TestConfig.ca_key, "-out", TestConfig.tvo_trusts + "/" + "alien.p12"}));
+
 
 		createAuthenAndSEKey();
 
