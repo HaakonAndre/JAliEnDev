@@ -598,6 +598,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			while (lfnToInsert.endsWith("/"))
 				lfnToInsert = lfnToInsert.substring(0, lfnToInsert.length() - 1);
 
+		if (ctime == null)
+			ctime = new Date();
+
 		final String q = "INSERT INTO L" + indexTableEntry.tableName + "L (owner, ctime, replicated, aclId, lfn, expiretime, size, "
 				+ "dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES (" + e(owner) + "," + e(format(ctime)) + "," + (replicated ? "1" : "0") + "," + (aclId > 0 ? "" + aclId : "null")
 				+ "," + e(lfnToInsert) + "," + e(format(expiretime)) + "," + size + "," + dir + "," + e(gowner) + "," + (type > 0 && "cdf-".indexOf(type) != -1 ? e("" + type) : "f") + "," + e(perm)
