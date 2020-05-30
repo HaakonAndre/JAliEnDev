@@ -630,6 +630,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (!exists)
 			return false;
 
+		ctime = new Date();
+
 		final String q = "UPDATE L" + indexTableEntry.tableName + "L SET size=" + size + ",owner=" + e(owner) + ",gowner=" + e(gowner) + ",ctime=" + e(format(ctime)) + ",md5=" + e(md5) + ",perm="
 				+ e(perm) + " WHERE entryId=" + entryId;
 
