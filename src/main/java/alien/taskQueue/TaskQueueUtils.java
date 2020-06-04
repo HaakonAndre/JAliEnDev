@@ -948,7 +948,7 @@ public class TaskQueueUtils {
 
 			int lim = 20000;
 
-			if (limit > 0 && limit < 20000)
+			if (limit > 0 && limit < 50000)
 				lim = limit;
 
 			String where = "";
@@ -2840,10 +2840,10 @@ public class TaskQueueUtils {
 
 		if (idx2 > idx1 && idx2 < ceName.length() - 2 && !ceName.contains("%")) {
 			// it seems to be a fully qualified CE name, get it from cache
-			final Integer cachedValue = siteIdCache.get(ceName);
+			int singleCDid = getSiteId(ceName);
 
-			if (cachedValue != null)
-				return Arrays.asList(cachedValue);
+			if (singleCDid > 0)
+				return Arrays.asList(Integer.valueOf(singleCDid));
 
 			return null;
 		}
