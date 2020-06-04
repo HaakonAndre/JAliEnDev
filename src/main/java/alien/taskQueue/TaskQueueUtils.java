@@ -1012,6 +1012,8 @@ public class TaskQueueUtils {
 
 				if (siteIDs.size() > 0)
 					where += " ( siteId in (" + Format.toCommaList(siteIDs) + ") ) and ";
+				else
+					return ret;
 			}
 
 			if (nodes != null && nodes.size() > 0 && !nodes.contains("%")) {
