@@ -76,7 +76,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			if (options.has("v"))
 				validity = ((Integer) options.valueOf("v")).intValue();
 
-			if (validity > tokentype.getMaxValidity()) {
+			if (validity > tokentype.getMaxValidity() && !commander.getUser().canBecome("admin")) {
 				commander.printErrln("Reducing the validity from " + validity + " to " + tokentype.getMaxValidity() + " as this is the max allowed value for this type of certificate");
 				validity = tokentype.getMaxValidity();
 			}
