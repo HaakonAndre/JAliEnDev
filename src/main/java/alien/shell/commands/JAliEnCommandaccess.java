@@ -289,27 +289,44 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 										referenceCount++;
 									}
 							}
-							else if (spec.contains(":"))
-								try {
-									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-									if (c > 0) {
-										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-										referenceCount = referenceCount + c;
-									}
-									else
-										throw new JAliEnCommandException("The number replicas has to be stricly positive");
+							else {
+								int separatorIdx = spec.indexOf(':');
 
+								if (separatorIdx < 0)
+									separatorIdx = spec.indexOf('=');
+
+								if (separatorIdx > 0)
+									try {
+										final int c = Integer.parseInt(spec.substring(separatorIdx + 1).trim());
+										if (c > 0) {
+											qos.put(spec.substring(0, separatorIdx).trim(), Integer.valueOf(c));
+											referenceCount = referenceCount + c;
+										}
+										else {
+											commander.setReturnCode(ErrNo.EINVAL, "The number replicas has to be stricly positive in `" + spec + "`");
+											setArgumentsOk(false);
+											return;
+										}
+									}
+									catch (@SuppressWarnings("unused") final Exception e) {
+										commander.setReturnCode(ErrNo.EINVAL, "Invalid format of the QoS string `" + spec + "`");
+										setArgumentsOk(false);
+										return;
+									}
+								else if (!spec.isBlank()) {
+									commander.setReturnCode(ErrNo.EINVAL, "Don't know what to do with `" + spec + "`");
+									setArgumentsOk(false);
+									return;
 								}
-								catch (final Exception e) {
-									throw new JAliEnCommandException("Exception parsing the QoS string", e);
-								}
-							else if (!spec.equals(""))
-								throw new JAliEnCommandException();
+							}
 						}
 					}
 				}
-				else
+				else {
 					commander.setReturnCode(ErrNo.EINVAL, "Invalid access type requested: " + access);
+					setArgumentsOk(false);
+					return;
+				}
 			}
 
 			if (options.has("s"))
