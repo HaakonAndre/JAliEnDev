@@ -42,13 +42,7 @@ public class Tester {
 			return;
 		}
 
-		try {
-			CreateLDAP.stopLDAP();
-			CreateDB.stopDatabase();
-		}
-		catch (@SuppressWarnings("unused") final Exception e) {
-			// ignore
-		}
+		cleanUp();
 		System.out.println("Don't worry about any errors up to here!");
 		System.out.println();
 		System.out.println("Starting ...");
@@ -118,4 +112,18 @@ public class Tester {
 
 	}
 
+	private static void cleanUp() {
+		try{
+			CreateDB.stopDatabase();
+		}
+		catch(@SuppressWarnings("unused") final Exception e){
+			//ignore
+		}
+		try{
+			CreateLDAP.stopLDAP();
+		}
+		catch(@SuppressWarnings("unused") final Exception e){
+			//ignore
+		}
+	}
 }

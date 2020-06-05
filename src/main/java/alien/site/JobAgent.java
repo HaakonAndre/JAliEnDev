@@ -525,7 +525,7 @@ public class JobAgent implements Runnable {
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
 				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
-				monitor.sendParameter("containerType", cont.getContainerizerName());
+				monitor.sendParameter("containerLayer", 1);
 				cont.setWorkdir(jobWorkdir);
 				return cont.containerize(String.join(" ", launchCmd));
 			}

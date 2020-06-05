@@ -948,7 +948,7 @@ public class TaskQueueUtils {
 
 			int lim = 20000;
 
-			if (limit > 0 && limit < 20000)
+			if (limit > 0 && limit < 50000)
 				lim = limit;
 
 			String where = "";
@@ -1001,25 +1001,19 @@ public class TaskQueueUtils {
 			}
 
 			if (sites != null && sites.size() > 0 && !sites.contains("%")) {
-				final StringBuilder whe = new StringBuilder(" ( siteId in (");
-
-				boolean first = true;
+				final Collection<Integer> siteIDs = new HashSet<>();
 
 				for (final String s : sites) {
-					final int id = getSiteId(s);
+					final Collection<Integer> ids = getSiteIDs(s);
 
-					if (id >= 0) {
-						if (!first)
-							whe.append(',');
-						else
-							first = false;
-
-						whe.append(id);
-					}
+					if (ids != null)
+						siteIDs.addAll(ids);
 				}
 
-				if (!first)
-					where += whe + ") ) and ";
+				if (siteIDs.size() > 0)
+					where += " ( siteId in (" + Format.toCommaList(siteIDs) + ") ) and ";
+				else
+					return ret;
 			}
 
 			if (nodes != null && nodes.size() > 0 && !nodes.contains("%")) {
@@ -1105,7 +1099,8 @@ public class TaskQueueUtils {
 			else
 				q = "SELECT " + ALL_BUT_JDL + " FROM QUEUE " + where + orderBy + " limit " + lim + ";";
 
-			// System.out.println("SQL: " + q);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "selection query: " + q);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
@@ -1120,6 +1115,7 @@ public class TaskQueueUtils {
 		}
 
 		return ret;
+
 	}
 
 	/**
@@ -2834,6 +2830,65 @@ public class TaskQueueUtils {
 			}
 		}
 		return 0;
+	}
+
+	/**
+	 * @param ceName
+	 * @return matching queue IDs for the given CE name (full or partial)
+	 */
+	public static Collection<Integer> getSiteIDs(final String ceName) {
+		final int idx1 = ceName.indexOf("::");
+		final int idx2 = ceName.lastIndexOf("::");
+
+		if (idx2 > idx1 && idx2 < ceName.length() - 2 && !ceName.contains("%")) {
+			// it seems to be a fully qualified CE name, get it from cache
+			int singleCDid = getSiteId(ceName);
+
+			if (singleCDid > 0)
+				return Arrays.asList(Integer.valueOf(singleCDid));
+
+			return null;
+		}
+
+		String pattern = ceName;
+
+		if (idx1 < 0)
+			pattern = "ALICE::" + ceName;
+		else {
+			if (idx1 == 0)
+				pattern = "ALICE" + ceName;
+			else if (idx1 == idx2 && !pattern.toUpperCase().startsWith("ALICE::"))
+				pattern = "ALICE::" + pattern;
+		}
+
+		pattern += "%";
+
+		final Collection<Integer> queueIDs = new ArrayList<>();
+
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			final String q = "select siteid,site from SITEQUEUES where site LIKE ?;";
+
+			logger.log(Level.INFO, "Going to find CEs matching pattern: " + pattern);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			if (db.query(q, false, pattern) && db.moveNext()) {
+				do {
+					final Integer siteId = Integer.valueOf(db.geti(1));
+					final String siteName = db.gets(2);
+
+					siteIdCache.put(siteName, siteId, 1000 * 60 * 60);
+
+					queueIDs.add(siteId);
+				} while (db.moveNext());
+			}
+		}
+
+		return queueIDs;
 	}
 
 	private static final GenericLastValuesCache<Integer, String> siteNameCache = new GenericLastValuesCache<>() {

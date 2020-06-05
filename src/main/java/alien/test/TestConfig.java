@@ -352,17 +352,32 @@ public class TestConfig {
 	 * @return the content for the config.properties file
 	 */
 	private static String getDatabaseProperties(final String db) {
-		return "\n" + "password=" + sql_pass + "\n" + "driver=com.mysql.jdbc.Driver\n" + "host=127.0.0.1\n" + "port=3307\n" + "database=" + db + "\n" + "user=root\n";
+		return "\n" + "password=" + sql_pass + "\n" +
+        "driver=com.mysql.jdbc.Driver\n" +
+        "host=127.0.0.1\n" +
+        "port=3307\n" + "database=" + db + "\n" +
+        "user=root\n" +
+        "useSSL=false\n";
 	}
 
 	/**
 	 * @return the content for the config.properties file
 	 */
 	private static String getLoggingProperties() {
-		return "\n" + "handlers= java.util.logging.FileHandler\n" + "java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter\n" + "java.util.logging.FileHandler.limit = 1000000\n"
-				+ "java.util.logging.FileHandler.count = 4\n" + "java.util.logging.FileHandler.append = true\n" + "java.util.logging.FileHandler.pattern = alien%g.log\n" + ".level = WARNING\n"
-				+ "lia.level = WARNING\n" + "lazyj.level = WARNING\n" + "apmon.level = WARNING\n" + "alien.level = INFO\n" + "# tell LazyJ to use the same logging facilities\n"
-				+ "use_java_logger=true\n";
+		return "\n" +
+        "handlers= java.util.logging.FileHandler\n" +
+        "java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter\n" +
+        "java.util.logging.FileHandler.limit = 1000000\n" +
+        "java.util.logging.FileHandler.count = 4\n" +
+        "java.util.logging.FileHandler.append = true\n" +
+        "java.util.logging.FileHandler.pattern = alien%g.log\n" +
+        ".level = WARNING\n" +
+        "lia.level = WARNING\n" +
+        "lazyj.level = WARNING\n" +
+        "apmon.level = WARNING\n" +
+        "alien.level = INFO\n" +
+        "# tell LazyJ to use the same logging facilities\n" +
+        "use_java_logger=true\n";
 	}
 
 }

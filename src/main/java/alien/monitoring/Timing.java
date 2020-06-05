@@ -2,6 +2,8 @@ package alien.monitoring;
 
 import java.io.Closeable;
 
+import lazyj.Format;
+
 /**
  * @author costing
  * @since 2019-06-12
@@ -93,5 +95,10 @@ public final class Timing implements Closeable {
 	public void close() {
 		if (monitor != null)
 			monitor.addMeasurement(key, this);
+	}
+
+	@Override
+	public String toString() {
+		return Format.toInterval(Math.round(getMillis()));
 	}
 }

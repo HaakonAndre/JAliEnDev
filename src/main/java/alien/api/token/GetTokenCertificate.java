@@ -11,6 +11,7 @@ import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.x509.Extension;
@@ -171,7 +172,15 @@ public class GetTokenCertificate extends Request {
 
 				final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
 
-				builder = builder.setCn("Users").setCn(requester).setOu(requested);
+				final String cn;
+
+				// if an admin requests a user token for a role that it doesn't directly have, switch to that identity
+				if (isAdmin && !getEffectiveRequester().hasRole(requested))
+					cn = requested;
+				else
+					cn = requester;
+
+				builder = builder.setCn("Users").setCn(cn).setOu(requested);
 
 				// User token can be used as both client identity and local (JBox) server identity
 				// CERN also adds "E-mail Protection" and "Microsoft Encrypted File System" (the later one doesn't have a corresponding value yet)
@@ -264,7 +273,25 @@ public class GetTokenCertificate extends Request {
 
 		final CsrWithPrivateKey csr = CA.createCsr().generateRequest(userDN);
 
-		final TemporalAmount amount = Period.ofDays(validity <= 0 || validity > certificateType.getMaxValidity() ? 2 : validity);
+		int actualValidity = validity;
+
+		if (actualValidity <= 0)
+			actualValidity = 2;
+
+		if (actualValidity > certificateType.getMaxValidity())
+			if (isAdmin)
+				if (actualValidity > 400) {
+					logger.log(Level.INFO, "An admin has requested a validity of " + actualValidity + " days for " + userDN + ", shrinking it to 400 days only");
+					actualValidity = 400;
+				}
+				else
+					logger.log(Level.INFO, "An admin has requested a validity of " + actualValidity + " days for " + userDN + ", granting it");
+			else {
+				logger.log(Level.WARNING, requester + " has requested a validity of " + actualValidity + " days for " + userDN + ", shrinking it to 2 days");
+				actualValidity = 2;
+			}
+
+		final TemporalAmount amount = Period.ofDays(actualValidity);
 
 		ZonedDateTime notAfter = ZonedDateTime.now().plus(amount);
 
@@ -273,8 +300,11 @@ public class GetTokenCertificate extends Request {
 			if (getEffectiveRequester().getUserCert() != null) {
 				final ZonedDateTime userNotAfter = getEffectiveRequester().getUserCert()[0].getNotAfter().toInstant().atZone(ZoneId.systemDefault());
 
-				if (notAfter.isAfter(userNotAfter))
+				if (notAfter.isAfter(userNotAfter)) {
+					logger.log(Level.WARNING,
+							"Restricting the validity of " + userDN + " to " + userNotAfter + " since the requested validity of " + notAfter + " is beyond requester's identity expiration time");
 					notAfter = userNotAfter;
+				}
 			}
 			else {
 				throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
@@ -287,8 +317,11 @@ public class GetTokenCertificate extends Request {
 				for (final java.security.cert.X509Certificate partner : partnerCertificateChain) {
 					final ZonedDateTime partnerNotAfter = partner.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
 
-					if (notAfter.isAfter(partnerNotAfter))
+					if (notAfter.isAfter(partnerNotAfter)) {
+						logger.log(Level.WARNING,
+								"Restricting the validity of " + userDN + " to " + partnerNotAfter + " since the requested validity of " + notAfter + " is beyond partner's identity expiration time");
 						notAfter = partnerNotAfter;
+					}
 				}
 		}
 

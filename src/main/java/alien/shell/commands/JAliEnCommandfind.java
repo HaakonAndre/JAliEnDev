@@ -64,6 +64,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	private boolean bW = false;
 
+	/**
+	 * Full LFN details, an API option only as it simply makes sure all fields are returned as JSON data
+	 */
+	private boolean bF = false;
+
 	private List<String> alPaths = null;
 
 	private Collection<LFN> lfns = null;
@@ -128,8 +133,9 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		final LFN lPath = commander.c_api.getLFN(path);
 
-		if (lPath != null && lPath.isDirectory())
-			path += "/";
+		if (lPath != null && lPath.isDirectory()) {
+			path = lPath.getCanonicalName();
+		}
 		else {
 			commander.setReturnCode(ErrNo.ENOTDIR, alPaths.get(0));
 			return;
@@ -155,13 +161,31 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				commander.outNextResult();
 				commander.printOut("lfn", lfn.getCanonicalName());
 
-				if (bW) {
-					commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(lfn));
-					commander.printOut("user", lfn.owner);
-					commander.printOut("group", lfn.gowner);
-					commander.printOut("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
-					commander.printOut("ctime", " " + lfn.ctime);
+				if (bW || bF) {
+					commander.printOut("perm", lfn.perm);
+					commander.printOut("owner", lfn.owner);
+					commander.printOut("gowner", lfn.gowner);
+					commander.printOut("size", String.valueOf(lfn.size));
+					commander.printOut("ctime", lfn.ctime != null ? String.valueOf(lfn.ctime.getTime()) : "");
+					commander.printOut("guid", lfn.guid != null ? lfn.guid.toString() : "");
+				}
 
+				if (bF) {
+					// the remaining fields that are needed in particular for preparing XML collections
+					commander.printOut("name", lfn.getFileName());
+					commander.printOut("aclId", lfn.aclId >= 0 ? String.valueOf(lfn.aclId) : "");
+					commander.printOut("broken", lfn.broken ? "1" : "0");
+					commander.printOut("dir", String.valueOf(lfn.dir));
+					commander.printOut("entryId", String.valueOf(lfn.entryId));
+					commander.printOut("expiretime", lfn.expiretime != null ? String.valueOf(lfn.expiretime.getTime()) : "");
+					commander.printOut("guidtime", lfn.guidtime);
+					commander.printOut("md5", lfn.md5 != null ? lfn.md5 : "");
+					commander.printOut("jobid", String.valueOf(lfn.jobid));
+					commander.printOut("replicated", lfn.replicated ? "1" : "0");
+					commander.printOut("type", String.valueOf(lfn.type));
+				}
+
+				if (bW) {
 					// print long
 					commander.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
 							+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + padSpace(1) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
@@ -200,6 +224,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-l <count>", "limit the number of returned entries to at most the indicated value"));
 		commander.printOutln(helpOption("-o <offset>", "skip over the first /offset/ results"));
 		commander.printOutln(helpOption("-r", "pattern is a regular expression"));
+		commander.printOutln(helpOption("-f", "return all LFN data as JSON fields (API flag only)"));
 		commander.printOutln();
 	}
 
@@ -242,6 +267,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			parser.accepts("l").withRequiredArg().ofType(Long.class);
 			parser.accepts("o").withRequiredArg().ofType(Long.class);
 			parser.accepts("z"); // ignored option, just to maintain compatibility with AliEn
+			parser.accepts("f"); // full LFN details, API only
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -257,6 +283,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 			alPaths = optionToString(options.nonOptionArguments());
 
+			bF = options.has("f");
 			bW = options.has("w");
 			bS = options.has("s");
 			bA = options.has("a");

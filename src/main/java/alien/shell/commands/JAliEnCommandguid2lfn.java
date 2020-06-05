@@ -1,9 +1,13 @@
 package alien.shell.commands;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.shell.ErrNo;
 import joptsimple.OptionException;
@@ -17,29 +21,32 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	/**
 	 * entry the call is executed on, either representing a LFN
 	 */
-	private String guidName = null;
+	private Collection<String> guidNames = new LinkedHashSet<>();
 
 	/**
 	 * execute the lfn2guid
 	 */
 	@Override
 	public void run() {
-		final GUID guid = commander.c_api.getGUID(guidName, false, true);
+		for (final String guidName : guidNames) {
+			final GUID guid = commander.c_api.getGUID(guidName, false, true);
 
-		final Iterator<LFN> it;
+			final Iterator<LFN> it;
 
-		if (guid == null)
-			commander.setReturnCode(ErrNo.ENXIO, "Could not get the GUID [" + guidName + "].");
-		else if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
-			final LFN lfn = it.next();
+			if (guid == null)
+				commander.setReturnCode(ErrNo.ENXIO, "Could not get the GUID [" + guidName + "].");
+			else if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
+				final LFN lfn = it.next();
 
-			commander.printOutln(padRight(guid.guid + "", 40) + lfn.getCanonicalName());
+				commander.printOutln(padRight(guid.guid + "", 40) + lfn.getCanonicalName());
 
-			commander.printOut("guid", String.valueOf(guid.guid));
-			commander.printOut("lfn", String.valueOf(lfn.getCanonicalName()));
+				commander.printOut("guid", String.valueOf(guid.guid));
+				commander.printOut("lfn", String.valueOf(lfn.getCanonicalName()));
+				commander.outNextResult();
+			}
+			else
+				commander.setReturnCode(ErrNo.ENOENT, "No LFNs are associated to this GUID [" + guid.guid + "].");
 		}
-		else
-			commander.setReturnCode(ErrNo.ENOENT, "No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
 
 	/**
@@ -74,12 +81,31 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	public JAliEnCommandguid2lfn(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
-		if (alArguments.size() != 1) {
+		if (alArguments.size() == 0) {
 			// help will be printed by the commander anyway since canRunWithoutArguments=false
 			return;
 		}
 
-		guidName = alArguments.get(0);
-	}
+		for (final String s : alArguments) {
+			boolean ok = false;
 
+			final StringTokenizer st = new StringTokenizer(s, " \r\n\t;#/\\?");
+
+			while (st.hasMoreTokens()) {
+				final String tok = st.nextToken();
+
+				if (GUIDUtils.isValidGUID(tok)) {
+					guidNames.add(tok);
+					ok = true;
+					continue;
+				}
+			}
+
+			if (!ok) {
+				commander.setReturnCode(ErrNo.EINVAL, "No GUID in this string: " + s);
+				setArgumentsOk(false);
+				return;
+			}
+		}
+	}
 }
