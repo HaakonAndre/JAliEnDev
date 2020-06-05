@@ -93,7 +93,7 @@ public class JAliEnCOMMander extends Thread {
 			"find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user", "touch", "touch_csd",
 			"type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota", "jquota",
 			"listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep", "showTagValue",
-			"randomPFNs", "toXml"};
+			"randomPFNs", "toXml" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
@@ -609,8 +609,11 @@ public class JAliEnCOMMander extends Thread {
 						jcommand.run();
 					}
 					else {
-						out.setReturnCode(ErrNo.EINVAL, "Command requires an argument");
-						jcommand.printHelp();
+						if (out.getReturnCode() == 0) {
+							// if non zero then an error message was already printed to the client, don't bloat the output with a generic help
+							out.setReturnCode(ErrNo.EINVAL, "Command requires an argument");
+							jcommand.printHelp();
+						}
 					}
 				}
 			}
