@@ -117,7 +117,7 @@ public class WebsocketEndpoint extends Endpoint {
 		}
 
 		final long getRunningDeadline() {
-			return Math.min(absoluteRunningDeadline, lastActivityTime + 3 * 60 * 60 * 1000L);
+			return Math.min(absoluteRunningDeadline, lastActivityTime + 15 * 60 * 1000L);
 		}
 
 		@Override
