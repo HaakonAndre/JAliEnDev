@@ -17,7 +17,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
-import alien.api.TomcatServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
@@ -36,9 +35,6 @@ import joptsimple.OptionException;
 import lazyj.Format;
 import utils.CachedThreadPool;
 
-// TODO: remove comments
-// TODO: discuss whether the whole command list has to be seen for anyone
-
 /**
  * @author ron
  * @since June 4, 2011
@@ -48,21 +44,22 @@ public class JAliEnCOMMander implements Runnable {
 	/**
 	 * Thread pool size monitoring
 	 */
-	private static final Monitor monitor = MonitorFactory.getMonitor(TomcatServer.class.getCanonicalName());
+	private static final Monitor monitor = MonitorFactory.getMonitor(JAliEnCOMMander.class.getCanonicalName());
 
 	private static CachedThreadPool COMMAND_EXECUTOR = new CachedThreadPool(ConfigUtils.getConfig().geti(JAliEnCommandcat.class.getCanonicalName() + ".executorSize", 200), 1, TimeUnit.MINUTES);
 
 	static {
-		monitor.addMonitoring("thread_pool_status", (names, values) -> {
-			names.add("active_threads");
-			values.add(Double.valueOf(COMMAND_EXECUTOR.getActiveCount()));
+		if (monitor != null)
+			monitor.addMonitoring("thread_pool_status", (names, values) -> {
+				names.add("active_threads");
+				values.add(Double.valueOf(COMMAND_EXECUTOR.getActiveCount()));
 
-			names.add("allocated_threads");
-			values.add(Double.valueOf(COMMAND_EXECUTOR.getPoolSize()));
+				names.add("allocated_threads");
+				values.add(Double.valueOf(COMMAND_EXECUTOR.getPoolSize()));
 
-			names.add("max_threads");
-			values.add(Double.valueOf(COMMAND_EXECUTOR.getMaximumPoolSize()));
-		});
+				names.add("max_threads");
+				values.add(Double.valueOf(COMMAND_EXECUTOR.getMaximumPoolSize()));
+			});
 	}
 
 	/**
@@ -468,7 +465,7 @@ public class JAliEnCOMMander implements Runnable {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	private void bootMessage() {
 		logger.log(Level.INFO, "Starting Commander");
@@ -676,7 +673,7 @@ public class JAliEnCOMMander implements Runnable {
 			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
 
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, List.class });
+			final java.lang.reflect.Constructor co = cl.getConstructor(JAliEnCOMMander.class, List.class);
 			return (JAliEnBaseCommand) co.newInstance(objectParm);
 		}
 		catch (@SuppressWarnings("unused") final ClassNotFoundException e) {
