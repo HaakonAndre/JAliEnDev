@@ -11,11 +11,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
+import alien.api.TomcatServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
@@ -23,6 +25,8 @@ import alien.catalogue.LFN_CSD;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.log.RequestEvent;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.shell.ErrNo;
 import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
@@ -30,6 +34,7 @@ import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
 import joptsimple.OptionException;
 import lazyj.Format;
+import utils.CachedThreadPool;
 
 // TODO: remove comments
 // TODO: discuss whether the whole command list has to be seen for anyone
@@ -38,7 +43,27 @@ import lazyj.Format;
  * @author ron
  * @since June 4, 2011
  */
-public class JAliEnCOMMander extends Thread {
+public class JAliEnCOMMander implements Runnable {
+
+	/**
+	 * Thread pool size monitoring
+	 */
+	private static final Monitor monitor = MonitorFactory.getMonitor(TomcatServer.class.getCanonicalName());
+
+	private static CachedThreadPool COMMAND_EXECUTOR = new CachedThreadPool(ConfigUtils.getConfig().geti(JAliEnCommandcat.class.getCanonicalName() + ".executorSize", 200), 1, TimeUnit.MINUTES);
+
+	static {
+		monitor.addMonitoring("thread_pool_status", (names, values) -> {
+			names.add("active_threads");
+			values.add(Double.valueOf(COMMAND_EXECUTOR.getActiveCount()));
+
+			names.add("allocated_threads");
+			values.add(Double.valueOf(COMMAND_EXECUTOR.getPoolSize()));
+
+			names.add("max_threads");
+			values.add(Double.valueOf(COMMAND_EXECUTOR.getMaximumPoolSize()));
+		});
+	}
 
 	/**
 	 * Atomic status update of the command execution
@@ -166,6 +191,10 @@ public class JAliEnCOMMander extends Thread {
 		this(null, null, null, null);
 	}
 
+	private static void setName(final String threadName) {
+		Thread.currentThread().setName(threadName);
+	}
+
 	/**
 	 * @param user
 	 * @param curDir
@@ -202,7 +231,7 @@ public class JAliEnCOMMander extends Thread {
 				this.curDir = curDir;
 		}
 
-		setName("Commander");
+		bootMessage();
 	}
 
 	/**
@@ -361,18 +390,6 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	public volatile boolean kill = false;
 
-	private void waitForCommand() {
-		while (!kill && out == null)
-			synchronized (this) {
-				try {
-					wait(1000);
-				}
-				catch (@SuppressWarnings("unused") final InterruptedException e) {
-					return;
-				}
-			}
-	}
-
 	private static OutputStream accessLogStream = null;
 
 	private static synchronized OutputStream getAccessLogTarget() {
@@ -415,6 +432,45 @@ public class JAliEnCOMMander extends Thread {
 
 	@Override
 	public void run() {
+		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
+			event.identity = getUser();
+			event.site = getSite();
+			event.serverThreadID = Long.valueOf(commanderId);
+			event.requestId = Long.valueOf(++commandCount);
+
+			try {
+				status.set(1);
+
+				setName("Commander " + commanderId + ": Executing: " + Arrays.toString(arg));
+
+				execute(event);
+			}
+			catch (final Exception e) {
+				event.exception = e;
+
+				logger.log(Level.WARNING, "Got exception", e);
+			}
+			finally {
+				out = null;
+
+				setName("Commander " + commanderId + ": Idle");
+
+				status.set(0);
+				synchronized (status) {
+					status.notifyAll();
+				}
+			}
+
+		}
+		catch (final Exception e) {
+			logger.log(Level.WARNING, "Got exception", e);
+		}
+	}
+
+	/**
+	 * 
+	 */
+	private void bootMessage() {
 		logger.log(Level.INFO, "Starting Commander");
 
 		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
@@ -434,47 +490,6 @@ public class JAliEnCOMMander extends Thread {
 		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore any exception in writing out the event
 		}
-
-		try {
-			while (!kill) {
-				waitForCommand();
-				if (kill)
-					break;
-
-				try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
-					event.identity = getUser();
-					event.site = getSite();
-					event.serverThreadID = Long.valueOf(commanderId);
-					event.requestId = Long.valueOf(++commandCount);
-
-					try {
-						status.set(1);
-
-						setName("Commander " + commanderId + ": Executing: " + Arrays.toString(arg));
-
-						execute(event);
-					}
-					catch (final Exception e) {
-						event.exception = e;
-
-						logger.log(Level.WARNING, "Got exception", e);
-					}
-					finally {
-						out = null;
-
-						setName("Commander " + commanderId + ": Idle");
-
-						status.set(0);
-						synchronized (status) {
-							status.notifyAll();
-						}
-					}
-				}
-			}
-		}
-		catch (final Exception e) {
-			logger.log(Level.WARNING, "Got exception", e);
-		}
 	}
 
 	/**
@@ -482,8 +497,14 @@ public class JAliEnCOMMander extends Thread {
 	 * @param arg
 	 */
 	public void setLine(final UIPrintWriter out, final String[] arg) {
+		if (kill)
+			return;
+
 		this.out = out;
 		this.arg = arg;
+
+		if (this.out != null && this.arg != null)
+			COMMAND_EXECUTOR.submit(this);
 	}
 
 	/**

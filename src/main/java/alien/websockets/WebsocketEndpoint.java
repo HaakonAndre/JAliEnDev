@@ -203,7 +203,6 @@ public class WebsocketEndpoint extends Endpoint {
 		userIdentity.setRemoteEndpoint(remoteIP);
 
 		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteIP != null ? remoteIP.getHostAddress() : null), null);
-		commander.start();
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
@@ -329,7 +328,6 @@ public class WebsocketEndpoint extends Endpoint {
 
 		commander.kill = true;
 		commander.setLine(null, null);
-		commander.interrupt();
 
 		out = null;
 		try {
@@ -420,17 +418,6 @@ public class WebsocketEndpoint extends Endpoint {
 			catch (@SuppressWarnings("unused") final IllegalArgumentException e) {
 				// Illegal command. Details given by parse method
 				return;
-			}
-
-			// Restart the commander if needed
-			if (!commander.isAlive()) {
-				commander.kill = true;
-				commander.interrupt();
-
-				final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), null);
-				commander = comm;
-
-				commander.start();
 			}
 
 			try (Timing t = new Timing(monitor, "execution_time")) {
