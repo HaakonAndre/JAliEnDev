@@ -136,7 +136,7 @@ public class NetStat {
 		for (int i = hexa.length() - 1; i >= 0; i = i - 2) {
 			final String group = hexa.substring(i - 1, i + 1);
 			result.append(Integer.parseInt(group, 16));
-			if (i > 0)
+			if (i > 1)
 				result.append(".");
 		}
 
