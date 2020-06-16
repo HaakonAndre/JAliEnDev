@@ -1,13 +1,16 @@
 package alien.api;
 
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyStoreException;
@@ -18,8 +21,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,14 +51,14 @@ import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
-import lazyj.Format;
 import utils.CachedThreadPool;
+import utils.NetStat;
 
 /**
  * @author costing
  *
  */
-public class DispatchSSLServer extends Thread {
+public class DispatchSSLServer implements Runnable {
 
 	/**
 	 * Reset the object stream every this many objects sent
@@ -73,6 +80,8 @@ public class DispatchSSLServer extends Thread {
 	 */
 	private final Socket connection;
 
+	private InputStream is;
+
 	/**
 	 * Getting requests by this stream
 	 */
@@ -83,8 +92,6 @@ public class DispatchSSLServer extends Thread {
 	 */
 	private ObjectOutputStream oos;
 
-	private OutputStream os;
-
 	private X509Certificate partnerCerts[] = null;
 
 	private static final int defaultPort = 8098;
@@ -94,26 +101,46 @@ public class DispatchSSLServer extends Thread {
 
 	private int objectsSentCounter = 0;
 
-	private static AtomicInteger activeSessions = new AtomicInteger();
+	private static ConcurrentHashMap<InetSocketAddress, DispatchSSLServer> sessionMap = new ConcurrentHashMap<>();
 
 	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS);
+
+	private static final CachedThreadPool runnerPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxRunnerThreads", 32), 10, TimeUnit.SECONDS);
 
 	private static CacheMonitor ipv6Connections = null;
 
 	private static InetAddress actualServerAddress = null;
 	private static int actualServerPort = -1;
 
+	private final AtomicBoolean isKilled = new AtomicBoolean(false);
+
+	private final AtomicBoolean isActive = new AtomicBoolean(true);
+
+	private long lastActive = System.currentTimeMillis();
+
+	private AliEnPrincipal remoteIdentity = null;
+
+	private int requestCount = 0;
+
+	private String connectionID = null;
+
 	static {
 		if (monitor != null) {
 			monitor.addMonitoring("activeSessions", (names, values) -> {
 				names.add("activeSessions");
-				values.add(Double.valueOf(activeSessions.get()));
+				values.add(Double.valueOf(sessionMap.size()));
 
 				names.add("acceptorPoolSize");
 				values.add(Double.valueOf(acceptorPool.getPoolSize()));
 
 				names.add("acceptorPoolQueueLength");
 				values.add(Double.valueOf(acceptorPool.getQueue().size()));
+
+				names.add("runnerPoolSize");
+				values.add(Double.valueOf(runnerPool.getPoolSize()));
+
+				names.add("runnerPoolQueueLength");
+				values.add(Double.valueOf(runnerPool.getQueue().size()));
 			});
 
 			ipv6Connections = monitor.getCacheMonitor("ipv6_connections");
@@ -138,41 +165,40 @@ public class DispatchSSLServer extends Thread {
 	 */
 	public DispatchSSLServer(final Socket connection) {
 		this.connection = connection;
-
-		setName(connection.getInetAddress().toString());
-		setDaemon(true);
 	}
 
-	@Override
-	public void run() {
+	/**
+	 * Initialize the socket information, streams, get the identity and register the object in the sessions map
+	 * 
+	 * @return
+	 */
+	private boolean setup() {
 		try {
 			connection.setTcpNoDelay(true);
 			connection.setTrafficClass(0x10);
 
-			// clients that did not send any command for a long time (default one hour) are disconnected
-			connection.setSoTimeout(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.idleTimeout_seconds", 3600) * 1000);
-
-			this.os = connection.getOutputStream();
-
-			this.oos = new ObjectOutputStream(this.os);
+			this.oos = new ObjectOutputStream(connection.getOutputStream());
 			this.oos.flush();
-			this.os.flush();
 
-			this.ois = new ObjectInputStream(connection.getInputStream());
+			this.is = connection.getInputStream();
+
+			this.ois = new ObjectInputStream(this.is);
 		}
 		catch (final IOException e) {
 			logger.log(Level.WARNING, "Exception initializing the SSL socket", e);
-			return;
+			return false;
 		}
 
-		final AliEnPrincipal remoteIdentity = UserFactory.getByCertificate(partnerCerts);
+		remoteIdentity = UserFactory.getByCertificate(partnerCerts);
 
 		if (remoteIdentity == null) {
 			logger.log(Level.WARNING, "Could not get the identity of this certificate chain: " + Arrays.toString(partnerCerts));
-			return;
+			return false;
 		}
 
-		remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
+		final InetSocketAddress remoteAddr = (InetSocketAddress) connection.getRemoteSocketAddress();
+
+		remoteIdentity.setRemoteEndpoint(remoteAddr.getAddress());
 
 		try (RequestEvent event = new RequestEvent(getAccessLog())) {
 			event.command = "login";
@@ -188,122 +214,143 @@ public class DispatchSSLServer extends Thread {
 			// ignore any exception in writing out the event
 		}
 
-		double lLasted = 0;
+		connectionID = remoteAddr.toString();
 
-		int requestCount = 0;
+		sessionMap.put(remoteAddr, this);
 
-		activeSessions.incrementAndGet();
+		finishCommand();
 
+		return true;
+	}
+
+	private void finishCommand() {
+		isActive.set(false);
+		lastActive = System.currentTimeMillis();
+	}
+
+	@Override
+	public void run() {
 		try {
-			while (true) {
-				final Object o = ois.readObject();
+			final Object o = ois.readObject();
 
-				if (o != null)
-					if (o instanceof Request) {
-						Request r = (Request) o;
+			if (o != null)
+				if (o instanceof Request) {
+					Request r = (Request) o;
 
-						r.setPartnerIdentity(remoteIdentity);
+					r.setPartnerIdentity(remoteIdentity);
 
-						r.setPartnerCertificate(partnerCerts);
+					r.setPartnerCertificate(partnerCerts);
 
-						final double requestProcessingDuration;
+					final double requestProcessingDuration;
 
-						try (RequestEvent event = new RequestEvent(getAccessLog())) {
-							event.clientAddress = remoteIdentity.getRemoteEndpoint();
-							event.command = r.getClass().getSimpleName();
-							event.clientID = r.getVMUUID();
-							event.requestId = r.getRequestID();
-							event.arguments = r.getArguments();
+					try (RequestEvent event = new RequestEvent(getAccessLog())) {
+						event.clientAddress = remoteIdentity.getRemoteEndpoint();
+						event.command = r.getClass().getSimpleName();
+						event.clientID = r.getVMUUID();
+						event.requestId = r.getRequestID();
+						event.arguments = r.getArguments();
 
-							try {
-								r = Dispatcher.execute(r, forwardRequest);
-								event.exitCode = 0;
-							}
-							catch (final Exception e) {
-								logger.log(Level.WARNING, "Returning an exception to the client", e);
+						try {
+							r = Dispatcher.execute(r, forwardRequest);
+							event.exitCode = 0;
+						}
+						catch (final Exception e) {
+							logger.log(Level.WARNING, "Returning an exception to the client", e);
 
-								r.setException(new ServerException(e.getMessage(), e));
+							r.setException(new ServerException(e.getMessage(), e));
 
-								event.exception = e;
-								event.exitCode = ErrNo.EBADE.getErrorCode();
-								event.errorMessage = "Exception executing request";
-							}
-
-							event.identity = r.getEffectiveRequester();
-
-							requestProcessingDuration = event.timing.getMillis();
+							event.exception = e;
+							event.exitCode = ErrNo.EBADE.getErrorCode();
+							event.errorMessage = "Exception executing request";
 						}
 
-						lLasted += requestProcessingDuration;
+						event.identity = r.getEffectiveRequester();
 
-						final double serializationTime;
-
-						try (Timing timing = new Timing()) {
-							// System.err.println("When returning the object, ex is "+r.getException());
-
-							oos.writeObject(r);
-
-							if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
-								oos.reset();
-								objectsSentCounter = 0;
-							}
-
-							oos.flush();
-
-							serializationTime = timing.getMillis();
-						}
-
-						lSerialization += serializationTime;
-
-						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
-
-						if (monitor != null) {
-							monitor.addMeasurement("request_processing", requestProcessingDuration);
-							monitor.addMeasurement("serialization", serializationTime);
-						}
-
-						requestCount++;
+						requestProcessingDuration = event.timing.getMillis();
 					}
-					else
-						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
-			}
-		}
-		catch (
 
-		@SuppressWarnings("unused") final EOFException e) {
-			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted) + " to process and "
-					+ Format.toInterval((long) lSerialization) + " to serialize");
+					final double serializationTime;
+
+					try (Timing timing = new Timing()) {
+						// System.err.println("When returning the object, ex is "+r.getException());
+
+						oos.writeObject(r);
+
+						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
+							oos.reset();
+							objectsSentCounter = 0;
+						}
+
+						oos.flush();
+
+						serializationTime = timing.getMillis();
+					}
+
+					lSerialization += serializationTime;
+
+					logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
+
+					if (monitor != null) {
+						monitor.addMeasurement("request_processing", requestProcessingDuration);
+						monitor.addMeasurement("serialization", serializationTime);
+					}
+
+					requestCount++;
+				}
+				else
+					logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
+		}
+		catch (@SuppressWarnings("unused") final EOFException e) {
+			logger.log(Level.FINE, "Client " + connectionID + " disconnected after " + requestCount + " requests");
+			cleanup();
 		}
 		catch (final Throwable e) {
-			logger.log(Level.WARNING, "Main thread for " + getName() + " threw an error after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted)
-					+ " to process and " + Format.toInterval((long) lSerialization) + " to serialize", e);
+			logger.log(Level.WARNING, "Main thread for " + connectionID + " threw an error", e);
+			cleanup();
 		}
 		finally {
-			activeSessions.decrementAndGet();
-
-			if (ois != null)
-				try {
-					ois.close();
-				}
-				catch (@SuppressWarnings("unused") final IOException ioe) {
-					// ignore
-				}
-
-			if (oos != null)
-				try {
-					oos.close();
-				}
-				catch (@SuppressWarnings("unused") final IOException ioe) {
-					// ignore
-				}
-
-			try {
-				connection.close();
-			}
-			catch (@SuppressWarnings("unused") final IOException ioe) {
-				// ignore
-			}
+			finishCommand();
 		}
+	}
+
+	private void notifyData() {
+		try {
+			isActive.set(true);
+
+			runnerPool.submit(this);
+		}
+		catch (final Throwable t) {
+			logger.log(Level.SEVERE, "Exception handling data notification for " + connectionID, t);
+
+			isActive.set(false);
+		}
+	}
+
+	private static void close(final Closeable c) {
+		try {
+			if (c != null)
+				c.close();
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
+			// ignore
+		}
+	}
+
+	/**
+	 * 
+	 */
+	private void cleanup() {
+		final InetSocketAddress addr = (InetSocketAddress) connection.getRemoteSocketAddress();
+
+		close(oos);
+		close(ois);
+		close(is);
+		close(connection);
+
+		isKilled.set(true);
+		isActive.set(false);
+
+		sessionMap.remove(addr);
 	}
 
 	private static OutputStream accessLogStream = null;
@@ -364,12 +411,92 @@ public class DispatchSSLServer extends Thread {
 		return true;
 	}
 
+	private static AtomicBoolean netStatUpdaterQueued = new AtomicBoolean(false);
+
+	private static Set<InetSocketAddress> establishedSockets = null;
+
+	private static Runnable netStatUpdater = new Runnable() {
+		@Override
+		public void run() {
+			try {
+				establishedSockets = NetStat.getRemoteEndpoints(actualServerPort);
+			}
+			finally {
+				netStatUpdaterQueued.set(false);
+			}
+		}
+	};
+
+	private static Thread selectorThread = new Thread("SSLServer selector thread") {
+		@Override
+		public void run() {
+			long lastNetstatCheck = System.currentTimeMillis();
+
+			while (true) {
+				// clients that did not send any command for a long time (default 15 minutes) are disconnected
+				final long idleThreshold = ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.idleTimeout_seconds", 900) * 1000;
+
+				// clients that did not send any command for a long time (default 15 minutes) are disconnected
+				final long graceTime = ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.graceTimeout_seconds", 15) * 1000;
+
+				if (System.currentTimeMillis() - lastNetstatCheck > 1000 * 30 && !netStatUpdaterQueued.get()) {
+					// Asynchronously run the netstat info updater once per minute
+					netStatUpdaterQueued.set(true);
+					runnerPool.submit(netStatUpdater);
+					lastNetstatCheck = System.currentTimeMillis();
+				}
+
+				// use the established socket information once
+				final Set<InetSocketAddress> activeSockets = establishedSockets;
+				establishedSockets = null;
+
+				final Iterator<Map.Entry<InetSocketAddress, DispatchSSLServer>> it = sessionMap.entrySet().iterator();
+
+				while (it.hasNext()) {
+					final Map.Entry<InetSocketAddress, DispatchSSLServer> entryToCheck = it.next();
+
+					final InetSocketAddress addr = entryToCheck.getKey();
+
+					final DispatchSSLServer obj = entryToCheck.getValue();
+
+					try {
+						if (obj.isKilled.get() == true) {
+							// if for any reason the object was left in the sessions map after closing the connection, get rid of it
+							it.remove();
+						}
+						else {
+							if (!obj.isActive.get()) {
+								// activity and sanity check of idle connections
+								if (obj.is.available() > 0)
+									obj.notifyData();
+								else {
+									if (activeSockets != null && !activeSockets.contains(addr) && (System.currentTimeMillis() - obj.lastActive > graceTime)) {
+										logger.log(Level.INFO, "Client has disconnected: " + obj.connectionID);
+										obj.cleanup();
+									}
+									else {
+										// socket is still active, but was it idle for too long?
+										if (System.currentTimeMillis() - obj.lastActive > idleThreshold)
+											obj.cleanup();
+									}
+								}
+							}
+						}
+					}
+					catch (final IOException ioe) {
+						logger.log(Level.WARNING, "Exception handling the selector", ioe);
+						obj.cleanup();
+					}
+				}
+			}
+		}
+	};
+
 	/**
 	 * @throws IOException
 	 */
 	@SuppressWarnings("resource")
 	public static void runService() throws IOException {
-
 		int port = defaultPort;
 
 		String address = ConfigUtils.getConfig().gets(serviceName).trim();
@@ -436,6 +563,9 @@ public class DispatchSSLServer extends Thread {
 
 			logger.log(Level.INFO, "JCentral listening on  " + server.getLocalSocketAddress());
 
+			selectorThread.setDaemon(true);
+			selectorThread.start();
+
 			while (true) {
 				if (!isHostCertValid()) {
 					logger.log(Level.SEVERE, "Host certificate is not valid any more, please renew it and restart the service");
@@ -456,7 +586,6 @@ public class DispatchSSLServer extends Thread {
 						monitor.incrementCounter("exception_handling_client");
 				}
 			}
-
 		}
 		catch (final Throwable e) {
 			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket on " + address + ":" + port, e);
@@ -519,7 +648,8 @@ public class DispatchSSLServer extends Thread {
 		if (needClientAuth)
 			serv.partnerCerts = peerCertChain;
 
-		serv.start();
+		if (!serv.setup())
+			return;
 
 		if (monitor != null) {
 			monitor.incrementCounter("accepted_connections");
