@@ -432,6 +432,10 @@ public class DispatchSSLServer implements Runnable {
 		public void run() {
 			long lastNetstatCheck = System.currentTimeMillis();
 
+			boolean anyActive = false;
+
+			int sleepTime = 0;
+
 			while (true) {
 				// clients that did not send any command for a long time (default 15 minutes) are disconnected
 				final long idleThreshold = ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.idleTimeout_seconds", 900) * 1000;
@@ -467,8 +471,11 @@ public class DispatchSSLServer implements Runnable {
 						else {
 							if (!obj.isActive.get()) {
 								// activity and sanity check of idle connections
-								if (obj.is.available() > 0)
+								if (obj.is.available() > 0) {
 									obj.notifyData();
+
+									anyActive = true;
+								}
 								else {
 									if (activeSockets != null && !activeSockets.contains(addr) && (System.currentTimeMillis() - obj.lastActive > graceTime)) {
 										logger.log(Level.INFO, "Client has disconnected: " + obj.connectionID);
@@ -476,8 +483,10 @@ public class DispatchSSLServer implements Runnable {
 									}
 									else {
 										// socket is still active, but was it idle for too long?
-										if (System.currentTimeMillis() - obj.lastActive > idleThreshold)
+										if (System.currentTimeMillis() - obj.lastActive > idleThreshold) {
+											logger.log(Level.INFO, "Closing connection to idle client " + obj.connectionID);
 											obj.cleanup();
+										}
 									}
 								}
 							}
@@ -488,6 +497,21 @@ public class DispatchSSLServer implements Runnable {
 						obj.cleanup();
 					}
 				}
+
+				if (!anyActive) {
+					if (sleepTime < 5)
+						sleepTime++;
+
+					try {
+						Thread.sleep(sleepTime);
+					}
+					catch (InterruptedException e) {
+						logger.log(Level.INFO, "Received interruption, will exit now", e);
+						return;
+					}
+				}
+				else
+					sleepTime = 0;
 			}
 		}
 	};
