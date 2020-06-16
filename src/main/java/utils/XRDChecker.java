@@ -132,6 +132,12 @@ public class XRDChecker {
 			if (!f.delete())
 				return new XRDStatus(false, "Could not delete the temporary created file, xrdcp would fail, bailing out");
 
+			if (pfn.ticket == null) {
+				final String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
+
+			        if (reason != null)
+					return new XRDStatus(false, reason);
+			}
 			final long lStart = System.currentTimeMillis();
 
 			System.err.println("Getting this file " + pfn.pfn);
