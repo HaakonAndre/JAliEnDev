@@ -44,6 +44,7 @@ import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
+import lia.util.process.ExternalProcesses;
 
 /**
  * Job execution wrapper, running an embedded Tomcat server for in/out-bound communications
@@ -262,6 +263,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
+			
+			cleanupProcesses();
 
 			return 0;
 		}
@@ -799,6 +802,29 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			paramNames.add("statusID");
 			paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
 		}
+	}
+	
+	/**
+	 * Cleanup processes, using a specialised script in CVMFS
+	 * 
+	 * @return script exit code, or -1 in case of error
+	 */
+	private int cleanupProcesses() {
+		final File cleanupScript = new File(CVMFS.getCleanupScript());
+		
+		if (!cleanupScript.exists()) {
+			logger.log(Level.WARNING, "Script for process cleanup not found in: " + cleanupScript.getAbsolutePath());
+			return -1;
+		}
+		
+		try {
+			Process process = Runtime.getRuntime().exec((cleanupScript.getAbsolutePath() + " -v -m ALIEN_PROC_ID=" + queueId + " $$ -KILL"));
+			return process.waitFor();
+		} catch (IOException | InterruptedException e) {
+			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
+			return -1;
+		}
+
 	}
 
 }

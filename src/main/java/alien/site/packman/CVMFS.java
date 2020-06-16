@@ -154,4 +154,11 @@ public class CVMFS extends PackMan {
 	public static String getJava32DirFromCVMFS() {
 		return JAVA32_DIR;
 	}
+	
+	/**
+	 * @return location of script used for cleanup of stale processes
+	 */
+	public static String getCleanupScript() {
+		return "/cvmfs/alice.cern.ch/scripts/ja_cleanup.pl";
+	}
 }
