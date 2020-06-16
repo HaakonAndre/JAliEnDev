@@ -3,7 +3,6 @@ package utils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.HashSet;
@@ -36,8 +35,8 @@ public class NetStat {
 	 *            server port number
 	 * @return all remote sockets connected to this local port number, on both IPv4 and IPv6. Returns <code>null</code> if the statistics gathering didn't work for any reason
 	 */
-	public static Set<SocketAddress> getRemoteEndpoints(final int serverPort) {
-		final Set<SocketAddress> ret = new HashSet<>(lastSetSize > 16 ? lastSetSize * 4 / 3 : 16);
+	public static Set<InetSocketAddress> getRemoteEndpoints(final int serverPort) {
+		final Set<InetSocketAddress> ret = new HashSet<>(lastSetSize > 16 ? lastSetSize * 4 / 3 : 16);
 
 		final String lookFor = String.format(":%04X ", Integer.valueOf(serverPort));
 
@@ -49,7 +48,7 @@ public class NetStat {
 		return ipv4OK || ipv6OK ? ret : null;
 	}
 
-	private static boolean fillTCP(final Set<SocketAddress> ret, final boolean ipv6, final String lookFor) {
+	private static boolean fillTCP(final Set<InetSocketAddress> ret, final boolean ipv6, final String lookFor) {
 		final File f = new File(ipv6 ? "/proc/net/tcp6" : "/proc/net/tcp");
 
 		if (!f.exists() || !f.canRead())
@@ -96,9 +95,7 @@ public class NetStat {
 				final String addr = remoteAddress.substring(0, idx);
 				final String port = remoteAddress.substring(idx + 1);
 
-				final InetAddress iaddr = InetAddress.getByName(ipv6 ? hexToIPv6(addr) : hex2IPv4(addr));
-
-				final SocketAddress toAdd = new InetSocketAddress(iaddr, Integer.parseInt(port, 16));
+				final InetSocketAddress toAdd = new InetSocketAddress(ipv6 ? hexToIPv6(addr) : hex2IPv4(addr), Integer.parseInt(port, 16));
 
 				ret.add(toAdd);
 			}
@@ -158,7 +155,7 @@ public class NetStat {
 
 		final long nanos = System.nanoTime();
 
-		Set<SocketAddress> clients = null;
+		Set<InetSocketAddress> clients = null;
 
 		for (int i = 0; i < iterations; i++)
 			clients = getRemoteEndpoints(port);
