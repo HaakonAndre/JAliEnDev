@@ -103,9 +103,11 @@ public class DispatchSSLServer implements Runnable {
 
 	private static ConcurrentHashMap<InetSocketAddress, DispatchSSLServer> sessionMap = new ConcurrentHashMap<>();
 
-	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS);
+	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS,
+			(r) -> new Thread(r, "SSLAcceptor"));
 
-	private static final CachedThreadPool runnerPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxRunnerThreads", 32), 10, TimeUnit.SECONDS);
+	private static final CachedThreadPool runnerPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxRunnerThreads", 32), 10, TimeUnit.SECONDS,
+			(r) -> new Thread(r, "SSLRunner"));
 
 	private static CacheMonitor ipv6Connections = null;
 
