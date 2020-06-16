@@ -46,7 +46,8 @@ public class JAliEnCOMMander implements Runnable {
 	 */
 	private static final Monitor monitor = MonitorFactory.getMonitor(JAliEnCOMMander.class.getCanonicalName());
 
-	private static CachedThreadPool COMMAND_EXECUTOR = new CachedThreadPool(ConfigUtils.getConfig().geti(JAliEnCommandcat.class.getCanonicalName() + ".executorSize", 200), 1, TimeUnit.MINUTES);
+	private static CachedThreadPool COMMAND_EXECUTOR = new CachedThreadPool(ConfigUtils.getConfig().geti(JAliEnCommandcat.class.getCanonicalName() + ".executorSize", 200), 1, TimeUnit.MINUTES,
+			(r) -> new Thread(r, "CommandExecutor"));
 
 	static {
 		if (monitor != null)
