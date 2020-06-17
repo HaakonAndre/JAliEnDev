@@ -143,7 +143,7 @@ public class CVMFS extends PackMan {
 			return jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get jAliEn version", e);
+			logger.log(Level.WARNING, "Could not get jAliEn version");
 			return "";
 		}
 	}
