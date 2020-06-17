@@ -381,6 +381,9 @@ public class JobAgent implements Runnable {
 			}
 			catch (IOException | InterruptedException ioe) {
 				logger.log(Level.WARNING, "Could not extract the space information from `df`", ioe);
+				if(System.getenv().containsKey("JALIEN_DEBUG")){
+					return 200000000000L;
+				}
 			}
 		}
 
