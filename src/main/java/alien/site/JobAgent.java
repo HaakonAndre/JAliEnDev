@@ -115,7 +115,7 @@ public class JobAgent implements Runnable {
 		}
 	}
 
-	private final int jobagent_requests = 1; // TODO: restore to 5
+	private final int jobagent_requests = 5;
 
 	/**
 	 * logger object
