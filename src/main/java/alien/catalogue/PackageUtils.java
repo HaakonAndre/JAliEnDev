@@ -52,7 +52,7 @@ public class PackageUtils {
 
 		@Override
 		public void run() {
-			while (true)
+			while (true) {
 				synchronized (wakeupObject) {
 					try {
 						wakeupObject.wait(1000 * 60 * 60);
@@ -60,9 +60,10 @@ public class PackageUtils {
 					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						// ignore
 					}
-
-					cacheCheck();
 				}
+
+				cacheCheck();
+			}
 		}
 
 		public void wakeup() {
