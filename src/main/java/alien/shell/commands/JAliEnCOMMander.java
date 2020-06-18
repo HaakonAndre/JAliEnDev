@@ -448,20 +448,19 @@ public class JAliEnCOMMander implements Runnable {
 
 				logger.log(Level.WARNING, "Got exception", e);
 			}
-			finally {
-				out = null;
-
-				setName("Commander " + commanderId + ": Idle");
-
-				status.set(0);
-				synchronized (status) {
-					status.notifyAll();
-				}
-			}
-
 		}
 		catch (final Exception e) {
 			logger.log(Level.WARNING, "Got exception", e);
+		}
+		finally {
+			out = null;
+
+			setName("Commander " + commanderId + ": Idle");
+
+			status.set(0);
+			synchronized (status) {
+				status.notifyAll();
+			}
 		}
 	}
 

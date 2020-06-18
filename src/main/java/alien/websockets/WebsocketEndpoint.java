@@ -536,15 +536,21 @@ public class WebsocketEndpoint extends Endpoint {
 		 * @return <code>true</code> if the command is done
 		 */
 		private boolean waitForCommand(final boolean oneShot, final int seconds) {
+			if (!oneShot)
+				Thread.currentThread().setName("WS: waiting for commander " + commander.commanderId);
+
 			while (commander.status.get() == 1) {
 				synchronized (commander.status) {
 					try {
 						commander.status.wait(seconds * 1000);
 					}
 					catch (@SuppressWarnings("unused") final InterruptedException e) {
-						Thread.currentThread().interrupt();
+						commander.setLine(null, null);
+						commander.kill = true;
+						break;
 					}
 				}
+
 				if (oneShot)
 					break;
 			}
