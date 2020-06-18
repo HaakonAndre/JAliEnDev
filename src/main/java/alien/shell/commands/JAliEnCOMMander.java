@@ -428,6 +428,13 @@ public class JAliEnCOMMander implements Runnable {
 		return accessLogStream;
 	}
 
+	private void notifyExecutionEnd() {
+		status.set(0);
+		synchronized (status) {
+			status.notifyAll();
+		}
+	}
+
 	@Override
 	public void run() {
 		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
@@ -437,8 +444,6 @@ public class JAliEnCOMMander implements Runnable {
 			event.requestId = Long.valueOf(++commandCount);
 
 			try {
-				status.set(1);
-
 				setName("Commander " + commanderId + ": Executing: " + Arrays.toString(arg));
 
 				execute(event);
@@ -457,10 +462,7 @@ public class JAliEnCOMMander implements Runnable {
 
 			setName("Commander " + commanderId + ": Idle");
 
-			status.set(0);
-			synchronized (status) {
-				status.notifyAll();
-			}
+			notifyExecutionEnd();
 		}
 	}
 
@@ -494,14 +496,20 @@ public class JAliEnCOMMander implements Runnable {
 	 * @param arg
 	 */
 	public void setLine(final UIPrintWriter out, final String[] arg) {
-		if (kill)
+		if (kill) {
+			notifyExecutionEnd();
 			return;
+		}
 
 		this.out = out;
 		this.arg = arg;
 
-		if (this.out != null && this.arg != null)
+		if (this.out != null && this.arg != null) {
+			status.set(1);
 			COMMAND_EXECUTOR.submit(this);
+		}
+		else
+			notifyExecutionEnd();
 	}
 
 	/**

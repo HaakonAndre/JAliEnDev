@@ -423,11 +423,7 @@ public class WebsocketEndpoint extends Endpoint {
 			try (Timing t = new Timing(monitor, "execution_time")) {
 				// Send the command to executor and send the result back to
 				// client via OutputStream
-				synchronized (commander) {
-					commander.status.set(1);
-					commander.setLine(out, fullCmd.toArray(new String[0]));
-					commander.notifyAll();
-				}
+				commander.setLine(out, fullCmd.toArray(new String[0]));
 
 				// Wait and return the result back to the client
 				waitForResult();
