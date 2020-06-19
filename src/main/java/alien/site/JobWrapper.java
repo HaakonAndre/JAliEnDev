@@ -711,7 +711,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		try {
 			// Set the updated status
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-
+			
+			//TODO: Confirm(?) and remove
+			//Wait 10s, and set status once more, in case the first attempt was not registered (high load?)
+			Thread.sleep(10 * 1000);
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+			
 			// Also write status to file for the JobAgent to see
 			Files.writeString(Paths.get(currentDir.getAbsolutePath() + "/.jobstatus"), newStatus.name());
 		}
