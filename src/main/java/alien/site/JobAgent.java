@@ -41,6 +41,7 @@ import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.containers.Containerizer;
 import alien.site.containers.ContainerizerFactory;
+import alien.site.packman.CVMFS;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
@@ -213,6 +214,7 @@ public class JobAgent implements Runnable {
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting JobAgent in " + hostName);
+		commander.q_api.putJobLog(queueId, "trace", "Starting JAliEn JobAgent " + CVMFS.getJAliEnVersion());
 
 		int count = jobagent_requests;
 		while (count > 0) {
