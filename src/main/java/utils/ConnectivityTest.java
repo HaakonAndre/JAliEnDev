@@ -31,7 +31,15 @@ public class ConnectivityTest {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
-		final InetAddress[] allAddr = InetAddress.getAllByName(args.length == 0 ? "alice-jcentral.cern.ch" : args[0]);
+		final String testTarget = args.length == 0 ? "alice-jcentral.cern.ch" : args[0];
+
+		final InetAddress[] allAddr;
+
+		try (Timing t = new Timing()) {
+			System.err.println("Resolving IP addresses of " + testTarget);
+			allAddr = InetAddress.getAllByName(testTarget);
+			System.err.println("    resolving " + testTarget + " to " + allAddr.length + " took " + Format.point(t.getMillis()) + " ms");
+		}
 
 		final int port = args.length < 2 ? 8097 : Integer.parseInt(args[1]);
 
@@ -47,6 +55,8 @@ public class ConnectivityTest {
 		double sslHandshakeTime = 0;
 
 		SSLSocketFactory sslSF = null;
+
+		double dnsResolvingTime = 0;
 
 		if (runSSL) {
 			try {
@@ -72,7 +82,12 @@ public class ConnectivityTest {
 		}
 
 		for (final InetAddress addr : allAddr) {
-			final String hostName = Utils.getHostName(addr.getHostAddress());
+			final String hostName;
+
+			try (Timing t = new Timing()) {
+				hostName = Utils.getHostName(addr.getHostAddress());
+				dnsResolvingTime += t.getMillis();
+			}
 
 			System.err.print(addr.getHostAddress() + " ( " + hostName + ") / " + port + " : ");
 
@@ -112,17 +127,24 @@ public class ConnectivityTest {
 		System.err.println(" ------------ Summary ---------------");
 		System.err.print("Connection successful to " + ok + " out of " + (ok + fail) + " addresses");
 
-		if (ok > 0)
-			System.err.println(", average connection time was " + Format.point(okTime / ok) + " ms");
+		if (ok > 0) {
+			final double avgConnectionTime = okTime / ok;
+
+			System.err.println(", average TCP connection time was " + Format.point(avgConnectionTime) + " ms");
+
+			if (runSSL) {
+				System.err.println("  out of them " + sslOK + " sockets could be upgraded to SSL");
+
+				if (sslOK > 0) {
+					final double avgSSLHandshakeTime = sslHandshakeTime / sslOK;
+
+					System.err.println(
+							"    average SSL handshake time was " + Format.point(avgSSLHandshakeTime) + " ms (" + Format.point(avgSSLHandshakeTime / avgConnectionTime) + "x avg connection time)");
+				}
+			}
+		}
 		else
 			System.err.println();
-
-		if (runSSL) {
-			System.err.println("  Out of them " + sslOK + " sockets could be upgraded to SSL");
-
-			if (sslOK > 0)
-				System.err.println("    average SSL handshake time was " + Format.point(sslHandshakeTime / sslOK) + " ms");
-		}
 
 		System.err.print("Connection failed for " + fail + " out of " + (ok + fail) + " addresses");
 
@@ -130,5 +152,8 @@ public class ConnectivityTest {
 			System.err.println(", average time to fail a connection was " + Format.point(failTime / fail) + " ms");
 		else
 			System.err.println();
+
+		if (allAddr.length > 0)
+			System.err.println("DNS reverse lookup average time: " + Format.point(dnsResolvingTime / allAddr.length) + " ms");
 	}
 }
