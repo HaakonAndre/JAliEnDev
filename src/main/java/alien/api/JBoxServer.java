@@ -329,8 +329,6 @@ public class JBoxServer extends Thread {
 												out = new XMLPrintWriter(os);
 
 											commander.setLine(out, fullCmd.toArray(new String[0]));
-
-											commander.notifyAll();
 										}
 									}
 									os.flush();
