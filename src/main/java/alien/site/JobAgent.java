@@ -214,7 +214,6 @@ public class JobAgent implements Runnable {
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting JobAgent in " + hostName);
-		commander.q_api.putJobLog(queueId, "trace", "Starting JAliEn JobAgent " + CVMFS.getJAliEnVersion());
 
 		int count = jobagent_requests;
 		while (count > 0) {
@@ -297,7 +296,7 @@ public class JobAgent implements Runnable {
 			}
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
-
+			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent " + CVMFS.getJAliEnVersion());
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
 			// Set up constraints
