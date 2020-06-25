@@ -238,7 +238,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				if (jdl.gets("OutputErrorE") != null)
 					return uploadOutputFiles(true) ? execExitCode : -1;
 
-				changeStatus(jobStatus);
+				changeStatus(JobStatus.ERROR_E);
 				return execExitCode;
 			}
 
