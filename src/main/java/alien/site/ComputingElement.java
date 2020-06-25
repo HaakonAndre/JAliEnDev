@@ -304,7 +304,7 @@ public class ComputingElement extends Thread {
 			before += "export partition='" + config.get("ce_partition") + "'\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
-		before += "source <( " + CVMFS.getAlienvForSource() + " ); " + "\n";
+		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
 
 		startup_script = getStartup() + "\n";
 
@@ -354,7 +354,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return CVMFS.getJava32DirFromCVMFS() + "/java -Djdk.lang.Process.launchMechanism=fork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
+		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=fork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
 	}
 
 	/**

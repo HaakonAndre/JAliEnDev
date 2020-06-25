@@ -36,7 +36,7 @@ public abstract class Containerizer {
 	/**
 	 * Command to set the environment for payload execution
 	 */
-	protected static final String envSetup = "source <( " + CVMFS.getAlienvForSource() + " ); ";
+	protected static final String envSetup = "source <( " + CVMFS.getAlienvPrint() + " ); ";
 
 	/**
 	 * Simple constructor, initializing the container path from default location or from the environment (DEFAULT_JOB_CONTAINER_PATH key)
