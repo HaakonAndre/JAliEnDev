@@ -382,9 +382,6 @@ public class JobAgent implements Runnable {
 			}
 			catch (IOException | InterruptedException ioe) {
 				logger.log(Level.WARNING, "Could not extract the space information from `df`", ioe);
-				if(System.getenv().containsKey("JALIEN_DEBUG")){
-					return 200000000000L;
-				}
 			}
 		}
 
@@ -421,7 +418,9 @@ public class JobAgent implements Runnable {
 		// what is the minimum we want to run with? (100MB?)
 		if (space <= 100 * 1024 * 1024) {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
-			return false;
+            if(!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")){
+                return false;
+            }
 		}
 
 		if (timeleft <= 0) {
@@ -626,9 +625,9 @@ public class JobAgent implements Runnable {
 					monitor_loops++;
 					final String error = checkProcessResources();
 					if (error != null) {
-						killProcess.run();
+						//killProcess.run(); //TODO: Temporarily disabled
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
-						return 1;
+						//return 1;
 					}
 					if (monitor_loops == 10) {
 						monitor_loops = 0;
@@ -737,7 +736,7 @@ public class JobAgent implements Runnable {
 			if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
 				error = "Disk space limit is " + workdirMaxSizeMB + ", using " + RES_WORKDIR_SIZE;
 
-			// check disk usage
+			// check memory usage
 			if (jobMaxMemoryMB != 0 && RES_VMEM.doubleValue() > jobMaxMemoryMB)
 				error = "Memory usage limit is " + jobMaxMemoryMB + ", using " + RES_VMEM;
 
