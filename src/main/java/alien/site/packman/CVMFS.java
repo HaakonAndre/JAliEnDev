@@ -166,4 +166,11 @@ public class CVMFS extends PackMan {
 	public static String getCleanupScript() {
 		return CVMFS_BASE_DIR + "/scripts/ja_cleanup.pl";
 	}
+	
+    /**
+	 * @return path to job container
+	 */
+	public static String getContainerPath() {
+		return CVMFS_BASE_DIR + "/containers/fs/singularity/centos7";
+	}
 }
