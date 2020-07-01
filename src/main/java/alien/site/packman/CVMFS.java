@@ -167,6 +167,13 @@ public class CVMFS extends PackMan {
 		return CVMFS_BASE_DIR + "/scripts/ja_cleanup.pl";
 	}
 	
+	/**
+	 * @return location of script used for LHCbMarks
+	 */
+	public static String getLhcbMarksScript() {
+		return CVMFS_BASE_DIR + "/scripts/lhcbmarks.sh";
+	}
+	
     /**
 	 * @return path to job container
 	 */

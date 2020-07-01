@@ -871,5 +871,28 @@ public class JobAgent implements Runnable {
 				return Integer.parseInt(number);
 		}
 	}
+	
+		/**
+	 * Get LhcbMarks, using a specialised script in CVMFS
+	 * 
+	 * @return script output, or null in case of error
+	 */
+	private Float getLhcbMarks() {
+		final File lhcbMarksScript = new File(CVMFS.getLhcbMarksScript());
+		
+		if (!lhcbMarksScript.exists()) {
+			logger.log(Level.WARNING, "Script for lhcbMarksScript not found in: " + lhcbMarksScript.getAbsolutePath());
+			return null;
+		}
+		
+		try {
+			String out =  ExternalProcesses.getCmdOutput(lhcbMarksScript.getAbsolutePath(), true, 300L, TimeUnit.SECONDS);
+			out = out.substring(out.lastIndexOf(":") + 1);
+			return Float.parseFloat(out);
+		} catch (IOException | InterruptedException e) {
+			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
+			return null;
+		}
+	}
 
 }
