@@ -96,6 +96,7 @@ public class JobAgent implements Runnable {
 	private String jarPath;
 	private String jarName;
 	private int wrapperPID;
+	private float lhcbMarks = -1;
 
 	private enum jaStatus {
 		REQUESTING_JOB(1), INSTALLING_PKGS(2), JOB_STARTED(3), RUNNING_JOB(4), DONE(5), ERROR_HC(-1), // error in getting host
@@ -878,6 +879,9 @@ public class JobAgent implements Runnable {
 	 * @return script output, or null in case of error
 	 */
 	private Float getLhcbMarks() {
+		if (lhcbMarks > 0)
+			return lhcbMarks;
+		
 		final File lhcbMarksScript = new File(CVMFS.getLhcbMarksScript());
 		
 		if (!lhcbMarksScript.exists()) {
@@ -888,8 +892,9 @@ public class JobAgent implements Runnable {
 		try {
 			String out =  ExternalProcesses.getCmdOutput(lhcbMarksScript.getAbsolutePath(), true, 300L, TimeUnit.SECONDS);
 			out = out.substring(out.lastIndexOf(":") + 1);
-			return Float.parseFloat(out);
-		} catch (IOException | InterruptedException e) {
+			lhcbMarks = Float.parseFloat(out);
+			return lhcbMarks;
+		} catch (Exception e) {
 			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
 			return null;
 		}
