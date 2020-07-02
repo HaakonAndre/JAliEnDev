@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleState;
-import org.apache.catalina.Service;
 import org.apache.catalina.authenticator.SSLAuthenticator;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.servlets.DefaultServlet;
@@ -21,6 +20,8 @@ import org.apache.coyote.http11.Http11NioProtocol;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
 import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
+import org.apache.tomcat.util.net.SSLHostConfig;
+import org.apache.tomcat.util.net.SSLHostConfigCertificate;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -69,9 +70,8 @@ public class TomcatServer {
 		tomcat = new Tomcat();
 		tomcat.setBaseDir(System.getProperty("java.io.tmpdir"));
 		tomcat.setPort(tomcatPort);
-		final Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
-		service.addConnector(createSslConnector(tomcatPort, bindAddress));
+		tomcat.getService().addConnector(createSslConnector(tomcatPort, bindAddress));
 
 		// Add an empty Tomcat context
 		final Context ctx = tomcat.addContext("", null);
@@ -141,35 +141,46 @@ public class TomcatServer {
 		final String truststoreName = dirName + "truststore.jks_" + UserFactory.getUserID();
 
 		if (ConfigUtils.isCentralService()) {
-                        JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
-                        expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.getKeyStore());
+			JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
+			expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.getKeyStore());
 		}
-                else {
-                        JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
+		else {
+			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
 			expirationTime = JAKeyStore.getExpirationTime(JAKeyStore.tokenCert);
-                }
-                JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
+		}
+		JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
 
 		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 
-		connector.setAttribute("address", ConfigUtils.getConfig().gets("alien.api.TomcatServer.bindAddress", bindAddress));
+		connector.setProperty("address", ConfigUtils.getConfig().gets("alien.api.TomcatServer.bindAddress", bindAddress));
 
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
 		connector.setScheme("https");
-		connector.setAttribute("keyAlias", "User.cert");
-		connector.setAttribute("keystorePass", keystorePass);
-		connector.setAttribute("keystoreType", "JKS");
-		connector.setAttribute("keystoreFile", keystoreName);
-		connector.setAttribute("truststorePass", keystorePass);
-		connector.setAttribute("truststoreType", "JKS");
-		connector.setAttribute("truststoreFile", truststoreName);
-		connector.setAttribute("clientAuth", "true");
-		connector.setAttribute("sslProtocol", "TLS");
-		connector.setAttribute("sslEnabledProtocols", "TLSv1.2");
-		connector.setAttribute("SSLEnabled", "true");
-		connector.setAttribute("maxThreads", "200");
-		connector.setAttribute("connectionTimeout", "20000");
+		connector.setProperty("SSLEnabled", "true");
+		connector.setProperty("maxThreads", "200");
+		connector.setProperty("connectionTimeout", "20000");
+		connector.setProperty("compression", "on");
+		connector.setProperty("compressionMinSize", "1");
+		connector.setProperty("useSendFile", "false");
+		connector.setProperty("defaultSSLHostConfigName", "localhost");
+
+		final SSLHostConfig hostconfig = new SSLHostConfig();
+		hostconfig.setHostName("localhost");
+		hostconfig.setCertificateVerification("true");
+		hostconfig.setTruststoreFile(truststoreName);
+		hostconfig.setTruststorePassword(keystorePass);
+		hostconfig.setTruststoreType("JKS");
+		hostconfig.setSslProtocol("TLS");
+		hostconfig.setProtocols("TLSv1.2");
+
+		final SSLHostConfigCertificate cert = hostconfig.getCertificates(true).iterator().next();
+		cert.setCertificateKeyAlias("User.cert");
+		cert.setCertificateKeystoreFile(keystoreName);
+		cert.setCertificateKeystorePassword(keystorePass);
+		cert.setCertificateKeystoreType("JKS");
+
+		connector.addSslHostConfig(hostconfig);
 		return connector;
 	}
 
@@ -257,7 +268,7 @@ public class TomcatServer {
 	 */
 	public static String getListeningAddressAndPort() {
 		if (tomcatServer != null) {
-			final Object addressAttribute = tomcatServer.tomcat.getConnector().getAttribute("address");
+			final Object addressAttribute = tomcatServer.tomcat.getConnector().getProperty("address");
 
 			String address = addressAttribute != null ? addressAttribute.toString() : "*";
 
@@ -276,11 +287,9 @@ public class TomcatServer {
 		new Thread() {
 			@Override
 			public void run() {
-				final String keystorePass = new String(JAKeyStore.pass);
-
-		                final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
+				final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
 				final String keystoreName = dirName + "keystore.jks_" + UserFactory.getUserID();
-		                final String truststoreName = dirName + "truststore.jks_" + UserFactory.getUserID();
+				final String truststoreName = dirName + "truststore.jks_" + UserFactory.getUserID();
 
 				try {
 					while (true) {
