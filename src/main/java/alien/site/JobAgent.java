@@ -86,6 +86,7 @@ public class JobAgent implements Runnable {
 	private MonitoredJob mj;
 	private Double prevCpuTime;
 	private long prevTime = 0;
+	private int cpuCores = 1;
 
 	private int totalJobs;
 	private final long jobAgentStartTime = System.currentTimeMillis();
@@ -96,7 +97,7 @@ public class JobAgent implements Runnable {
 	private String jarPath;
 	private String jarName;
 	private int wrapperPID;
-	private float lhcbMarks = -1;
+	private static float lhcbMarks = -1;
 
 	private enum jaStatus {
 		REQUESTING_JOB(1), INSTALLING_PKGS(2), JOB_STARTED(3), RUNNING_JOB(4), DONE(5), ERROR_HC(-1), // error in getting host
@@ -419,9 +420,9 @@ public class JobAgent implements Runnable {
 		// what is the minimum we want to run with? (100MB?)
 		if (space <= 100 * 1024 * 1024) {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
-            if(!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")){
-                return false;
-            }
+			if (!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")) {
+				return false;
+			}
 		}
 
 		if (timeleft <= 0) {
@@ -446,40 +447,63 @@ public class JobAgent implements Runnable {
 		// Sandbox size
 		final String workdirMaxSize = jdl.gets("Workdirectorysize");
 
-		if (workdirMaxSize != null) {
-			final Pattern p = Pattern.compile("\\p{L}");
-			final Matcher m = p.matcher(workdirMaxSize);
-			if (m.find()) {
-				final String number = workdirMaxSize.substring(0, m.start());
-				final String unit = workdirMaxSize.substring(m.start());
+		// By default the jobs are allowed to use up to 10GB of disk space in the sandbox
+		workdirMaxSizeMB = 10 * 1024;
 
-				workdirMaxSizeMB = convertStringUnitToIntegerMB(unit, number);
+		final Pattern p = Pattern.compile("\\p{L}");
+
+		if (workdirMaxSize != null) {
+			final Matcher m = p.matcher(workdirMaxSize);
+			try {
+				if (m.find()) {
+					final String number = workdirMaxSize.substring(0, m.start());
+					final String unit = workdirMaxSize.substring(m.start());
+
+					workdirMaxSizeMB = convertStringUnitToIntegerMB(unit, number);
+				}
+				else
+					workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
+
+				commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (JDL): " + workdirMaxSizeMB + "MB");
 			}
-			else
-				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
-			commander.q_api.putJobLog(queueId, "trace", "Disk requested: " + workdirMaxSizeMB);
+			catch (@SuppressWarnings("unused") NumberFormatException nfe) {
+				commander.q_api.putJobLog(queueId, "trace", "Local disk space specs are invalid: '" + workdirMaxSize + "', using the default " + workdirMaxSizeMB + "MB");
+			}
 		}
 		else
-			workdirMaxSizeMB = 0;
+			commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (default): " + jobMaxMemoryMB + "MB");
+
+		Integer requestedCPUCores = jdl.getInteger("CPUCores");
+
+		if (requestedCPUCores != null && requestedCPUCores.intValue() > 0)
+			cpuCores = requestedCPUCores.intValue();
 
 		// Memory use
 		final String maxmemory = jdl.gets("Memorysize");
 
-		if (maxmemory != null) {
-			final Pattern p = Pattern.compile("\\p{L}");
-			final Matcher m = p.matcher(maxmemory);
-			if (m.find()) {
-				final String number = maxmemory.substring(0, m.start());
-				final String unit = maxmemory.substring(m.start());
+		// By default the job is limited to using 8GB of virtual memory per allocated CPU core
+		jobMaxMemoryMB = cpuCores * 8 * 1024;
 
-				jobMaxMemoryMB = convertStringUnitToIntegerMB(unit, number);
+		if (maxmemory != null) {
+			final Matcher m = p.matcher(maxmemory);
+			try {
+				if (m.find()) {
+					final String number = maxmemory.substring(0, m.start());
+					final String unit = maxmemory.substring(m.start()).toUpperCase();
+
+					jobMaxMemoryMB = convertStringUnitToIntegerMB(unit, number);
+				}
+				else
+					jobMaxMemoryMB = Integer.parseInt(maxmemory);
+
+				commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit (JDL): " + jobMaxMemoryMB + "MB");
 			}
-			else
-				jobMaxMemoryMB = Integer.parseInt(maxmemory);
-			commander.q_api.putJobLog(queueId, "trace", "Memory requested: " + jobMaxMemoryMB);
+			catch (@SuppressWarnings("unused") NumberFormatException nfe) {
+				commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit specs are invalid: '" + maxmemory + "', using the default " + jobMaxMemoryMB + "MB");
+			}
 		}
 		else
-			jobMaxMemoryMB = 0;
+			commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit (default): " + jobMaxMemoryMB + "MB");
 	}
 
 	/**
@@ -489,7 +513,7 @@ public class JobAgent implements Runnable {
 	public static void main(final String[] args) throws IOException {
 		ConfigUtils.setApplicationName("JobAgent");
 		ConfigUtils.switchToForkProcessLaunching();
-		
+
 		final JobAgent jao = new JobAgent();
 		jao.run();
 	}
@@ -529,7 +553,7 @@ public class JobAgent implements Runnable {
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
 				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
-				monitor.sendParameter("containerLayer", 1);
+				monitor.sendParameter("containerLayer", Integer.valueOf(1));
 				cont.setWorkdir(jobWorkdir);
 				return cont.containerize(String.join(" ", launchCmd));
 			}
@@ -626,9 +650,9 @@ public class JobAgent implements Runnable {
 					monitor_loops++;
 					final String error = checkProcessResources();
 					if (error != null) {
-						//killProcess.run(); //TODO: Temporarily disabled
+						// killProcess.run(); //TODO: Temporarily disabled
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
-						//return 1;
+						// return 1;
 					}
 					if (monitor_loops == 10) {
 						monitor_loops = 0;
@@ -872,32 +896,32 @@ public class JobAgent implements Runnable {
 				return Integer.parseInt(number);
 		}
 	}
-	
-		/**
-	 * Get LhcbMarks, using a specialised script in CVMFS
+
+	/**
+	 * Get LhcbMarks, using a specialized script in CVMFS
 	 * 
 	 * @return script output, or null in case of error
 	 */
-	private Float getLhcbMarks() {
+	public static Float getLhcbMarks() {
 		if (lhcbMarks > 0)
-			return lhcbMarks;
-		
+			return Float.valueOf(lhcbMarks);
+
 		final File lhcbMarksScript = new File(CVMFS.getLhcbMarksScript());
-		
+
 		if (!lhcbMarksScript.exists()) {
 			logger.log(Level.WARNING, "Script for lhcbMarksScript not found in: " + lhcbMarksScript.getAbsolutePath());
 			return null;
 		}
-		
+
 		try {
-			String out =  ExternalProcesses.getCmdOutput(lhcbMarksScript.getAbsolutePath(), true, 300L, TimeUnit.SECONDS);
+			String out = ExternalProcesses.getCmdOutput(lhcbMarksScript.getAbsolutePath(), true, 300L, TimeUnit.SECONDS);
 			out = out.substring(out.lastIndexOf(":") + 1);
 			lhcbMarks = Float.parseFloat(out);
-			return lhcbMarks;
-		} catch (Exception e) {
+			return Float.valueOf(lhcbMarks);
+		}
+		catch (Exception e) {
 			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
 			return null;
 		}
 	}
-
 }
