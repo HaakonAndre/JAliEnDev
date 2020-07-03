@@ -44,7 +44,6 @@ import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
-import lia.util.process.ExternalProcesses;
 
 /**
  * Job execution wrapper, running an embedded Tomcat server for in/out-bound communications
@@ -104,7 +103,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * Streams for data transfer
 	 */
 	private ObjectInputStream inputFromJobAgent;
-	
+
 	/**
 	 * ML monitor object
 	 */
@@ -155,10 +154,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
-		
+
 		// use same tmpdir everywhere
 		String tmpdir = System.getenv("TMPDIR");
-		if(tmpdir != null)
+		if (tmpdir != null)
 			System.setProperty("java.io.tmpdir", tmpdir);
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
@@ -233,7 +232,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				if (execExitCode < 0)
 					commander.q_api.putJobLog(queueId, "trace", "Failed to start execution of payload. Exit code: " + Math.abs(execExitCode));
 				else
-					commander.q_api.putJobLog(queueId, "trace", "Job started, but did not execute correctly: " + execExitCode);
+					commander.q_api.putJobLog(queueId, "trace", "Marking the job as ERROR_E since executable exit code was " + execExitCode);
 
 				if (jdl.gets("OutputErrorE") != null)
 					return uploadOutputFiles(true) ? execExitCode : -1;
@@ -263,7 +262,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
-			
+
 			cleanupProcesses();
 
 			return 0;
@@ -311,13 +310,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						cmd.add(st.nextToken());
 				}
 
-		//Check if we can put the payload in its own container
+		// Check if we can put the payload in its own container
 		Containerizer cont = ContainerizerFactory.getContainerizer();
 		if (cont != null) {
 			monitor.sendParameter("containerLayer", 2);
-			cmd =  cont.containerize(String.join(" ", cmd));
+			cmd = cont.containerize(String.join(" ", cmd));
 		}
-		
+
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
@@ -537,10 +536,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
-		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 		logger.log(Level.INFO, "Uploading output for: " + jdl);
 
 		final String outputDir = getJobOutputDir();
+
+		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles(ERROR_E=" + ERROR_E + ", outputDir=" + outputDir + ")");
 
 		String tag = "Output";
 		if (ERROR_E)
@@ -685,7 +685,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	public static void main(final String[] args) throws IOException {
 		ConfigUtils.setApplicationName("JobWrapper");
 		ConfigUtils.switchToForkProcessLaunching();
-		
+
 		final JobWrapper jw = new JobWrapper();
 		jw.run();
 	}
@@ -711,12 +711,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		try {
 			// Set the updated status
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-			
-			//TODO: Confirm(?) and remove
-			//Wait 10s, and set status once more, in case the first attempt was not registered (high load?)
-			Thread.sleep(10 * 1000);
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-			
+
+			// TODO: Confirm(?) and remove
+			// Wait 10s, and set status once more, in case the first attempt was not registered (high load?)
+			// Thread.sleep(10 * 1000);
+			// TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+
 			// Also write status to file for the JobAgent to see
 			Files.writeString(Paths.get(currentDir.getAbsolutePath() + "/.jobstatus"), newStatus.name());
 		}
@@ -808,7 +808,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
 		}
 	}
-	
+
 	/**
 	 * Cleanup processes, using a specialised script in CVMFS
 	 * 
@@ -816,16 +816,17 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 */
 	private int cleanupProcesses() {
 		final File cleanupScript = new File(CVMFS.getCleanupScript());
-		
+
 		if (!cleanupScript.exists()) {
 			logger.log(Level.WARNING, "Script for process cleanup not found in: " + cleanupScript.getAbsolutePath());
 			return -1;
 		}
-		
+
 		try {
 			Process process = Runtime.getRuntime().exec((cleanupScript.getAbsolutePath() + " -v -m ALIEN_PROC_ID=" + queueId + " $$ -KILL"));
 			return process.waitFor();
-		} catch (IOException | InterruptedException e) {
+		}
+		catch (IOException | InterruptedException e) {
 			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
 			return -1;
 		}
