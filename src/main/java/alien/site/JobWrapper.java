@@ -574,11 +574,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 					// Use upload instead
-					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName());
+					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName() + " to " + outputDir);
 
 					String args = "-w,-S," +
 							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") +
-							",-j," + String.valueOf(queueId) + "";
+							",-j," + String.valueOf(queueId);
 
 					// Don't commit in case of ERROR_E
 					if (ERROR_E)
@@ -615,6 +615,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			}
 			catch (final IOException e) {
 				logger.log(Level.WARNING, "IOException received while attempting to upload files", e);
+				commander.q_api.putJobLog(queueId, "trace", e.getMessage());
 				uploadedAllOutFiles = false;
 			}
 		}
