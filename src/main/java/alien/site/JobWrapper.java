@@ -640,7 +640,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				changeStatus(JobStatus.DONE);
 		}
 		else
-			changeStatus(JobStatus.ERROR_E);
+			changeStatus(exitStatus);
 
 		return uploadedAllOutFiles;
 	}
