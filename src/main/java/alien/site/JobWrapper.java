@@ -235,7 +235,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					commander.q_api.putJobLog(queueId, "trace", "Marking the job as ERROR_E since executable exit code was " + execExitCode);
 
 				if (jdl.gets("OutputErrorE") != null)
-					return uploadOutputFiles(true) ? execExitCode : -1;
+					return uploadOutputFiles(JobStatus.ERROR_E) ? execExitCode : -1;
 
 				changeStatus(JobStatus.ERROR_E);
 				return execExitCode;
@@ -253,12 +253,15 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				final String fileTrace = getTraceFromFile();
 				if (fileTrace != null)
 					commander.q_api.putJobLog(queueId, "trace", fileTrace);
+				
+				if (jdl.gets("OutputErrorV") != null)
+					return uploadOutputFiles(JobStatus.ERROR_V) ? execExitCode : -1;
 
 				changeStatus(JobStatus.ERROR_V);
 				return valExitCode;
 			}
 
-			if (!uploadOutputFiles(false)) {
+			if (!uploadOutputFiles(JobStatus.DONE)) {
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
@@ -532,19 +535,21 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return envmap;
 	}
 
-	private boolean uploadOutputFiles(boolean ERROR_E) {
+	private boolean uploadOutputFiles(JobStatus exitStatus) {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
 		logger.log(Level.INFO, "Uploading output for: " + jdl);
 
-		final String outputDir = getJobOutputDir();
+		final String outputDir = getJobOutputDir(exitStatus);
 
-		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles(ERROR_E=" + ERROR_E + ", outputDir=" + outputDir + ")");
+		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles(exitStatus=" + exitStatus + ", outputDir=" + outputDir + ")");
 
 		String tag = "Output";
-		if (ERROR_E)
+		if (exitStatus == JobStatus.ERROR_E)
 			tag = "OutputErrorE";
+		else if (exitStatus == JobStatus.ERROR_V)
+			tag = "OutputErrorV";
 
 		changeStatus(JobStatus.SAVING);
 
@@ -580,8 +585,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") +
 							",-j," + String.valueOf(queueId);
 
-					// Don't commit in case of ERROR_E
-					if (ERROR_E)
+					// Don't commit in case of ERROR_E or ERROR_V
+					if (exitStatus == JobStatus.ERROR_E || exitStatus == JobStatus.ERROR_V)
 						args += ",-nc";
 
 					final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -602,7 +607,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						break;
 					}
 
-					if (!ERROR_E) {
+					if (exitStatus == JobStatus.DONE) {
 						// Register lfn links to archive
 						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
 					}
@@ -628,7 +633,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		} // else
 			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
-		if (!ERROR_E) {
+		if (exitStatus == JobStatus.DONE) {
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
 			else
@@ -704,7 +709,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		// if final status with saved files, we set the path
 		if (jobStatus == JobStatus.DONE || jobStatus == JobStatus.DONE_WARN || jobStatus == JobStatus.ERROR_E || jobStatus == JobStatus.ERROR_V)
-			extrafields.put("path", getJobOutputDir());
+			extrafields.put("path", getJobOutputDir(newStatus));
 		else if (jobStatus == JobStatus.RUNNING) {
 			extrafields.put("spyurl", hostName + ":" + TomcatServer.getPort());
 			extrafields.put("node", hostName);
@@ -730,10 +735,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	/**
 	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
 	 */
-	public String getJobOutputDir() {
+	public String getJobOutputDir(JobStatus exitStatus) {
 		String outputDir = jdl.getOutputDir();
 
-		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
+		if (exitStatus == JobStatus.ERROR_V || exitStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
 		else if (outputDir == null)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);

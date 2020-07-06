@@ -26,6 +26,7 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -624,10 +625,18 @@ public class JobAgent implements Runnable {
 				sendProcessResources();
 		}
 
-		TimerTask killProcess = new TimerTask() {
+		TimerTask killPayload = new TimerTask() {
 			@Override
 			public void run() {
-				p.destroy();
+				final Vector<Integer> childProcs = mj.getChildren();
+				if (childProcs != null || childProcs.size() > 1) {
+					try {
+						int payloadPidPos = getPayloadPidPos(childProcs);
+						Runtime.getRuntime().exec("kill -9 " + childProcs.get(payloadPidPos));
+						Thread.sleep(60 * 1000); //Give the JobWrapper 60s to clean things up
+					} catch (Exception e) {}
+				}
+				//If still alive, kill everything, including the JW
 				if (p.isAlive()) {
 					p.destroyForcibly();
 				}
@@ -635,7 +644,7 @@ public class JobAgent implements Runnable {
 		};
 
 		final Timer t = new Timer();
-		t.schedule(killProcess, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
+		t.schedule(killPayload, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
 
 		int code = 0;
 
@@ -923,5 +932,38 @@ public class JobAgent implements Runnable {
 			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
 			return null;
 		}
+	}
+	
+	/**
+	 * 
+	 * Identifies job payload position in list of child PIDs
+	 * 
+	 * @param childPIDs
+	 * @return position of job payload in childPIDs
+	 */
+	private int getPayloadPidPos(Vector<Integer> childPIDs) {
+
+		ArrayList<Integer> javaProcs = new ArrayList<Integer>();
+
+		try {
+			final Process getWrappers = Runtime.getRuntime().exec("pgrep java");
+			getWrappers.waitFor();
+			Scanner cmdScanner = new Scanner(getWrappers.getInputStream());
+			while (cmdScanner.hasNext()) {
+				javaProcs.add(Integer.parseInt(cmdScanner.next()));
+			}
+			cmdScanner.close();
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Could not get wrapper PID");
+		}
+
+		for(int i=0; i < childPIDs.size(); i++) {
+			for(int j=0; j < javaProcs.size(); j++) {
+				if(childPIDs.get(i).equals(javaProcs.get(j)))
+						return i+1; //the first java PID encountered will be the wrapper, the next will be the payload
+			}
+		}
+		return 0;
 	}
 }
