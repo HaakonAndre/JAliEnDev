@@ -631,8 +631,7 @@ public class JobAgent implements Runnable {
 				final Vector<Integer> childProcs = mj.getChildren();
 				if (childProcs != null || childProcs.size() > 1) {
 					try {
-						int payloadPidPos = getPayloadPidPos(childProcs);
-						Runtime.getRuntime().exec("kill -9 " + childProcs.get(payloadPidPos));
+						Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
 						Thread.sleep(60 * 1000); //Give the JobWrapper 60s to clean things up
 					} catch (Exception e) {}
 				}
@@ -929,39 +928,38 @@ public class JobAgent implements Runnable {
 			return Float.valueOf(lhcbMarks);
 		}
 		catch (Exception e) {
-			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
+			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: ", e);
 			return null;
 		}
 	}
 	
 	/**
 	 * 
-	 * Identifies job payload position in list of child PIDs
+	 * Identifies job payload in list of child PIDs
 	 * 
 	 * @param childPIDs
-	 * @return position of job payload in childPIDs
+	 * @return job payload PID
 	 */
-	private int getPayloadPidPos(Vector<Integer> childPIDs) {
-
+	private int getPayloadPid(Vector<Integer> childPIDs) {
 		ArrayList<Integer> javaProcs = new ArrayList<Integer>();
 
 		try {
-			final Process getWrappers = Runtime.getRuntime().exec("pgrep java");
-			getWrappers.waitFor();
-			Scanner cmdScanner = new Scanner(getWrappers.getInputStream());
+			final Process getJavaProcs = Runtime.getRuntime().exec("pgrep java");
+			getJavaProcs.waitFor();
+			Scanner cmdScanner = new Scanner(getJavaProcs.getInputStream());
 			while (cmdScanner.hasNext()) {
 				javaProcs.add(Integer.parseInt(cmdScanner.next()));
 			}
 			cmdScanner.close();
 		}
 		catch (Exception e) {
-			logger.log(Level.WARNING, "Could not get wrapper PID");
+			logger.log(Level.WARNING, "Could not get PIDs to identify payload");
 		}
 
 		for(int i=0; i < childPIDs.size(); i++) {
 			for(int j=0; j < javaProcs.size(); j++) {
 				if(childPIDs.get(i).equals(javaProcs.get(j)))
-						return i+1; //the first java PID encountered will be the wrapper, the next will be the payload
+						return childPIDs.get(i+1); //the first java PID encountered will be the wrapper, the next will be the payload
 			}
 		}
 		return 0;
