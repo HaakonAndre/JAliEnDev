@@ -539,6 +539,7 @@ public class JobAgent implements Runnable {
 							cmdScanner.next();
 							break;
 						case "alien.site.JobAgent":
+							launchCmd.add("-Djobagent.vmid=" + queueId);
 							launchCmd.add("-DAliEnConfig=" + jobWorkdir);
 							launchCmd.add("-cp");
 							launchCmd.add(jarPath + jarName);
@@ -940,27 +941,26 @@ public class JobAgent implements Runnable {
 	 * @param childPIDs
 	 * @return job payload PID
 	 */
-	private int getPayloadPid(Vector<Integer> childPIDs) {
-		ArrayList<Integer> javaProcs = new ArrayList<Integer>();
+	private int getPayloadPid(Vector<Integer> childPids) {
+		ArrayList<Integer> wrapperProcs = new ArrayList<Integer>();
 
 		try {
-			final Process getJavaProcs = Runtime.getRuntime().exec("pgrep java");
-			getJavaProcs.waitFor();
-			Scanner cmdScanner = new Scanner(getJavaProcs.getInputStream());
+			final Process getWrapperProcs = Runtime.getRuntime().exec("pgrep -f " + queueId);
+			getWrapperProcs.waitFor();
+			Scanner cmdScanner = new Scanner(getWrapperProcs.getInputStream());
 			while (cmdScanner.hasNext()) {
-				javaProcs.add(Integer.parseInt(cmdScanner.next()));
+				wrapperProcs.add(Integer.parseInt(cmdScanner.next()));
 			}
 			cmdScanner.close();
 		}
 		catch (Exception e) {
-			logger.log(Level.WARNING, "Could not get PIDs to identify payload");
+			logger.log(Level.WARNING, "Could not get JobWrapper PID");
 		}
-
-		for(int i=0; i < childPIDs.size(); i++) {
-			for(int j=0; j < javaProcs.size(); j++) {
-				if(childPIDs.get(i).equals(javaProcs.get(j)))
-						return childPIDs.get(i+1); //the first java PID encountered will be the wrapper, the next will be the payload
-			}
+		int wrapperPid = wrapperProcs.get(wrapperProcs.size()-1); //first entry comes from the env init in container. Ignore if present
+		
+		for(int i=0; i < childPids.size(); i++) {
+				if(childPids.get(i).equals(wrapperPid))
+						return childPids.get(i+1); //payload is the subsequent child of the wrapper
 		}
 		return 0;
 	}
