@@ -955,6 +955,7 @@ public class JobAgent implements Runnable {
 		}
 		catch (Exception e) {
 			logger.log(Level.WARNING, "Could not get JobWrapper PID");
+			return 0;
 		}
 		int wrapperPid = wrapperProcs.get(wrapperProcs.size()-1); //first entry comes from the env init in container. Ignore if present
 		
