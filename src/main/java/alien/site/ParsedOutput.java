@@ -3,7 +3,9 @@ package alien.site;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import alien.taskQueue.JDL;
 import lazyj.commands.SystemCommand;
@@ -72,8 +74,9 @@ public class ParsedOutput {
 			files.add("jalien_defarchNOSPEC." + this.queueId + ":stdout,stderr,resources");
 		System.out.println(files); // TODELETE
 
-		for (final String line : files) {
+		final Set<String> processedFiles = new HashSet<>();
 
+		for (final String line : files) {
 			System.out.println("Line: " + line);
 
 			final String[] parts = line.split("@");
@@ -88,7 +91,7 @@ public class ParsedOutput {
 
 				System.out.println("Archparts: " + archparts[0] + " " + archparts[1]);
 
-				final ArrayList<String> filesincluded = parsePatternFiles(archparts[1].split(","));
+				final ArrayList<String> filesincluded = parsePatternFiles(archparts[1].split(","), processedFiles);
 
 				System.out.println("Adding archive: " + archparts[0] + " and opt: " + options);
 				jobOutput.add(new OutputEntry(archparts[0], filesincluded, options, Long.valueOf(queueId)));
@@ -96,7 +99,7 @@ public class ParsedOutput {
 			else {
 				// file(s)
 				System.out.println("Single file: " + parts[0]);
-				final ArrayList<String> filesincluded = parsePatternFiles(parts[0].split(","));
+				final ArrayList<String> filesincluded = parsePatternFiles(parts[0].split(","), processedFiles);
 				for (final String f : filesincluded) {
 					System.out.println("Adding single: [" + f + "] and opt: [" + options + "]");
 					jobOutput.add(new OutputEntry(f, null, options, Long.valueOf(queueId)));
@@ -109,7 +112,7 @@ public class ParsedOutput {
 		return;
 	}
 
-	private ArrayList<String> parsePatternFiles(final String[] files) {
+	private ArrayList<String> parsePatternFiles(final String[] files, final Set<String> alreadySeen) {
 		System.out.println("Files to parse patterns: " + Arrays.asList(files).toString());
 
 		final ArrayList<String> filesFound = new ArrayList<>();
@@ -124,13 +127,25 @@ public class ParsedOutput {
 							f = f.trim();
 							if (f.length() > 0) {
 								final String fname = new File(f).getName();
-								System.out.println("Adding file from ls: " + fname);
-								filesFound.add(fname);
+
+								if (!alreadySeen.contains(fname)) {
+									System.out.println("Adding file from ls: " + fname);
+									filesFound.add(fname);
+									alreadySeen.add(fname);
+								}
+								else
+									System.out.println("Ignoring duplicate file: " + fname);
 							}
 						}
 				}
-				else
-					filesFound.add(file);
+				else {
+					if (!alreadySeen.contains(file)) {
+						filesFound.add(file);
+						alreadySeen.add(file);
+					}
+					else
+						System.out.println("Ignoring duplicate file: " + file);
+				}
 			}
 
 		System.out.println("Returned parsed array: " + filesFound.toString());
