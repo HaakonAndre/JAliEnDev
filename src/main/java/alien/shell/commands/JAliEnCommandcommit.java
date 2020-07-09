@@ -25,7 +25,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	/**
 	 * commit request size
 	 */
-	private int size = 0;
+	private long size = 0;
 
 	/**
 	 * commit request permissions
@@ -145,7 +145,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 			rawenvelope = arg.next();
 			if (arg.hasNext())
 				try {
-					size = Integer.parseInt(arg.next());
+					size = Long.parseLong(arg.next());
 				}
 				catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					// ignore

@@ -27,9 +27,9 @@ import alien.user.AliEnPrincipal;
  */
 public class RegisterEnvelopes extends Request {
 	/**
-	 *
+	 * 
 	 */
-	private static final long serialVersionUID = -5833071635420290042L;
+	private static final long serialVersionUID = 6927727456767661381L;
 
 	/**
 	 * Logger
@@ -40,7 +40,7 @@ public class RegisterEnvelopes extends Request {
 	private List<PFN> pfns = null;
 
 	private String encryptedEnvelope = null;
-	private int size = 0;
+	private long size = 0;
 	private String md5 = null;
 
 	private BOOKING_STATE targetState = BOOKING_STATE.COMMITED;
@@ -68,7 +68,7 @@ public class RegisterEnvelopes extends Request {
 	 * @param md5
 	 * @param state what to do which the respective entries
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String encryptedEnvelope, final int size, final String md5, final BOOKING_STATE state) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String encryptedEnvelope, final long size, final String md5, final BOOKING_STATE state) {
 		setRequestUser(user);
 		this.encryptedEnvelope = encryptedEnvelope;
 		this.size = size;
