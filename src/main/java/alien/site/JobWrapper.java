@@ -565,8 +565,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
+		final ArrayList<OutputEntry> entries = filesTable.getEntries();
 
-		for (final OutputEntry entry : filesTable.getEntries()) {
+		for (final OutputEntry entry : entries) {
 			File localFile;
 			try {
 				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
@@ -604,11 +605,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
 						break;
 					}
-
-					if (exitStatus == JobStatus.DONE) {
-						// Register lfn links to archive
-						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
-					}
 				}
 				else {
 					logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
@@ -629,13 +625,14 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			changeStatus(JobStatus.ERROR_SV);
 			return false;
 		} // else
-			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
+		// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
 		if (exitStatus == JobStatus.DONE) {
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
 			else
 				changeStatus(JobStatus.DONE);
+			registerEntries(entries, outputDir);
 		}
 		else
 			changeStatus(exitStatus);
@@ -834,7 +831,18 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
 			return -1;
 		}
-
+	}
+	
+	/**
+	 * Register lfn links to archive
+	 * 
+	 * @param entries
+	 * @param outputDir
+	 */
+	private void registerEntries(ArrayList<OutputEntry> entries, String outputDir) {
+		for (final OutputEntry entry : entries) {
+			CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
+		}
 	}
 
 }
