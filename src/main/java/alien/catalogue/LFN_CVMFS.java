@@ -112,7 +112,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 	 *
 	 * @since AliEn 2.19
 	 */
-	public int jobid;
+	public long jobid;
 
 	/**
 	 * physical locations
@@ -246,7 +246,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 				this.ctime = formatter.parse(date);
 
 				this.perm = values[4];
-				this.jobid = Integer.parseInt(values[6]);
+				this.jobid = Long.parseLong(values[6]);
 				this.owner = values[2];
 				this.gowner = values[3];
 

@@ -53,7 +53,7 @@ public final class TransferUtils {
 	 * @param id
 	 * @return the transfer with the given ID
 	 */
-	public static TransferDetails getTransfer(final int id) {
+	public static TransferDetails getTransfer(final long id) {
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -65,7 +65,7 @@ public final class TransferUtils {
 
 			db.setReadOnly(true);
 
-			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(id));
+			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Long.valueOf(id));
 
 			if (!db.moveNext())
 				return null;
@@ -113,7 +113,7 @@ public final class TransferUtils {
 	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Long id, final Integer count, final boolean orderAsc) {
 		if (id != null) {
 			final List<TransferDetails> l = new ArrayList<>();
-			final TransferDetails d = getTransfer(id.intValue());
+			final TransferDetails d = getTransfer(id.longValue());
 			if (d != null)
 				l.add(d);
 			return l;
