@@ -30,14 +30,14 @@ import lazyj.Format;
 public class XrootDEnvelope implements Serializable {
 
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6510022440471004424L;
+
+	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 1024787790575833398L;
 
 	/**
 	 * the order the key-vals have to appear for sign and verify
