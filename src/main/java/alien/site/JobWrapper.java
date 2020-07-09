@@ -548,8 +548,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		String tag = "Output";
 		if (exitStatus == JobStatus.ERROR_E)
 			tag = "OutputErrorE";
-		else if (exitStatus == JobStatus.ERROR_V)
-			tag = "OutputErrorV";
 
 		changeStatus(JobStatus.SAVING);
 
