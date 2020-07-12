@@ -1,8 +1,6 @@
 package utils.crawler;
 
 import java.util.*;
-
-import alien.io.protocols.Xrootd;
 import alien.user.LDAPHelper;
 
 /**
@@ -10,6 +8,39 @@ import alien.user.LDAPHelper;
  * @since Apr 15, 2020
  */
 public class GetCEs {
+
+    /**
+     * Debug method
+     *
+     * @param args
+     */
+    public static void main(final String[] args) {
+
+        for (final String se : new String[] { " ALICE::CERN::EOS" }) {
+            final Set<String> siteNames = getCloseSites(se);
+            System.err.println(siteNames);
+
+            final Set<String> matchingCEs = new LinkedHashSet<>();
+
+            for (final String siteName : siteNames)
+                for (final String ce : getCEs(siteName))
+                    matchingCEs.add(siteName + "::" + ce);
+
+            final StringBuilder requirements = new StringBuilder();
+
+            System.err.println("GetCE " + matchingCEs);
+
+            for (final String ce : matchingCEs) {
+                if (requirements.length() > 0)
+                    requirements.append(" || ");
+
+                requirements.append("(other.CE==\"ALICE::").append(ce).append("\")");
+            }
+
+            System.err.println(se + " : " + requirements);
+        }
+    }
+
     public static Set<String> getCloseSites(final String storageName) {
         final Set<String> dns = LDAPHelper.checkLdapInformation("closese=" + storageName, "ou=Sites,", "dn");
 
@@ -34,39 +65,32 @@ public class GetCEs {
         return ret;
     }
 
-    public static Set<String> getCEs(final String siteName) {
-        return LDAPHelper.checkLdapInformation("(objectClass=AliEnCE)", "ou=CE,ou=Services,ou=" + siteName + ",ou=Sites,", "name");
+    /**
+     * Generate JDL requirement for closest site to storage element
+     * @param se
+     */
+    public static StringBuilder getSiteJDLRequirement(String se) {
+        final Set<String> siteNames = GetCEs.getCloseSites(se);
+
+        final Set<String> matchingCEs = new LinkedHashSet<>();
+
+        for (final String siteName : siteNames)
+            for (final String ce : GetCEs.getCEs(siteName))
+                matchingCEs.add(siteName + "::" + ce);
+
+        final StringBuilder requirements = new StringBuilder();
+
+        for (final String ce : matchingCEs) {
+            if (requirements.length() > 0)
+                requirements.append(" || ");
+
+            requirements.append("(other.CE==\"ALICE::").append(ce).append("\")");
+        }
+
+        return requirements;
     }
 
-    /**
-     * Debug method
-     *
-     * @param args
-     */
-    public static void main(final String[] args) {
-
-        for (final String se : new String[] { "ALICE::TORINO::SE" }) {
-            final Set<String> siteNames = getCloseSites(se);
-            System.err.println(siteNames);
-
-            final Set<String> matchingCEs = new LinkedHashSet<>();
-
-            for (final String siteName : siteNames)
-                for (final String ce : getCEs(siteName))
-                    matchingCEs.add(siteName + "::" + ce);
-
-            final StringBuilder requirements = new StringBuilder();
-
-            System.err.println("GetCE " + matchingCEs);
-
-            for (final String ce : matchingCEs) {
-                if (requirements.length() > 0)
-                    requirements.append(" || ");
-
-                requirements.append("(other.CE==\"ALICE::").append(ce).append("\")");
-            }
-
-            System.err.println(se + " : " + requirements);
-        }
+    public static Set<String> getCEs(final String siteName) {
+        return LDAPHelper.checkLdapInformation("(objectClass=AliEnCE)", "ou=CE,ou=Services,ou=" + siteName + ",ou=Sites,", "name");
     }
 }
