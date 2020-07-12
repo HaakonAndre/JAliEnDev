@@ -2,12 +2,7 @@ package alien.shell.commands;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Level;
-
-import alien.catalogue.GUIDUtils;
-import alien.catalogue.LFN;
 import alien.catalogue.PFN;
-import alien.io.IOUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.ErrNo;
