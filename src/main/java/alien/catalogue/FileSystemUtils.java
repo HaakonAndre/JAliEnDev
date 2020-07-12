@@ -140,7 +140,7 @@ public final class FileSystemUtils {
 			// List all files and folders in the path (e.g. /alice/cern.ch/user/v/vyurchen/)
 			final LFNListingfromString listing = Dispatcher.execute(new LFNListingfromString(user, path));
 
-			if (listing != null) {
+			if (listing != null && listing.getLFNs() != null) {
 				// If the pattern is complex (e.g. 01*/*Trig?er*.root - contains many wildcards in different directories)
 				// then expand paths recursively
 				if (pattern.contains("/")) {

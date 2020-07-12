@@ -204,7 +204,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 		try {
 			if (alArguments.size() > 0) {
 				try {
-					jobId = Integer.parseInt(alArguments.get(0));
+					jobId = Long.parseLong(alArguments.get(0));
 				}
 				catch (final NumberFormatException e) {
 					throw new JAliEnCommandException("Invalid job ID " + alArguments.get(0), e);

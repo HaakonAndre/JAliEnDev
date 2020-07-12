@@ -26,6 +26,7 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.containers.Containerizer;
 import alien.site.containers.ContainerizerFactory;
+import alien.site.packman.CVMFS;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
@@ -85,6 +87,7 @@ public class JobAgent implements Runnable {
 	private MonitoredJob mj;
 	private Double prevCpuTime;
 	private long prevTime = 0;
+	private int cpuCores = 1;
 
 	private int totalJobs;
 	private final long jobAgentStartTime = System.currentTimeMillis();
@@ -95,6 +98,7 @@ public class JobAgent implements Runnable {
 	private String jarPath;
 	private String jarName;
 	private int wrapperPID;
+	private static float lhcbMarks = -1;
 
 	private enum jaStatus {
 		REQUESTING_JOB(1), INSTALLING_PKGS(2), JOB_STARTED(3), RUNNING_JOB(4), DONE(5), ERROR_HC(-1), // error in getting host
@@ -115,7 +119,7 @@ public class JobAgent implements Runnable {
 		}
 	}
 
-	private final int jobagent_requests = 1; // TODO: restore to 5
+	private final int jobagent_requests = 5;
 
 	/**
 	 * logger object
@@ -295,7 +299,7 @@ public class JobAgent implements Runnable {
 			}
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
-
+			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent " + CVMFS.getJAliEnVersion());
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
 			// Set up constraints
@@ -417,7 +421,9 @@ public class JobAgent implements Runnable {
 		// what is the minimum we want to run with? (100MB?)
 		if (space <= 100 * 1024 * 1024) {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
-			return false;
+			if (!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")) {
+				return false;
+			}
 		}
 
 		if (timeleft <= 0) {
@@ -442,40 +448,63 @@ public class JobAgent implements Runnable {
 		// Sandbox size
 		final String workdirMaxSize = jdl.gets("Workdirectorysize");
 
-		if (workdirMaxSize != null) {
-			final Pattern p = Pattern.compile("\\p{L}");
-			final Matcher m = p.matcher(workdirMaxSize);
-			if (m.find()) {
-				final String number = workdirMaxSize.substring(0, m.start());
-				final String unit = workdirMaxSize.substring(m.start());
+		// By default the jobs are allowed to use up to 10GB of disk space in the sandbox
+		workdirMaxSizeMB = 10 * 1024;
 
-				workdirMaxSizeMB = convertStringUnitToIntegerMB(unit, number);
+		final Pattern p = Pattern.compile("\\p{L}");
+
+		if (workdirMaxSize != null) {
+			final Matcher m = p.matcher(workdirMaxSize);
+			try {
+				if (m.find()) {
+					final String number = workdirMaxSize.substring(0, m.start());
+					final String unit = workdirMaxSize.substring(m.start());
+
+					workdirMaxSizeMB = convertStringUnitToIntegerMB(unit, number);
+				}
+				else
+					workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
+
+				commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (JDL): " + workdirMaxSizeMB + "MB");
 			}
-			else
-				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
-			commander.q_api.putJobLog(queueId, "trace", "Disk requested: " + workdirMaxSizeMB);
+			catch (@SuppressWarnings("unused") NumberFormatException nfe) {
+				commander.q_api.putJobLog(queueId, "trace", "Local disk space specs are invalid: '" + workdirMaxSize + "', using the default " + workdirMaxSizeMB + "MB");
+			}
 		}
 		else
-			workdirMaxSizeMB = 0;
+			commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (default): " + jobMaxMemoryMB + "MB");
+
+		Integer requestedCPUCores = jdl.getInteger("CPUCores");
+
+		if (requestedCPUCores != null && requestedCPUCores.intValue() > 0)
+			cpuCores = requestedCPUCores.intValue();
 
 		// Memory use
 		final String maxmemory = jdl.gets("Memorysize");
 
-		if (maxmemory != null) {
-			final Pattern p = Pattern.compile("\\p{L}");
-			final Matcher m = p.matcher(maxmemory);
-			if (m.find()) {
-				final String number = maxmemory.substring(0, m.start());
-				final String unit = maxmemory.substring(m.start());
+		// By default the job is limited to using 8GB of virtual memory per allocated CPU core
+		jobMaxMemoryMB = cpuCores * 8 * 1024;
 
-				jobMaxMemoryMB = convertStringUnitToIntegerMB(unit, number);
+		if (maxmemory != null) {
+			final Matcher m = p.matcher(maxmemory);
+			try {
+				if (m.find()) {
+					final String number = maxmemory.substring(0, m.start());
+					final String unit = maxmemory.substring(m.start()).toUpperCase();
+
+					jobMaxMemoryMB = convertStringUnitToIntegerMB(unit, number);
+				}
+				else
+					jobMaxMemoryMB = Integer.parseInt(maxmemory);
+
+				commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit (JDL): " + jobMaxMemoryMB + "MB");
 			}
-			else
-				jobMaxMemoryMB = Integer.parseInt(maxmemory);
-			commander.q_api.putJobLog(queueId, "trace", "Memory requested: " + jobMaxMemoryMB);
+			catch (@SuppressWarnings("unused") NumberFormatException nfe) {
+				commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit specs are invalid: '" + maxmemory + "', using the default " + jobMaxMemoryMB + "MB");
+			}
 		}
 		else
-			jobMaxMemoryMB = 0;
+			commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit (default): " + jobMaxMemoryMB + "MB");
 	}
 
 	/**
@@ -485,7 +514,7 @@ public class JobAgent implements Runnable {
 	public static void main(final String[] args) throws IOException {
 		ConfigUtils.setApplicationName("JobAgent");
 		ConfigUtils.switchToForkProcessLaunching();
-		
+
 		final JobAgent jao = new JobAgent();
 		jao.run();
 	}
@@ -510,6 +539,7 @@ public class JobAgent implements Runnable {
 							cmdScanner.next();
 							break;
 						case "alien.site.JobAgent":
+							launchCmd.add("-Djobagent.vmid=" + queueId);
 							launchCmd.add("-DAliEnConfig=" + jobWorkdir);
 							launchCmd.add("-cp");
 							launchCmd.add(jarPath + jarName);
@@ -525,7 +555,7 @@ public class JobAgent implements Runnable {
 			Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
 				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
-				monitor.sendParameter("containerLayer", 1);
+				monitor.sendParameter("containerLayer", Integer.valueOf(1));
 				cont.setWorkdir(jobWorkdir);
 				return cont.containerize(String.join(" ", launchCmd));
 			}
@@ -596,10 +626,17 @@ public class JobAgent implements Runnable {
 				sendProcessResources();
 		}
 
-		TimerTask killProcess = new TimerTask() {
+		TimerTask killPayload = new TimerTask() {
 			@Override
 			public void run() {
-				p.destroy();
+				final Vector<Integer> childProcs = mj.getChildren();
+				if (childProcs != null || childProcs.size() > 1) {
+					try {
+						Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
+						Thread.sleep(60 * 1000); //Give the JobWrapper 60s to clean things up
+					} catch (Exception e) {}
+				}
+				//If still alive, kill everything, including the JW
 				if (p.isAlive()) {
 					p.destroyForcibly();
 				}
@@ -607,7 +644,7 @@ public class JobAgent implements Runnable {
 		};
 
 		final Timer t = new Timer();
-		t.schedule(killProcess, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
+		t.schedule(killPayload, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
 
 		int code = 0;
 
@@ -622,9 +659,9 @@ public class JobAgent implements Runnable {
 					monitor_loops++;
 					final String error = checkProcessResources();
 					if (error != null) {
-						killProcess.run();
+						// killProcess.run(); //TODO: Temporarily disabled
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
-						return 1;
+						// return 1;
 					}
 					if (monitor_loops == 10) {
 						monitor_loops = 0;
@@ -733,7 +770,7 @@ public class JobAgent implements Runnable {
 			if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
 				error = "Disk space limit is " + workdirMaxSizeMB + ", using " + RES_WORKDIR_SIZE;
 
-			// check disk usage
+			// check memory usage
 			if (jobMaxMemoryMB != 0 && RES_VMEM.doubleValue() > jobMaxMemoryMB)
 				error = "Memory usage limit is " + jobMaxMemoryMB + ", using " + RES_VMEM;
 
@@ -869,4 +906,63 @@ public class JobAgent implements Runnable {
 		}
 	}
 
+	/**
+	 * Get LhcbMarks, using a specialized script in CVMFS
+	 * 
+	 * @return script output, or null in case of error
+	 */
+	public static Float getLhcbMarks() {
+		if (lhcbMarks > 0)
+			return Float.valueOf(lhcbMarks);
+
+		final File lhcbMarksScript = new File(CVMFS.getLhcbMarksScript());
+
+		if (!lhcbMarksScript.exists()) {
+			logger.log(Level.WARNING, "Script for lhcbMarksScript not found in: " + lhcbMarksScript.getAbsolutePath());
+			return null;
+		}
+
+		try {
+			String out = ExternalProcesses.getCmdOutput(lhcbMarksScript.getAbsolutePath(), true, 300L, TimeUnit.SECONDS);
+			out = out.substring(out.lastIndexOf(":") + 1);
+			lhcbMarks = Float.parseFloat(out);
+			return Float.valueOf(lhcbMarks);
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: ", e);
+			return null;
+		}
+	}
+	
+	/**
+	 * 
+	 * Identifies job payload in list of child PIDs
+	 * 
+	 * @param childPIDs
+	 * @return job payload PID
+	 */
+	private int getPayloadPid(Vector<Integer> childPids) {
+		ArrayList<Integer> wrapperProcs = new ArrayList<Integer>();
+
+		try {
+			final Process getWrapperProcs = Runtime.getRuntime().exec("pgrep -f " + queueId);
+			getWrapperProcs.waitFor();
+			Scanner cmdScanner = new Scanner(getWrapperProcs.getInputStream());
+			while (cmdScanner.hasNext()) {
+				wrapperProcs.add(Integer.parseInt(cmdScanner.next()));
+			}
+			cmdScanner.close();
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Could not get JobWrapper PID");
+			return 0;
+		}
+		int wrapperPid = wrapperProcs.get(wrapperProcs.size()-1); //first entry comes from the env init in container. Ignore if present
+		
+		for(int i=0; i < childPids.size(); i++) {
+				if(childPids.get(i).equals(wrapperPid))
+						return childPids.get(i+1); //payload is the subsequent child of the wrapper
+		}
+		return 0;
+	}
 }

@@ -373,7 +373,7 @@ public class CatalogueApiUtils {
 	 * @param state what to do with the given files
 	 * @return PFNs that were successfully registered or <code>null</code> if failed to register
 	 */
-	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final BOOKING_STATE state) {
+	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final long size, final String md5, final BOOKING_STATE state) {
 		try {
 			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), encryptedEnvelope, size, md5, state)).getPFNs();
 		}

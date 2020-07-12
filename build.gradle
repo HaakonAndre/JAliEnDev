@@ -19,7 +19,7 @@ dependencies {
 	compile 'joptsimple:jopt-simple:4.8'
 	compile 'org.bouncycastle:bcpkix-jdk15on:163'
 	compile 'org.bouncycastle:bcprov-jdk15on:163'
-	compile 'org.junit:junit-platform-console-standalone:1.3.1'
+	compile 'org.junit:junit-platform-console-standalone:1.7.0-M1'
 	compile 'org.sqlite:sqlite-jdbc:3.9.1-SNAPSHOT'
 	compile 'org.json:json-simple:1.1.1'
 	compile 'org.nfunk.jep:jep:2.4.0'

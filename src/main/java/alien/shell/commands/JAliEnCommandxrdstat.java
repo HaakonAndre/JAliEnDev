@@ -243,18 +243,19 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		try {
 			final PFN targetPFN = onePfnToCheck != null ? onePfnToCheck : p;
 
-			if (xrootd.isOnline(targetPFN)) {
+			if (!ignoreStat && xrootd.isOnline(targetPFN)) {
 				commander.printOutln(ShellColor.jobStateGreen() + "Online" + ShellColor.reset());
 
 				commander.printOut("status", "online");
-			}
-			else {
-				xrootd.prepare(onePfnToCheck != null ? onePfnToCheck : p);
 
-				commander.printOutln(ShellColor.jobStateYellow() + "prepare request sent" + ShellColor.reset());
-
-				commander.printOut("status", "prepare_queued");
+				return;
 			}
+			
+			xrootd.prepare(onePfnToCheck != null ? onePfnToCheck : p);
+
+			commander.printOutln(ShellColor.jobStateYellow() + "prepare request sent" + ShellColor.reset());
+
+			commander.printOut("status", "prepare_queued");
 		}
 		catch (final Throwable t) {
 			final String error = t.getMessage();

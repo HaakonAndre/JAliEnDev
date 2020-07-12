@@ -188,7 +188,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				case SAVED_WARN:
 					return padLeft(" SW", 3);
 				case STAGING:
-					return padLeft(" ST", 3);
+					return padLeft(" SG", 3);
 				case TO_STAGE:
 					return padLeft("TST", 3);
 				case ERROR_A:

@@ -17,11 +17,10 @@ import lia.util.StringFactory;
  * @since Nov 4, 2010
  */
 public class Quota implements Serializable, Comparable<Quota> {
-
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 6590424126764110021L;
+	private static final long serialVersionUID = -267664655406935779L;
 
 	/**
 	 * Logger
@@ -100,44 +99,14 @@ public class Quota implements Serializable, Comparable<Quota> {
 	public final int unfinishedJobsLast24h;
 
 	/**
-	 * Total size of the files
-	 */
-	public final long totalSize;
-
-	/**
-	 * Maximum number of files
-	 */
-	public final int maxNbFiles;
-
-	/**
-	 * Current number of files
-	 */
-	public final int nbFiles;
-
-	/**
-	 * Temp increased total size
-	 */
-	public final long tmpIncreasedTotalSize;
-
-	/**
 	 * Total CPU cost in the last 24 h
 	 */
 	public final float totalCpuCostLast24h;
 
 	/**
-	 * Maximum total size
-	 */
-	public final long maxTotalSize;
-
-	/**
 	 * Maximum total running time
 	 */
 	public final long maxTotalRunningTime;
-
-	/**
-	 * Temp increased number of files
-	 */
-	public final int tmpIncreasedNbFiles;
 
 	/**
 	 * Fields allowed to modify via jquota set command
@@ -174,21 +143,9 @@ public class Quota implements Serializable, Comparable<Quota> {
 
 		unfinishedJobsLast24h = db.geti("unfinishedJobsLast24h");
 
-		totalSize = db.getl("totalSize");
-
-		maxNbFiles = db.geti("maxNbFiles");
-
-		nbFiles = db.geti("nbFiles");
-
-		tmpIncreasedTotalSize = db.getl("tmpIncreasedTotalSize");
-
 		totalCpuCostLast24h = db.getf("totalCpuCostLast24h");
 
-		maxTotalSize = db.getl("maxTotalSize");
-
 		maxTotalRunningTime = db.getl("maxTotalRunningTime");
-
-		tmpIncreasedNbFiles = db.geti("tmpIncreasedNbFiles");
 	}
 
 	@Override

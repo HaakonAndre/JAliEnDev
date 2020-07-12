@@ -184,7 +184,7 @@ public class TaskQueueUtils {
 			if (dbStructure2_20) {
 				if (archiveYear < 2000) {
 					if (loadJDL)
-						q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
+						q = "SELECT QUEUE.*,origJdl as JDL, path FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
 					else
 						q = "SELECT * FROM QUEUE WHERE queueId=?";
 				}
@@ -262,7 +262,7 @@ public class TaskQueueUtils {
 			if (dbStructure2_20) {
 				if (archiveYear < 2000) {
 					if (loadJDL)
-						q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
+						q = "SELECT QUEUE.*,origJdl as JDL, path FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
 					else
 						q = "SELECT * FROM QUEUE ";
 				}
@@ -459,7 +459,7 @@ public class TaskQueueUtils {
 			if (dbStructure2_20) {
 				if (archiveYear < 2000) {
 					if (loadJDL)
-						q = "SELECT QUEUE.*,origJdl AS jdl FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
+						q = "SELECT QUEUE.*,origJdl AS jdl, path FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
 					else
 						q = "SELECT * FROM QUEUE";
 				}
@@ -2094,9 +2094,9 @@ public class TaskQueueUtils {
 		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE || j.status() == JobStatus.INTERACTIV) && j.isMaster())
 			return false;
 
-		if (j.status() == JobStatus.WAITING && j.jobagentId > 0)
-			if (!deleteJobAgent(j.jobagentId))
-				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.jobagentId + "].");
+		if (j.status() == JobStatus.WAITING && j.agentid > 0)
+			if (!deleteJobAgent(j.agentid))
+				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.agentid + "].");
 
 		if (j.notify != null && !j.notify.equals(""))
 			sendNotificationMail(j);

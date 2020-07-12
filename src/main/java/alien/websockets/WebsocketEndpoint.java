@@ -117,7 +117,7 @@ public class WebsocketEndpoint extends Endpoint {
 		}
 
 		final long getRunningDeadline() {
-			return Math.min(absoluteRunningDeadline, lastActivityTime + 3 * 60 * 60 * 1000L);
+			return Math.min(absoluteRunningDeadline, lastActivityTime + 15 * 60 * 1000L);
 		}
 
 		@Override
@@ -203,7 +203,6 @@ public class WebsocketEndpoint extends Endpoint {
 		userIdentity.setRemoteEndpoint(remoteIP);
 
 		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteIP != null ? remoteIP.getHostAddress() : null), null);
-		commander.start();
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
@@ -329,7 +328,6 @@ public class WebsocketEndpoint extends Endpoint {
 
 		commander.kill = true;
 		commander.setLine(null, null);
-		commander.interrupt();
 
 		out = null;
 		try {
@@ -422,25 +420,10 @@ public class WebsocketEndpoint extends Endpoint {
 				return;
 			}
 
-			// Restart the commander if needed
-			if (!commander.isAlive()) {
-				commander.kill = true;
-				commander.interrupt();
-
-				final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), null);
-				commander = comm;
-
-				commander.start();
-			}
-
 			try (Timing t = new Timing(monitor, "execution_time")) {
 				// Send the command to executor and send the result back to
 				// client via OutputStream
-				synchronized (commander) {
-					commander.status.set(1);
-					commander.setLine(out, fullCmd.toArray(new String[0]));
-					commander.notifyAll();
-				}
+				commander.setLine(out, fullCmd.toArray(new String[0]));
 
 				// Wait and return the result back to the client
 				waitForResult();
@@ -549,17 +532,31 @@ public class WebsocketEndpoint extends Endpoint {
 		 * @return <code>true</code> if the command is done
 		 */
 		private boolean waitForCommand(final boolean oneShot, final int seconds) {
-			while (commander.status.get() == 1) {
-				synchronized (commander.status) {
-					try {
-						commander.status.wait(seconds * 1000);
+			final long lStart = System.currentTimeMillis();
+
+			try {
+				while (commander.status.get() == 1) {
+					if (!oneShot)
+						Thread.currentThread().setName("WS: waiting for commander " + commander.commanderId + " for " + (System.currentTimeMillis() - lStart) / 1000 + "s");
+
+					synchronized (commander.status) {
+						try {
+							commander.status.wait(seconds * 1000);
+						}
+						catch (@SuppressWarnings("unused") final InterruptedException e) {
+							commander.setLine(null, null);
+							commander.kill = true;
+							break;
+						}
 					}
-					catch (@SuppressWarnings("unused") final InterruptedException e) {
-						Thread.currentThread().interrupt();
-					}
+
+					if (oneShot)
+						break;
 				}
-				if (oneShot)
-					break;
+			}
+			finally {
+				if (!oneShot)
+					Thread.currentThread().setName("WS: commander " + commander.commanderId + " completed after " + (System.currentTimeMillis() - lStart) + "ms");
 			}
 
 			return commander.status.get() == 0;

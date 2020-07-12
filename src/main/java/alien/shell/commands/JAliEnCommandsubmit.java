@@ -24,51 +24,67 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 
 		long queueId = 0;
 
-		final String jdlName = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alArguments.get(0));
+		String content = null;
 
-		commander.printOutln("Submitting " + jdlName);
+		String jdlArg = alArguments.get(0);
 
-		final File fout = catFile(jdlName);
+		String jdlPath = null;
 
-		try {
-			if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
-				final String content = Utils.readFile(fout.getAbsolutePath());
+		if (jdlArg.contains("=")) {
+			commander.printOutln("Submitting the content that you passed to the command");
+			content = jdlArg;
+		}
+		else {
+			jdlPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), jdlArg);
 
-				if (content != null) {
-					try {
-						final JDL jdl;
-						final String[] args = getArgs();
+			commander.printOutln("Submitting " + jdlPath);
 
-						try {
-							jdl = TaskQueueUtils.applyJDLArguments(content, args);
-						}
-						catch (final IOException ioe) {
-							commander.setReturnCode(ErrNo.EINVAL, "Passing arguments to " + jdlName + " failed:\n  " + ioe.getMessage());
-							return;
-						}
+			final File fout = catFile(jdlPath);
 
-						jdl.set("JDLPath", jdlName);
+			try {
+				if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
+					content = Utils.readFile(fout.getAbsolutePath());
+				}
+				else {
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Not able to get the file " + jdlPath);
+					return;
+				}
 
-						queueId = commander.q_api.submitJob(jdl);
-						if (queueId > 0) {
-							commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-							commander.printOut("jobId", String.valueOf(queueId));
-						}
-						else
-							commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot submit " + jdlName);
-					}
-					catch (final ServerException e) {
-						commander.setReturnCode(ErrNo.EREMOTEIO, "Task queue rejected " + jdlName + " due to:\n  " + e.getMessage());
-					}
+				if (content == null) {
+					commander.setReturnCode(ErrNo.EIO, "Could not read the contents of " + fout.getAbsolutePath());
+					return;
+				}
+			}
+			finally {
+				TempFileManager.release(fout);
+			}
+
+			try {
+				final JDL jdl;
+				final String[] args = getArgs();
+
+				try {
+					jdl = TaskQueueUtils.applyJDLArguments(content, args);
+				}
+				catch (final IOException ioe) {
+					commander.setReturnCode(ErrNo.EINVAL, "Passing arguments to " + (jdlPath != null ? jdlPath : "your job") + " failed:\n  " + ioe.getMessage());
+					return;
+				}
+
+				if (jdlPath != null)
+					jdl.set("JDLPath", jdlPath);
+
+				queueId = commander.q_api.submitJob(jdl);
+				if (queueId > 0) {
+					commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
+					commander.printOut("jobId", String.valueOf(queueId));
 				}
 				else
-					commander.setReturnCode(ErrNo.EIO, "Could not read the contents of " + fout.getAbsolutePath());
+					commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot submit " + (jdlPath != null ? jdlPath : "your job"));
 			}
-			else
-				commander.setReturnCode(ErrNo.EREMOTEIO, "Not able to get the file " + jdlName);
-		}
-		finally {
-			TempFileManager.release(fout);
+			catch (final ServerException e) {
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Task queue rejected " + (jdlPath != null ? jdlPath : "your job") + " due to:\n  " + e.getMessage());
+			}
 		}
 	}
 

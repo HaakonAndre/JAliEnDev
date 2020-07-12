@@ -202,7 +202,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
 
-		sb.append("\n { JAliEnCommandcatreceived\n");
+		sb.append("\n { JAliEnCommandcat\n");
 		sb.append("Arguments: ");
 
 		if (bG)

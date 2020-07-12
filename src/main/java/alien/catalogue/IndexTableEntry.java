@@ -37,6 +37,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(IndexTableEntry.class.getCanonicalName());
 
+	private static transient final boolean forceLFNIndexUsage = ConfigUtils.getConfig().getb("alien.catalogue.IndexTableEntry.forceLFNIndexUsage", true);
+
 	/**
 	 * Index id
 	 */
@@ -365,7 +367,12 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 				else
 					sSearch = "";
 
-			String q = "SELECT * FROM L" + tableName + "L WHERE ";
+			String q = "SELECT * FROM L" + tableName + "L ";
+
+			if (forceLFNIndexUsage)
+				q += "FORCE INDEX (lfn)";
+
+			q += " WHERE ";
 
 			if ((flags & LFNUtils.FIND_REGEXP) == 0) {
 				String sSearchAlternate = null;

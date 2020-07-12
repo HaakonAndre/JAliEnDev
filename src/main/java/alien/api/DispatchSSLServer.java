@@ -96,7 +96,8 @@ public class DispatchSSLServer extends Thread {
 
 	private static AtomicInteger activeSessions = new AtomicInteger();
 
-	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS);
+	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS,
+			(r) -> new Thread(r, "SSLAcceptor"));
 
 	private static CacheMonitor ipv6Connections = null;
 
@@ -149,8 +150,8 @@ public class DispatchSSLServer extends Thread {
 			connection.setTcpNoDelay(true);
 			connection.setTrafficClass(0x10);
 
-			// clients that did not send any command for a long time (default one hour) are disconnected
-			connection.setSoTimeout(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.idleTimeout_seconds", 3600) * 1000);
+			// clients that did not send any command for a long time (default 15 minutes) are disconnected
+			connection.setSoTimeout(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.idleTimeout_seconds", 900) * 1000);
 
 			this.os = connection.getOutputStream();
 

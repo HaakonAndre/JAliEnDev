@@ -285,10 +285,8 @@ public class JBoxServer extends Thread {
 								else {
 									logger.log(Level.INFO, "JSh connected.");
 
-									if (commander == null) {
+									if (commander == null)
 										commander = new JAliEnCOMMander();
-										commander.start();
-									}
 
 									notifyActivity();
 
@@ -298,7 +296,6 @@ public class JBoxServer extends Thread {
 										try {
 											commander.setLine(null, null);
 											commander.kill = true;
-											commander.interrupt();
 										}
 										catch (@SuppressWarnings("unused") final Throwable t) {
 											// ignore
@@ -309,8 +306,6 @@ public class JBoxServer extends Thread {
 											// kill the active command and start a new instance
 											final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
 											commander = comm;
-
-											commander.start();
 
 											commander.flush();
 										}
@@ -334,8 +329,6 @@ public class JBoxServer extends Thread {
 												out = new XMLPrintWriter(os);
 
 											commander.setLine(out, fullCmd.toArray(new String[0]));
-
-											commander.notifyAll();
 										}
 									}
 									os.flush();
@@ -361,7 +354,6 @@ public class JBoxServer extends Thread {
 				if (commander!=null){
 					commander.setLine(null, null);
 					commander.kill = true;
-					commander.interrupt();
 				}
 
 				if (br != null)

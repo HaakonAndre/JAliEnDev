@@ -103,7 +103,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * Streams for data transfer
 	 */
 	private ObjectInputStream inputFromJobAgent;
-	
+
 	/**
 	 * ML monitor object
 	 */
@@ -154,10 +154,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
-		
+
 		// use same tmpdir everywhere
 		String tmpdir = System.getenv("TMPDIR");
-		if(tmpdir != null)
+		if (tmpdir != null)
 			System.setProperty("java.io.tmpdir", tmpdir);
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
@@ -232,12 +232,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				if (execExitCode < 0)
 					commander.q_api.putJobLog(queueId, "trace", "Failed to start execution of payload. Exit code: " + Math.abs(execExitCode));
 				else
-					commander.q_api.putJobLog(queueId, "trace", "Job started, but did not execute correctly: " + execExitCode);
+					commander.q_api.putJobLog(queueId, "trace", "Marking the job as ERROR_E since executable exit code was " + execExitCode);
 
 				if (jdl.gets("OutputErrorE") != null)
-					return uploadOutputFiles(true) ? execExitCode : -1;
+					return uploadOutputFiles(JobStatus.ERROR_E) ? execExitCode : -1;
 
-				changeStatus(jobStatus);
+				changeStatus(JobStatus.ERROR_E);
 				return execExitCode;
 			}
 
@@ -253,15 +253,20 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				final String fileTrace = getTraceFromFile();
 				if (fileTrace != null)
 					commander.q_api.putJobLog(queueId, "trace", fileTrace);
+				
+				if (jdl.gets("OutputErrorV") != null)
+					return uploadOutputFiles(JobStatus.ERROR_V) ? execExitCode : -1;
 
 				changeStatus(JobStatus.ERROR_V);
 				return valExitCode;
 			}
 
-			if (!uploadOutputFiles(false)) {
+			if (!uploadOutputFiles(JobStatus.DONE)) {
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
+
+			cleanupProcesses();
 
 			return 0;
 		}
@@ -308,13 +313,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						cmd.add(st.nextToken());
 				}
 
-		//Check if we can put the payload in its own container
+		// Check if we can put the payload in its own container
 		Containerizer cont = ContainerizerFactory.getContainerizer();
 		if (cont != null) {
 			monitor.sendParameter("containerLayer", 2);
-			cmd =  cont.containerize(String.join(" ", cmd));
+			cmd = cont.containerize(String.join(" ", cmd));
 		}
-		
+
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
@@ -530,17 +535,18 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return envmap;
 	}
 
-	private boolean uploadOutputFiles(boolean ERROR_E) {
+	private boolean uploadOutputFiles(JobStatus exitStatus) {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
-		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 		logger.log(Level.INFO, "Uploading output for: " + jdl);
 
-		final String outputDir = getJobOutputDir();
+		final String outputDir = getJobOutputDir(exitStatus);
+
+		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles(exitStatus=" + exitStatus + ", outputDir=" + outputDir + ")");
 
 		String tag = "Output";
-		if (ERROR_E)
+		if (exitStatus == JobStatus.ERROR_E)
 			tag = "OutputErrorE";
 
 		changeStatus(JobStatus.SAVING);
@@ -559,8 +565,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
+		final ArrayList<OutputEntry> entries = filesTable.getEntries();
 
-		for (final OutputEntry entry : filesTable.getEntries()) {
+		for (final OutputEntry entry : entries) {
 			File localFile;
 			try {
 				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
@@ -571,14 +578,14 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 					// Use upload instead
-					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName());
+					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName() + " to " + outputDir);
 
 					String args = "-w,-S," +
 							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") +
-							",-j," + String.valueOf(queueId) + "";
+							",-j," + String.valueOf(queueId);
 
-					// Don't commit in case of ERROR_E
-					if (ERROR_E)
+					// Don't commit in case of ERROR_E or ERROR_V
+					if (exitStatus == JobStatus.ERROR_E || exitStatus == JobStatus.ERROR_V)
 						args += ",-nc";
 
 					final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -598,11 +605,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
 						break;
 					}
-
-					if (!ERROR_E) {
-						// Register lfn links to archive
-						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
-					}
 				}
 				else {
 					logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
@@ -612,6 +614,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			}
 			catch (final IOException e) {
 				logger.log(Level.WARNING, "IOException received while attempting to upload files", e);
+				commander.q_api.putJobLog(queueId, "trace", e.getMessage());
 				uploadedAllOutFiles = false;
 			}
 		}
@@ -622,16 +625,17 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			changeStatus(JobStatus.ERROR_SV);
 			return false;
 		} // else
-			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
+		// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
-		if (!ERROR_E) {
+		if (exitStatus == JobStatus.DONE) {
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
 			else
 				changeStatus(JobStatus.DONE);
+			registerEntries(entries, outputDir);
 		}
 		else
-			changeStatus(JobStatus.ERROR_E);
+			changeStatus(exitStatus);
 
 		return uploadedAllOutFiles;
 	}
@@ -682,7 +686,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	public static void main(final String[] args) throws IOException {
 		ConfigUtils.setApplicationName("JobWrapper");
 		ConfigUtils.switchToForkProcessLaunching();
-		
+
 		final JobWrapper jw = new JobWrapper();
 		jw.run();
 	}
@@ -700,7 +704,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		// if final status with saved files, we set the path
 		if (jobStatus == JobStatus.DONE || jobStatus == JobStatus.DONE_WARN || jobStatus == JobStatus.ERROR_E || jobStatus == JobStatus.ERROR_V)
-			extrafields.put("path", getJobOutputDir());
+			extrafields.put("path", getJobOutputDir(newStatus));
 		else if (jobStatus == JobStatus.RUNNING) {
 			extrafields.put("spyurl", hostName + ":" + TomcatServer.getPort());
 			extrafields.put("node", hostName);
@@ -708,6 +712,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		try {
 			// Set the updated status
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+
+			// TODO: Confirm(?) and remove
+			// Wait 10s, and set status once more, in case the first attempt was not registered (high load?)
+			// Thread.sleep(10 * 1000);
+			// TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 
 			// Also write status to file for the JobAgent to see
 			Files.writeString(Paths.get(currentDir.getAbsolutePath() + "/.jobstatus"), newStatus.name());
@@ -721,10 +730,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	/**
 	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
 	 */
-	public String getJobOutputDir() {
+	public String getJobOutputDir(JobStatus exitStatus) {
 		String outputDir = jdl.getOutputDir();
 
-		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
+		if (exitStatus == JobStatus.ERROR_V || exitStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
 		else if (outputDir == null)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
@@ -798,6 +807,41 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			paramNames.add("statusID");
 			paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
+		}
+	}
+
+	/**
+	 * Cleanup processes, using a specialised script in CVMFS
+	 * 
+	 * @return script exit code, or -1 in case of error
+	 */
+	private int cleanupProcesses() {
+		final File cleanupScript = new File(CVMFS.getCleanupScript());
+
+		if (!cleanupScript.exists()) {
+			logger.log(Level.WARNING, "Script for process cleanup not found in: " + cleanupScript.getAbsolutePath());
+			return -1;
+		}
+
+		try {
+			Process process = Runtime.getRuntime().exec((cleanupScript.getAbsolutePath() + " -v -m ALIEN_PROC_ID=" + queueId + " $$ -KILL"));
+			return process.waitFor();
+		}
+		catch (IOException | InterruptedException e) {
+			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: " + e);
+			return -1;
+		}
+	}
+	
+	/**
+	 * Register lfn links to archive
+	 * 
+	 * @param entries
+	 * @param outputDir
+	 */
+	private void registerEntries(ArrayList<OutputEntry> entries, String outputDir) {
+		for (final OutputEntry entry : entries) {
+			CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
 		}
 	}
 
