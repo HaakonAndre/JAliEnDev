@@ -272,8 +272,16 @@ public class TaskQueueApiUtils {
 	 * @return file quota for the current user
 	 */
 	public FileQuota getFileQuota() {
+		return getFileQuota(commander.getUser());
+	}
+
+	/**
+	 * @param user requested user information
+	 * @return file quota for the indicated user
+	 */
+	public static FileQuota getFileQuota(final AliEnPrincipal user) {
 		try {
-			final GetFileQuota gq = new GetFileQuota(commander.getUser());
+			final GetFileQuota gq = new GetFileQuota(user);
 			final GetFileQuota gqres = Dispatcher.execute(gq);
 
 			return gqres.getFileQuota();

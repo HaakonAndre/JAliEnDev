@@ -1,8 +1,8 @@
 package alien.quotas;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -61,7 +61,7 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	/**
 	 * Fields allowed to modify via fquota set command
 	 */
-	private final static ArrayList<String> allowed_to_update = new ArrayList<>(Arrays.asList("maxNbFiles", "maxTotalSize"));
+	private final static List<String> allowed_to_update = Arrays.asList("maxNbFiles", "maxTotalSize");
 
 	/**
 	 * @param db
