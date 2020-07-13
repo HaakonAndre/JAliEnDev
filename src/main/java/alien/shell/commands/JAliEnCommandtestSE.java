@@ -3,11 +3,11 @@ package alien.shell.commands;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
@@ -46,7 +46,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 	private boolean showTiming = false;
 
-	private final List<SE> sesToTest = new ArrayList<>();
+	private final Set<SE> sesToTest = new LinkedHashSet<>();
 
 	private static File getReferenceFile() throws IOException {
 		// try some small files usually found on any system
@@ -382,10 +382,11 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln("Test the functional status of Grid storage elements");
-		commander.printOutln("Usage: testSE [options] <some SE names or numbers>");
+		commander.printOutln("Usage: testSE [options] <some SE names, numbers or @tags>");
 		commander.printOutln(helpOption("-v", "verbose error messages even when the operation is expected to fail"));
 		commander.printOutln(helpOption("-c", "show full command line for each test"));
 		commander.printOutln(helpOption("-t", "time each operation"));
+		commander.printOutln(helpOption("-a", "test all SEs (obviously a very long operation)"));
 	}
 
 	@Override
@@ -407,6 +408,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 			parser.accepts("v");
 			parser.accepts("c");
 			parser.accepts("t");
+			parser.accepts("a");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -414,34 +416,49 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 			showCommand = options.has("c");
 			showTiming = options.has("t");
 
-			for (final Object o : options.nonOptionArguments()) {
-				final String s = o.toString();
+			if (options.has("a")) {
+				sesToTest.addAll(commander.c_api.getSEs(null));
+			}
+			else {
+				for (final Object o : options.nonOptionArguments()) {
+					final String s = o.toString();
 
-				try {
-					final int seNumber = Integer.parseInt(s);
-					final SE se = SEUtils.getSE(seNumber);
+					if (s.indexOf("@") == 0) {
+						final String tag = s.substring(1);
 
-					if (se != null) {
-						sesToTest.add(se);
-					}
-					else {
-						commander.printErrln("No such SE: " + seNumber);
-						commander.setReturnCode(ErrNo.ENOENT);
-						setArgumentsOk(false);
-						return;
-					}
-				}
-				catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-					final SE se = SEUtils.getSE(s);
+						for (final SE se : commander.c_api.getSEs(null))
+							if (se.isQosType(tag))
+								sesToTest.add(se);
 
-					if (se != null) {
-						sesToTest.add(se);
+						continue;
 					}
-					else {
-						commander.printErrln("No such SE: " + s);
-						commander.setReturnCode(ErrNo.ENOENT);
-						setArgumentsOk(false);
-						return;
+
+					try {
+						final int seNumber = Integer.parseInt(s);
+						final SE se = SEUtils.getSE(seNumber);
+
+						if (se != null) {
+							sesToTest.add(se);
+						}
+						else {
+							commander.printErrln("No such SE: " + seNumber);
+							commander.setReturnCode(ErrNo.ENOENT);
+							setArgumentsOk(false);
+							return;
+						}
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+						final SE se = SEUtils.getSE(s);
+
+						if (se != null) {
+							sesToTest.add(se);
+						}
+						else {
+							commander.printErrln("No such SE: " + s);
+							commander.setReturnCode(ErrNo.ENOENT);
+							setArgumentsOk(false);
+							return;
+						}
 					}
 				}
 			}
@@ -451,7 +468,9 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 			throw e;
 		}
 
-		if (sesToTest.isEmpty())
+		if (sesToTest.isEmpty()) {
+			commander.printErrln("No SE to test");
 			setArgumentsOk(false);
+		}
 	}
 }
