@@ -331,7 +331,7 @@ public class Xrootd extends Protocol {
 
 			String envelope = null;
 
-			boolean encryptedEnvelope = true;
+			boolean encryptedEnvelope = false;
 
 			if (pfn.ticket != null && pfn.ticket.envelope != null) {
 				envelope = pfn.ticket.envelope.getEncryptedEnvelope();
@@ -340,6 +340,8 @@ public class Xrootd extends Protocol {
 					envelope = pfn.ticket.envelope.getSignedEnvelope();
 					encryptedEnvelope = false;
 				}
+				else
+					encryptedEnvelope = true;
 			}
 
 			File fAuthz = null;
@@ -350,7 +352,7 @@ public class Xrootd extends Protocol {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 			if (xrootdNewerThan4) {
-				final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+				final URL url = new URL(transactionURL);
 
 				final String host = url.getHost();
 				final int port = url.getPort() > 0 ? url.getPort() : 1094;
@@ -363,7 +365,7 @@ public class Xrootd extends Protocol {
 				command.add(xrootd_default_path + "/bin/xrdfs");
 				command.add(host + ":" + port);
 				command.add("rm");
-				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+				command.add(path + (envelope != null ? "?" + (encryptedEnvelope ? "authz=" : "") + envelope : ""));
 			}
 			else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
@@ -447,7 +449,7 @@ public class Xrootd extends Protocol {
 		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new IOException("delete aborted because " + t);
+			throw new IOException("delete aborted due to an unexpected exception", t);
 		}
 	}
 
