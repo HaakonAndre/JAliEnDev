@@ -58,33 +58,33 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 			finally {
 				TempFileManager.release(fout);
 			}
+		}
+
+		try {
+			final JDL jdl;
+			final String[] args = getArgs();
 
 			try {
-				final JDL jdl;
-				final String[] args = getArgs();
-
-				try {
-					jdl = TaskQueueUtils.applyJDLArguments(content, args);
-				}
-				catch (final IOException ioe) {
-					commander.setReturnCode(ErrNo.EINVAL, "Passing arguments to " + (jdlPath != null ? jdlPath : "your job") + " failed:\n  " + ioe.getMessage());
-					return;
-				}
-
-				if (jdlPath != null)
-					jdl.set("JDLPath", jdlPath);
-
-				queueId = commander.q_api.submitJob(jdl);
-				if (queueId > 0) {
-					commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-					commander.printOut("jobId", String.valueOf(queueId));
-				}
-				else
-					commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot submit " + (jdlPath != null ? jdlPath : "your job"));
+				jdl = TaskQueueUtils.applyJDLArguments(content, args);
 			}
-			catch (final ServerException e) {
-				commander.setReturnCode(ErrNo.EREMOTEIO, "Task queue rejected " + (jdlPath != null ? jdlPath : "your job") + " due to:\n  " + e.getMessage());
+			catch (final IOException ioe) {
+				commander.setReturnCode(ErrNo.EINVAL, "Passing arguments to " + (jdlPath != null ? jdlPath : "your job") + " failed:\n  " + ioe.getMessage());
+				return;
 			}
+
+			if (jdlPath != null)
+				jdl.set("JDLPath", jdlPath);
+
+			queueId = commander.q_api.submitJob(jdl);
+			if (queueId > 0) {
+				commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
+				commander.printOut("jobId", String.valueOf(queueId));
+			}
+			else
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Cannot submit " + (jdlPath != null ? jdlPath : "your job"));
+		}
+		catch (final ServerException e) {
+			commander.setReturnCode(ErrNo.EREMOTEIO, "Task queue rejected " + (jdlPath != null ? jdlPath : "your job") + " due to:\n  " + e.getMessage());
 		}
 	}
 
