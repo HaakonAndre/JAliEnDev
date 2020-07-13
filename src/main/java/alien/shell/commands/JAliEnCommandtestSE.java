@@ -25,6 +25,7 @@ import alien.io.protocols.Factory;
 import alien.io.protocols.SpaceInfo;
 import alien.io.protocols.TempFileManager;
 import alien.io.protocols.Xrootd;
+import alien.monitoring.Timing;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.ErrNo;
@@ -32,6 +33,7 @@ import alien.shell.ShellColor;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import lazyj.Format;
 
 /**
  *
@@ -41,6 +43,8 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 	private boolean verbose = false;
 
 	private boolean showCommand = false;
+
+	private boolean showTiming = false;
 
 	private final List<SE> sesToTest = new ArrayList<>();
 
@@ -66,12 +70,30 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 	private static final String notOK = " (" + ShellColor.jobStateRed() + "NOT OK" + ShellColor.reset() + ")";
 
+	private void afterCommandPrinting(final Timing t, final Xrootd xrootd) {
+		if (showCommand)
+			commander.printOutln(xrootd.getFormattedLastCommand());
+
+		if (showTiming) {
+			final double ms = t.getMillis();
+
+			commander.printOut("Execution time: ");
+
+			if (ms < 1000)
+				commander.printOutln((long) ms + "ms");
+			else if (ms < 10000)
+				commander.printOutln(Format.point(ms / 1000) + "s");
+			else
+				commander.printOutln(Format.toInterval((long) ms));
+		}
+	}
+
 	private void openReadTest(final PFN pTarget, final Xrootd xrootd) {
 		final AccessTicket oldTicket = pTarget.ticket;
 
 		pTarget.ticket = null;
 
-		try {
+		try (Timing t = new Timing()) {
 			commander.printOut("  Open read test: ");
 
 			File tempFile = null;
@@ -92,8 +114,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 				}
 			}
 
-			if (showCommand)
-				commander.printOutln(xrootd.getFormattedLastCommand());
+			afterCommandPrinting(t, xrootd);
 		}
 		finally {
 			pTarget.ticket = oldTicket;
@@ -105,7 +126,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 		pTarget.ticket = null;
 
-		try {
+		try (Timing t = new Timing()) {
 			commander.printOut("  Open delete test: ");
 
 			try {
@@ -120,11 +141,10 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 				commander.printOutln("delete failed" + expected);
 
 				if (verbose)
-					commander.printOutln("    " + ioe.getMessage());
+					commander.printOutln(ioe.getMessage());
 			}
 
-			if (showCommand)
-				System.err.println(xrootd.getFormattedLastCommand());
+			afterCommandPrinting(t, xrootd);
 		}
 		finally {
 			pTarget.ticket = oldTicket;
@@ -187,10 +207,13 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 				final AccessTicket writeTicket = pTarget.ticket;
 				pTarget.ticket = null;
 
+				@SuppressWarnings("resource")
+				final Timing t = new Timing();
+
 				try {
 					xrootd.put(pTarget, referenceFile, false);
 
-					commander.printOutln("could write, " + ShellColor.jobStateRed() + "NOT OK" + ShellColor.reset() + ", please check authorization configuration");
+					commander.printOutln("could write, " + notOK + ", please check authorization configuration");
 
 					wasAdded = true;
 
@@ -203,8 +226,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 						commander.printOutln("    " + ioe.getMessage());
 				}
 
-				if (showCommand)
-					commander.printOutln(xrootd.getFormattedLastCommand());
+				afterCommandPrinting(t, xrootd);
 
 				if (wasAdded) {
 					openReadTest(pTarget, xrootd);
@@ -224,6 +246,8 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 				wasAdded = false;
 
+				t.startTiming();
+
 				try {
 					xrootd.put(pTarget, referenceFile);
 
@@ -234,11 +258,10 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 					commander.c_api.registerEnvelopes(Arrays.asList(writeTicket.envelope.getEncryptedEnvelope()), BOOKING_STATE.COMMITED);
 				}
 				catch (final IOException ioe) {
-					commander.printOutln("cannot write, that's bad\n    " + ioe.getMessage());
+					commander.printOutln("cannot write " + notOK + "\n    " + ioe.getMessage());
 				}
 
-				if (showCommand)
-					commander.printOutln(xrootd.getFormattedLastCommand());
+				afterCommandPrinting(t, xrootd);
 
 				PFN infoPFN = pTarget;
 
@@ -253,6 +276,8 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 					final List<PFN> readPFNs = commander.c_api.getPFNsToRead(lfn, Arrays.asList(se.getName()), null);
 
 					if (readPFNs.size() > 0) {
+						t.startTiming();
+
 						File tempFile = null;
 						try {
 							infoPFN = readPFNs.iterator().next();
@@ -261,7 +286,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 							commander.printOutln("file read back ok" + expected);
 						}
 						catch (final IOException ioe) {
-							commander.printOutln("cannot read:\n    " + ioe.getMessage());
+							commander.printOutln("cannot read " + notOK + ":\n    " + ioe.getMessage());
 						}
 						finally {
 							if (tempFile != null) {
@@ -270,8 +295,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 							}
 						}
 
-						if (showCommand)
-							commander.printOutln(xrootd.getFormattedLastCommand());
+						afterCommandPrinting(t, xrootd);
 					}
 				}
 
@@ -283,6 +307,8 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 						commander.printOutln("  The file is gone, trying to add it back and then try the authenticated delete");
 
+						t.startTiming();
+
 						try {
 							xrootd.put(pTarget, referenceFile);
 
@@ -293,16 +319,17 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 							if (verbose)
 								commander.printOutln("      " + ioe.getMessage());
-
-							if (showCommand)
-								commander.printOutln(xrootd.getFormattedLastCommand());
 						}
+
+						afterCommandPrinting(t, xrootd);
 					}
 				}
 
 				if (wasAdded) {
 					// if the file is (still) on the SE, try to delete it with a proper token
 					commander.printOut("  Authenticated delete: ");
+
+					t.startTiming();
 
 					try {
 						final PFNforReadOrDel del = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), null, AccessType.DELETE, lfn, Arrays.asList(se.getName()), null));
@@ -313,17 +340,18 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 							commander.printOutln("delete worked ok" + expected);
 					}
 					catch (final IOException ioe) {
-						commander.printOutln("couldn't delete:\n    " + ioe.getMessage());
+						commander.printOutln("couldn't delete " + notOK + ":\n    " + ioe.getMessage());
 					}
 					catch (final ServerException e) {
-						commander.printOutln("couldn't get a delete token:\n    " + e.getMessage());
+						commander.printOutln("couldn't get a delete token " + notOK + ":\n    " + e.getMessage());
 					}
 
-					if (showCommand)
-						commander.printOutln(xrootd.getFormattedLastCommand());
+					afterCommandPrinting(t, xrootd);
 				}
 
 				commander.printOutln("  Space information:");
+
+				t.startTiming();
 
 				try {
 					infoPFN.pfn = se.generateProtocol();
@@ -336,6 +364,8 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 				catch (final IOException e) {
 					commander.printOutln("    Could not get the space information due to: " + e.getMessage());
 				}
+
+				afterCommandPrinting(t, xrootd);
 
 				commander.printOutln("  LDAP information:");
 
@@ -355,6 +385,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 		commander.printOutln("Usage: testSE [options] <some SE names or numbers>");
 		commander.printOutln(helpOption("-v", "verbose error messages even when the operation is expected to fail"));
 		commander.printOutln(helpOption("-c", "show full command line for each test"));
+		commander.printOutln(helpOption("-t", "time each operation"));
 	}
 
 	@Override
@@ -375,11 +406,13 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 
 			parser.accepts("v");
 			parser.accepts("c");
+			parser.accepts("t");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			verbose = options.has("v");
 			showCommand = options.has("c");
+			showTiming = options.has("t");
 
 			for (final Object o : options.nonOptionArguments()) {
 				final String s = o.toString();
