@@ -314,7 +314,7 @@ public class JDL implements Serializable {
 			return Integer.valueOf(((Number) o).intValue());
 
 		try {
-			return Integer.valueOf(Integer.valueOf(getString(o)).intValue());
+			return Integer.valueOf(getString(o));
 		}
 		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
@@ -332,6 +332,9 @@ public class JDL implements Serializable {
 
 		if (o == null)
 			return null;
+
+		if (o instanceof Float)
+			return (Float) o;
 
 		if (o instanceof Number)
 			return Float.valueOf(((Number) o).floatValue());
