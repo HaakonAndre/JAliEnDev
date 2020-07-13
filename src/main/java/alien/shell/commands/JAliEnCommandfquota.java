@@ -1,5 +1,6 @@
 package alien.shell.commands;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import alien.api.taskQueue.TaskQueueApiUtils;
@@ -20,32 +21,30 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	private String param_to_set;
 	private Long value_to_set;
 
+	private List<String> usersToList = new ArrayList<>();
+
 	@Override
 	public void run() {
-		if (!this.command.equals("list") && !(isAdmin && this.command.equals("set"))) {
-			commander.setReturnCode(ErrNo.EINVAL, this.command);
-			printHelp();
-			return;
-		}
-
-		final String username = commander.user.getName();
-
 		if (command.equals("list")) {
-			final FileQuota q = commander.q_api.getFileQuota();
-			if (q == null) {
-				commander.setReturnCode(ErrNo.ENODATA, "File quota information not available for " + username);
-				return;
+			for (final String username : usersToList) {
+				final FileQuota q = TaskQueueApiUtils.getFileQuota(UserFactory.getByUsername(username));
+
+				if (q == null) {
+					commander.setReturnCode(ErrNo.ENODATA, "File quota information not available for " + username);
+					continue;
+				}
+
+				commander.printOut("username", q.user);
+				commander.printOut("totalSize", String.valueOf(q.totalSize));
+				commander.printOut("maxTotalSize", String.valueOf(q.maxTotalSize));
+				commander.printOut("nbFiles", String.valueOf(q.nbFiles));
+				commander.printOut("maxNbFiles", String.valueOf(q.maxNbFiles));
+				commander.printOut("maxNbFiles", String.valueOf(q.maxNbFiles));
+
+				commander.printOutln(q.toString());
+
+				commander.outNextResult();
 			}
-
-			commander.printOut("username", q.user);
-			commander.printOut("totalSize", String.valueOf(q.totalSize));
-			commander.printOut("maxTotalSize", String.valueOf(q.maxTotalSize));
-			commander.printOut("nbFiles", String.valueOf(q.nbFiles));
-			commander.printOut("maxNbFiles", String.valueOf(q.maxNbFiles));
-			commander.printOut("maxNbFiles", String.valueOf(q.maxNbFiles));
-
-			commander.printOutln(q.toString());
-			return;
 		}
 
 		if (command.equals("set")) {
@@ -58,11 +57,12 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 				printHelp();
 				return;
 			}
+
 			// run the update
 			if (TaskQueueApiUtils.setFileQuota(user_to_set, this.param_to_set, this.value_to_set.toString()))
-				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + user_to_set);
 			else
-				commander.setReturnCode(ErrNo.EREMOTEIO, "Failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.setReturnCode(ErrNo.EREMOTEIO, "Failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + user_to_set);
 		}
 	}
 
@@ -100,19 +100,40 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			return;
 
 		this.command = alArguments.get(0);
-		// System.out.println( alArguments );
-		if (this.command.equals("set") && alArguments.size() == 4) {
-			this.user_to_set = UserFactory.getByUsername(alArguments.get(1));
-			final String param = alArguments.get(2);
-			if (FileQuota.canUpdateField(param))
-				return;
-			this.param_to_set = param;
-			try {
-				this.value_to_set = Long.valueOf(alArguments.get(3));
+
+		if (this.command.equals("set")) {
+			if (alArguments.size() == 4) {
+				this.user_to_set = UserFactory.getByUsername(alArguments.get(1));
+				final String param = alArguments.get(2);
+
+				if (!FileQuota.canUpdateField(param)) {
+					commander.setReturnCode(ErrNo.EINVAL, "Not a field you can set: " + param);
+					setArgumentsOk(false);
+					return;
+				}
+
+				this.param_to_set = param;
+
+				try {
+					this.value_to_set = Long.valueOf(alArguments.get(3));
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
+					commander.setReturnCode(ErrNo.EINVAL, "Illegal value for " + param_to_set + " : " + alArguments.get(4));
+				}
 			}
-			catch (@SuppressWarnings("unused") final Exception e) {
-				// FIXME ignoring invalid numeric arguments
+			else {
+				setArgumentsOk(false);
 			}
+		}
+		else if (this.command.equals("list")) {
+			for (int i = 1; i < alArguments.size(); i++)
+				usersToList.add(alArguments.get(i));
+
+			if (usersToList.size() == 0)
+				usersToList.add(commander.getUsername());
+		}
+		else {
+			setArgumentsOk(false);
 		}
 	}
 }
