@@ -5,6 +5,7 @@ import java.util.List;
 
 import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.PFN;
+import alien.shell.ErrNo;
 
 /**
  * @author ron
@@ -72,18 +73,32 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 		if (rawenvelope.contains("signature="))
 			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope), BOOKING_STATE.COMMITED);
-		else
+		else {
+			if (size <= 0) {
+				commander.setReturnCode(ErrNo.EINVAL, "Size should be known at commit time");
+				return;
+			}
+
 			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5, BOOKING_STATE.COMMITED);
+		}
+
+		commander.printOut("path", lfn);
 
 		String ret = "";
 		if (pfns != null && pfns.size() > 0) {
 			commander.printOut("lfn", "1");
+			commander.printOut("pfn", pfns.iterator().next().getPFN());
+
 			ret += lfn + padSpace(1) + "1";
 		}
 		else {
 			commander.printOut("lfn", "0");
+
 			ret += lfn + padSpace(1) + "0";
+
+			commander.setReturnCode(ErrNo.EBADR, "Nothing was registered");
 		}
+
 		logger.info("Commit line : " + ret);
 
 		commander.printOutln(ret);
