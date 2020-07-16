@@ -1427,6 +1427,11 @@ public class TaskQueueUtils {
 		if (jdl.get("MemorySize") == null)
 			jdl.set("MemorySize", "8GB");
 
+		if (jdl.getInteger("CPUCores") == null)
+			jdl.set("CPUCores", "1");
+
+		jdl.append("JDLVariables", "CPUCores");
+
 		jdl.set("User", account.getName());
 
 		// set the requirements anew
