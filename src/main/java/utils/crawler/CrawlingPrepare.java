@@ -83,8 +83,6 @@ class CrawlingPrepare {
 		try {
 			ConfigUtils.setApplicationName("CrawlingPrepare");
 			ConfigUtils.switchToForkProcessLaunching();
-			String version = System.getProperty("java.version");
-			logger.log(Level.WARNING, "Version = " + version);
 
 			if (!JAKeyStore.loadKeyStore()) {
 				logger.log(Level.SEVERE, "No identity found, exiting");
