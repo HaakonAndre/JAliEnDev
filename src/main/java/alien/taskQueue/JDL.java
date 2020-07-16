@@ -896,7 +896,7 @@ public class JDL implements Serializable {
 				s = s.substring(0, idx);
 		}
 
-		if (s.endsWith("/"))
+		while (s.endsWith("/"))
 			s = s.substring(0, s.length() - 1);
 
 		return s;
