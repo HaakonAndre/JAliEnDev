@@ -311,7 +311,17 @@ public class Xrootd extends Protocol {
 
 	@Override
 	public boolean delete(final PFN pfn) throws IOException {
-		if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE)
+		return delete(pfn, true);
+	}
+
+	/**
+	 * @param pfn
+	 * @param enforceTicket optionally enforce a delete token
+	 * @return <code>true</code> if everything went ok and the file was deleted
+	 * @throws IOException
+	 */
+	public boolean delete(final PFN pfn, final boolean enforceTicket) throws IOException {
+		if (enforceTicket && (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE))
 			throw new IOException("You didn't get the rights to delete this PFN");
 
 		try {
@@ -321,26 +331,28 @@ public class Xrootd extends Protocol {
 
 			String envelope = null;
 
-			boolean encryptedEnvelope = true;
+			boolean encryptedEnvelope = false;
 
-			if (pfn.ticket.envelope != null) {
+			if (pfn.ticket != null && pfn.ticket.envelope != null) {
 				envelope = pfn.ticket.envelope.getEncryptedEnvelope();
 
 				if (envelope == null) {
 					envelope = pfn.ticket.envelope.getSignedEnvelope();
 					encryptedEnvelope = false;
 				}
+				else
+					encryptedEnvelope = true;
 			}
 
 			File fAuthz = null;
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket.envelope != null)
+			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 			if (xrootdNewerThan4) {
-				final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+				final URL url = new URL(transactionURL);
 
 				final String host = url.getHost();
 				final int port = url.getPort() > 0 ? url.getPort() : 1094;
@@ -353,7 +365,7 @@ public class Xrootd extends Protocol {
 				command.add(xrootd_default_path + "/bin/xrdfs");
 				command.add(host + ":" + port);
 				command.add("rm");
-				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+				command.add(path + (envelope != null ? "?" + (encryptedEnvelope ? "authz=" : "") + envelope : ""));
 			}
 			else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
@@ -437,7 +449,7 @@ public class Xrootd extends Protocol {
 		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new IOException("delete aborted because " + t);
+			throw new IOException("delete aborted due to an unexpected exception", t);
 		}
 	}
 
@@ -664,14 +676,25 @@ public class Xrootd extends Protocol {
 	 */
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
-		return put(pfn, localFile, null);
+		return put(pfn, localFile, true);
 	}
 
-	private String put(final PFN pfn, final File localFile, final String applicationName) throws IOException {
+	/**
+	 * @param pfn target location
+	 * @param localFile local file to upload
+	 * @param enforceTicket optional ticket enforcing, should only be set to <code>false</code> for tests but all SEs should enforce it
+	 * @return the xrdstat of the newly uploaded file
+	 * @throws IOException in case of upload problems
+	 */
+	public String put(final PFN pfn, final File localFile, final boolean enforceTicket) throws IOException {
+		return put(pfn, localFile, null, enforceTicket);
+	}
+
+	private String put(final PFN pfn, final File localFile, final String applicationName, final boolean enforceTicket) throws IOException {
 		if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
 			throw new TargetException("Local file " + localFile + " cannot be read");
 
-		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE)
+		if (enforceTicket && (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE))
 			throw new TargetException("No access to this PFN");
 
 		final GUID guid = pfn.getGuid();
@@ -714,7 +737,7 @@ public class Xrootd extends Protocol {
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket.envelope != null) {
+			if (pfn.ticket != null && pfn.ticket.envelope != null) {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null) {
@@ -784,7 +807,7 @@ public class Xrootd extends Protocol {
 				throw new TargetException(sMessage);
 			}
 
-			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
+			if (pfn.ticket != null && pfn.ticket.envelope.getEncryptedEnvelope() != null)
 				return xrdstat(pfn, false);
 
 			return xrdstat(pfn, true);
@@ -1161,7 +1184,7 @@ public class Xrootd extends Protocol {
 		final File temp = get(source, null, "transfer");
 
 		try {
-			return put(target, temp, "transfer");
+			return put(target, temp, "transfer", true);
 		}
 		finally {
 			TempFileManager.release(temp);
@@ -1455,7 +1478,24 @@ public class Xrootd extends Protocol {
 	private SpaceInfo getQuerySpaceInfo(final PFN pfn) throws IOException {
 		final List<String> command = new LinkedList<>();
 
-		final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+		final URL url;
+
+		boolean encryptedEnvelope = false;
+
+		String envelope = null;
+
+		if (pfn.ticket != null && pfn.ticket.type == AccessType.READ && pfn.ticket.envelope != null) {
+			url = new URL(pfn.ticket.envelope.getTransactionURL());
+
+			envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+			if (envelope == null)
+				envelope = pfn.ticket.envelope.getSignedEnvelope();
+			else
+				encryptedEnvelope = true;
+		}
+		else
+			url = new URL(pfn.pfn);
 
 		final String host = url.getHost();
 		final int port = url.getPort() > 0 ? url.getPort() : 1094;
@@ -1464,15 +1504,6 @@ public class Xrootd extends Protocol {
 
 		if (path.startsWith("//"))
 			path = path.substring(1);
-
-		boolean encryptedEnvelope = true;
-
-		String envelope = pfn.ticket.envelope.getEncryptedEnvelope();
-
-		if (envelope == null) {
-			envelope = pfn.ticket.envelope.getSignedEnvelope();
-			encryptedEnvelope = false;
-		}
 
 		final SpaceInfo ret = new SpaceInfo();
 
@@ -1579,7 +1610,24 @@ public class Xrootd extends Protocol {
 	private SpaceInfo getXrdfsSpaceInfo(final PFN pfn) throws IOException {
 		final List<String> command = new LinkedList<>();
 
-		final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+		final URL url;
+
+		boolean encryptedEnvelope = false;
+
+		String envelope = null;
+
+		if (pfn.ticket != null && pfn.ticket.envelope != null) {
+			url = new URL(pfn.ticket.envelope.getTransactionURL());
+
+			envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+			if (envelope == null)
+				envelope = pfn.ticket.envelope.getSignedEnvelope();
+			else
+				encryptedEnvelope = true;
+		}
+		else
+			url = new URL(pfn.pfn);
 
 		final String host = url.getHost();
 		final int port = url.getPort() > 0 ? url.getPort() : 1094;
@@ -1588,15 +1636,6 @@ public class Xrootd extends Protocol {
 
 		if (path.startsWith("//"))
 			path = path.substring(1);
-
-		boolean encryptedEnvelope = true;
-
-		String envelope = pfn.ticket.envelope.getEncryptedEnvelope();
-
-		if (envelope == null) {
-			envelope = pfn.ticket.envelope.getSignedEnvelope();
-			encryptedEnvelope = false;
-		}
 
 		final SpaceInfo ret = new SpaceInfo();
 

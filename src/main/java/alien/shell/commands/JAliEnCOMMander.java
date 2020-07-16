@@ -116,7 +116,7 @@ public class JAliEnCOMMander implements Runnable {
 			"find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user", "touch", "touch_csd",
 			"type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota", "jquota",
 			"listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep", "showTagValue",
-			"randomPFNs", "toXml", "changeDiff" };
+			"randomPFNs", "toXml", "changeDiff", "testSE" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 

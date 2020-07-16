@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import lazyj.Format;
 
 /**
  * @author ron
@@ -104,15 +105,24 @@ public class PlainWriter extends UIPrintWriter {
 		}
 	}
 
+	private static String cleanupLine(final String line) {
+		if (line.indexOf('\0') < 0)
+			return line;
+
+		return Format.replace(line, "\0", "");
+	}
+
 	@Override
 	protected void printOut(final String line) {
-		print(line);
+		print(cleanupLine(line));
 	}
 
 	@Override
 	protected void printErr(final String line) {
-		print(errTag + line);
-		setMetaInfo("error", line);
+		final String cleanedUpLine = cleanupLine(line);
+
+		print(errTag + cleanedUpLine);
+		setMetaInfo("error", cleanedUpLine);
 	}
 
 	@Override

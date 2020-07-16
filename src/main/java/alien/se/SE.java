@@ -234,7 +234,10 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @return if this SE server the requested QoS type
 	 */
 	public boolean isQosType(final String qosRequest) {
-		return qos.contains(qosRequest);
+		if (qosRequest == null)
+			return false;
+
+		return qos.contains(qosRequest.toLowerCase());
 	}
 
 	private static final NumberFormat twoDigits = new DecimalFormat("00");
@@ -304,7 +307,7 @@ public class SE implements Serializable, Comparable<SE> {
 		final StringTokenizer st = new StringTokenizer(s, ",");
 
 		while (st.hasMoreTokens()) {
-			final String tok = StringFactory.get(st.nextToken().trim());
+			final String tok = StringFactory.get(st.nextToken().trim().toLowerCase());
 
 			if (tok.length() > 0)
 				ret.add(tok);
