@@ -42,6 +42,7 @@ public class HTCONDOR extends BatchQueue {
 	private String htc_logdir = "$HOME/htcondor";
 	private String grid_resource = null;
 	private boolean use_job_router = false;
+	private boolean use_external_cloud = false;
 
 	//
 	// 2020-06-24 - Maarten Litmaath, Maxim Storetvedt
@@ -112,7 +113,7 @@ public class HTCONDOR extends BatchQueue {
 		String ce_submit_cmd_str = "CE_SUBMITCMD";
 
 		submitCmd = if_else(environment.get(ce_submit_cmd_str),
-			if_else(config.get(ce_submit_cmd_str), "condor_submit"));
+			if_else((String) config.get(ce_submit_cmd_str), "condor_submit"));
 
 		String use_job_router_tmp = "0";
 		String use_external_cloud_tmp = "0";
@@ -228,7 +229,7 @@ public class HTCONDOR extends BatchQueue {
 		//
 
 		String proxy = environment.get("X509_USER_PROXY");
-		String vo_str = if_else(config.get("LCGVO"), "alice");
+		String vo_str = if_else((String) config.get("LCGVO"), "alice");
 		String proxy_renewal_str = String.format("/etc/init.d/%s-box-proxyrenewal", vo_str);
 		File proxy_no_check = new File(environment.get("HOME") + "/no-proxy-check");
 		File proxy_renewal_svc = new File(proxy_renewal_str);
@@ -246,8 +247,6 @@ public class HTCONDOR extends BatchQueue {
 
 		String dn_str = "";
 		String time_left_str = "";
-		Pattern dn_pattern = Pattern.compile("^/");
-		Pattern time_left_pattern = Pattern.compile();
 
 		for (String line : proxy_info_output) {
 			String trimmed_line = line.trim();
