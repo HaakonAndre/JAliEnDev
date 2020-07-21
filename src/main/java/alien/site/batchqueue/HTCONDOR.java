@@ -166,13 +166,13 @@ public class HTCONDOR extends BatchQueue {
 				if (tot <= 0) {
 					String msg = "CE_LCGCE invalid: " + val;
 					logger.severe(msg);
-					throw new InstantiationException(msg);
+					throw new IllegalArgumentException(msg);
 				}
 
 				if (ce_weight.size() != ce_list.size()) {
 					String msg = "CE_LCGCE has duplicate CEs: " + val;
 					logger.severe(msg);
-					throw new InstantiationException(msg);
+					throw new IllegalArgumentException(msg);
 				}
 
 				logger.info("Load-balancing over these CEs with normalized weights:");
@@ -219,7 +219,7 @@ public class HTCONDOR extends BatchQueue {
 		if (ce_list.size() <= 0 && grid_resource == null && !use_job_router) {
 			String msg = "No CE usage specified in the environment";
 			logger.severe(msg);
-			throw new InstantiationException(msg);
+			throw new IllegalArgumentException(msg);
 		}
 	}
 
