@@ -238,7 +238,7 @@ public class HTCONDOR extends BatchQueue {
 			return;
 		}
 
-		String threshold = if_else(config.get("CE_PROXYTHRESHOLD"), String.valueOf(46 * 3600));
+		String threshold = if_else((String) config.get("CE_PROXYTHRESHOLD"), String.valueOf(46 * 3600));
 		logger.info(String.format("X509_USER_PROXY is %s", proxy));
 		logger.info("Checking remaining proxy lifetime");
 
