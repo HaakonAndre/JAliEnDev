@@ -35,12 +35,13 @@ import utils.ProcessWithTimeout;
  */
 public class HTCONDOR extends BatchQueue {
 
-	private Map<String, String> environment;
+	private HashMap<String, String> environment = new HashMap<>();
 	private TreeSet<String> envFromConfig;
 	private String submitCmd;
 	private String submitArgs = "";
-	private String killCmd;
-	private File temp_file;
+	private String htc_logdir = "$HOME/htcondor";
+	private String grid_resource = null;
+	private boolean use_job_router = false;
 
 	//
 	// 2020-06-24 - Maarten Litmaath, Maxim Storetvedt
@@ -57,33 +58,77 @@ public class HTCONDOR extends BatchQueue {
 	private int tot_waiting = 0;
 	private long job_numbers_timestamp = 0;
 
+	//
+	// our own Elvis operator approximation...
+	//
+
+	private static String if_else(String value, String fallback) {
+		return value != null ? value : fallback;
+	}
+
 	/**
 	 * @param conf
 	 * @param logr
 	 */
 	@SuppressWarnings("unchecked")
 	public HTCONDOR(HashMap<String, Object> conf, Logger logr) {
-		this.environment = System.getenv();
-		this.config = conf;
-		this.logger = logr;
-		// String host_logdir = (String) config.get("host_logdir");
-		// this.logger = LogUtils.redirectToCustomHandler(this.logger, (Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out")));
+		config = conf;
+		logger = logr;
 
-		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountname"));
+		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") +
+			", site is " + config.get("site_accountname"));
 
-		try {
-			this.envFromConfig = (TreeSet<String>) this.config.get("ce_environment");
-		} catch(ClassCastException e){
-			this.envFromConfig = new TreeSet<String>(Arrays.asList((String)this.config.get("ce_environment")));
+		String ce_env_str = "ce_environment";
+
+		if (config.get(ce_env_str) == null) {
+			String msg = ce_env_str + " needs to be defined!";
+			logger.warning(msg);
+			config.put(ce_env_str, new TreeSet<String>());
 		}
 
-		this.temp_file = null;
-		this.submitCmd = (config.get("CE_SUBMITCMD") != null ? (String) config.get("CE_SUBMITCMD") : "condor_submit");
+		try {
+			envFromConfig = (TreeSet<String>) config.get(ce_env_str);
+		} catch (ClassCastException e) {
+			envFromConfig = new TreeSet<String>(Arrays.asList((String) config.get(ce_env_str)));
+		}
+
+		//
+		// initialize our environment from the LDAP configuration
+		//
 
 		for (String env_field : envFromConfig) {
-			if (Pattern.matches("^CE_LCGCE=.*", env_field)) {
-				String val = env_field.split("=")[1];
+			String[] parts = env_field.split("=", 2);
+			String var = parts[0];
+			String val = parts.length > 1 ? parts[1] : "";
+			environment.put(var, val);
+		}
+
+		//
+		// allow the process environment to override any variable and add others
+		//
+
+		environment.putAll(System.getenv());
+
+		String ce_submit_cmd_str = "CE_SUBMITCMD";
+
+		submitCmd = if_else(environment.get(ce_submit_cmd_str),
+			if_else(config.get(ce_submit_cmd_str), "condor_submit"));
+
+		String use_job_router_tmp = "0";
+		String use_external_cloud_tmp = "0";
+
+		for (String var : environment.keySet()) {
+			String val = environment.get(var);
+
+			if (var.equals("CE_LCGCE")) {
 				double tot = 0;
+
+				//
+				// support weighted, round-robin load-balancing over a CE set
+				// (mind: the WLCG SiteMon VO feed currently needs the ports):
+				//
+				// CE_LCGCE=[N1 * ]ce1.abc.xyz[:port], [N2 * ]ce2.abc.xyz[:port], ...
+				//
 
 				logger.info("Load-balancing over these CEs with configured weights:");
 
@@ -100,6 +145,12 @@ public class HTCONDOR extends BatchQueue {
 						ce = ce.replaceAll("\\s+", "");
 					}
 
+					if (!Pattern.matches(".*\\w.*", ce)) {
+						logger.severe("syntax error in CE_LCGCE");
+						tot = 0;
+						break;
+					}
+
 					if (!Pattern.matches(".*:.*", ce)) {
 						ce += ":9619";
 					}
@@ -112,60 +163,83 @@ public class HTCONDOR extends BatchQueue {
 				}
 
 				if (tot <= 0) {
-					logger.log(Level.WARNING, "CE_LCGCE invalid: " + val);
-					// need to abort...
-					ce_list.clear();
+					String msg = "CE_LCGCE invalid: " + val;
+					logger.severe(msg);
+					throw new InstantiationException(msg);
 				}
 
 				if (ce_weight.size() != ce_list.size()) {
-					logger.log(Level.WARNING, "CE_LCGCE has duplicate CEs: " + val);
-					// need to abort...
-					tot = 0;
-					ce_list.clear();
+					String msg = "CE_LCGCE has duplicate CEs: " + val;
+					logger.severe(msg);
+					throw new InstantiationException(msg);
 				}
 
-				if (tot > 0) {
-					logger.info("Load-balancing over these CEs with normalized weights:");
+				logger.info("Load-balancing over these CEs with normalized weights:");
 
-					for (String ce : ce_list) {
-						double w = ce_weight.get(ce) / tot;
-						ce_weight.replace(ce, w);
-						logger.info(ce + " --> " + String.format("%5.3f", w));
-					}
+				for (String ce : ce_list) {
+					double w = ce_weight.get(ce) / tot;
+					ce_weight.replace(ce, w);
+					logger.info(ce + " --> " + String.format("%5.3f", w));
 				}
+
+				continue;
 			}
 
-			if (env_field.contains("SUBMIT_ARGS")) {
-				this.submitArgs = env_field.split("SUBMIT_ARGS=")[1];
+			if (var.equals("SUBMIT_ARGS")) {
+				submitArgs = val;
+				continue;
+			}
+
+			if (var.equals("HTCONDOR_LOG_PATH")) {
+				htc_logdir = val;
+				continue;
+			}
+
+			if (var.equals("GRID_RESOURCE")) {
+				grid_resource = val;
+				continue;
+			}
+
+			if (var.equals("USE_JOB_ROUTER")) {
+				use_job_router_tmp = val;
+				continue;
+			}
+
+			if (var.equals("USE_EXTERNAL_CLOUD")) {
+				use_external_cloud_tmp = val;
+				continue;
 			}
 		}
-		if (environment.get("SUBMIT_ARGS") != null) {
-			this.submitArgs = environment.get("SUBMIT_ARGS");
-		}
 
-		this.killCmd = (config.get("CE_KILLCMD") != null ? (String) config.get("CE_KILLCMD") : "condor_rm");
+		htc_logdir = Functions.resolvePathWithEnv(htc_logdir);
+		use_job_router = Integer.parseInt(use_job_router_tmp) == 1;
+		use_external_cloud = Integer.parseInt(use_external_cloud_tmp) == 1;
+
+		if (ce_list.size() <= 0 && grid_resource == null && !use_job_router) {
+			String msg = "No CE usage specified in the environment";
+			logger.severe(msg);
+			throw new InstantiationException(msg);
+		}
 	}
 
-	/**
-	 * @param classad
-	 * @return classad or null
-	 */
-	public String prepareForSubmission(String classad) {
-		if (classad == null) {
-			return null;
-		}
-		String vo_str = (config.get("LCGVO") != null ? (String) config.get("LCGVO") : "alice");
+	public void proxyCheck() {
+		//
+		// not yet called, fix later...
+		//
+
+		String proxy = environment.get("X509_USER_PROXY");
+		String vo_str = if_else(config.get("LCGVO"), "alice");
 		String proxy_renewal_str = String.format("/etc/init.d/%s-box-proxyrenewal", vo_str);
+		File proxy_no_check = new File(environment.get("HOME") + "/no-proxy-check");
+		File proxy_renewal_svc = new File(proxy_renewal_str);
 
-		File proxy_check_file = new File(environment.get("HOME") + "/no-proxy-check");
-		File proxy_renewal_file = new File(proxy_renewal_str);
-		if (proxy_check_file.exists() || environment.get("X509_USER_PROXY") == null || !proxy_renewal_file.exists()) {
-			return classad;
+		if (proxy == null || proxy_no_check.exists() || !proxy_renewal_svc.exists()) {
+			return;
 		}
 
-		int threshold = (config.get("CE_PROXYTHRESHOLD") != null ? ((Integer) config.get("CE_PROXYTHRESHOLD")).intValue() : 46 * 3600);
-		this.logger.info(String.format("X509_USER_PROXY is %s", environment.get("X509_USER_PROXY")));
-		this.logger.info("Checking remaining proxy lifetime");
+		String threshold = if_else(config.get("CE_PROXYTHRESHOLD"), String.valueOf(46 * 3600));
+		logger.info(String.format("X509_USER_PROXY is %s", proxy));
+		logger.info("Checking remaining proxy lifetime");
 
 		String proxy_info_cmd = "voms-proxy-info -acsubject -actimeleft 2>&1";
 		ArrayList<String> proxy_info_output = executeCommand(proxy_info_cmd);
@@ -173,124 +247,113 @@ public class HTCONDOR extends BatchQueue {
 		String dn_str = "";
 		String time_left_str = "";
 		Pattern dn_pattern = Pattern.compile("^/");
-		Pattern time_left_pattern = Pattern.compile("^\\d+$");
+		Pattern time_left_pattern = Pattern.compile();
+
 		for (String line : proxy_info_output) {
-			line = line.trim();
-			Matcher dn_matcher = dn_pattern.matcher(line);
-			if (dn_matcher.matches()) {
-				dn_str = line;
+			String trimmed_line = line.trim();
+
+			if (trimmed_line.matches("^/.+")) {
+				dn_str = trimmed_line;
 				continue;
 			}
-			Matcher time_left_matcher = time_left_pattern.matcher(line);
-			if (time_left_matcher.matches()) {
-				time_left_str = line;
+
+			if (trimmed_line.matches("^\\d+$")) {
+				time_left_str = trimmed_line;
 				continue;
 			}
-		}
-		if (dn_str.length() == 0) {
-			this.logger.warning("[LCG] No valid proxy found.");
-			return null;
-		}
-		this.logger.info(String.format("DN  is %s", dn_str));
-		this.logger.info(String.format("Proxy timeleft is %s (threshold is %d)", time_left_str, Integer.valueOf(threshold)));
-		if (Integer.parseInt(time_left_str) > threshold) {
-			return classad;
 		}
 
+		if (dn_str.length() == 0) {
+			logger.warning("[LCG] No valid proxy found!");
+			return;
+		}
+
+		logger.info(String.format("DN is %s", dn_str));
+		logger.info(String.format("Proxy timeleft is %s (threshold is %s)", time_left_str, threshold);
+
+		if (Integer.parseInt(time_left_str) > Integer.parseInt(threshold)) {
+			return;
+		}
+
+		//
 		// the proxy shall be managed by the proxy renewal service for the VO;
 		// restart it as needed...
+		//
 
-		String proxy_renewal_cmd = String.format("%s start 2>&1", proxy_renewal_str);
-		this.logger.info("Checking proxy renewal service");
+		logger.info("Checking proxy renewal service");
+
+		String proxy_renewal_cmd = String.format("%s start 2>&1", proxy_renewal_svc);
 		ArrayList<String> proxy_renewal_output = null;
+
 		try {
 			proxy_renewal_output = executeCommand(proxy_renewal_cmd);
-		}
-		catch (Exception e) {
-			this.logger.info(String.format("[HTCONDOR] Problem while executing command: %s", proxy_renewal_cmd));
+		} catch (Exception e) {
+			logger.info(String.format("[LCG] Problem while executing command: %s", proxy_renewal_cmd));
 			e.printStackTrace();
-		}
-		finally {
+		} finally {
 			if (proxy_renewal_output != null) {
-				this.logger.info("Proxy renewal output:\n");
+				logger.info("Proxy renewal output:\n");
+
 				for (String line : proxy_renewal_output) {
-					line = line.trim();
-					this.logger.info(line);
+					logger.info(line.trim());
 				}
 			}
 		}
-
-		return classad;
 	}
 
 	@Override
 	public void submit(final String script) {
-		this.logger.info("Submit HTCONDOR");
-		String cm = String.format("%s:%s", this.config.get("host_host"), this.config.get("host_port"));
+		logger.info("Submit HTCONDOR");
 
-		//DateFormat date_format = new SimpleDateFormat("yyyy-MM-dd");
-		//String current_date_str = date_format.format(new Date());
-
-		String host_logdir = (environment.get("HTCONDOR_LOG_PATH") != null ? environment.get("HTCONDOR_LOG_PATH") : (String) config.get("host_logdir"));
-		String log_folder_path = String.format("%s/%s", host_logdir, "jobagents"); //let's just use the dir "jobagents" for now
+		DateFormat date_format = new SimpleDateFormat("yyyy-MM-dd");
+		String current_date_str = date_format.format(new Date());
+		String log_folder_path = htc_logdir + "/" + current_date_str;
 		File log_folder = new File(log_folder_path);
-		if (!(log_folder.exists()) || !(log_folder.isDirectory())) {
+
+		if (!log_folder.exists()) {
 			try {
-				log_folder.mkdir();
-			}
-			catch (SecurityException e) {
-				this.logger.info(String.format("[HTCONDOR] Couldn't create log folder: %s", log_folder_path));
+				log_folder.mkdirs();
+			} catch (Exception e) {
+				logger.severe(String.format("[HTCONDOR] log folder mkdirs() exception: %s",
+					log_folder_path));
 				e.printStackTrace();
 			}
+
+			if (!log_folder.exists()) {
+				logger.severe(String.format("[HTCONDOR] Couldn't create log folder: %s",
+					log_folder_path));
+				return;
+			}
 		}
 
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-		String file_base_name = String.format("%s/jobagent_%s_%d_%d", Functions.resolvePathWithEnv(log_folder_path), this.config.get("host"), this.config.get("CLUSTERMONITOR_PORT"),
-				Long.valueOf(timestamp.getTime()));
-		String log_cmd = String.format("log = %s.log", file_base_name);
+		String file_base_name = String.format("%s/jobagent_%d", log_folder_path, System.currentTimeMillis());
+		String log_cmd = String.format("log = %s.log\n", file_base_name);
 		String out_cmd = "";
 		String err_cmd = "";
+
 		File enable_sandbox_file = new File(environment.get("HOME") + "/enable-sandbox");
-		if (enable_sandbox_file.exists() || (this.logger.getLevel() != null)) {
-			out_cmd = String.format("output = %s.out", file_base_name);
-			err_cmd = String.format("error = %s.err", file_base_name);
+
+		if (enable_sandbox_file.exists()) {
+			out_cmd = String.format("output = %s.out\n", file_base_name);
+			err_cmd = String.format("error = %s.err\n", file_base_name);
 		}
 
-		// String per_hold = "periodic_hold = JobStatus == 1 && "
-		// + "( GridJobStatus =?= undefined && CurrentTime - EnteredCurrentStatus > 1800 ) || "
-		// + "JobStatus <= 2 && ( CurrentTime - EnteredCurrentStatus > 172800 )";
-		// String per_remove = "periodic_remove = CurrentTime - QDate > 259200";
-		// String osb = "+TransferOutput = \"\"";
+		String submit_jdl =
+			"cmd = " + script + "\n" +
+			out_cmd +
+			err_cmd +
+			log_cmd +
+			"+TransferOutput = \"\"\n" +
+			"periodic_hold = JobStatus == 1 && " +
+			"GridJobStatus =?= undefined && CurrentTime - EnteredCurrentStatus > 1800 || " +
+			"JobStatus <= 2 && CurrentTime - EnteredCurrentStatus > 172800\n" +
+			"periodic_remove = CurrentTime - QDate > 259200\n";
 
-		// ===========
+		//
+		// via our own load-balancing (preferred), via the JobRouter, or to the single CE
+		//
 
-		String submit_cmd = String.format("cmd = %s\n", script);
-		if (log_folder.exists()) {
-			submit_cmd += String.format("%s\n%s\n%s\n", out_cmd, err_cmd, log_cmd);
-		}
-
-		// --- via JobRouter or direct
-
-		boolean use_job_agent = false;
-		for (String env_field : envFromConfig) {
-			if (env_field.contains("USE_JOB_ROUTER")) {
-				use_job_agent = Integer.parseInt(env_field.split("=")[1]) == 1;
-			}
-		}
-		if (environment.get("USE_JOB_ROUTER") != null) {
-			use_job_agent = Integer.parseInt(environment.get("USE_JOB_ROUTER")) == 1;
-		}
-		String grid_resource = null;
-		for (String env_field : envFromConfig) {
-			if (env_field.contains("GRID_RESOURCE")) {
-				grid_resource = env_field.split("=")[1];
-			}
-		}
-		if (environment.get("GRID_RESOURCE") != null) {
-			grid_resource = environment.get("GRID_RESOURCE");
-		}
-
-		if (ce_list.size() > 0) {
+		if (!use_job_router && ce_list.size() > 0) {
 			logger.info("Determining the next CE to use:");
 
 			for (int i = 0; i < ce_list.size(); i++) {
@@ -326,147 +389,98 @@ public class HTCONDOR extends BatchQueue {
 
 			String h = ce.replaceAll(":.*", "");
 			grid_resource = "condor " + h + " " + ce;
-			use_job_agent = false;
 		}
 
-		if (use_job_agent) {
-			submit_cmd += "" + "universe = vanilla\n" + "+WantJobRouter = True\n" + "job_lease_duration = 7200\n" + "ShouldTransferFiles = YES\n";
+		if (use_job_router) {
+			submit_jdl +=
+				"universe = vanilla\n" +
+				"+WantJobRouter = True\n" +
+				"job_lease_duration = 7200\n" +
+				"ShouldTransferFiles = YES\n";
+		} else {
+			submit_jdl +=
+				"universe = grid\n" +
+				"grid_resource = " + grid_resource + "\n";
 		}
-		else {
-			submit_cmd += "universe = grid\n";
-			if (grid_resource != null) {
-				submit_cmd += String.format("grid_resource = %s\n", grid_resource);
-			}
+
+		if (use_external_cloud) {
+			submit_jdl += "+WantExternalCloud = True\n";
 		}
 
-		// --- further common attributes
+		submit_jdl += "use_x509userproxy = true\n";
 
-		if (grid_resource != null) {
-			// this needs to be taken from LDAP !!!
-			// submit_cmd += "+WantExternalCloud = True\n";
-		}
-		submit_cmd += ""
-				// + "$osb\n"
-				// + "$per_hold\n" // TODO: inspect what this does in perl
-				// + "$per_remove\n"
-				+ "use_x509userproxy = true\n";
+		String cm = config.get("host_host") + ":" + config.get("host_port");
+		String env_cmd = String.format("ALIEN_CM_AS_LDAP_PROXY='%s'", cm);
+		submit_jdl += String.format("environment = \"%s\"\n", env_cmd);
 
-		String env_cmd = String.format("ALIEN_CM_AS_LDAP_PROXY=\'%s\'", cm);
-		submit_cmd += String.format("environment = \"%s\"\n", env_cmd);
+		//
+		// allow preceding attributes to be overridden and others added if needed
+		//
 
-		// --- allow preceding attributes to be overridden and others added if needed
+		String custom_jdl_path = environment.get("HOME") + "/custom-classad.jdl";
 
-		String custom_jdl_path = String.format("%s/custom-classad.jdl", environment.get("HOME"));
-		if ((new File(custom_jdl_path)).exists()) { // Check if we should add the custom attributes
+		if ((new File(custom_jdl_path)).exists()) {
 			String custom_attr_str = "\n#\n# custom attributes start\n#\n\n";
-			custom_attr_str += this.readJdlFile(custom_jdl_path);
+			custom_attr_str += readJdlFile(custom_jdl_path);
 			custom_attr_str += "\n#\n# custom attributes end\n#\n\n";
-			submit_cmd += custom_attr_str;
+			submit_jdl += custom_attr_str;
+			logger.info("Custom attributes added from file: " + custom_jdl_path));
 		}
 
-		// --- finally
+		//
+		// finally
+		//
 
-		submit_cmd += "queue 1\n";
+		submit_jdl += "queue 1\n";
 
-		// =============
+		//
+		// keep overwriting the same file for ~1 minute
+		//
 
-		if (this.temp_file != null) {
-			List<String> temp_file_lines = null;
-			try {
-				temp_file_lines = Files.readAllLines(Paths.get(this.temp_file.getAbsolutePath()), StandardCharsets.UTF_8);
-			}
-			catch (IOException e1) {
-				this.logger.info("Error reading old temp file");
-				e1.printStackTrace();
-			}
-			finally {
-				if (temp_file_lines != null) {
-					String temp_file_lines_str = "";
-					for (String line : temp_file_lines) {
-						temp_file_lines_str += line + '\n';
-					}
-					if (!temp_file_lines_str.equals(submit_cmd)) {
-						if (!this.temp_file.delete()) {
-							this.logger.info("Could not delete temp file");
-						}
-						try {
-							this.temp_file = File.createTempFile("htc-submit.", ".jdl");
-						}
-						catch (IOException e) {
-							this.logger.info("Error creating temp file");
-							e.printStackTrace();
-							return;
-						}
-					}
-				}
-			}
-		}
-		else {
-			try {
-				this.temp_file = File.createTempFile("htc-submit.", ".jdl");
-			}
-			catch (IOException e) {
-				this.logger.info("Error creating temp file");
-				e.printStackTrace();
-				return;
-			}
-		}
+		String submit_file = log_folder_path + "/htc-submit." + (job_numbers_timestamp >> 16) + ".jdl";
 
-		this.temp_file.setReadable(true);
-		this.temp_file.setExecutable(true);
-
-		try (PrintWriter out = new PrintWriter(this.temp_file.getAbsolutePath())) {
-			out.println(submit_cmd);
+		try (PrintWriter out = new PrintWriter(submit_file)) {
+			out.println(submit_jdl);
 			out.close();
-		}
-		catch (FileNotFoundException e) {
-			this.logger.info("Error writing to temp file");
+		} catch (Exception e) {
+			logger.severe("Error writing to submit file: " + submit_file);
 			e.printStackTrace();
+			return;
 		}
 
-		String temp_file_cmd = String.format("%s %s %s", this.submitCmd, this.submitArgs, this.temp_file.getAbsolutePath());
-		ArrayList<String> output = executeCommand(temp_file_cmd);
+		String submit_cmd = submitCmd + " " + submitArgs + " " + submit_file;
+		ArrayList<String> output = executeCommand(submit_cmd);
+
 		for (String line : output) {
 			String trimmed_line = line.trim();
-			this.logger.info(trimmed_line);
+			logger.info(trimmed_line);
 		}
-
 	}
 
 	private String readJdlFile(String path) {
 		String file_contents = "";
-
 		String line;
+
 		try (BufferedReader br = new BufferedReader(new FileReader(path))) {
 			Pattern comment_pattern = Pattern.compile("^\\s*(#.*|//.*)?$");
 			Pattern err_spaces_pattern = Pattern.compile("\\\\\\s*$");
-			Pattern endl_spaces_pattern = Pattern.compile("\\s+$");
+
 			while ((line = br.readLine()) != null) {
 				Matcher comment_matcher = comment_pattern.matcher(line);
 				// skip over comment lines
+
 				if (comment_matcher.matches()) {
 					continue;
 				}
+
 				// remove erroneous spaces
 				line = line.replaceAll(err_spaces_pattern.pattern(), "\\\\\n");
-				line = line.replaceAll(endl_spaces_pattern.pattern(), "");
-				if (line.lastIndexOf('\n') == -1) {
-					line += '\n';
-				}
-				file_contents += line;
+				file_contents += line + "\n";
 			}
-
-			this.logger.info(String.format("Custom attributes added from file: %s.", path));
-		}
-		catch (FileNotFoundException e) {
-			this.logger.info(String.format("Could not find file: %s.\n", path));
+		} catch (Exception e) {
+			logger.severe("ERROR when reading JDL file: " + path);
 			e.printStackTrace();
 			return "";
-		}
-		catch (IOException e) {
-			this.logger.info(String.format("Error while working with file: %s.\n", path));
-			e.printStackTrace();
-			return file_contents;
 		}
 
 		return file_contents;
@@ -475,7 +489,7 @@ public class HTCONDOR extends BatchQueue {
 	private boolean getJobNumbers() {
 
 		long now = System.currentTimeMillis();
-		long dt  = now - job_numbers_timestamp;
+		long dt  = (now - job_numbers_timestamp) / 1000;
 
 		if (dt < 60) {
 			logger.info("Reusing cached job numbers collected " + dt + " seconds ago");
@@ -557,40 +571,14 @@ public class HTCONDOR extends BatchQueue {
 
 	@Override
 	public int kill() {
-		this.logger.info("Checking proxy renewal service");
-		ArrayList<String> kill_cmd_output = null;
-		try {
-			kill_cmd_output = executeCommand(this.killCmd);
-		}
-		catch (Exception e) {
-			this.logger.info(String.format("[HTCONDOR] Problem while executing command: %s", this.killCmd));
-			e.printStackTrace();
-			return -1;
-		}
-		finally {
-			if (kill_cmd_output != null) {
-				this.logger.info("Kill cmd output:\n");
-				for (String line : kill_cmd_output) {
-					line = line.trim();
-					this.logger.info(line);
-				}
-			}
-		}
-		if (temp_file != null && temp_file.exists()) {
-			this.logger.info(String.format("Deleting temp file  %s after command.", this.temp_file.getAbsolutePath()));
-			if (!temp_file.delete()) {
-				this.logger.info(String.format("Could not delete temp file: %s", this.temp_file.getAbsolutePath()));
-			}
-			else {
-				this.temp_file = null;
-			}
-		}
+		logger.info("Kill command not implemented");
 		return 0;
 	}
 
 	// Previously named "_system" in perl
 	private ArrayList<String> executeCommand(String cmd) {
 		ArrayList<String> proc_output = new ArrayList<>();
+
 		try {
 			ArrayList<String> cmd_full = new ArrayList<>();
 			cmd_full.add("/bin/bash");
@@ -599,18 +587,45 @@ public class HTCONDOR extends BatchQueue {
 			final ProcessBuilder proc_builder = new ProcessBuilder(cmd_full);
 
 			Map<String, String> env = proc_builder.environment();
-			env.clear();
+			String[] dirs = {
+				"/cvmfs/alice.cern.ch/",
+				env.get("JALIEN_ROOT"),
+				env.get("JALIEN_HOME"),
+				env.get("ALIEN_ROOT"),
+			};
 
-			final HashMap<String, String> additional_env_vars = new HashMap<>();
-			additional_env_vars.put("X509_USER_PROXY", System.getenv("X509_USER_PROXY"));
-			additional_env_vars.put("LD_LIBRARY_PATH", System.getenv("LD_LIBRARY_PATH"));
-			additional_env_vars.put("PATH", System.getenv("PATH"));
-			env.putAll(additional_env_vars);
+			HashMap<String, String> cleaned_env_vars = new HashMap<>();
+			Pattern p = Pattern.compile(".*PATH$");
 
-			proc_builder.redirectErrorStream(false);
+			for (String var : env.keySet()) {
+				Matcher m = p.matcher(var);
+
+				if (!m.matches()) {
+					continue;
+				}
+
+				String val = env.get(var);
+
+				//
+				// remove any traces of (J)AliEn...
+				//
+
+				for (String d : dirs) {
+					if (d == null) {
+						continue;
+					}
+
+					val.replaceAll("\Q" + d + "\E[^:]*:?", "");
+				}
+
+				cleaned_env_vars.put(var, val);
+			}
+
+			env.putAll(cleaned_env_vars);
+
+			proc_builder.redirectErrorStream(true);
 
 			final Process proc = proc_builder.start();
-
 			final ProcessWithTimeout pTimeout = new ProcessWithTimeout(proc, proc_builder);
 
 			pTimeout.waitFor(60, TimeUnit.SECONDS);
@@ -618,20 +633,16 @@ public class HTCONDOR extends BatchQueue {
 			final ExitStatus exitStatus = pTimeout.getExitStatus();
 			logger.info("Process exit status: " + exitStatus.getExecutorFinishStatus());
 
-			if (exitStatus.getExtProcExitStatus() == 0) {
-				final BufferedReader reader = new BufferedReader(new StringReader(exitStatus.getStdOut()));
+			final BufferedReader reader = new BufferedReader(new StringReader(exitStatus.getStdOut()));
+			String output_str;
 
-				String output_str;
-
-				while ((output_str = reader.readLine()) != null)
-					proc_output.add(output_str.trim());
+			while ((output_str = reader.readLine()) != null) {
+				proc_output.add(output_str.trim());
 			}
-		}
-		catch (final Throwable t) {
+		} catch (final Throwable t) {
 			logger.log(Level.WARNING, "Exception executing command: " + cmd, t);
 		}
-		// this.logger.info("[HTCONDOR] Command output: " + proc_output);
+
 		return proc_output;
 	}
-
 }
