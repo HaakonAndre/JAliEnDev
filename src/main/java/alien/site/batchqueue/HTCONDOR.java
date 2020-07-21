@@ -269,7 +269,7 @@ public class HTCONDOR extends BatchQueue {
 		}
 
 		logger.info(String.format("DN is %s", dn_str));
-		logger.info(String.format("Proxy timeleft is %s (threshold is %s)", time_left_str, threshold);
+		logger.info(String.format("Proxy timeleft is %s (threshold is %s)", time_left_str, threshold));
 
 		if (Integer.parseInt(time_left_str) > Integer.parseInt(threshold)) {
 			return;
@@ -424,7 +424,7 @@ public class HTCONDOR extends BatchQueue {
 			custom_attr_str += readJdlFile(custom_jdl_path);
 			custom_attr_str += "\n#\n# custom attributes end\n#\n\n";
 			submit_jdl += custom_attr_str;
-			logger.info("Custom attributes added from file: " + custom_jdl_path));
+			logger.info("Custom attributes added from file: " + custom_jdl_path);
 		}
 
 		//
@@ -615,7 +615,7 @@ public class HTCONDOR extends BatchQueue {
 						continue;
 					}
 
-					val.replaceAll("\Q" + d + "\E[^:]*:?", "");
+					val.replaceAll("\\Q" + d + "\\E[^:]*:?", "");
 				}
 
 				cleaned_env_vars.put(var, val);
