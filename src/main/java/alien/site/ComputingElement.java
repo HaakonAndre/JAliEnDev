@@ -29,7 +29,6 @@ import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
 import alien.site.packman.CVMFS;
-import alien.test.utils.Functions;
 import apmon.ApMon;
 import apmon.ApMonException;
 
@@ -283,27 +282,27 @@ public class ComputingElement extends Thread {
 		// pass environment variables
 		before += "export HOME=$(pwd)" + "\n";
 		if (config.containsKey("host_logdir") || config.containsKey("site_logdir"))
-			before += "export LOGDIR='" + (config.containsKey("host_logdir") ? config.get("host_logdir") : config.get("site_logdir")) + "'\n";
+			before += "export LOGDIR=\"" + (config.containsKey("host_logdir") ? config.get("host_logdir") : config.get("site_logdir")) + "\"\n";
 		if (config.containsKey("host_cachedir") || config.containsKey("site_cachedir"))
-			before += "export CACHEDIR='" + (config.containsKey("host_cachedir") ? config.get("host_cachedir") : config.get("site_cachedir")) + "'\n";
+			before += "export CACHEDIR=\"" + (config.containsKey("host_cachedir") ? config.get("host_cachedir") : config.get("site_cachedir")) + "\"\n";
 		if (config.containsKey("host_tmpdir") || config.containsKey("site_tmpdir"))
-			before += "export TMPDIR='" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "'\n";
+			before += "export TMPDIR=\"" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "\"\n";
 		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
-			before += "export WORKDIR='" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "'\n";
-		before += "export ALIEN_CM_AS_LDAP_PROXY='" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "'\n";
-		before += "export site='" + site + "'\n";
-		before += "export CE='" + siteMap.get("CE") + "'\n";
-		before += "export CEhost='" + siteMap.get("Localhost") + "'\n";
-		before += "export TTL='" + siteMap.get("TTL") + "'\n";
-		before += "export APMON_CONFIG='" + ConfigUtils.getLocalHostname() + "'\n";
+			before += "export WORKDIR=\"" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "\"\n";
+		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
+		before += "export site=\"" + site + "\"\n";
+		before += "export CE=\"" + siteMap.get("CE") + "\"\n";
+		before += "export CEhost=\"" + siteMap.get("Localhost") + "\"\n";
+		before += "export TTL=\"" + siteMap.get("TTL") + "\"\n";
+		before += "export APMON_CONFIG=\"" + ConfigUtils.getLocalHostname() + "\"\n";
 		if (config.containsKey("ce_installationmethod"))
-			before += "export installationMethod='" + config.get("ce_installationmethod") + "'\n";
+			before += "export installationMethod=\"" + config.get("ce_installationmethod") + "\"\n";
 		if (config.containsKey("ce_cerequirements"))
-			before += "export cerequirements='" + config.get("ce_cerequirements") + "'\n";
+			before += "export cerequirements=\"" + config.get("ce_cerequirements") + "\"\n";
 		if (config.containsKey("ce_partition"))
-			before += "export partition='" + config.get("ce_partition") + "'\n";
+			before += "export partition=\"" + config.get("ce_partition") + "\"\n";
 		if (siteMap.containsKey("closeSE"))
-			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
+			before += "export closeSE=\"" + siteMap.get("closeSE") + "\"\n";
 		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
 
 		startup_script = getStartup() + "\n";

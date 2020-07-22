@@ -3,7 +3,7 @@ package alien;
 import java.io.File;
 import java.io.IOException;
 
-import alien.test.utils.Functions;
+import alien.site.Functions;
 
 /**
  * @author ron

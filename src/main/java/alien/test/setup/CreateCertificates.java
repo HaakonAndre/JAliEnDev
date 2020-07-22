@@ -2,9 +2,9 @@ package alien.test.setup;
 
 import java.util.ArrayList;
 
+import alien.site.Functions;
 import alien.test.TestBrain;
 import alien.test.TestConfig;
-import alien.test.utils.Functions;
 import alien.test.utils.TestCommand;
 
 /**

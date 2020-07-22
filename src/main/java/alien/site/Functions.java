@@ -1,4 +1,4 @@
-package alien.test.utils;
+package alien.site;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -11,11 +11,14 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import alien.test.utils.TestCommand;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 
@@ -214,5 +217,4 @@ public class Functions {
 			}
 		}
 	}
-
 }

@@ -5,9 +5,9 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import alien.site.Functions;
 import alien.test.TestBrain;
 import alien.test.TestConfig;
-import alien.test.utils.Functions;
 import alien.test.utils.TestCommand;
 import alien.test.utils.TestException;
 import alien.user.UserFactory;

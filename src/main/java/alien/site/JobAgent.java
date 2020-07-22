@@ -162,7 +162,7 @@ public class JobAgent implements Runnable {
 
 		ce = env.get("CE");
 
-		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp") + "/" + jobWrapperLogName;
+		jobWrapperLogDir = Functions.resolvePathWithEnv(env.getOrDefault("TMPDIR", "/tmp") + "/" + jobWrapperLogName);
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
@@ -180,7 +180,7 @@ public class JobAgent implements Runnable {
 		else
 			jobAgentId = Request.getVMID().toString();
 
-		workdir = (String) siteMap.get("workdir");
+		workdir = Functions.resolvePathWithEnv((String)siteMap.get("workdir"));
 
 		origTtl = ((Integer) siteMap.get("TTL")).intValue();
 
@@ -207,7 +207,6 @@ public class JobAgent implements Runnable {
 			File filepath = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
 			jarName = filepath.getName();
 			jarPath = filepath.toString().replace(jarName, "");
-
 		}
 		catch (final URISyntaxException e) {
 			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
@@ -357,7 +356,7 @@ public class JobAgent implements Runnable {
 	 * @return amount of free space (in bytes) in the given folder. Or zero if there was a problem (or no free space).
 	 */
 	public static long getFreeSpace(final String folder) {
-		long space = new File(folder).getFreeSpace();
+		long space = new File(Functions.resolvePathWithEnv(folder)).getFreeSpace();
 
 		if (space <= 0) {
 			// 32b JRE returns 0 when too much space is available

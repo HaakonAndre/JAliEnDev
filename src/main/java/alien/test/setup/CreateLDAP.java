@@ -17,9 +17,9 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import alien.site.Functions;
 import alien.test.TestBrain;
 import alien.test.TestConfig;
-import alien.test.utils.Functions;
 import alien.test.utils.TestCommand;
 import alien.test.utils.TestException;
 

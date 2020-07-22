@@ -156,7 +156,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		c_api = new CatalogueApiUtils(commander);
 
 		// use same tmpdir everywhere
-		String tmpdir = System.getenv("TMPDIR");
+		String tmpdir = Functions.resolvePathWithEnv(System.getenv("TMPDIR"));
 		if (tmpdir != null)
 			System.setProperty("java.io.tmpdir", tmpdir);
 
