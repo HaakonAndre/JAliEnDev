@@ -102,6 +102,7 @@ public class HTCONDOR extends BatchQueue {
 			String var = parts[0];
 			String val = parts.length > 1 ? parts[1] : "";
 			environment.put(var, val);
+			logger.info("envFromConfig: " + var + "=" + val);
 		}
 
 		//
@@ -188,31 +189,38 @@ public class HTCONDOR extends BatchQueue {
 
 			if (var.equals("SUBMIT_ARGS")) {
 				submitArgs = val;
+				logger.info("environment: " + var + "=" + val);
 				continue;
 			}
 
 			if (var.equals("HTCONDOR_LOG_PATH")) {
 				htc_logdir = val;
+				logger.info("environment: " + var + "=" + val);
 				continue;
 			}
 
 			if (var.equals("GRID_RESOURCE")) {
 				grid_resource = val;
+				logger.info("environment: " + var + "=" + val);
 				continue;
 			}
 
 			if (var.equals("USE_JOB_ROUTER")) {
 				use_job_router_tmp = val;
+				logger.info("environment: " + var + "=" + val);
 				continue;
 			}
 
 			if (var.equals("USE_EXTERNAL_CLOUD")) {
 				use_external_cloud_tmp = val;
+				logger.info("environment: " + var + "=" + val);
 				continue;
 			}
 		}
 
 		htc_logdir = Functions.resolvePathWithEnv(htc_logdir);
+		logger.info("htc_logdir: " + htc_logdir);
+
 		use_job_router = Integer.parseInt(use_job_router_tmp) == 1;
 		use_external_cloud = Integer.parseInt(use_external_cloud_tmp) == 1;
 
@@ -574,9 +582,10 @@ public class HTCONDOR extends BatchQueue {
 		return 0;
 	}
 
-	// Previously named "_system" in perl
 	private ArrayList<String> executeCommand(String cmd) {
 		ArrayList<String> proc_output = new ArrayList<>();
+
+		logger.info("Executing: " + cmd);
 
 		try {
 			ArrayList<String> cmd_full = new ArrayList<>();
@@ -614,7 +623,9 @@ public class HTCONDOR extends BatchQueue {
 						continue;
 					}
 
-					val.replaceAll("\\Q" + d + "\\E[^:]*:?", "");
+					String dir = d.replaceAll("/+$", "");
+					String pat = "\\Q" + dir + "\\E/[^:]*:?";
+					val = val.replaceAll(pat, "");
 				}
 
 				cleaned_env_vars.put(var, val);
