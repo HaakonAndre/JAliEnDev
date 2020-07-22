@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import alien.config.JAliEnIAm;
-import alien.test.utils.Functions;
+import alien.site.Functions;
 import alien.test.utils.TestException;
 import alien.user.UserFactory;
 

@@ -1,6 +1,6 @@
 package alien.test;
 
-import alien.test.utils.Functions;
+import alien.site.Functions;
 
 /**
  * @author ron
