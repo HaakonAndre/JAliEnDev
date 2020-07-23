@@ -433,7 +433,7 @@ public class ConfigUtils {
 	 * @return global config map
 	 */
 	public static HashMap<String, Object> getConfigFromLdap() {
-		return getConfigFromLdap(false);
+		return getConfigFromLdap(Boolean.parseBoolean(getConfig().gets("verify_ldap", "true")));
 	}
 
 	private static String resolvedLocalHostname = null;
@@ -599,7 +599,7 @@ public class ConfigUtils {
 		if (siteset.size() == 0 && !checkContent)
 			return configuration;
 
-		final String site = siteset.iterator().next();
+		final String site = getConfig().gets("this.ce", siteset.iterator().next());
 
 		// Get the root site config based on site name
 		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
