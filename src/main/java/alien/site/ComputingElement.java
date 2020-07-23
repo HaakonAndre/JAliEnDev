@@ -66,10 +66,9 @@ public class ComputingElement extends Thread {
 			site = (String) config.get("site_accountname");
 			getSiteMap();
 
-			final String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
-
 			queue = getBatchQueue((String) config.get("ce_type"));
-
+			
+			final String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			if (config.containsKey("proxy_cache_file")) {

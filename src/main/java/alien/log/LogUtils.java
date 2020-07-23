@@ -32,8 +32,8 @@ public class LogUtils {
 		// Create new handler
 		Handler fh = null;
 		try {
-			fh = new FileHandler(location + ".log.%g", Integer.parseInt(logManager.getProperty("alien.log.InfoFileHandler.limit")),
-					Integer.parseInt(logManager.getProperty("alien.log.InfoFileHandler.count")), Boolean.parseBoolean(logManager.getProperty("alien.log.InfoFileHandler.append")));
+			fh = new FileHandler(location + ".log.%g", Integer.parseInt(logManager.getProperty("java.util.logging.FileHandler.limit")),
+					Integer.parseInt(logManager.getProperty("java.util.logging.FileHandler.count")), Boolean.parseBoolean(logManager.getProperty("java.util.logging.FileHandler.append")));
 
 			fh.setLevel(Level.INFO);
 			fh.setFormatter(new SimpleFormatter());
