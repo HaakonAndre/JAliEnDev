@@ -8,6 +8,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +58,7 @@ public class ComputingElement extends Thread {
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
+	private String host_logdir_resolved = "";
 
 	/**
 	 *
@@ -68,7 +71,7 @@ public class ComputingElement extends Thread {
 
 			queue = getBatchQueue((String) config.get("ce_type"));
 			
-			final String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
+			host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			if (config.containsKey("proxy_cache_file")) {
@@ -90,6 +93,7 @@ public class ComputingElement extends Thread {
 			logger.info("Trying to start JBox");
 			JBoxServer.startJBoxService();
 			port = JBoxServer.getPort();
+			Files.writeString(Paths.get(host_logdir_resolved + "/CE.pid"), Integer.toString(MonitorFactory.getSelfProcessID()));
 		}
 		catch (final Exception e) {
 			logger.severe("Unable to start JBox: " + e.toString());
