@@ -378,26 +378,46 @@ public class JDL implements Serializable {
 			return toSet(value.substring(1, value.length() - 1));
 		}
 
-		try {
-			return Integer.valueOf(value);
-		}
-		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-			// ignore
+		boolean possibleInt = true;
+		boolean possibleDouble = true;
+
+		for (char c : value.toCharArray()) {
+			if (c >= '0' && c <= '9')
+				continue;
+
+			possibleInt = false;
+
+			if (c != '.' && c != '+' && c != '-' && c != 'E' && c != 'e')
+				possibleDouble = false;
+
+			if (!possibleInt && !possibleDouble)
+				break;
 		}
 
-		try {
-			return Long.valueOf(value);
-		}
-		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-			// ignore
+		if (possibleInt) {
+			if (value.length() <= 10)
+				try {
+					return Integer.valueOf(value);
+				}
+				catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+					// ignore
+				}
+
+			try {
+				return Long.valueOf(value);
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				// ignore
+			}
 		}
 
-		try {
-			return Double.valueOf(value);
-		}
-		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-			// ignore
-		}
+		if (possibleDouble)
+			try {
+				return Double.valueOf(value);
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				// ignore
+			}
 
 		// signal that this is not a string in quotes
 		return new StringBuilder(value);
