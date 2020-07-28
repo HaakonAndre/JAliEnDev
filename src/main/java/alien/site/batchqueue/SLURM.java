@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.FileNotFoundException;
-import alien.test.utils.Functions;
+import alien.site.Functions;
 
 public class SLURM extends BatchQueue {
 
