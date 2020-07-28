@@ -248,7 +248,7 @@ public class JobUploader extends Thread {
 			return false;
 		}
 
-		final LFN outDir = c_api.createCatalogueDirectory(outputDir);
+		final LFN outDir = c_api.createCatalogueDirectory(outputDir, true);
 
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir + "].");

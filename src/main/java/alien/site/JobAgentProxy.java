@@ -1323,106 +1323,108 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			return false;
 		}
 
-		final LFN outDir = c_api.createCatalogueDirectory(outputDir);
+		final LFN outDir = c_api.createCatalogueDirectory(outputDir, true);
 
 		if (outDir == null) {
-			System.err.println("Error creating the OutputDir [" + outputDir + "].");
 			uploadedAllOutFiles = false;
+			logger.log(Level.SEVERE, "Error creating the OutputDir [" + outputDir + "].");
+			commander.q_api.putJobLog(queueId, "trace", "Can't create the output directory " + outputDir);
+			changeStatus(JobStatus.ERROR_SV);
+			return false;
 		}
-		else {
-			String tag = "Output";
-			if (jobStatus == JobStatus.ERROR_E)
-				tag = "OutputErrorE";
 
-			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir, tag);
+		String tag = "Output";
+		if (jobStatus == JobStatus.ERROR_E)
+			tag = "OutputErrorE";
 
-			for (final OutputEntry entry : filesTable.getEntries()) {
-				File localFile;
-				try {
-					if (entry.isArchive())
-						entry.createZip(jobWorkdir);
+		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir, tag);
 
-					localFile = new File(jobWorkdir + "/" + entry.getName());
-					System.out.println("Processing output file: " + localFile);
+		for (final OutputEntry entry : filesTable.getEntries()) {
+			File localFile;
+			try {
+				if (entry.isArchive())
+					entry.createZip(jobWorkdir);
 
-					// EXPERIMENTAL
-					System.err.println("===================");
-					System.err.println("Filename: " + localFile.getName());
-					System.err.println("File exists: " + localFile.exists());
-					System.err.println("File is file: " + localFile.isFile());
-					System.err.println("File readable: " + localFile.canRead());
-					System.err.println("File length: " + localFile.length());
+				localFile = new File(jobWorkdir + "/" + entry.getName());
+				System.out.println("Processing output file: " + localFile);
 
-					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
+				// EXPERIMENTAL
+				System.err.println("===================");
+				System.err.println("Filename: " + localFile.getName());
+				System.err.println("File exists: " + localFile.exists());
+				System.err.println("File is file: " + localFile.isFile());
+				System.err.println("File readable: " + localFile.canRead());
+				System.err.println("File length: " + localFile.length());
 
-						final long size = localFile.length();
-						if (size <= 0)
-							System.err.println("Local file has size zero: " + localFile.getAbsolutePath());
-						String md5 = null;
-						try {
-							md5 = IOUtils.getMD5(localFile);
-						}
-						catch (@SuppressWarnings("unused") final Exception e1) {
-							// ignore
-						}
-						if (md5 == null)
-							System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
+				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 
-						final LFN lfn = c_api.getLFN(outDir.getCanonicalName() + "/" + entry.getName(), true);
-						lfn.size = size;
-						lfn.md5 = md5;
-						lfn.jobid = queueId;
-						lfn.type = 'f';
-						final GUID guid = GUIDUtils.createGuid(localFile, commander.getUser());
-						lfn.guid = guid.guid;
-						final ArrayList<String> exses = entry.getSEsDeprioritized();
+					final long size = localFile.length();
+					if (size <= 0)
+						System.err.println("Local file has size zero: " + localFile.getAbsolutePath());
+					String md5 = null;
+					try {
+						md5 = IOUtils.getMD5(localFile);
+					}
+					catch (@SuppressWarnings("unused") final Exception e1) {
+						// ignore
+					}
+					if (md5 == null)
+						System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
 
-						final List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
+					final LFN lfn = c_api.getLFN(outDir.getCanonicalName() + "/" + entry.getName(), true);
+					lfn.size = size;
+					lfn.md5 = md5;
+					lfn.jobid = queueId;
+					lfn.type = 'f';
+					final GUID guid = GUIDUtils.createGuid(localFile, commander.getUser());
+					lfn.guid = guid.guid;
+					final ArrayList<String> exses = entry.getSEsDeprioritized();
 
-						System.out.println("LFN :" + lfn + "\npfns: " + pfns);
+					final List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
 
-						commander.q_api.putJobLog(queueId, "trace", "Uploading: " + lfn.getName());
+					System.out.println("LFN :" + lfn + "\npfns: " + pfns);
 
-						if (pfns != null && !pfns.isEmpty()) {
-							final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
-							for (final PFN pfn : pfns) {
-								final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-								for (final Protocol protocol : protocols) {
-									envelopes.add(protocol.put(pfn, localFile));
-									break;
-								}
+					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + lfn.getName());
+
+					if (pfns != null && !pfns.isEmpty()) {
+						final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
+						for (final PFN pfn : pfns) {
+							final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+							for (final Protocol protocol : protocols) {
+								envelopes.add(protocol.put(pfn, localFile));
+								break;
 							}
-
-							// drop the following three lines once put replies
-							// correctly
-							// with the signed envelope
-							envelopes.clear();
-							for (final PFN pfn : pfns)
-								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
-
-							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, BOOKING_STATE.COMMITED);
-							if (!pfns.equals(pfnsok))
-								if (pfnsok != null && pfnsok.size() > 0) {
-									System.out.println("Only " + pfnsok.size() + " could be uploaded");
-									uploadedNotAllCopies = true;
-								}
-								else {
-									System.err.println("Upload failed, sorry!");
-									uploadedAllOutFiles = false;
-									break;
-								}
 						}
-						else
-							System.out.println("Couldn't get write envelopes for output file");
+
+						// drop the following three lines once put replies
+						// correctly
+						// with the signed envelope
+						envelopes.clear();
+						for (final PFN pfn : pfns)
+							envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+
+						final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, BOOKING_STATE.COMMITED);
+						if (!pfns.equals(pfnsok))
+							if (pfnsok != null && pfnsok.size() > 0) {
+								System.out.println("Only " + pfnsok.size() + " could be uploaded");
+								uploadedNotAllCopies = true;
+							}
+							else {
+								System.err.println("Upload failed, sorry!");
+								uploadedAllOutFiles = false;
+								break;
+							}
 					}
 					else
-						System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
+						System.out.println("Couldn't get write envelopes for output file");
+				}
+				else
+					System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 
-				}
-				catch (final IOException e) {
-					e.printStackTrace();
-					uploadedAllOutFiles = false;
-				}
+			}
+			catch (final IOException e) {
+				e.printStackTrace();
+				uploadedAllOutFiles = false;
 			}
 		}
 

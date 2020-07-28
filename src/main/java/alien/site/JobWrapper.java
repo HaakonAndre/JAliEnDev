@@ -253,7 +253,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				final String fileTrace = getTraceFromFile();
 				if (fileTrace != null)
 					commander.q_api.putJobLog(queueId, "trace", fileTrace);
-				
+
 				if (jdl.gets("OutputErrorV") != null)
 					return uploadOutputFiles(JobStatus.ERROR_V) ? execExitCode : -1;
 
@@ -316,7 +316,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		// Check if we can put the payload in its own container
 		Containerizer cont = ContainerizerFactory.getContainerizer();
 		if (cont != null) {
-			monitor.sendParameter("containerLayer", 2);
+			monitor.sendParameter("containerLayer", Integer.valueOf(2));
 			cmd = cont.containerize(String.join(" ", cmd));
 		}
 
@@ -555,13 +555,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "outputDir: " + outputDir);
 		logger.log(Level.INFO, "We are the current user: " + commander.getUser().getName());
 
-		if (c_api.getLFN(outputDir) == null) {
-			final LFN outDir = c_api.createCatalogueDirectory(outputDir);
-			if (outDir == null) {
-				logger.log(Level.SEVERE, "Error creating the OutputDir [" + outputDir + "].");
-				changeStatus(JobStatus.ERROR_SV);
-				return false;
-			}
+		// `mkdir -p`, returning the new or existing LFN, when it's a directory or `null` in case of any error creating it
+		final LFN outDir = c_api.createCatalogueDirectory(outputDir, true);
+		if (outDir == null) {
+			logger.log(Level.SEVERE, "Error creating the OutputDir [" + outputDir + "].");
+			commander.q_api.putJobLog(queueId, "trace", "Can't create the output directory " + outputDir);
+			changeStatus(JobStatus.ERROR_SV);
+			return false;
 		}
 
 		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
@@ -625,7 +625,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			changeStatus(JobStatus.ERROR_SV);
 			return false;
 		} // else
-		// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
+			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
 		if (exitStatus == JobStatus.DONE) {
 			if (uploadedNotAllCopies)
@@ -728,6 +728,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	}
 
 	/**
+	 * @param exitStatus the target job status, affecting the booked directory (`~/recycle` if any error)
 	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
 	 */
 	public String getJobOutputDir(JobStatus exitStatus) {
@@ -832,7 +833,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return -1;
 		}
 	}
-	
+
 	/**
 	 * Register lfn links to archive
 	 * 
