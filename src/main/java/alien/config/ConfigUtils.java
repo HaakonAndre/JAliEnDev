@@ -599,7 +599,9 @@ public class ConfigUtils {
 		if (siteset.size() == 0 && !checkContent)
 			return configuration;
 
-		final String site = getConfig().gets("this.ce", siteset.iterator().next());
+		String site = getConfig().gets("this.ce");
+		if (site == null || site == "")
+			site = siteset.iterator().next();
 
 		// Get the root site config based on site name
 		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
