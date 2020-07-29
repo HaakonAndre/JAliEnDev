@@ -55,8 +55,8 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			filteredSEs.add(se);
 		}
 
-		commander.printOutln(padRight(" ", maxSENameLength) + "\t\t                Capacity\t  \t\t\tDemote");
-		commander.printOutln(padLeft("SE name", maxSENameLength) + "\t ID\t   Total  \t    Used  \t    Free  \t   Read   Write\t" + padRight("QoS", maxQosLength) + "\t  Endpoint URL");
+		commander.printOutln(padRight(" ", maxSENameLength) + "\t\t                Capacity\t  \t\t\t\t\tDemote");
+		commander.printOutln(padLeft("SE name", maxSENameLength) + "\t ID\t   Total  \t    Used  \t    Free      File count\t   Read   Write\t" + padRight("QoS", maxQosLength) + "\t  Endpoint URL");
 
 		for (final SE se : filteredSEs) {
 			String qos = "";
@@ -95,7 +95,9 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			final long freeSpace = usedSpace <= totalSpace ? totalSpace - usedSpace : 0;
 
 			commander.printOutln(String.format("%1$" + maxSENameLength + "s", se.originalName) + "\t" + String.format("%3d", Integer.valueOf(se.seNumber)) + "\t" + padLeft(Format.size(totalSpace), 8)
-					+ "\t" + padLeft(Format.size(usedSpace), 8) + "\t" + padLeft(Format.size(freeSpace), 8) + "\t" + String.format("% .4f", Double.valueOf(se.demoteRead)) + " "
+					+ "\t" + padLeft(Format.size(usedSpace), 8) + "\t" + padLeft(Format.size(freeSpace), 8)
+					+ String.format("%16d", Long.valueOf(se.seNumFiles))
+					+ "\t" + String.format("% .4f", Double.valueOf(se.demoteRead)) + " "
 					+ String.format("% .4f", Double.valueOf(se.demoteWrite)) + "\t" + qos + "\t  " + se.generateProtocol());
 
 			commander.printOut("seName", se.originalName);
@@ -103,6 +105,7 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			commander.printOut("totalSpace", String.valueOf(totalSpace));
 			commander.printOut("usedSpace", String.valueOf(usedSpace));
 			commander.printOut("freeSpace", String.valueOf(freeSpace));
+			commander.printOut("fileCount", String.valueOf(se.seNumFiles));
 			commander.printOut("demoteRead", String.valueOf(se.demoteRead));
 			commander.printOut("demoteWrite", String.valueOf(se.demoteWrite));
 			commander.printOut("qos", String.join(",", se.qos));
