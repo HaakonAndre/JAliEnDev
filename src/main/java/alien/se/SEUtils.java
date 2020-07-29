@@ -1081,6 +1081,9 @@ public final class SEUtils {
 		final NumberFormat twoDigits = new DecimalFormat("00");
 		final NumberFormat fiveDigits = new DecimalFormat("00000");
 
+		long fileCount = 0;
+		long totalSize = 0;
+
 		for (final String seName : ses) {
 			final SE se = SEUtils.getSE(seName);
 
@@ -1098,6 +1101,10 @@ public final class SEUtils {
 
 							while (gdb.moveNext()) {
 								pw.print(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
+
+								totalSize += gdb.getl(2);
+								fileCount++;
+
 								try {
 									final UUID u = UUID.fromString(gdb.gets(4));
 									pw.print(GUIDUtils.epochTime(u));
@@ -1117,6 +1124,9 @@ public final class SEUtils {
 
 								pw.print(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
 
+								totalSize += gdb.getl(2);
+								fileCount++;
+
 								try {
 									final UUID u = UUID.fromString(guid);
 									pw.print(GUIDUtils.epochTime(u));
@@ -1130,6 +1140,16 @@ public final class SEUtils {
 						}
 					}
 				}
+			}
+
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				db.setReadOnly(false);
+				db.setQueryTimeout(60);
+
+				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(totalSize), Long.valueOf(fileCount), Integer.valueOf(se.seNumber));
+
+				se.seUsedSpace = totalSize;
+				se.seNumFiles = fileCount;
 			}
 		}
 	}
