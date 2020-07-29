@@ -704,9 +704,9 @@ public class CatalogueApiUtils {
 	 * @param args
 	 *            other `cp` command parameters to pass
 	 * @throws IOException
-	 * @return <code>true</code> if the copy was successful
+	 * @return the uploaded LFN, if everything went ok, <code>null</code> if something didn't work
 	 */
-	public boolean uploadFile(final File localFile, final String toLFN, final String... args) throws IOException {
+	public LFN uploadFile(final File localFile, final String toLFN, final String... args) throws IOException {
 		final LFN l = getLFN(toLFN, true);
 
 		if (l.exists)

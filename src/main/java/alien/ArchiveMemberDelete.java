@@ -273,7 +273,7 @@ public class ArchiveMemberDelete {
 
 			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + newArchiveFullPath);
 			// Create only one replica
-			if (!commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1")) {
+			if (commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1") == null) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
 				validation.println("Upload failed " + newArchiveFullPath);
 				cleanUpLocal(Path.of(usrdir, "extracted"));

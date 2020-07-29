@@ -585,9 +585,10 @@ public class IOUtils {
 	 * @param progressReport
 	 * @param deleteSourceAfterUpload
 	 *            if <code>true</code> then the local file (the source) is to be deleted after the operation completes
+	 * @return the uploaded LFN, if everything was ok, or <code>null</code> in case of an upload problem
 	 * @throws IOException
 	 */
-	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload)
+	public static LFN upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload)
 			throws IOException {
 		final ArrayList<String> cpArgs = new ArrayList<>();
 
@@ -597,7 +598,7 @@ public class IOUtils {
 		cpArgs.add("-S");
 		cpArgs.add("disk:" + replicaCount);
 
-		upload(localFile, toLFN, owner, progressReport, cpArgs.toArray(new String[0]));
+		return upload(localFile, toLFN, owner, progressReport, cpArgs.toArray(new String[0]));
 	}
 
 	/**
@@ -613,9 +614,10 @@ public class IOUtils {
 	 *            if you want progress report displayed (for user interface)
 	 * @param args
 	 *            other `cp` command parameters to pass
+	 * @return the uploaded LFN, if everything went ok, <code>null</code> if not
 	 * @throws IOException
 	 */
-	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final OutputStream progressReport, final String... args) throws IOException {
+	public static LFN upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final OutputStream progressReport, final String... args) throws IOException {
 		final UIPrintWriter out = progressReport != null ? new PlainWriter(progressReport) : null;
 
 		final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, null, ConfigUtils.getCloseSite(), out);
@@ -637,7 +639,7 @@ public class IOUtils {
 
 		final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, cpArgs);
 
-		cp.copyLocalToGrid(localFile, absolutePath);
+		return cp.copyLocalToGrid(localFile, absolutePath);
 	}
 
 	/**

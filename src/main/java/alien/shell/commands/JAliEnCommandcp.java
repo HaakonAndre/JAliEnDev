@@ -248,7 +248,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					localFile = copyGridToLocal(sFile, null);
 					if (localFile != null && localFile.exists() && localFile.length() > 0) {
-						if (copyLocalToGrid(localFile, actualTarget)) {
+						if (copyLocalToGrid(localFile, actualTarget) != null) {
 							commander.printOutln("Copied " + sFile + " -> " + actualTarget);
 						}
 						else {
@@ -696,7 +696,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            Grid filename
 	 * @return status of the upload
 	 */
-	public boolean copyLocalToGrid(final File sourceFile, final String targetLFN) {
+	public LFN copyLocalToGrid(final File sourceFile, final String targetLFN) {
 		if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead()) {
 			commander.setReturnCode(201, "Could not get the local file: " + sourceFile.getAbsolutePath());
 			if (isSilent()) {
@@ -705,7 +705,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				throw new IOError(ex);
 			}
 
-			return false;
+			return null;
 		}
 
 		List<PFN> pfns = null;
@@ -721,7 +721,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					if (isSilent())
 						throw new IOError(new IOException("Cannot remove the previously existing file: " + lfn.getCanonicalName()));
 
-					return false;
+					return null;
 				}
 			}
 			else {
@@ -730,7 +730,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				if (isSilent())
 					throw new IOError(new IOException("Target existing and is not a file: " + lfn.getCanonicalName()));
 
-				return false;
+				return null;
 			}
 
 		final GUID guid;
@@ -746,7 +746,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				throw new IOError(ex);
 			}
 
-			return false;
+			return null;
 		}
 
 		lfn.guid = guid.guid;
@@ -770,7 +770,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				if (isSilent())
 					throw new IOError(new IOException(err != null ? err : "No write access tickets were returned for " + lfn.getCanonicalName()));
 
-				return false;
+				return null;
 			}
 		}
 		catch (final ServerException e) {
@@ -779,7 +779,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (isSilent())
 				throw new IOError(new IOException("Call for write PFNs for " + lfn.getCanonicalName() + " failed", e.getCause()));
 
-			return false;
+			return null;
 		}
 
 		for (final PFN p : pfns) {
@@ -857,7 +857,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						lock.wait(100);
 					}
 					catch (@SuppressWarnings("unused") final InterruptedException e) {
-						return false;
+						return null;
 					}
 				}
 			}
@@ -868,12 +868,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			new BackgroundUpload(guid, futures, bD ? sourceFile : null).start();
 
-			return true;
+			return lfn;
 		}
 		else if (bD)
 			sourceFile.delete();
 
-		return commit(envelopes, guid, bD ? null : sourceFile, referenceCount, true);
+		if (commit(envelopes, guid, bD ? null : sourceFile, referenceCount, true))
+			return lfn;
+
+		return null;
 	}
 
 	private final class BackgroundUpload extends Thread {
