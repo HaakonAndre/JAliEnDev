@@ -77,6 +77,8 @@ public final class SEUtils {
 
 	private static final String SEDISTANCE_QUERY;
 
+	private static final int maxAllowedRandomPFNs = 10000;
+
 	static {
 		if (ConfigUtils.isCentralService()) {
 			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
@@ -1159,9 +1161,22 @@ public final class SEUtils {
 	 * @param fileCount
 	 * @return at most <code>fileCount</code> random PFNs associated to this storage ID
 	 */
-	public static Collection<PFN> getRandomPFNs(final int storageNumber, final int fileCount) {
-		final SE se = getSE(storageNumber);
+	public static Collection<PFN> getRandomPFNs(final int storageNumber, int fileCount) {
 		final Set<PFN> pfns = new HashSet<>();
+		final SE se = getSE(storageNumber);
+
+		if (se == null) {
+			logger.log(Level.WARNING, "Cannot find SE with number " + storageNumber);
+			return null;
+		}
+
+		if (fileCount <= 0) {
+			return null;
+		}
+
+		if (fileCount > maxAllowedRandomPFNs) {
+			fileCount = maxAllowedRandomPFNs;
+		}
 
 		List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
 

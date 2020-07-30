@@ -2,7 +2,6 @@ package alien.shell.commands;
 
 import java.util.Collection;
 import java.util.List;
-
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
