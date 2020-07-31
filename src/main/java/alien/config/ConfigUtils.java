@@ -600,7 +600,7 @@ public class ConfigUtils {
 			return configuration;
 
 		String site = getConfig().gets("this.ce");
-		if (site == null || site == "")
+		if (site == null || site.isEmpty())
 			site = siteset.iterator().next();
 
 		// Get the root site config based on site name
