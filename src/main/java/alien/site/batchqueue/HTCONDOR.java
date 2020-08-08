@@ -49,6 +49,7 @@ public class HTCONDOR extends BatchQueue {
 	private int tot_running = 0;
 	private int tot_waiting = 0;
 	private long job_numbers_timestamp = 0;
+	private long proxy_check_timestamp = 0;
 
 	//
 	// our own Elvis operator approximation...
@@ -223,17 +224,19 @@ public class HTCONDOR extends BatchQueue {
 	}
 
 	public void proxyCheck() {
-		//
-		// not yet called, fix later...
-		//
 
 		String proxy = environment.get("X509_USER_PROXY");
+		File proxy_no_check = new File(environment.get("HOME") + "/no-proxy-check");
+
+		if (proxy == null || proxy_no_check.exists()) {
+			return;
+		}
+
 		String vo_str = if_else((String) config.get("LCGVO"), "alice");
 		String proxy_renewal_str = String.format("/etc/init.d/%s-box-proxyrenewal", vo_str);
-		File proxy_no_check = new File(environment.get("HOME") + "/no-proxy-check");
 		File proxy_renewal_svc = new File(proxy_renewal_str);
 
-		if (proxy == null || proxy_no_check.exists() || !proxy_renewal_svc.exists()) {
+		if (!proxy_renewal_svc.exists()) {
 			return;
 		}
 
@@ -262,7 +265,7 @@ public class HTCONDOR extends BatchQueue {
 		}
 
 		if (dn_str.length() == 0) {
-			logger.warning("[LCG] No valid proxy found!");
+			logger.warning("[LCG] No valid VOMS proxy found!");
 			return;
 		}
 
@@ -492,6 +495,15 @@ public class HTCONDOR extends BatchQueue {
 		if (dt < 60) {
 			logger.info("Reusing cached job numbers collected " + dt + " seconds ago");
 			return true;
+		}
+
+		//
+		// take advantage of this regular call to check how the proxy is doing as well
+		//
+
+		if ((now - proxy_check_timestamp) / 1000 > 3600) {
+			proxyCheck();
+			proxy_check_timestamp = now;
 		}
 
 		String cmd = "condor_q -const 'JobStatus < 3' -af JobStatus GridResource";
