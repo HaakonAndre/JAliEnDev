@@ -234,7 +234,7 @@ public class BusyBox {
 		reader.setBellEnabled(false);
 		reader.setExpandEvents(false);
 		// reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
-		reader.addCompleter(new ArgumentCompleter(new StringsCompleter(callJBoxGetString("commandlist").split("\\s+")), new GridLocalFileCompletor(this)));
+		reader.addCompleter(new ArgumentCompleter(new StringsCompleter(callJBoxGetString("commandlist -i").split("\\s+")), new GridLocalFileCompletor(this)));
 
 		String prefixCNo = "0";
 		while ((line = reader.readLine(genPromptPrefix() + "[" + prefixCNo + commNo + "] " + currentDir + promptSuffix)) != null) {

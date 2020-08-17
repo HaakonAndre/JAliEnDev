@@ -9,8 +9,11 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -112,11 +115,18 @@ public class JAliEnCOMMander implements Runnable {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd", "find",
-			"find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user", "touch", "touch_csd",
-			"type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota", "jquota",
-			"listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois", "ping", "setSite", "grep", "showTagValue",
-			"randomPFNs", "toXml", "changeDiff", "testSE" };
+	private static final String[] jAliEnCommandList = new String[] {
+			"cd", "pwd", "mkdir", "rmdir",
+			"ls", "find", "toXml", "cat", "whereis", "cp", "rm", "mv", "touch", "type", "lfn2guid", "guid2lfn", "access", "commit", "chgroup", "chown", "deleteMirror", "md5sum", "mirror", "grep",
+			"changeDiff",
+			"listFilesFromCollection", "addFileToCollection",
+			"packages",
+			"submit", "ps", "masterjob", "kill", "w", "uptime", "resubmit", "top",
+			"df", "du", "fquota", "jquota",
+			"listSEs", "listSEDistance", "setSite", "testSE", "listTransfer", "uuid", "stat", "xrdstat", "randomPFNs",
+			"showTagValue",
+			"time", "commandlist", "motd", "ping",
+			"user", "whois", "groups", "token" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
@@ -124,6 +134,8 @@ public class JAliEnCOMMander implements Runnable {
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
 	private static final String[] commandList;
+
+	private final Set<String> userAvailableCommands = new LinkedHashSet<>();
 
 	private static final AtomicLong commanderIDSequence = new AtomicLong();
 
@@ -145,7 +157,7 @@ public class JAliEnCOMMander implements Runnable {
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", "blackwhite", "color",
+	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color",
 			"setshell", "type", "randomPFNs" };
 
 	private UIPrintWriter out = null;
@@ -228,6 +240,16 @@ public class JAliEnCOMMander implements Runnable {
 			else
 				this.curDir = curDir;
 		}
+
+		for (String s : jAliEnCommandList)
+			userAvailableCommands.add(s);
+
+		if (this.user.canBecome("admin"))
+			for (String s : jAliEnAdminCommandList)
+				userAvailableCommands.add(s);
+
+		for (String s : hiddenCommandList)
+			userAvailableCommands.remove(s);
 
 		bootMessage();
 	}
@@ -835,5 +857,12 @@ public class JAliEnCOMMander implements Runnable {
 	 */
 	public UIPrintWriter getPrintWriter() {
 		return out;
+	}
+
+	/**
+	 * @return the available internal commands to the user
+	 */
+	protected Set<String> getUserAvailableCommands() {
+		return Collections.unmodifiableSet(userAvailableCommands);
 	}
 }
