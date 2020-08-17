@@ -126,7 +126,7 @@ public class JAliEnCOMMander implements Runnable {
 			"listSEs", "listSEDistance", "setSite", "testSE", "listTransfer", "uuid", "stat", "xrdstat", "randomPFNs",
 			"showTagValue",
 			"time", "commandlist", "motd", "ping",
-			"user", "whois", "groups", "token" };
+			"whoami", "user", "whois", "groups", "token" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
@@ -157,7 +157,7 @@ public class JAliEnCOMMander implements Runnable {
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color",
+	private static final String[] hiddenCommandList = new String[] { "roleami", "listFilesFromCollection", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color",
 			"setshell", "type", "randomPFNs" };
 
 	private UIPrintWriter out = null;
@@ -601,11 +601,7 @@ public class JAliEnCOMMander implements Runnable {
 		// ( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) &&
 				!Arrays.asList(jAliEnAdminCommandList).contains(comm) /* ) */) {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
-				if ("commandlist".equals(comm))
-					out.printOutln(getCommandList());
-				else if ("whoami".equals(comm))
-					out.printOutln(getUsername());
-				else if ("blackwhite".equals(comm))
+				if ("blackwhite".equals(comm))
 					out.blackwhitemode();
 				else if ("color".equals(comm))
 					out.colourmode();
