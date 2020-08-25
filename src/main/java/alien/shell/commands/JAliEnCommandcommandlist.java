@@ -19,11 +19,12 @@ public class JAliEnCommandcommandlist extends JAliEnBaseCommand {
 			commander.printOutln(JAliEnCOMMander.getCommandList());
 		}
 		else {
-			for (String command : commander.getUserAvailableCommands()) {
+			for (String command : commander.getUserAvailableCommands())
 				commander.printOutln(command);
-				
+
+			for (String command : commander.getUserAvailableCommands()) {
+				commander.printOut("commandlist", command);
 				commander.outNextResult();
-				commander.printOut("command", command);
 			}
 		}
 	}
