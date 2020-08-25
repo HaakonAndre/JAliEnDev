@@ -225,10 +225,9 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			if (options.nonOptionArguments().iterator().hasNext())
 				lfnOrGuid = options.nonOptionArguments().iterator().next().toString();
 			else
-				printHelp();
+				setArgumentsOk(false);
 		}
 		catch (final OptionException e) {
-			printHelp();
 			throw e;
 		}
 	}
