@@ -21,6 +21,8 @@ public class JAliEnCommandcommandlist extends JAliEnBaseCommand {
 		else {
 			for (String command : commander.getUserAvailableCommands()) {
 				commander.printOutln(command);
+				
+				commander.outNextResult();
 				commander.printOut("command", command);
 			}
 		}
