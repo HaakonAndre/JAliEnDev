@@ -1099,7 +1099,8 @@ public class Xrootd extends Protocol {
 					command.add(pfn.getPFN());
 				}
 
-				setLastCommand(command);
+				if (getLastCommand() == null)
+					setLastCommand(command);
 
 				final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
@@ -1123,11 +1124,14 @@ public class Xrootd extends Protocol {
 						exitStatus = pTimeout.getExitStatus();
 						setLastExitStatus(exitStatus);
 					}
-					else
+					else {
+						setLastCommand(command);
 						throw new IOException("Cannot execute command:\n" + getFormattedLastCommand());
+					}
 				}
 				catch (final InterruptedException ie) {
 					setLastExitStatus(null);
+					setLastCommand(command);
 					throw new IOException("Interrupted while waiting for the following command to finish:\n" + getFormattedLastCommand(), ie);
 				}
 
@@ -1148,12 +1152,13 @@ public class Xrootd extends Protocol {
 				if (pfn.getGuid().size <= 0 || pfn.getGuid().size == filesize)
 					return cleanupXrdOutput(exitStatus.getStdOut());
 
-				if (sleep == 0 || !retryWithDelay)
+				if (sleep == 0 || !retryWithDelay) {
+					setLastCommand(command);
 					throw new IOException(command.toString() + ": could not confirm the upload after " + (statRetryCounter + 1) + " retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
+				}
 
 				Thread.sleep(sleep * 1000);
 				continue;
-
 			}
 			catch (final IOException ioe) {
 				throw ioe;
