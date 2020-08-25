@@ -85,7 +85,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		for (final String lfnName : this.alPaths) {
 			final LFN lfn = commander.c_api.getRealLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
-			final GUID referenceGUID;
+			GUID referenceGUID;
 
 			PFN onePfnToCheck = null;
 
@@ -96,6 +96,31 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					if (referenceGUID == null) {
 						commander.setReturnCode(ErrNo.ENOENT, "This GUID does not exist in the catalogue: " + lfnName);
 						continue;
+					}
+
+					// is this a real file or a pointer to an archive member?
+					Set<PFN> replicas = commander.c_api.getPFNs(lfnName);
+
+					String uuid = null;
+
+					if (replicas != null) {
+						for (PFN p : replicas) {
+							uuid = PFN.getGUIDFromPFN(p.pfn);
+
+							if (uuid != null)
+								break;
+						}
+					}
+
+					if (uuid != null) {
+						commander.printOutln(lfnName + " is a member of a ZIP archive");
+
+						referenceGUID = commander.c_api.getGUID(uuid);
+
+						if (referenceGUID == null) {
+							commander.setReturnCode(ErrNo.ENOENT, "The archive GUID does not exist in the catalogue: " + uuid + " (for " + lfnName + ")");
+							continue;
+						}
 					}
 				}
 				else {
@@ -250,7 +275,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 				return;
 			}
-			
+
 			xrootd.prepare(onePfnToCheck != null ? onePfnToCheck : p);
 
 			commander.printOutln(ShellColor.jobStateYellow() + "prepare request sent" + ShellColor.reset());

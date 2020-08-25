@@ -217,16 +217,12 @@ public class PFN implements Serializable, Comparable<PFN> {
 	}
 
 	/**
-	 * @return the physical locations
+	 * @param pfn
+	 * @return the UUID from this PFN, if it's a pointer to an archive, or <code>null</code> if not
 	 */
-	public Set<PFN> getRealPFNs() {
-		if (realPFNs != null)
-			return realPFNs;
-
+	public static String getGUIDFromPFN(final String pfn) {
 		if (pfn.startsWith("guid://")) {
 			int idx = 7;
-
-			String sUuid;
 
 			while (pfn.charAt(idx) == '/' && idx < pfn.length() - 1)
 				idx++;
@@ -234,10 +230,24 @@ public class PFN implements Serializable, Comparable<PFN> {
 			final int idx2 = pfn.indexOf('?', idx);
 
 			if (idx2 < 0)
-				sUuid = pfn.substring(idx);
-			else
-				sUuid = pfn.substring(idx, idx2);
+				return pfn.substring(idx);
 
+			return pfn.substring(idx, idx2);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @return the physical locations
+	 */
+	public Set<PFN> getRealPFNs() {
+		if (realPFNs != null)
+			return realPFNs;
+
+		final String sUuid = getGUIDFromPFN(pfn);
+
+		if (sUuid != null) {
 			final GUID archiveGuid = ConfigUtils.isCentralService() ? GUIDUtils.getGUID(UUID.fromString(sUuid)) : JAliEnCOMMander.getInstance().c_api.getGUID(sUuid);
 
 			if (archiveGuid != null)
