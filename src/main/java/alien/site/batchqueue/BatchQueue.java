@@ -25,14 +25,6 @@ public abstract class BatchQueue {
 	protected Logger logger = null;
 
 	/**
-	 * Common env variables for running commands
-	 */
-	public HashMap<String, String> additional_env_vars = new HashMap<>(){{
-			put("LD_LIBRARY_PATH", System.getenv("LD_LIBRARY_PATH"));
-			put("PATH", System.getenv("PATH"));
-	}};
-
-	/**
 	 * Common configuration mechanism with the BQ implementations
 	 */
 	protected HashMap<String, Object> config = null;
