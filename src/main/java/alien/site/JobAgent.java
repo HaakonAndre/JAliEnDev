@@ -695,9 +695,11 @@ public class JobAgent implements Runnable {
 			if (code != 0) {
 				// Looks like something went wrong. Let's check the last reported status
 				final String lastStatus = readWrapperStatus();
-				if (lastStatus.equals("STARTED") || lastStatus.equals("RUNNING"))
+				if (lastStatus.equals("STARTED") || lastStatus.equals("RUNNING")) {
+					commander.q_api.putJobLog(queueId, "trace", "ERROR: The JobWrapper was killed before job could complete");
 					changeJobStatus(JobStatus.ERROR_E, null); // JobWrapper was killed before the job could be completed
-				else if (lastStatus.equals("SAVING")) {
+				} else if (lastStatus.equals("SAVING")) {
+					commander.q_api.putJobLog(queueId, "trace", "ERROR: The JobWrapper was killed during saving");
 					changeJobStatus(JobStatus.ERROR_SV, null); // JobWrapper was killed during saving
 				}
 			}
