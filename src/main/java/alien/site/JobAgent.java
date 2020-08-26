@@ -298,7 +298,7 @@ public class JobAgent implements Runnable {
 			}
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
-			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent " + CVMFS.getJAliEnVersion());
+			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent" + CVMFS.getJAliEnVersion());
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
 			// Set up constraints

@@ -413,8 +413,15 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		final List<LFN> iFiles = c_api.getLFNs(filesToDownload, true, false);
 
-		if (iFiles == null || iFiles.size() != filesToDownload.size()) {
+		if (iFiles == null) {
+			logger.log(Level.WARNING, "No requested files could be located");
+			commander.q_api.putJobLog(queueId, "trace", "ERROR: No requested files could be located: getLFNs returned null");
+			return false;
+		}
+		
+		if (iFiles.size() != filesToDownload.size()) {
 			logger.log(Level.WARNING, "Not all requested files could be located");
+			commander.q_api.putJobLog(queueId, "trace", "ERROR: Not all requested files could be located. Located files " + iFiles.size() + ", but expected " + filesToDownload.size());
 			return false;
 		}
 
@@ -432,6 +439,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (localFile.exists()) {
 				logger.log(Level.WARNING, "Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
+				commander.q_api.putJobLog(queueId, "trace","ERROR: Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
 				return false;
 			}
 
@@ -443,6 +451,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (pfns == null || pfns.size() == 0) {
 				logger.log(Level.WARNING, "No replicas of " + entry.getKey().getCanonicalName() + " to read from");
+				commander.q_api.putJobLog(queueId, "trace","ERROR: No replicas of " + entry.getKey().getCanonicalName() + " to read from");
 				return false;
 			}
 
@@ -456,6 +465,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (f == null) {
 				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+				commander.q_api.putJobLog(queueId, "trace","ERROR: Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				return false;
 			}
 
