@@ -460,7 +460,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
 
 			logger.log(Level.INFO, "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
-
+			commander.q_api.putJobLog(queueId, "trace", "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
+			
 			final File f = IOUtils.get(g, entry.getValue());
 
 			if (f == null) {
