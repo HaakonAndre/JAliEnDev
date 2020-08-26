@@ -44,7 +44,7 @@ public class CVMFS extends PackMan {
 	 */
 	public CVMFS(String location) {		
 		if (location != null && !location.isBlank()) {
-			location.replaceAll("/$", ""); //Remove trailing '/' if exists
+			location = location.replaceAll("/$", ""); //Remove trailing '/' if exists
 			if (Files.exists(Paths.get(location + "/alienv")))
 				ALIEN_BIN_DIR = location;
 			else {
