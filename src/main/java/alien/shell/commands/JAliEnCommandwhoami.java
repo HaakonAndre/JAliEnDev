@@ -4,8 +4,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import alien.user.AliEnPrincipal;
+import alien.user.LDAPHelper;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -40,13 +42,34 @@ public class JAliEnCommandwhoami extends JAliEnBaseCommand {
 			commander.printOut("Role: " + user.getDefaultRole());
 
 			if (otherRoles.size() > 0)
-				commander.printOut(" (other roles: " + String.join(",", otherRoles) + ")");
+				commander.printOut(" (other roles: " + String.join(", ", otherRoles) + ")");
 
 			commander.printOutln();
 		}
 		else
 			// simple shell printout
 			commander.printOutln(user.getName());
+
+		Set<String> names = LDAPHelper.checkLdapInformation("uid=" + user.getName(), "ou=People,", "gecos");
+
+		if (names == null)
+			names = LDAPHelper.checkLdapInformation("uid=" + user.getName(), "ou=People,", "cn");
+
+		if (names != null && names.size() > 0) {
+			if (verbose)
+				commander.printOutln("Full name: " + String.join(", ", names));
+
+			commander.printOut("fullname", String.join(",", names));
+		}
+
+		final Set<String> emails = LDAPHelper.getEmails(user.getName());
+
+		if (emails != null && emails.size() > 0) {
+			if (verbose)
+				commander.printOutln("Email: " + String.join(", ", emails));
+
+			commander.printOut("email", String.join(",", emails));
+		}
 
 		if (user.getUserCert() != null) {
 			final ZonedDateTime userNotAfter = user.getUserCert()[0].getNotAfter().toInstant().atZone(ZoneId.systemDefault());
@@ -60,10 +83,10 @@ public class JAliEnCommandwhoami extends JAliEnBaseCommand {
 		}
 
 		if (user.getRemoteEndpoint() != null) {
-			commander.printOut("connected_from", user.getRemoteEndpoint().toString());
+			commander.printOut("connected_from", user.getRemoteEndpoint().getHostAddress());
 
 			if (verbose)
-				commander.printOutln("Connected from: " + user.getRemoteEndpoint());
+				commander.printOutln("Connected from: " + user.getRemoteEndpoint().getHostAddress());
 		}
 	}
 
