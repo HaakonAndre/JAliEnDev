@@ -29,10 +29,10 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 			return;
 		}
 
-		final String username = commander.user.getName();
+		final String username = user_to_set.getName();
 
 		if (command.equals("list")) {
-			final Quota q = commander.q_api.getJobsQuota();
+			final Quota q = TaskQueueApiUtils.getJobsQuota(user_to_set);
 			if (q == null) {
 				commander.setReturnCode(ErrNo.ENODATA, "No jobs quota found for user " + username);
 				return;
@@ -75,14 +75,11 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln("jquota: Displays information about Job Quotas.");
-		commander.printOutln("Usage:");
-		commander.printOutln("  jquota list <user>                - list the user quota for job");
-		commander.printOutln("                                     use just 'jquota list' for all users");
-		commander.printOutln();
-		commander.printOutln("  jquota set <user> <field> <value> - set the user quota for job");
-		commander.printOutln("                                      (maxUnfinishedJobs, maxTotalCpuCost, maxTotalRunningTime)");
-		commander.printOutln("                                      use <user>=% for all users");
+
+		commander.printOutln(helpUsage("jquota", "Displays information about Job Quotas."));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("list [username]", "get job quota information for the current account, or the indicated one"));
+		commander.printOutln(helpOption("set <user> <field> <value>", "to set quota fileds (one of  maxUnfinishedJobs, maxTotalCpuCost, maxTotalRunningTime)"));
 	}
 
 	@Override
@@ -100,8 +97,11 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 		this.isAdmin = commander.getUser().canBecome("admin");
 		if (alArguments.size() == 0)
 			return;
+
 		this.command = alArguments.get(0);
-		System.out.println(alArguments);
+
+		this.user_to_set = commander.getUser();
+
 		if (this.command.equals("set") && alArguments.size() == 4) {
 			this.user_to_set = UserFactory.getByUsername(alArguments.get(1));
 
@@ -116,6 +116,15 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 			}
 			catch (@SuppressWarnings("unused") final Exception e) {
 				// FIXME invalid numeric values are ignored
+			}
+		}
+
+		if (this.command.equals("list") && alArguments.size() > 1) {
+			this.user_to_set = UserFactory.getByUsername(alArguments.get(1));
+
+			if (this.user_to_set == null) {
+				commander.printErrln("No such account name: " + alArguments.get(1));
+				setArgumentsOk(false);
 			}
 		}
 	}

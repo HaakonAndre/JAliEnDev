@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.quotas;
 
@@ -18,7 +18,7 @@ import lia.util.StringFactory;
  */
 public class Quota implements Serializable, Comparable<Quota> {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -267664655406935779L;
 
@@ -150,10 +150,10 @@ public class Quota implements Serializable, Comparable<Quota> {
 
 	@Override
 	public String toString() {
-		return "Quota: userid: " + userId + "\n" + "priority\t: " + priority + "\n" + "maxparallelJobs\t: " + maxparallelJobs + "\n" + "userload\t: " + userload + "\n" + "nominalparallelJobs\t: "
-				+ nominalparallelJobs + "\n" + "computedpriority\t: " + computedpriority + "\n" + "waiting\t: " + waiting + "\n" + "running\t: " + running + "\n" + "maxUnfinishedJobs\t: "
-				+ maxUnfinishedJobs + "\n" + "maxTotalCpuCost\t: " + maxTotalCpuCost + "\n" + "totalRunningTimeLast24h\t: " + totalRunningTimeLast24h + "\n" + "unfinishedJobsLast24h\t: "
-				+ unfinishedJobsLast24h + "\n" + "totalCpuCostLast24h\t: " + totalCpuCostLast24h + "\n" + "maxTotalRunningTime\t: " + maxTotalRunningTime;
+		return "Quota of " + user + " (userid: " + userId + ")\n" + "priority\t: " + priority + "\n" + "maxparallelJobs\t: " + maxparallelJobs + "\n" + "userload\t: " + userload + "\n"
+				+ "nominalparallelJobs\t: " + nominalparallelJobs + "\n" + "computedpriority\t: " + computedpriority + "\n" + "waiting\t: " + waiting + "\n" + "running\t: " + running + "\n"
+				+ "maxUnfinishedJobs\t: " + maxUnfinishedJobs + "\n" + "maxTotalCpuCost\t: " + maxTotalCpuCost + "\n" + "totalRunningTimeLast24h\t: " + totalRunningTimeLast24h + "\n"
+				+ "unfinishedJobsLast24h\t: " + unfinishedJobsLast24h + "\n" + "totalCpuCostLast24h\t: " + totalCpuCostLast24h + "\n" + "maxTotalRunningTime\t: " + maxTotalRunningTime;
 	}
 
 	@Override

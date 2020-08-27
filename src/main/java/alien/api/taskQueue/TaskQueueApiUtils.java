@@ -254,11 +254,12 @@ public class TaskQueueApiUtils {
 	}
 
 	/**
+	 * @param user Account to get the quota information for
 	 * @return jobs quota for the current user
 	 */
-	public Quota getJobsQuota() {
+	public static Quota getJobsQuota(final AliEnPrincipal user) {
 		try {
-			final GetQuota gq = new GetQuota(commander.getUser());
+			final GetQuota gq = new GetQuota(user);
 			final GetQuota gqres = Dispatcher.execute(gq);
 			return gqres.getQuota();
 		}
