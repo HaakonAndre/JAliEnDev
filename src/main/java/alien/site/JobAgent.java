@@ -185,6 +185,7 @@ public class JobAgent implements Runnable {
 		origTtl = ((Integer) siteMap.get("TTL")).intValue();
 
 		Hashtable<Long, String> cpuinfo;
+
 		try {
 			cpuinfo = BkThread.getCpuInfo();
 			RES_CPUFAMILY = cpuinfo.get(ApMonMonitoringConstants.LGEN_CPU_FAMILY);
@@ -256,6 +257,7 @@ public class JobAgent implements Runnable {
 					logger.log(Level.INFO, jdl.getExecutable());
 					logger.log(Level.INFO, username);
 					logger.log(Level.INFO, Long.toString(queueId));
+					sendBatchInfo();
 
 					// process payload
 					handleJob();
@@ -965,5 +967,30 @@ public class JobAgent implements Runnable {
 						return childPids.get(i+1); //payload is the subsequent child of the wrapper
 		}
 		return 0;
+	}
+
+
+	private void sendBatchInfo(){
+		String[] batchSystemVars = {
+		"SLURM_JOBID",
+		"SLURM_JOB_ID",
+		"LSB_BATCH_JID",
+		"LSB_JOBID",
+		"PBS_JOBID",
+		"PBS_JOBNAME",
+		"JOB_ID",
+		"CREAM_JOBID",
+		"SubmitterGlobalJobId",
+		"GlobalJobId",
+		"GRID_GLOBAL_JOBID",
+		"JOB_ID"
+		};
+
+	for (String var : batchSystemVars) {
+		if (env.containsKey(var)){
+			commander.q_api.putJobLog(queueId, "trace", "BatchId " + var + ": " + env.get(var));
+			}
+		}
+
 	}
 }
