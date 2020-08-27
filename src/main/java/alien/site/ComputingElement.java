@@ -325,7 +325,7 @@ public class ComputingElement extends Thread {
 
 		try (PrintWriter writer = new PrintWriter(agent_startup_path, "UTF-8")) {
 			writer.println("#!/bin/bash");
-			writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); // make sure we start with a clean env
+			//writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); // Used to start with a clean env
 			writer.println(content_str);
 		}
 		catch (final FileNotFoundException e) {
