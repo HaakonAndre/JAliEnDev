@@ -141,8 +141,6 @@ public class JobAgent implements Runnable {
 
 	private Double RES_WORKDIR_SIZE = ZERO;
 	private Double RES_VMEM = ZERO;
-	private Double RES_PSS = ZERO;
-	private Double RES_SWAPPSS = ZERO;
 	private Double RES_RMEM = ZERO;
 	private Double RES_VMEMMAX = ZERO;
 	private Double RES_RMEMMAX = ZERO;
