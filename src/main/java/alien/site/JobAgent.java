@@ -970,27 +970,39 @@ public class JobAgent implements Runnable {
 	}
 
 
-	private void sendBatchInfo(){
+	private void sendBatchInfo() {
 		String[] batchSystemVars = {
-		"SLURM_JOBID",
-		"SLURM_JOB_ID",
-		"LSB_BATCH_JID",
-		"LSB_JOBID",
-		"PBS_JOBID",
-		"PBS_JOBNAME",
-		"JOB_ID",
-		"CREAM_JOBID",
-		"SubmitterGlobalJobId",
-		"GlobalJobId",
-		"GRID_GLOBAL_JOBID",
-		"JOB_ID"
-		};
+			"CONDOR_PARENT_ID",
+			"_CONDOR_JOB_AD",
+			"SLURM_JOBID",
+			"SLURM_JOB_ID",
+			"LSB_BATCH_JID",
+			"LSB_JOBID",
+			"PBS_JOBID",
+			"PBS_JOBNAME",
+			"JOB_ID",
+			"CREAM_JOBID",
+			"SubmitterGlobalJobId",
+			"GlobalJobId",
+			"GRID_GLOBAL_JOBID",
+			"JOB_ID"
+			};
 
-	for (String var : batchSystemVars) {
-		if (env.containsKey(var)){
-			commander.q_api.putJobLog(queueId, "trace", "BatchId " + var + ": " + env.get(var));
+		for (String var : batchSystemVars) {
+			if (env.containsKey(var)) {
+				if (var.equals("_CONDOR_JOB_AD")) {
+					try {
+						List<String> lines = Files.readAllLines(Paths.get(env.get(var)));
+						for (String line : lines) {
+							if (line.contains("GlobalJobId"))
+								commander.q_api.putJobLog(queueId, "trace", "BatchId " + line);
+						}
+					} catch (IOException e) {
+						logger.log(Level.WARNING, "Error getting batch info from file " + env.get(var) + ":", e);
+					}
+				} else
+					commander.q_api.putJobLog(queueId, "trace", "BatchId " + var + ": " + env.get(var));
 			}
 		}
-
 	}
 }
