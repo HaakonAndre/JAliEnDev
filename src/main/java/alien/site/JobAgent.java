@@ -141,6 +141,8 @@ public class JobAgent implements Runnable {
 
 	private Double RES_WORKDIR_SIZE = ZERO;
 	private Double RES_VMEM = ZERO;
+	private Double RES_PSS = ZERO;
+	private Double RES_SWAPPSS = ZERO;
 	private Double RES_RMEM = ZERO;
 	private Double RES_VMEMMAX = ZERO;
 	private Double RES_RMEMMAX = ZERO;
@@ -744,8 +746,9 @@ public class JobAgent implements Runnable {
 				RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
 
 			if (jobinfo != null) {
-				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
-				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
+				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_PSS).doubleValue() / 1024);
+				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_SWAPPSS).doubleValue() / 1024 + RES_RMEM.doubleValue());
+
 				RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
 				RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
 				RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
