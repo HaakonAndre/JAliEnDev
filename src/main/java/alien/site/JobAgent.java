@@ -982,8 +982,6 @@ public class JobAgent implements Runnable {
 			"PBS_JOBNAME",
 			"JOB_ID",
 			"CREAM_JOBID",
-			"SubmitterGlobalJobId",
-			"GlobalJobId",
 			"GRID_GLOBAL_JOBID",
 			"JOB_ID"
 			};
