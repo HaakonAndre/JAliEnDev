@@ -69,7 +69,7 @@ public class JobAgent implements Runnable {
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private static final String jobWrapperLogName = "jalien-jobwrapper.log";
 	private String jobWorkdir;
-	private String jobWrapperLogDir;
+	private final String jobWrapperLogDir;
 
 	// Job variables
 	private JDL jdl;
@@ -78,7 +78,7 @@ public class JobAgent implements Runnable {
 	private String tokenCert;
 	private String tokenKey;
 	private String jobAgentId;
-	private String workdir;
+	private final String workdir;
 	private String legacyToken;
 	private HashMap<String, Object> matchedJob;
 	private HashMap<String, Object> siteMap = new HashMap<>();
@@ -93,7 +93,7 @@ public class JobAgent implements Runnable {
 	private final long jobAgentStartTime = System.currentTimeMillis();
 
 	// Other
-	private String hostName;
+	private final String hostName;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private String jarPath;
 	private String jarName;
@@ -110,7 +110,7 @@ public class JobAgent implements Runnable {
 
 		private final int value;
 
-		private jaStatus(int value) {
+		private jaStatus(final int value) {
 			this.value = value;
 		}
 
@@ -164,7 +164,7 @@ public class JobAgent implements Runnable {
 
 		jobWrapperLogDir = Functions.resolvePathWithEnv(env.getOrDefault("TMPDIR", "/tmp") + "/" + jobWrapperLogName);
 
-		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
+		final String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
 		logger.log(Level.INFO, "We have the following DN :" + DN);
 
@@ -180,7 +180,7 @@ public class JobAgent implements Runnable {
 		else
 			jobAgentId = Request.getVMID().toString();
 
-		workdir = Functions.resolvePathWithEnv((String)siteMap.get("workdir"));
+		workdir = Functions.resolvePathWithEnv((String) siteMap.get("workdir"));
 
 		origTtl = ((Integer) siteMap.get("TTL")).intValue();
 
@@ -205,7 +205,7 @@ public class JobAgent implements Runnable {
 		}
 
 		try {
-			File filepath = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+			final File filepath = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
 			jarName = filepath.getName();
 			jarPath = filepath.toString().replace(jarName, "");
 		}
@@ -334,7 +334,7 @@ public class JobAgent implements Runnable {
 					.sorted(Comparator.reverseOrder()) // or else dir will appear before its contents
 					.forEach(File::delete);
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
 		}
 
@@ -468,14 +468,14 @@ public class JobAgent implements Runnable {
 
 				commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (JDL): " + workdirMaxSizeMB + "MB");
 			}
-			catch (@SuppressWarnings("unused") NumberFormatException nfe) {
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				commander.q_api.putJobLog(queueId, "trace", "Local disk space specs are invalid: '" + workdirMaxSize + "', using the default " + workdirMaxSizeMB + "MB");
 			}
 		}
 		else
-			commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (default): " + jobMaxMemoryMB + "MB");
+			commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (default): " + workdirMaxSizeMB + "MB");
 
-		Integer requestedCPUCores = jdl.getInteger("CPUCores");
+		final Integer requestedCPUCores = jdl.getInteger("CPUCores");
 
 		if (requestedCPUCores != null && requestedCPUCores.intValue() > 0)
 			cpuCores = requestedCPUCores.intValue();
@@ -500,7 +500,7 @@ public class JobAgent implements Runnable {
 
 				commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit (JDL): " + jobMaxMemoryMB + "MB");
 			}
-			catch (@SuppressWarnings("unused") NumberFormatException nfe) {
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				commander.q_api.putJobLog(queueId, "trace", "Virtual memory limit specs are invalid: '" + maxmemory + "', using the default " + jobMaxMemoryMB + "MB");
 			}
 		}
@@ -553,7 +553,7 @@ public class JobAgent implements Runnable {
 			}
 
 			// Check if there is container support at present on site. If yes, add to launchCmd
-			Containerizer cont = ContainerizerFactory.getContainerizer();
+			final Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
 				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
 				monitor.sendParameter("containerLayer", Integer.valueOf(1));
@@ -569,7 +569,7 @@ public class JobAgent implements Runnable {
 		}
 	}
 
-	private int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
+	private int launchJobWrapper(final List<String> launchCommand, final boolean monitorJob) {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
@@ -627,17 +627,20 @@ public class JobAgent implements Runnable {
 				sendProcessResources();
 		}
 
-		TimerTask killPayload = new TimerTask() {
+		final TimerTask killPayload = new TimerTask() {
 			@Override
 			public void run() {
 				final Vector<Integer> childProcs = mj.getChildren();
-				if (childProcs != null || childProcs.size() > 1) {
+				if (childProcs != null && childProcs.size() > 1) {
 					try {
 						Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
-						Thread.sleep(60 * 1000); //Give the JobWrapper 60s to clean things up
-					} catch (Exception e) {}
+						Thread.sleep(60 * 1000); // Give the JobWrapper 60s to clean things up
+					}
+					catch (final Exception e) {
+						logger.log(Level.INFO, "Cannot kill the child processes " + childProcs, e);
+					}
 				}
-				//If still alive, kill everything, including the JW
+				// If still alive, kill everything, including the JW
 				if (p.isAlive()) {
 					p.destroyForcibly();
 				}
@@ -700,7 +703,8 @@ public class JobAgent implements Runnable {
 				if (lastStatus.equals("STARTED") || lastStatus.equals("RUNNING")) {
 					commander.q_api.putJobLog(queueId, "trace", "ERROR: The JobWrapper was killed before job could complete");
 					changeJobStatus(JobStatus.ERROR_E, null); // JobWrapper was killed before the job could be completed
-				} else if (lastStatus.equals("SAVING")) {
+				}
+				else if (lastStatus.equals("SAVING")) {
 					commander.q_api.putJobLog(queueId, "trace", "ERROR: The JobWrapper was killed during saving");
 					changeJobStatus(JobStatus.ERROR_SV, null); // JobWrapper was killed during saving
 				}
@@ -832,7 +836,7 @@ public class JobAgent implements Runnable {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
 				return false;
 			}
-			File tempTmpDir = new File(jobWorkdir + "/tmp");
+			final File tempTmpDir = new File(jobWorkdir + "/tmp");
 			tempTmpDir.mkdir();
 		}
 
@@ -847,7 +851,7 @@ public class JobAgent implements Runnable {
 	private void setupJobWrapperLogging() {
 		Properties props = new Properties();
 		try {
-			ExtProperties ep = ConfigUtils.getConfiguration("logging");
+			final ExtProperties ep = ConfigUtils.getConfiguration("logging");
 
 			props = ep.getProperties();
 
@@ -878,12 +882,12 @@ public class JobAgent implements Runnable {
 		try (FileOutputStream str = new FileOutputStream(jobWorkdir + "/logging.properties")) {
 			props.store(str, null);
 		}
-		catch (IOException e1) {
+		catch (final IOException e1) {
 			logger.log(Level.WARNING, "Failed to configure JobWrapper logging", e1);
 		}
 	}
 
-	private void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
+	private void changeJobStatus(final JobStatus newStatus, final HashMap<String, Object> extrafields) {
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 		return;
 	}
@@ -892,13 +896,13 @@ public class JobAgent implements Runnable {
 		try {
 			return Files.readString(Paths.get(jobWorkdir + "/.jobstatus"));
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			logger.log(Level.WARNING, "Attempt to read job status failed. Ignoring: " + e.toString());
 			return "";
 		}
 	}
 
-	private static int convertStringUnitToIntegerMB(String unit, String number) {
+	private static int convertStringUnitToIntegerMB(final String unit, final String number) {
 		switch (unit) {
 			case "KB":
 				return Integer.parseInt(number) / 1024;
@@ -911,7 +915,7 @@ public class JobAgent implements Runnable {
 
 	/**
 	 * Get LhcbMarks, using a specialized script in CVMFS
-	 * 
+	 *
 	 * @return script output, or null in case of error
 	 */
 	public static Float getLhcbMarks() {
@@ -931,47 +935,50 @@ public class JobAgent implements Runnable {
 			lhcbMarks = Float.parseFloat(out);
 			return Float.valueOf(lhcbMarks);
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "An error occurred while attempting to run process cleanup: ", e);
 			return null;
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * Identifies job payload in list of child PIDs
-	 * 
+	 *
 	 * @param childPIDs
 	 * @return job payload PID
 	 */
-	private int getPayloadPid(Vector<Integer> childPids) {
-		ArrayList<Integer> wrapperProcs = new ArrayList<Integer>();
+	private int getPayloadPid(final Vector<Integer> childPids) {
+		final ArrayList<Integer> wrapperProcs = new ArrayList<>();
 
 		try {
 			final Process getWrapperProcs = Runtime.getRuntime().exec("pgrep -f " + queueId);
 			getWrapperProcs.waitFor();
-			Scanner cmdScanner = new Scanner(getWrapperProcs.getInputStream());
-			while (cmdScanner.hasNext()) {
-				wrapperProcs.add(Integer.parseInt(cmdScanner.next()));
+			try (Scanner cmdScanner = new Scanner(getWrapperProcs.getInputStream())) {
+				while (cmdScanner.hasNext()) {
+					wrapperProcs.add(Integer.valueOf(cmdScanner.next()));
+				}
 			}
-			cmdScanner.close();
 		}
-		catch (Exception e) {
-			logger.log(Level.WARNING, "Could not get JobWrapper PID");
+		catch (final Exception e) {
+			logger.log(Level.WARNING, "Could not get JobWrapper PID", e);
 			return 0;
 		}
-		int wrapperPid = wrapperProcs.get(wrapperProcs.size()-1); //first entry comes from the env init in container. Ignore if present
-		
-		for(int i=0; i < childPids.size(); i++) {
-				if(childPids.get(i).equals(wrapperPid))
-						return childPids.get(i+1); //payload is the subsequent child of the wrapper
-		}
+
+		if (wrapperProcs.size() < 1)
+			return 0;
+
+		final Integer wrapperPid = wrapperProcs.get(wrapperProcs.size() - 1); // first entry comes from the env init in container. Ignore if present
+
+		final int idx = childPids.indexOf(wrapperPid);
+
+		if (idx >= 0 && idx < childPids.size() - 1)
+			return childPids.get(idx + 1).intValue();
+
 		return 0;
 	}
 
-
-	private void sendBatchInfo() {
-		String[] batchSystemVars = {
+	private final static String[] batchSystemVars = {
 			"CONDOR_PARENT_ID",
 			"_CONDOR_JOB_AD",
 			"SLURM_JOBID",
@@ -984,21 +991,24 @@ public class JobAgent implements Runnable {
 			"CREAM_JOBID",
 			"GRID_GLOBAL_JOBID",
 			"JOB_ID"
-			};
+	};
 
-		for (String var : batchSystemVars) {
+	private void sendBatchInfo() {
+		for (final String var : batchSystemVars) {
 			if (env.containsKey(var)) {
 				if (var.equals("_CONDOR_JOB_AD")) {
 					try {
-						List<String> lines = Files.readAllLines(Paths.get(env.get(var)));
-						for (String line : lines) {
+						final List<String> lines = Files.readAllLines(Paths.get(env.get(var)));
+						for (final String line : lines) {
 							if (line.contains("GlobalJobId"))
 								commander.q_api.putJobLog(queueId, "trace", "BatchId " + line);
 						}
-					} catch (IOException e) {
+					}
+					catch (final IOException e) {
 						logger.log(Level.WARNING, "Error getting batch info from file " + env.get(var) + ":", e);
 					}
-				} else
+				}
+				else
 					commander.q_api.putJobLog(queueId, "trace", "BatchId " + var + ": " + env.get(var));
 			}
 		}
