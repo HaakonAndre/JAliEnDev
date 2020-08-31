@@ -1161,7 +1161,7 @@ public final class SEUtils {
 	 * @param fileCount
 	 * @return at most <code>fileCount</code> random PFNs associated to this storage ID
 	 */
-	public static Collection<PFN> getRandomPFNs(final int storageNumber, int fileCount) {
+	public static Collection<PFN> getRandomPFNs(final int storageNumber, final int fileCount) {
 		final Set<PFN> pfns = new HashSet<>();
 		final SE se = getSE(storageNumber);
 
@@ -1174,9 +1174,7 @@ public final class SEUtils {
 			return null;
 		}
 
-		if (fileCount > maxAllowedRandomPFNs) {
-			fileCount = maxAllowedRandomPFNs;
-		}
+		final int targetFileCount = Math.min(fileCount, maxAllowedRandomPFNs);
 
 		List<GUIDIndex> guidIndices = CatalogueUtils.getAllGUIDIndexes();
 
@@ -1186,7 +1184,7 @@ public final class SEUtils {
 
 			final Iterator<GUIDIndex> it = guidIndices.iterator();
 
-			while (pfns.size() < fileCount && it.hasNext()) {
+			while (pfns.size() < targetFileCount && it.hasNext()) {
 				final GUIDIndex idx = it.next();
 
 				final Host h = CatalogueUtils.getHost(idx.hostIndex);
@@ -1195,7 +1193,7 @@ public final class SEUtils {
 					gdb.setReadOnly(true);
 
 					final String q = "select pfn,binary2string(guid),size from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) where seNumber=" + se.seNumber
-							+ " order by rand() limit " + (fileCount - pfns.size());
+							+ " order by rand() limit " + (targetFileCount - pfns.size());
 
 					gdb.query(q);
 
