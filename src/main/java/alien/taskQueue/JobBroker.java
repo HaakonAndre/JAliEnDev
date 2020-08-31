@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -255,18 +256,19 @@ public class JobBroker {
 			long queueId;
 
 			try {
-				dbc.getConnection();
-
 				dbc.setReadOnly(false);
+				
+				@SuppressWarnings("resource")
+				final Connection conn = dbc.getConnection();
 
-				try (Statement stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+				try (Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
 					stat.execute("SET @update_id := 0;", Statement.NO_GENERATED_KEYS);
 				}
 
 				String updateQuery = "UPDATE QUEUE SET statusId=6, siteid=?, exechostid=?, queueId = (SELECT @update_id := queueId) WHERE statusId=5 and agentId=?" + extra
 						+ " ORDER BY queueId ASC LIMIT 1;";
 
-				try (PreparedStatement stat = dbc.getConnection().prepareStatement(updateQuery, Statement.NO_GENERATED_KEYS)) {
+				try (PreparedStatement stat = conn.prepareStatement(updateQuery, Statement.NO_GENERATED_KEYS)) {
 					stat.setObject(1, Long.valueOf(siteId));
 					stat.setObject(2, Long.valueOf(hostId));
 					stat.setObject(3, agentId);
@@ -283,7 +285,7 @@ public class JobBroker {
 					}
 				}
 
-				try (Statement stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
+				try (Statement stat = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
 					stat.execute("SELECT @update_id;", Statement.NO_GENERATED_KEYS);
 
 					try (ResultSet resultSet = stat.getResultSet()) {
