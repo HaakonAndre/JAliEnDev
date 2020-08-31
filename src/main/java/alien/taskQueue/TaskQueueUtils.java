@@ -2431,8 +2431,10 @@ public class TaskQueueUtils {
 	public static void main(final String[] args) {
 		System.out.println("QUEUE TESTING...");
 
-		if (getAdminDB() == null)
-			System.out.println("ADMIN DB NULL.");
+		try (DBFunctions db = getAdminDB()) {
+			if (db == null)
+				System.out.println("ADMIN DB NULL.");
+		}
 
 		System.out.println("---------------------------------------------------------------------");
 
@@ -2447,7 +2449,6 @@ public class TaskQueueUtils {
 		System.out.println("---------------------------------------------------------------------");
 
 		deleteJobToken(12341234);
-
 	}
 
 	/**
