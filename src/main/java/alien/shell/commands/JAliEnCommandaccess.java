@@ -102,6 +102,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			referenceEntity = lfn;
 
 		if (accessRequest == AccessType.WRITE) {
+			if (lfn == null) {
+				commander.setReturnCode(ErrNo.ENOENT, "Could not get the LFN to create/modify: " + lfnName);
+				return;
+			}
+
 			final GUID guid;
 			if (!lfn.exists || lfn.guid == null) {
 				guid = GUIDUtils.createGuid(commander.user);
