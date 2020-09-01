@@ -113,6 +113,7 @@ public class OrphanPFNsCleanup {
 			}
 		}
 
+		@SuppressWarnings("resource")
 		private final boolean executeQuery(final DBConnection dbc, final String query) {
 			executeClose();
 

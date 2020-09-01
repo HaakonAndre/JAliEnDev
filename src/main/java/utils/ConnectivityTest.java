@@ -99,7 +99,7 @@ public class ConnectivityTest {
 					ok++;
 					System.err.println("OK, connection established in " + Format.point(t.getMillis()) + " ms");
 
-					if (runSSL) {
+					if (sslSF != null) {
 						try (Timing t2 = new Timing()) {
 							s.setSoTimeout(10000);
 

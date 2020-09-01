@@ -107,6 +107,7 @@ public final class ProcessWithTimeout {
 	 * @param p
 	 * @param pBuilder
 	 */
+	@SuppressWarnings("resource")
 	public ProcessWithTimeout(final Process p, final ProcessBuilder pBuilder) {
 		this.p = p;
 		this.command = pBuilder.command().toString();
