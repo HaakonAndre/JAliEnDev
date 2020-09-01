@@ -96,6 +96,7 @@ public class TransferBroker {
 
 	private int updateCount = -1;
 
+	@SuppressWarnings("resource")
 	private final boolean executeQuery(final DBConnection dbc, final String query) {
 		executeClose();
 
