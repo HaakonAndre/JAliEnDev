@@ -39,13 +39,12 @@ public class CVMFS extends PackMan {
 
 	/**
 	 * Constructor just checks CVMFS bin exist
-	 * 
+	 *
 	 * @param location
 	 */
-	public CVMFS(String location) {		
+	public CVMFS(final String location) {
 		if (location != null && !location.isBlank()) {
-			location = location.replaceAll("/$", ""); //Remove trailing '/' if exists
-			if (Files.exists(Paths.get(location + "/alienv")))
+			if (Files.exists(Paths.get(location + (location.endsWith("/") ? "" : "/") + "alienv")))
 				ALIEN_BIN_DIR = location;
 			else {
 				havePath = false;
@@ -130,7 +129,7 @@ public class CVMFS extends PackMan {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return JAliEn version as a string
 	 */
 	public static String getJAliEnVersion() {
@@ -148,7 +147,7 @@ public class CVMFS extends PackMan {
 			return jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get JAliEn version");
+			logger.log(Level.WARNING, "Could not get JAliEn version", e);
 			return "";
 		}
 	}
@@ -159,22 +158,22 @@ public class CVMFS extends PackMan {
 	public static String getJava32Dir() {
 		return JAVA32_DIR;
 	}
-	
+
 	/**
 	 * @return location of script used for cleanup of stale processes
 	 */
 	public static String getCleanupScript() {
 		return CVMFS_BASE_DIR + "/scripts/ja_cleanup.pl";
 	}
-	
+
 	/**
 	 * @return location of script used for LHCbMarks
 	 */
 	public static String getLhcbMarksScript() {
 		return CVMFS_BASE_DIR + "/scripts/lhcbmarks.sh";
 	}
-	
-    /**
+
+	/**
 	 * @return path to job container
 	 */
 	public static String getContainerPath() {

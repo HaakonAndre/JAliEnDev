@@ -11,8 +11,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -113,7 +111,7 @@ public class Functions {
 
 	/**
 	 * Write String[] as a file, with String[0] as file name and String[1] as file content
-	 * 
+	 *
 	 * @param file
 	 * @throws Exception
 	 */
@@ -162,9 +160,9 @@ public class Functions {
 	 * @param path_with_env
 	 * @return path without env vars
 	 */
-	public static String resolvePathWithEnv(String path_with_env) {
+	public static String resolvePathWithEnv(final String path_with_env) {
 		try {
-			String[] path_splitted = path_with_env.split("/");
+			final String[] path_splitted = path_with_env.split("/");
 			String path_resolved = "";
 			for (String dir : path_splitted) {
 				path_resolved += '/';
@@ -177,7 +175,8 @@ public class Functions {
 				path_resolved = path_resolved.substring(1);
 			}
 			return path_resolved;
-		} catch(NullPointerException e) {
+		}
+		catch (@SuppressWarnings("unused") final NullPointerException e) {
 			return null;
 		}
 	}
