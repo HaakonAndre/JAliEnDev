@@ -1,24 +1,27 @@
 package alien.site.batchqueue;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Logger;
-import java.util.TreeSet;
-import java.util.ArrayList;
-import java.util.List;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.charset.StandardCharsets;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.FileNotFoundException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
+import java.util.logging.Logger;
+
 import alien.site.Functions;
 
+/**
+ * 
+ */
 public class SLURM extends BatchQueue {
 
 	private Map<String, String> environment;
@@ -33,6 +36,10 @@ public class SLURM extends BatchQueue {
 	private String user;
 	private File temp_file;
 
+	/**
+	 * @param conf
+	 * @param logr
+	 */
 	@SuppressWarnings("unchecked")
 	public SLURM(HashMap<String, Object> conf, Logger logr) {
 		String statusOpts;
@@ -44,7 +51,8 @@ public class SLURM extends BatchQueue {
 
 		try {
 			this.envFromConfig = (TreeSet<String>) this.config.get("ce_environment");
-		} catch (ClassCastException e) {
+		}
+		catch (ClassCastException e) {
 			logger.severe(e.toString());
 		}
 
@@ -94,7 +102,7 @@ public class SLURM extends BatchQueue {
 		killCmd = killCmd + killArgs;
 	}
 
-
+	@Override
 	public void submit(final String script) {
 
 		this.logger.info("Submit SLURM");
@@ -109,14 +117,15 @@ public class SLURM extends BatchQueue {
 		if (!(log_folder.exists()) || !(log_folder.isDirectory())) {
 			try {
 				log_folder.mkdir();
-			} catch (SecurityException e) {
+			}
+			catch (SecurityException e) {
 				this.logger.info(String.format("[SLURM] Couldn't create log folder: %s", log_folder_path));
 				e.printStackTrace();
 			}
 		}
 
 		// Generate name for SLURM output files
-		Long timestamp = System.currentTimeMillis();
+		Long timestamp = Long.valueOf(System.currentTimeMillis());
 		String file_base_name = String.format("%s/jobagent_%s_%d",
 				Functions.resolvePathWithEnv(log_folder_path), config.get("host_host"),
 				timestamp);
@@ -130,7 +139,8 @@ public class SLURM extends BatchQueue {
 		if (enable_sandbox_file.exists() || (this.logger.getLevel() != null)) {
 			out_cmd = String.format("#SBATCH -o %s.out", file_base_name);
 			err_cmd = String.format("#SBATCH -e %s.err", file_base_name);
-		} else {
+		}
+		else {
 			out_cmd = "#SBATCH -o /dev/null";
 			err_cmd = "#SBATCH -e /dev/null";
 		}
@@ -158,16 +168,17 @@ public class SLURM extends BatchQueue {
 		submit_cmd += "srun " + runArgs + " ";
 		submit_cmd += script + "\n";
 
-
 		// Create temp file
 		if (this.temp_file != null) {
 			List<String> temp_file_lines = null;
 			try {
 				temp_file_lines = Files.readAllLines(Paths.get(this.temp_file.getAbsolutePath()), StandardCharsets.UTF_8);
-			} catch (IOException e1) {
+			}
+			catch (IOException e1) {
 				this.logger.info("Error reading old temp file");
 				e1.printStackTrace();
-			} finally {
+			}
+			finally {
 				if (temp_file_lines != null) {
 					String temp_file_lines_str = "";
 					for (String line : temp_file_lines) {
@@ -179,7 +190,8 @@ public class SLURM extends BatchQueue {
 						}
 						try {
 							this.temp_file = File.createTempFile("slurm-submit.", ".sh");
-						} catch (IOException e) {
+						}
+						catch (IOException e) {
 							this.logger.info("Error creating temp file");
 							e.printStackTrace();
 							return;
@@ -191,7 +203,8 @@ public class SLURM extends BatchQueue {
 		else {
 			try {
 				this.temp_file = File.createTempFile("slurm-submit.", ".sh");
-			} catch (IOException e) {
+			}
+			catch (IOException e) {
 				this.logger.info("Error creating temp file");
 				e.printStackTrace();
 				return;
@@ -204,7 +217,8 @@ public class SLURM extends BatchQueue {
 		try (PrintWriter out = new PrintWriter(this.temp_file.getAbsolutePath())) {
 			out.println(submit_cmd);
 			out.close();
-		} catch (FileNotFoundException e) {
+		}
+		catch (FileNotFoundException e) {
 			this.logger.info("Error writing to temp file");
 			e.printStackTrace();
 		}
@@ -221,6 +235,7 @@ public class SLURM extends BatchQueue {
 	/**
 	 * @return number of currently active jobs
 	 */
+	@Override
 	public int getNumberActive() {
 		String status = "R,S,CG";
 		ArrayList<String> output_list = this.executeCommand(statusCmd + " -t " + status + " " + statusArgs);
@@ -234,6 +249,7 @@ public class SLURM extends BatchQueue {
 	/**
 	 * @return number of queued jobs
 	 */
+	@Override
 	public int getNumberQueued() {
 		String status = "PD,CF";
 		ArrayList<String> output_list = this.executeCommand(statusCmd + " -t " + status + " " + statusArgs);
@@ -244,15 +260,18 @@ public class SLURM extends BatchQueue {
 		return output_list.size();
 	}
 
+	@Override
 	public int kill() {
 		ArrayList<String> kill_cmd_output = null;
 		try {
 			kill_cmd_output = executeCommand(this.killCmd);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			this.logger.info(String.format("[SLURM] Prolem while executing command: %s", this.killCmd));
 			e.printStackTrace();
 			return -1;
-		} finally {
+		}
+		finally {
 			if (kill_cmd_output != null) {
 				this.logger.info("Kill cmd output:\n");
 				for (String line : kill_cmd_output) {

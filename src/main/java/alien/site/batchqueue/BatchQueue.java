@@ -52,6 +52,10 @@ public abstract class BatchQueue {
 	public abstract int kill();
 	// Previously named "_system" in perl
 
+	/**
+	 * @param cmd
+	 * @return the output of the given command, one array entry per line
+	 */
 	public ArrayList<String> executeCommand(String cmd) {
 		ArrayList<String> proc_output = new ArrayList<>();
 
@@ -66,10 +70,10 @@ public abstract class BatchQueue {
 
 			Map<String, String> env = proc_builder.environment();
 			String[] dirs = {
-				"/cvmfs/alice.cern.ch/",
-				env.get("JALIEN_ROOT"),
-				env.get("JALIEN_HOME"),
-				env.get("ALIEN_ROOT"),
+					"/cvmfs/alice.cern.ch/",
+					env.get("JALIEN_ROOT"),
+					env.get("JALIEN_HOME"),
+					env.get("ALIEN_ROOT"),
 			};
 
 			HashMap<String, String> cleaned_env_vars = new HashMap<>();
@@ -119,7 +123,8 @@ public abstract class BatchQueue {
 			while ((output_str = reader.readLine()) != null) {
 				proc_output.add(output_str.trim());
 			}
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Exception executing command: " + cmd, t);
 		}
 
@@ -127,9 +132,15 @@ public abstract class BatchQueue {
 
 	}
 
-	public final String getValue(final String keyValue, final String key, final String defaultValue){
-		if (keyValue.startsWith(key+'='))
-			return keyValue.substring(key.length()+1).trim();
+	/**
+	 * @param keyValue
+	 * @param key
+	 * @param defaultValue
+	 * @return the value of the given key, if found, otherwise returning the default value
+	 */
+	public static final String getValue(final String keyValue, final String key, final String defaultValue) {
+		if (keyValue.startsWith(key + '='))
+			return keyValue.substring(key.length() + 1).trim();
 
 		return defaultValue;
 	}
