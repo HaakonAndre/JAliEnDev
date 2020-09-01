@@ -4,22 +4,19 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import alien.site.Functions;
-import lia.util.process.ExternalProcess.ExitStatus;
-import utils.ProcessWithTimeout;
 
 /**
  * @author mmmartin
@@ -44,8 +41,8 @@ public class HTCONDOR extends BatchQueue {
 	private ArrayList<String> ce_list = new ArrayList<>();
 	private HashMap<String, Double> ce_weight = new HashMap<>();
 	private int next_ce = 0;
-	private HashMap<String, Integer> running = new HashMap<>();
-	private HashMap<String, Integer> waiting = new HashMap<>();
+	private HashMap<String, AtomicInteger> running = new HashMap<>();
+	private HashMap<String, AtomicInteger> waiting = new HashMap<>();
 	private int tot_running = 0;
 	private int tot_waiting = 0;
 	private long job_numbers_timestamp = 0;
@@ -69,7 +66,7 @@ public class HTCONDOR extends BatchQueue {
 		logger = logr;
 
 		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") +
-			", site is " + config.get("site_accountname"));
+				", site is " + config.get("site_accountname"));
 
 		String ce_env_str = "ce_environment";
 
@@ -81,8 +78,9 @@ public class HTCONDOR extends BatchQueue {
 
 		try {
 			envFromConfig = (TreeSet<String>) config.get(ce_env_str);
-		} catch (ClassCastException e) {
-			envFromConfig = new TreeSet<String>(Arrays.asList((String) config.get(ce_env_str)));
+		}
+		catch (@SuppressWarnings("unused") ClassCastException e) {
+			envFromConfig = new TreeSet<>(Arrays.asList((String) config.get(ce_env_str)));
 		}
 
 		//
@@ -106,7 +104,7 @@ public class HTCONDOR extends BatchQueue {
 		String ce_submit_cmd_str = "CE_SUBMITCMD";
 
 		submitCmd = if_else(environment.get(ce_submit_cmd_str),
-			if_else((String) config.get(ce_submit_cmd_str), "condor_submit"));
+				if_else((String) config.get(ce_submit_cmd_str), "condor_submit"));
 
 		String use_job_router_tmp = "0";
 		String use_external_cloud_tmp = "0";
@@ -135,7 +133,8 @@ public class HTCONDOR extends BatchQueue {
 					if (m.find()) {
 						w = Double.parseDouble(m.group(1));
 						ce = m.group(2);
-					} else {
+					}
+					else {
 						ce = ce.replaceAll("\\s+", "");
 					}
 
@@ -149,10 +148,10 @@ public class HTCONDOR extends BatchQueue {
 						ce += ":9619";
 					}
 
-					logger.info(ce + " --> " + String.format("%5.3f", w));
+					logger.info(ce + " --> " + String.format("%5.3f", Double.valueOf(w)));
 
 					ce_list.add(ce);
-					ce_weight.put(ce, w);
+					ce_weight.put(ce, Double.valueOf(w));
 					tot += w;
 				}
 
@@ -171,7 +170,7 @@ public class HTCONDOR extends BatchQueue {
 				logger.info("Load-balancing over these CEs with normalized weights:");
 
 				for (String ce : ce_list) {
-					double w = ce_weight.get(ce) / tot;
+					Double w = Double.valueOf(ce_weight.get(ce).doubleValue() / tot);
 					ce_weight.replace(ce, w);
 					logger.info(ce + " --> " + String.format("%5.3f", w));
 				}
@@ -223,7 +222,7 @@ public class HTCONDOR extends BatchQueue {
 		}
 	}
 
-	public void proxyCheck() {
+	private void proxyCheck() {
 
 		String proxy = environment.get("X509_USER_PROXY");
 		File proxy_no_check = new File(environment.get("HOME") + "/no-proxy-check");
@@ -288,10 +287,12 @@ public class HTCONDOR extends BatchQueue {
 
 		try {
 			proxy_renewal_output = executeCommand(proxy_renewal_cmd);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.info(String.format("[LCG] Problem while executing command: %s", proxy_renewal_cmd));
 			e.printStackTrace();
-		} finally {
+		}
+		finally {
 			if (proxy_renewal_output != null) {
 				logger.info("Proxy renewal output:\n");
 
@@ -314,20 +315,21 @@ public class HTCONDOR extends BatchQueue {
 		if (!log_folder.exists()) {
 			try {
 				log_folder.mkdirs();
-			} catch (Exception e) {
+			}
+			catch (Exception e) {
 				logger.severe(String.format("[HTCONDOR] log folder mkdirs() exception: %s",
-					log_folder_path));
+						log_folder_path));
 				e.printStackTrace();
 			}
 
 			if (!log_folder.exists()) {
 				logger.severe(String.format("[HTCONDOR] Couldn't create log folder: %s",
-					log_folder_path));
+						log_folder_path));
 				return;
 			}
 		}
 
-		String file_base_name = String.format("%s/jobagent_%d", log_folder_path, System.currentTimeMillis());
+		String file_base_name = String.format("%s/jobagent_%d", log_folder_path, Long.valueOf(System.currentTimeMillis()));
 		String log_cmd = String.format("log = %s.log\n", file_base_name);
 		String out_cmd = "";
 		String err_cmd = "";
@@ -339,16 +341,15 @@ public class HTCONDOR extends BatchQueue {
 			err_cmd = String.format("error = %s.err\n", file_base_name);
 		}
 
-		String submit_jdl =
-			"cmd = " + script + "\n" +
-			out_cmd +
-			err_cmd +
-			log_cmd +
-			"+TransferOutput = \"\"\n" +
-			"periodic_hold = JobStatus == 1 && " +
-			"GridJobStatus =?= undefined && CurrentTime - EnteredCurrentStatus > 1800 || " +
-			"JobStatus <= 2 && CurrentTime - EnteredCurrentStatus > 172800\n" +
-			"periodic_remove = CurrentTime - QDate > 259200\n";
+		String submit_jdl = "cmd = " + script + "\n" +
+				out_cmd +
+				err_cmd +
+				log_cmd +
+				"+TransferOutput = \"\"\n" +
+				"periodic_hold = JobStatus == 1 && " +
+				"GridJobStatus =?= undefined && CurrentTime - EnteredCurrentStatus > 1800 || " +
+				"JobStatus <= 2 && CurrentTime - EnteredCurrentStatus > 172800\n" +
+				"periodic_remove = CurrentTime - QDate > 259200\n";
 
 		//
 		// via our own load-balancing (preferred), via the JobRouter, or to the single CE
@@ -359,16 +360,15 @@ public class HTCONDOR extends BatchQueue {
 
 			for (int i = 0; i < ce_list.size(); i++) {
 				String ce = ce_list.get(next_ce);
-				int idle  = waiting.get(ce);
-				double w  = ce_weight.get(ce);
-				double f  = tot_waiting > 0 ? (double) idle / tot_waiting : 0;
+				AtomicInteger idle = waiting.computeIfAbsent(ce, (r) -> new AtomicInteger(0));
+				Double w = ce_weight.get(ce);
+				Double f = Double.valueOf(tot_waiting > 0 ? idle.doubleValue() / tot_waiting : 0);
 
 				logger.info(String.format(
-					"--> %s has idle fraction %d / %d = %5.3f vs. weight %5.3f",
-					ce, idle, tot_waiting, f, w
-				));
+						"--> %s has idle fraction %d / %d = %5.3f vs. weight %5.3f",
+						ce, idle, Integer.valueOf(tot_waiting), f, w));
 
-				if (f < w) {
+				if (f.doubleValue() < w.doubleValue()) {
 					break;
 				}
 
@@ -380,9 +380,7 @@ public class HTCONDOR extends BatchQueue {
 
 			logger.info("--> next CE to use: " + ce);
 
-			int idle  = waiting.get(ce);
-
-			waiting.put(ce, idle + 1);
+			waiting.computeIfAbsent(ce, (r) -> new AtomicInteger(0)).incrementAndGet();
 			tot_waiting++;
 
 			next_ce++;
@@ -393,15 +391,14 @@ public class HTCONDOR extends BatchQueue {
 		}
 
 		if (use_job_router) {
-			submit_jdl +=
-				"universe = vanilla\n" +
-				"+WantJobRouter = True\n" +
-				"job_lease_duration = 7200\n" +
-				"ShouldTransferFiles = YES\n";
-		} else {
-			submit_jdl +=
-				"universe = grid\n" +
-				"grid_resource = " + grid_resource + "\n";
+			submit_jdl += "universe = vanilla\n" +
+					"+WantJobRouter = True\n" +
+					"job_lease_duration = 7200\n" +
+					"ShouldTransferFiles = YES\n";
+		}
+		else {
+			submit_jdl += "universe = grid\n" +
+					"grid_resource = " + grid_resource + "\n";
 		}
 
 		if (use_external_cloud) {
@@ -443,7 +440,8 @@ public class HTCONDOR extends BatchQueue {
 		try (PrintWriter out = new PrintWriter(submit_file)) {
 			out.println(submit_jdl);
 			out.close();
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("Error writing to submit file: " + submit_file);
 			e.printStackTrace();
 			return;
@@ -478,7 +476,8 @@ public class HTCONDOR extends BatchQueue {
 				line = line.replaceAll(err_spaces_pattern.pattern(), "\\\\\n");
 				file_contents += line + "\n";
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logger.severe("ERROR when reading JDL file: " + path);
 			e.printStackTrace();
 			return "";
@@ -490,7 +489,7 @@ public class HTCONDOR extends BatchQueue {
 	private boolean getJobNumbers() {
 
 		long now = System.currentTimeMillis();
-		long dt  = (now - job_numbers_timestamp) / 1000;
+		long dt = (now - job_numbers_timestamp) / 1000;
 
 		if (dt < 60) {
 			logger.info("Reusing cached job numbers collected " + dt + " seconds ago");
@@ -514,13 +513,17 @@ public class HTCONDOR extends BatchQueue {
 			return false;
 		}
 
-		for (String ce : ce_list) {
-			running.put(ce, 0);
-			waiting.put(ce, 0);
-		}
-
 		tot_running = tot_waiting = 0;
 		Pattern p = Pattern.compile("^\\s*([12]).*\\s(\\S+)");
+
+		// in case the CE list has changed
+		running.clear();
+		waiting.clear();
+
+		for (String ce : ce_list) {
+			waiting.put(ce, new AtomicInteger(0));
+			running.put(ce, new AtomicInteger(0));
+		}
 
 		for (String line : job_list) {
 			Matcher m = p.matcher(line);
@@ -530,20 +533,19 @@ public class HTCONDOR extends BatchQueue {
 				String ce = m.group(2);
 
 				if (job_status == 1) {
-					Integer w = waiting.get(ce);
+					AtomicInteger w = waiting.get(ce);
 
-					if (w != null) {
-						waiting.put(ce, w + 1);
-					}
+					if (w != null)
+						w.incrementAndGet();
 
 					tot_waiting++;
-				} else {
-					Integer r = running.get(ce);
+				}
+				else {
+					AtomicInteger r = running.get(ce);
 
-					if (r != null) {
-						running.put(ce, r + 1);
-					}
-
+					if (r != null)
+						r.incrementAndGet();
+					
 					tot_running++;
 				}
 			}
