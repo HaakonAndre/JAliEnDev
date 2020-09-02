@@ -3,6 +3,7 @@ package utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,6 +28,7 @@ import alien.io.protocols.XRDStatus;
 import alien.io.protocols.Xrootd;
 import alien.se.SE;
 import alien.se.SEUtils;
+import lazyj.Format;
 
 /**
  * @author costing
@@ -135,7 +137,7 @@ public class XRDChecker {
 			if (pfn.ticket == null) {
 				final String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
 
-			        if (reason != null)
+				if (reason != null)
 					return new XRDStatus(false, reason);
 			}
 			final long lStart = System.currentTimeMillis();
@@ -144,7 +146,7 @@ public class XRDChecker {
 
 			xrootd.get(pfn, f);
 
-			System.err.println("Got the file in " + (System.currentTimeMillis() - lStart) / 1000 + " seconds");
+			System.err.println("Got the file in " + Format.toInterval(System.currentTimeMillis() - lStart));
 
 			if (f.length() != guid.size)
 				return new XRDStatus(false, "Size is different: catalog=" + guid.size + ", downloaded size: " + f.length());
@@ -191,10 +193,11 @@ public class XRDChecker {
 				return "No entry found";
 			while (ze != null) {
 				// if it throws an exception fetching any of the following then we know the file is corrupted.
-				zipfile.getInputStream(ze);
-				ze.getCrc();
-				ze.getCompressedSize();
-				// ze.getName();
+				try (InputStream is = zipfile.getInputStream(ze)) {
+					ze.getCrc();
+					ze.getCompressedSize();
+					// System.err.println("All ok with " + ze.getName());
+				}
 				ze = zis.getNextEntry();
 			}
 			return null;
