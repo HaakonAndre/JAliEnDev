@@ -206,7 +206,17 @@ public class PFN implements Serializable, Comparable<PFN> {
 
 	@Override
 	public String toString() {
-		return "PFN: guidId\t: " + guidId + "\n" + "pfn\t\t: " + pfn + "\n" + "seNumber\t: " + seNumber + "\n" + "GUID cache value: " + guid;
+		final StringBuilder sb = new StringBuilder("PFN: guidId\t: ");
+		sb.append(guidId).append("\npfn\t\t: ").append(pfn);
+		sb.append("\nseNumber\t: ").append(seNumber);
+
+		if (guid != null)
+			sb.append("\nGUID cache value: ").append(guid);
+
+		if (ticket != null)
+			sb.append("\nAccess ticket attached (").append(ticket.getAccessType()).append(")");
+
+		return sb.toString();
 	}
 
 	/**
