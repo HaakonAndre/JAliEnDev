@@ -8,4 +8,4 @@ enum CrawlingResultType {
 	FILE_CORRUPT,
 	FILE_INACCESSIBLE,
 	UNEXPECTED_ERROR
-};
+}

@@ -68,9 +68,8 @@ class GetCEs {
 	}
 
 	/**
-	 * Generate JDL requirement for closest site to storage element
-	 *
 	 * @param se
+	 * @return JDL requirement for closest site to storage element
 	 */
 	public static StringBuilder getSiteJDLRequirement(String se) {
 		final Set<String> siteNames = GetCEs.getCloseSites(se);

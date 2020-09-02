@@ -17,11 +17,11 @@ import java.util.logging.Logger;
  */
 class CrawlerUtils {
 
-	public static String getSEName(SE se) {
+	static String getSEName(SE se) {
 		return se.seName.replace("::", "_");
 	}
 
-	public static void writeToDisk(JAliEnCOMMander commander, Logger logger, File f, String remoteFullPath) throws IOException {
+	static void writeToDisk(JAliEnCOMMander commander, Logger logger, File f, String remoteFullPath) throws IOException {
 
 		LFN lfn = commander.c_api.getLFN(remoteFullPath, true);
 
@@ -29,10 +29,16 @@ class CrawlerUtils {
 			throw new IOException("LFN " + lfn.getCanonicalName() + " already exists");
 
 		logger.log(Level.INFO, "Uploading " + remoteFullPath);
-		IOUtils.upload(f, remoteFullPath, commander.getUser(), 3, null, true);
+
+		LFN lfnUploaded = IOUtils.upload(f, remoteFullPath, commander.getUser(), 3, null, true);
+
+		if(lfnUploaded == null)
+			logger.log(Level.WARNING, "Uploading " + remoteFullPath + " failed");
+		else
+			logger.log(Level.INFO, "Successfully uploaded " + remoteFullPath);
 	}
 
-	public static void writeToDisk(JAliEnCOMMander commander, Logger logger, String contents, String localFileName, String remoteFullPath) throws IOException {
+	static void writeToDisk(JAliEnCOMMander commander, Logger logger, String contents, String localFileName, String remoteFullPath) throws IOException {
 		final File f = new File(localFileName);
 
 		try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(f))) {

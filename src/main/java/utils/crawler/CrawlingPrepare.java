@@ -1,6 +1,7 @@
 package utils.crawler;
 
 import alien.api.ServerException;
+import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
@@ -22,6 +23,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Extracts random PFNs from the catalogue and serializes them to disk
+ * Launches SEFileCrawler jobs using the aforementioned file as InputFile
+ *
  * @author anegru
  */
 class CrawlingPrepare {
@@ -29,22 +33,22 @@ class CrawlingPrepare {
 	/**
 	 * logger
 	 */
-	static final Logger logger = ConfigUtils.getLogger(CrawlingPrepare.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(CrawlingPrepare.class.getCanonicalName());
 
 	/**
 	 * JAlienCOMMander object
 	 */
-	static JAliEnCOMMander commander;
+	private static JAliEnCOMMander commander;
 
 	/**
 	 * The number of random PFNs to extract
 	 */
-	private static Integer sampleSize;
+	private static int sampleSize;
 
 	/**
 	 * The number of crawling jobs to be launched
 	 */
-	private static Integer crawlingJobCount;
+	private static int crawlingJobCount;
 
 
 	/**
@@ -55,29 +59,29 @@ class CrawlingPrepare {
 	/**
 	 * The Unix timestamp associated with the start of the current iteration
 	 */
-	private static Long iterationUnixTimestamp;
+	private static long iterationUnixTimestamp;
 
 	/**
 	 * The Unix timestamp associated with the start of the current iteration
 	 */
 	private static String outputFileType;
 
-	public static final Integer ARGUMENT_COUNT = 5;
+	private static final int ARGUMENT_COUNT = 5;
 
-	public static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_crawling";
+	static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_crawling";
 
-	public static final String FILE_NAME_PFN = "pfn";
+	private static final String FILE_NAME_PFN = "pfn";
 
-	public static final String FILE_SEPARATOR = " ";
+	private static final String FILE_SEPARATOR = " ";
 
-	public static final int TIME_TO_LIVE = 21600;
+	static final Integer TIME_TO_LIVE = Integer.valueOf(21600);
 
-	public static final int MAX_WAITING_TIME = 18000;
+	static final Integer MAX_WAITING_TIME = Integer.valueOf(18000);
 
 	/**
 	 * Submit jobs that analyze random PFNs for all SEs
 	 *
-	 * @param args
+	 * @param args Command line arguments
 	 */
 	public static void main(String[] args) {
 		try {
@@ -101,10 +105,10 @@ class CrawlingPrepare {
 	/**
 	 * Parse job arguments
 	 *
-	 * @param args
+	 * @param args Command line arguments
 	 * @throws Exception
 	 */
-	public static void parseArguments(String[] args) throws Exception {
+	private static void parseArguments(String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
 			throw new Exception("Number of arguments supplied is incorrect");
@@ -119,11 +123,11 @@ class CrawlingPrepare {
 	/**
 	 * Start the crawling jobs per SE
 	 *
-	 * @param se
+	 * @param storageElement The SE for which the crawling starts
 	 */
-	public static void startCrawlingJobs(SE se) {
+	private static void startCrawlingJobs(SE storageElement) {
 
-		Collection<PFN> pfns = commander.c_api.getRandomPFNsFromSE(se.seNumber, sampleSize);
+		Collection<PFN> pfns = commander.c_api.getRandomPFNsFromSE(storageElement.seNumber, sampleSize);
 
 		if (pfns == null) {
 			logger.log(Level.INFO, "Cannot extract random files from the catalogue");
@@ -162,25 +166,30 @@ class CrawlingPrepare {
 	/**
 	 * Serialize an array of random PFNs to disk. This array is an InputFile for the crawling jobs
 	 *
-	 * @param randomPFNs
-	 * @param outputDirectoryPath
-	 * @param outputFileName
+	 * @param randomPFNs A list of random PFNs
+	 * @param outputDirectoryPath The directory path of the output
+	 * @param outputFileName The file name of the output
 	 * @throws IOException
 	 */
-	public static void writePFNSliceToDisk(List<PFN> randomPFNs, String outputDirectoryPath, String outputFileName) throws IOException {
+	private static void writePFNSliceToDisk(List<PFN> randomPFNs, String outputDirectoryPath, String outputFileName) throws IOException {
 		int maxRetires = 3;
 
 		for (int attempts = 0; attempts < maxRetires; attempts++) {
-			try {
-				String fullPath = outputDirectoryPath + outputFileName;
-				File f = new File(outputFileName);
+			String fullPath = outputDirectoryPath + outputFileName;
+			File f = new File(outputFileName);
 
-				ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f));
+			try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f))) {
 				oos.writeObject(randomPFNs);
 				oos.flush();
 				oos.close();
 
-				IOUtils.upload(f, fullPath, commander.getUser(), 3, null, true);
+				LFN lfnUploaded = IOUtils.upload(f, fullPath, commander.getUser(), 3, null, true);
+
+				if(lfnUploaded == null)
+					logger.log(Level.WARNING, "Uploading " + fullPath + " failed");
+				else
+					logger.log(Level.INFO, "Successfully uploaded " + fullPath);
+
 				return;
 			}
 			catch (IOException e) {
@@ -193,13 +202,15 @@ class CrawlingPrepare {
 
 	/**
 	 * Get JDL to be used to crawl files from a specific SE
-	 *
-	 * @param se
+	 * @param storageElement The SE for which the job is launched
+	 * @param jobIndex The index of the job to launch
+	 * @param pfnStartIndex The start index from the serialized array
+	 * @param pfnEndIndex The end index from the serialized array
 	 * @return JDL
 	 */
-	public static JDL getJDLCrawlSE(SE se, int jobIndex, int pfnStartIndex, int pfnEndIndex) {
+	private static JDL getJDLCrawlSE(SE storageElement, int jobIndex, int pfnStartIndex, int pfnEndIndex) {
 		JDL jdl = new JDL();
-		jdl.append("JobTag", "Crawling_" + se.seNumber + "_" + jobIndex);
+		jdl.append("JobTag", "Crawling_" + storageElement.seNumber + "_" + jobIndex);
 		jdl.set("OutputDir", getDirectoryPathSE() + "logs/" + jobIndex);
 		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");
 		jdl.append("InputFile", "LF:" + getDirectoryPathSE() + "pfn");
@@ -213,7 +224,7 @@ class CrawlingPrepare {
 		return jdl;
 	}
 
-	public static String getDirectoryPathSE() {
+	private static String getDirectoryPathSE() {
 		return commander.getCurrentDirName() + "iteration_" + iterationUnixTimestamp + "/" + CrawlerUtils.getSEName(se) + "/";
 	}
 }

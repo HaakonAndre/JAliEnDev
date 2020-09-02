@@ -17,7 +17,6 @@ import org.json.simple.parser.ParseException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -25,35 +24,40 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
+ * Kills jobs launched from the previous iteration
+ * Merges the crawling outputs and crawling statistics from the previous iteration into single files
+ * Computes the number of jobs and files that must be analyzed for each SE
+ * Launches CrawlingPrepare jobs for all SEs to be analyzed
+ *
  * @author anegru
  */
 class IterationPrepare {
 
-	public static final Integer ARGUMENT_COUNT = 7;
-	public static final String FILE_SEPARATOR = " ";
-	public static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_iteration_prepare";
-	public static final int TIME_TO_LIVE = 21600;
-	public static final int MAX_WAITING_TIME = 18000;
+	private static final String FILE_SEPARATOR = " ";
+	private static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_iteration_prepare";
+	private static final int ARGUMENT_COUNT = 7;
+	static final Integer TIME_TO_LIVE = Integer.valueOf(21600);
+	static final Integer MAX_WAITING_TIME = Integer.valueOf(18000);
 
 	/**
 	 * The minimum number of crawling jobs per SE in each iteration, by default 10
 	 */
-	private static Integer minCrawlingJobs;
+	private static int minCrawlingJobs;
 
 	/**
 	 * The maximum number of crawling jobs per SE in each iteration, by default 100
 	 */
-	private static Integer maxCrawlingJobs;
+	private static int maxCrawlingJobs;
 
 	/**
 	 * The minimum number of random PFNs to extract per SE in each iteration, by default 1000
 	 */
-	private static Integer minRandomPFN;
+	private static int minRandomPFN;
 
 	/**
 	 * The maximum number of random PFNs to extract per SE in each iteration, by default 10000
 	 */
-	private static Integer maxRandomPFN;
+	private static int maxRandomPFN;
 
 	/**
 	 * The type of output files. Possible values: json, csv
@@ -74,17 +78,17 @@ class IterationPrepare {
 	/**
 	 * logger
 	 */
-	static final Logger logger = ConfigUtils.getLogger(IterationPrepare.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(IterationPrepare.class.getCanonicalName());
 
 	/**
 	 * JAliEnCOMMander object
 	 */
-	static JAliEnCOMMander commander;
+	private static JAliEnCOMMander commander;
 
 	/**
 	 * Entry point for every crawling iteration. Submits jobs
 	 *
-	 * @param args
+	 * @param args Command line arguments
 	 */
 	public static void main(String[] args) {
 		logger.log(Level.INFO, "Start iteration");
@@ -120,10 +124,10 @@ class IterationPrepare {
 	/**
 	 * Parse job arguments
 	 *
-	 * @param args
+	 * @param args Command line arguments
 	 * @throws Exception
 	 */
-	public static void parseArguments(String[] args) throws Exception {
+	private static void parseArguments(String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
 			throw new Exception("The number of arguments supplied is incorrect: given " + args.length + ", but expected " + ARGUMENT_COUNT);
@@ -143,7 +147,7 @@ class IterationPrepare {
 	 * @return List<SE>
 	 * @throws Exception
 	 */
-	public static List<SE> getStorageElementsForCrawling() throws Exception {
+	private static List<SE> getStorageElementsForCrawling() throws Exception {
 		Collection<SE> ses = commander.c_api.getSEs(null);
 
 		if (ses == null)
@@ -155,10 +159,11 @@ class IterationPrepare {
 
 	/**
 	 * Get the full path of the previous iteration.
+	 * @param previousIterationTimestamp The timestamp of the previous iteration
 	 *
 	 * @return String | null
 	 */
-	public static String getPreviousIterationPath(String previousIterationTimestamp) {
+	private static String getPreviousIterationPath(String previousIterationTimestamp) {
 		if (previousIterationTimestamp.equalsIgnoreCase("null"))
 			return null;
 		return commander.getCurrentDirName() + "iteration_" + previousIterationTimestamp + "/";
@@ -171,9 +176,10 @@ class IterationPrepare {
 	 * the first iteration of the crawler and no previous iterations are available or some errors have occurred.
 	 * In both cases, the job cleanup step is skipped.
 	 *
-	 * @param previousIterationPath
+	 * @param previousIterationPath The path of the previous iteration
+	 * @param ses A list of SEs for which jobs must be killed
 	 */
-	public static void killJobsFromPreviousIteration(@Nullable String previousIterationPath, List<SE> ses) {
+	private static void killJobsFromPreviousIteration(@Nullable String previousIterationPath, List<SE> ses) {
 
 		try {
 
@@ -207,9 +213,9 @@ class IterationPrepare {
 	 * The file contains space separated integers that represent job ids launched in the previous
 	 * iteration
 	 *
-	 * @param jobFilePath
+	 * @param jobFilePath The file that contains the job ids to kill
 	 */
-	public static void killJobsFromFile(String jobFilePath) {
+	private static void killJobsFromFile(String jobFilePath) {
 		try {
 			File downloadedFile = new File(FILE_NAME_JOBS_TO_KILL);
 
@@ -244,10 +250,9 @@ class IterationPrepare {
 	/**
 	 * Start the merging procedure for the output and statistics from the previous iteration
 	 *
-	 * @param ses
-	 * @return
+	 * @param ses A list of SEs whose outputs from the previous iteration must be merged
 	 */
-	static void mergeFilesFromPreviousIteration(List<SE> ses, @Nullable String previousIterationPath) {
+	private static void mergeFilesFromPreviousIteration(List<SE> ses, @Nullable String previousIterationPath) {
 
 		try {
 			if (previousIterationPath == null) {
@@ -304,12 +309,12 @@ class IterationPrepare {
 	/**
 	 * Merge job outputs
 	 *
-	 * @param se
-	 * @param outputDirectoryPath
-	 * @return
+	 * @param se The SE for which to merge the output
+	 * @param outputDirectoryPath The path of the output directory
+	 * @return Merged file
 	 * @throws Exception
 	 */
-	static File mergeOutputs(SE se, String outputDirectoryPath) throws Exception {
+	private static File mergeOutputs(SE se, String outputDirectoryPath) throws Exception {
 
 		if (se == null) {
 			throw new Exception("SE cannot be null");
@@ -327,7 +332,7 @@ class IterationPrepare {
 			if (outputFileType.equals("json"))
 				fw.append("{");
 			else if (outputFileType.equals("csv"))
-				fw.append(PFNData.csvHeader());
+				fw.append(PFNData.CSV_HEADER);
 
 			boolean firstSEWithData = true;
 
@@ -385,7 +390,7 @@ class IterationPrepare {
 		return outputFile;
 	}
 
-	static File mergeStats(SE se, String outputDirectoryPath) throws Exception {
+	private static File mergeStats(SE se, String outputDirectoryPath) throws Exception {
 
 		if (se == null)
 			throw new Exception("SE cannot be null");
@@ -442,19 +447,27 @@ class IterationPrepare {
 
 
 	/**
-	 * Submit jobs for the SEs given as parameter. The jobs are of type iteration_prepare.
+	 * Submit jobs for the SEs given as parameter. The jobs are of type crawling_prepare.
 	 * Returns a list of job ids.
 	 *
-	 * @param ses
+	 * @param ses A list of SEs for which to launch jobs
 	 * @return List<String>
 	 */
-	public static List<String> submitJobs(List<SE> ses) {
+	private static List<String> submitJobs(List<SE> ses) {
 
 		List<String> jobIds = new ArrayList<>();
-		List<Long> seFileCount = ses.stream().map(se -> se.seNumFiles).collect(Collectors.toList());
 
-		long maxFileCount = Collections.max(seFileCount);
-		long minFileCount = Collections.min(seFileCount);
+		long minFileCount = Long.MAX_VALUE, maxFileCount = Long.MIN_VALUE;
+
+		for (SE se : ses) {
+			long numFiles = se.seNumFiles;
+			if (numFiles < minFileCount) {
+				minFileCount = numFiles;
+			}
+			if (numFiles > maxFileCount) {
+				maxFileCount = numFiles;
+			}
+		}
 
 		//submitting jobs to all available SEs
 		for (SE se : ses) {
@@ -470,6 +483,7 @@ class IterationPrepare {
 					jobIds.add(Long.toString(jobId));
 			}
 			catch (ServerException e) {
+				e.printStackTrace();
 				logger.log(Level.WARNING, "Submitting job to SE " + se.seName + " failed");
 			}
 		}
@@ -479,22 +493,32 @@ class IterationPrepare {
 
 	/**
 	 * f : [a, b] -> [c, d]
-	 * <p>
+	 * 
 	 * The function is defined on an interval (for example 0 and the maximum number of files in a SE) with values
 	 * on another interval (for example the min and max PFNs to crawl in an iteration). The function arguments a, b
 	 * represent the domain, c,d represent the codomain and n is the value for which the function has to be applied.
+	 * 
+	 * @param a Domain lower bound
+	 * @param b Domain upper bound
+	 * @param c Codomain lower bound
+	 * @param d Codomain upper bound
+	 * @param n Value the function is applied to
+	 * 
+	 * @return the result of the function f applied for the value n
 	 */
-	public static int linearMathFunction(long a, long b, int c, int d, long n) {
+	private static int linearMathFunction(long a, long b, int c, int d, long n) {
 		return (int) Math.floor(((d - c) * (float) (n - a)) / (b - a) + c);
 	}
 
 	/**
 	 * Get JDL to be used to start the crawling process for an iteration, for a specific SE
 	 *
-	 * @param se
+	 * @param se The SE for which the job is launched
+	 * @param sampleSize The sample size computed for the SE
+	 * @param crawlingJobsCount The number of crawling jobs to launch
 	 * @return JDL
 	 */
-	public static JDL getJDLIteration(SE se, int sampleSize, int crawlingJobsCount) {
+	private static JDL getJDLIteration(SE se, int sampleSize, int crawlingJobsCount) {
 		JDL jdl = new JDL();
 		jdl.append("JobTag", "CrawlingPrepare_" + se.seNumber);
 		jdl.set("OutputDir", getSECurrentIterationDirectoryPath(se));
@@ -512,10 +536,10 @@ class IterationPrepare {
 	/**
 	 * Return the path to the SE given as parameter for the current iteration
 	 *
-	 * @param se
+	 * @param se The SE for which to get the directory path
 	 * @return String
 	 */
-	public static String getSECurrentIterationDirectoryPath(SE se) {
+	private static String getSECurrentIterationDirectoryPath(SE se) {
 		return getCurrentIterationDirectoryPath() + CrawlerUtils.getSEName(se) + "/";
 	}
 
@@ -524,7 +548,7 @@ class IterationPrepare {
 	 *
 	 * @return String
 	 */
-	public static String getCurrentIterationDirectoryPath() {
+	private static String getCurrentIterationDirectoryPath() {
 		return commander.getCurrentDirName() + "iteration_" + currentIterationUnixTimestamp + "/";
 	}
 }

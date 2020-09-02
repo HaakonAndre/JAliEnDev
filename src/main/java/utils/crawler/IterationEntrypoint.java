@@ -13,31 +13,33 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Represents the entry point for each iteration. It runs periodically from a cron.
+ *
  * @author anegru
  */
 class IterationEntrypoint {
 
-	public static final Integer ARGUMENT_COUNT = 5;
+	private static final int ARGUMENT_COUNT = 5;
 
 	/**
 	 * The minimum number of crawling jobs per SE in each iteration, by default 10
 	 */
-	private static Integer minCrawlingJobs = 10;
+	private static int minCrawlingJobs = 10;
 
 	/**
 	 * The maximum number of crawling jobs per SE in each iteration, by default 100
 	 */
-	private static Integer maxCrawlingJobs = 100;
+	private static int maxCrawlingJobs = 100;
 
 	/**
 	 * The minimum number of random PFNs to extract per SE in each iteration, by default 1000
 	 */
-	private static Integer minRandomPFN = 1000;
+	private static int minRandomPFN = 1000;
 
 	/**
 	 * The maximum number of random PFNs to extract per SE in each iteration, by default 10000
 	 */
-	private static Integer maxRandomPFN = 10000;
+	private static int maxRandomPFN = 10000;
 
 	/**
 	 * The type of output files. Possible values: json, csv
@@ -47,12 +49,12 @@ class IterationEntrypoint {
 	/**
 	 * The unix timestamp  registered at the beginning of each iteration
 	 */
-	private static Long currentIterationUnixTimestamp;
+	private static long currentIterationUnixTimestamp;
 
 	/**
 	 * logger
 	 */
-	static final Logger logger = ConfigUtils.getLogger(IterationEntrypoint.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(IterationEntrypoint.class.getCanonicalName());
 
 	/**
 	 * JAliEnCOMMander object
@@ -62,7 +64,7 @@ class IterationEntrypoint {
 	/**
 	 *
 	 */
-	public static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_iteration_entrypoint";
+	static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_iteration_entrypoint";
 
 	/**
 	 * Entry point for every crawling iteration. Submits jobs
@@ -101,7 +103,7 @@ class IterationEntrypoint {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void parseArguments(String[] args) throws Exception {
+	private static void parseArguments(String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
 			throw new Exception("The number of arguments supplied is incorrect: given " + args.length + ", but expected " + ARGUMENT_COUNT);
@@ -118,7 +120,7 @@ class IterationEntrypoint {
 	 *
 	 * @return JDL
 	 */
-	public static JDL getJDLIterationStart() {
+	private static JDL getJDLIterationStart() {
 		String previousIterationUnixTimestamp = getPreviousIterationTimestamp();
 
 		if (previousIterationUnixTimestamp == null)
@@ -143,7 +145,7 @@ class IterationEntrypoint {
 	 *
 	 * @return String
 	 */
-	public static String getPreviousIterationTimestamp() {
+	private static String getPreviousIterationTimestamp() {
 		try {
 			List<Long> iterationTimestamps = new ArrayList<>();
 			List<LFN> lfns = commander.c_api.getLFNs(commander.getCurrentDirName());
@@ -160,10 +162,11 @@ class IterationEntrypoint {
 					if (lfn.isDirectory() && lfn.getFileName().matches("iteration_[0-9]+")) {
 						String timestamp = lfn.getFileName().split("_")[1];
 						if (!timestamp.equals(currentTimestamp))
-							iterationTimestamps.add(Long.parseLong(timestamp));
+							iterationTimestamps.add(Long.valueOf(Long.parseLong(timestamp)));
 					}
 				}
 				catch (Exception e) {
+					e.printStackTrace();
 					// ignore folders that are not of the format 'iteration_%d'
 					logger.log(Level.INFO, "LFN " + lfn.getCanonicalName() + "is not an iteration directory");
 				}
@@ -187,7 +190,7 @@ class IterationEntrypoint {
 	 *
 	 * @return String
 	 */
-	public static String getCurrentIterationDirectoryPath() {
+	private static String getCurrentIterationDirectoryPath() {
 		return commander.getCurrentDirName() + "iteration_" + currentIterationUnixTimestamp + "/";
 	}
 }

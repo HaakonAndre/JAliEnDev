@@ -19,6 +19,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Start the crawling process for a chunk of PFNs
+ * Write information on disk for all PFNs analyzed
+ * Extract statistics for the entire crawling process
+ *
  * @author anegru
  */
 class SEFileCrawler {
@@ -43,15 +47,11 @@ class SEFileCrawler {
 	 */
 	private static final String STATS_FILE_NAME = "stats";
 
-	/**
-	 * The number of replicas to be created
-	 */
-	private static final Integer OUTPUT_LFN_REPLICA_COUNT = 3;
 
 	/**
 	 * The number of command line arguments required
 	 */
-	private static final Integer ARGUMENT_COUNT = 6;
+	private static final int ARGUMENT_COUNT = 6;
 
 	/**
 	 * logger
@@ -86,7 +86,7 @@ class SEFileCrawler {
 	/**
 	 * Multiple crawling jobs are launched per SE in an interation. The index of the current job.
 	 */
-	private static Integer jobIndex;
+	private static int jobIndex;
 
 	/**
 	 * The Unix timestamp of the current running iteration
@@ -96,16 +96,16 @@ class SEFileCrawler {
 	/**
 	 * The start index in the array of random PFNs that must be crawled in this iteration
 	 */
-	private static Integer pfnStartIndex;
+	private static int pfnStartIndex;
 
 	/**
 	 * The end index in the array of random PFNs that must be crawled in this iteration
 	 */
-	private static Integer pfnEndIndex;
+	private static int pfnEndIndex;
 
-	public static final int TIME_TO_LIVE = 21600;
+	static final Integer TIME_TO_LIVE = Integer.valueOf(21600);
 
-	public static final int MAX_WAITING_TIME = 18000;
+	static final Integer MAX_WAITING_TIME = Integer.valueOf(18000);
 
 	/**
 	 * @param args
@@ -147,7 +147,7 @@ class SEFileCrawler {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void parseArguments(String[] args) throws Exception {
+	private static void parseArguments(String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
 			throw new Exception("Number of arguments supplied is incorrect " + args.length + " " + ARGUMENT_COUNT);
@@ -169,7 +169,7 @@ class SEFileCrawler {
 	 *
 	 * @return CrawlingStatistics object
 	 */
-	public static CrawlingStatistics startCrawler() {
+	private static CrawlingStatistics startCrawler() {
 
 		try {
 			Collection<PFN> randomPFNs = getPFNsFromDisk(getSEPath(), "pfn", 3);
@@ -179,19 +179,20 @@ class SEFileCrawler {
 				throw new Exception("End index given is out of range. Found " + pfns.size() + " random PFNs on disk, but the endIndex is " + pfnEndIndex);
 
 			List<PFN> pfnsToCrawl = pfns.subList(pfnStartIndex, pfnEndIndex);
-			ArrayList<Long> timestamps = new ArrayList<>();
-
+			long[] timestamps = new long[pfnsToCrawl.size()];
+			
 			int totalPFNCount = pfnsToCrawl.size(), inaccessiblePFNs = 0, corruptPFNs = 0, okPFNs = 0;
 
 			if (totalPFNCount == 0)
 				return null;
 
-			for (PFN currentPFN : pfnsToCrawl) {
+			for (int i = 0; i < pfnsToCrawl.size(); i++) {
+				PFN currentPFN = pfnsToCrawl.get(i);
 				long startTimestamp = System.currentTimeMillis();
 				CrawlingResult crawlingResult = crawlPFN(currentPFN);
 				long endTimestamp = System.currentTimeMillis();
 
-				timestamps.add(endTimestamp - startTimestamp);
+				timestamps[i++] = endTimestamp - startTimestamp;
 
 				if (crawlingResult.resultHasType(CrawlingResultType.FILE_OK))
 					okPFNs += 1;
@@ -205,9 +206,9 @@ class SEFileCrawler {
 
 			CrawlingStatistics stats = new CrawlingStatistics(
 					totalPFNCount,
-					Math.round(okPFNs * 100 / (float) totalPFNCount),
-					Math.round(inaccessiblePFNs * 100 / (float) totalPFNCount),
-					Math.round(corruptPFNs * 100 / (float) totalPFNCount),
+					okPFNs,
+					inaccessiblePFNs,
+					corruptPFNs,
 					Long.MAX_VALUE,
 					Long.MIN_VALUE,
 					0L,
@@ -215,18 +216,18 @@ class SEFileCrawler {
 					0L
 			);
 
-			for (Long timestamp : timestamps) {
+			for (int i = 0; i < timestamps.length; i++) {
 
-				if (stats.crawlingMinDurationMillis > timestamp)
-					stats.crawlingMinDurationMillis = timestamp;
+				if (stats.crawlingMinDurationMillis > timestamps[i])
+					stats.crawlingMinDurationMillis = timestamps[i];
 
-				if (stats.crawlingMaxDurationMillis < timestamp)
-					stats.crawlingMaxDurationMillis = timestamp;
+				if (stats.crawlingMaxDurationMillis < timestamps[i])
+					stats.crawlingMaxDurationMillis = timestamps[i];
 
-				stats.crawlingTotalDurationMillis += timestamp;
+				stats.crawlingTotalDurationMillis += timestamps[i];
 			}
 
-			stats.crawlingAvgDurationMillis = stats.crawlingTotalDurationMillis / timestamps.size();
+			stats.crawlingAvgDurationMillis = stats.crawlingTotalDurationMillis / timestamps.length;
 			stats.iterationTotalDurationMillis = System.currentTimeMillis() - Long.parseLong(iterationUnixTimestamp) * 1000;
 			return stats;
 		}
@@ -247,7 +248,7 @@ class SEFileCrawler {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public static Collection<PFN> getPFNsFromDisk(String directoryPath, String fileName, int retries) throws IOException, ClassNotFoundException {
+	private static Collection<PFN> getPFNsFromDisk(String directoryPath, String fileName, int retries) throws IOException, ClassNotFoundException {
 
 		String filePath = directoryPath + fileName;
 		Collection<PFN> pfns = new HashSet<>();
@@ -277,6 +278,7 @@ class SEFileCrawler {
 				return getPFNsFromDisk(directoryPath, fileName, retries - 1);
 			}
 			catch (Exception e) {
+				e.printStackTrace();
 				// file cannot be downloaded. throw the original exception
 				throw exception;
 			}
@@ -289,7 +291,7 @@ class SEFileCrawler {
 	 * @param currentPFN
 	 * @return Status of the crawling
 	 */
-	public static CrawlingResult crawlPFN(PFN currentPFN) {
+	private static CrawlingResult crawlPFN(PFN currentPFN) {
 		CrawlingResult result = null;
 		PFN pfnToRead = null;
 		GUID guid = null;
@@ -302,6 +304,7 @@ class SEFileCrawler {
 			pfnToRead = getPFNWithAccessToken(currentPFN);
 		}
 		catch (Exception ex) {
+			ex.printStackTrace();
 			result = CrawlingResult.E_PFN_NOT_READABLE;
 		}
 
@@ -319,7 +322,7 @@ class SEFileCrawler {
 					if (!lfn.exists)
 						result = CrawlingResult.E_LFN_DOES_NOT_EXIST;
 					else
-						catalogueFileSize = lfn.size;
+						catalogueFileSize = Long.valueOf(lfn.size);
 				}
 				else
 					result = CrawlingResult.E_LFN_NOT_FOUND;
@@ -337,7 +340,7 @@ class SEFileCrawler {
 				long start = System.currentTimeMillis();
 				String stat = xrootd.xrdstat(pfnToRead, false, false, false);
 				long end = System.currentTimeMillis();
-				xrdfsDurationMillis = end - start;
+				xrdfsDurationMillis = Long.valueOf(end - start);
 				if (stat != null) {
 					final int idx = stat.indexOf("Flags");
 					if (idx >= 0 && stat.indexOf("Offline", idx) > 0)
@@ -358,23 +361,23 @@ class SEFileCrawler {
 				long start = System.currentTimeMillis();
 				downloadedFile = xrootd.get(pfnToRead, null);
 				long end = System.currentTimeMillis();
-				downloadDurationMillis = end - start;
+				downloadDurationMillis = Long.valueOf(end - start);
 			}
 			catch (IOException e) {
 				e.printStackTrace();
 				result = CrawlingResult.E_PFN_DOWNLOAD_FAILED;
 			}
 
-			if (downloadedFile != null) {
+			if (downloadedFile != null && guid != null) {
 				try {
-					observedFileSize = downloadedFile.length();
+					observedFileSize = Long.valueOf(downloadedFile.length());
 					observedMD5 = IOUtils.getMD5(downloadedFile);
 					catalogueMD5 = guid.md5;
 
 					if (downloadedFile.exists() && !downloadedFile.delete())
 						logger.log(Level.INFO, "Cannot delete " + downloadedFile.getName());
 
-					if (observedFileSize == 0)
+					if (observedFileSize.longValue() == 0)
 						result = CrawlingResult.E_FILE_EMPTY;
 					else if (!observedFileSize.equals(catalogueFileSize))
 						result = CrawlingResult.E_FILE_SIZE_MISMATCH;
@@ -386,6 +389,7 @@ class SEFileCrawler {
 						result = CrawlingResult.S_FILE_CHECKSUM_MATCH;
 				}
 				catch (IOException e) {
+					e.printStackTrace();
 					result = CrawlingResult.E_FILE_MD5_COMPUTATION_FAILED;
 				}
 			}
@@ -422,7 +426,7 @@ class SEFileCrawler {
 	 * @return PFN to read
 	 * @throws Exception
 	 */
-	public static PFN getPFNWithAccessToken(PFN pfn) throws Exception {
+	private static PFN getPFNWithAccessToken(PFN pfn) throws Exception {
 		GUID guid = pfn.getGuid();
 
 		if (guid == null)
@@ -448,13 +452,13 @@ class SEFileCrawler {
 	/**
 	 * Write the crawling output to disk
 	 *
-	 * @param outputFileType
+	 * @param fileType
 	 */
-	public static void writeJobOutputToDisk(String outputFileType) {
+	private static void writeJobOutputToDisk(String fileType) {
 		try {
 			String jobOutput;
 
-			if (outputFileType.toLowerCase().equals(OUTPUT_FORMAT_JSON))
+			if (fileType.toLowerCase().equals(OUTPUT_FORMAT_JSON))
 				jobOutput = getOutputAsJSON(mapGuidToPFN);
 			else
 				jobOutput = getOutputAsCSV(mapGuidToPFN);
@@ -467,30 +471,27 @@ class SEFileCrawler {
 	}
 
 	/**
-	 * Get job output as JSON
-	 *
-	 * @param mapGuidToPFN
-	 * @throws IOException
+	 * @param guidToPFN
+	 * @return The job output as JSON
 	 */
 	@SuppressWarnings("unchecked")
-	public static String getOutputAsJSON(Map<String, PFNData> mapGuidToPFN) {
+	private static String getOutputAsJSON(Map<String, PFNData> guidToPFN) {
 		JSONObject result = new JSONObject();
 		result.put(se.seName, new JSONObject());
 		JSONObject files = (JSONObject) result.get(se.seName);
-		files.putAll(mapGuidToPFN);
+		files.putAll(guidToPFN);
 		return result.toJSONString();
 	}
 
 	/**
-	 * Write the crawling output to disk as CSV
-	 *
-	 * @param mapGuidToPFN
+	 * @param guidToPFN
+	 * @return The crawling output as CSV
 	 */
-	public static String getOutputAsCSV(Map<String, PFNData> mapGuidToPFN) {
+	private static String getOutputAsCSV(Map<String, PFNData> guidToPFN) {
 		StringBuilder builder = new StringBuilder();
-		builder.append(PFNData.csvHeader());
+		builder.append(PFNData.CSV_HEADER);
 
-		for (Map.Entry<String, PFNData> entry : mapGuidToPFN.entrySet()) {
+		for (Map.Entry<String, PFNData> entry : guidToPFN.entrySet()) {
 			String guid = entry.getKey();
 			PFNData pfnCrawled = entry.getValue();
 			String resultCSV = guid + "," + pfnCrawled.toCSV() + "\n";
@@ -501,22 +502,22 @@ class SEFileCrawler {
 	}
 
 	/**
-	 * The path of the SE in the current iteration
+	 * @return The path of the SE in the current iteration
 	 */
-	public static String getSEPath() {
+	private static String getSEPath() {
 		return commander.getCurrentDirName() + "iteration_" + iterationUnixTimestamp + "/" + CrawlerUtils.getSEName(se) + "/";
 	}
 
 	/**
-	 * The path of the current crawling job output
+	 * @return The path of the current crawling job output
 	 */
-	public static String getJobOutputPath() {
+	private static String getJobOutputPath() {
 		String fileType = outputFileType.equals(OUTPUT_FORMAT_JSON) ? OUTPUT_FORMAT_JSON : OUTPUT_FORMAT_CSV;
 		return getSEPath() + "output/" + OUTPUT_FILE_NAME + "_" + jobIndex + "." + fileType;
 	}
 
 	/**
-	 * The path of the current crawling job statistics
+	 * @return The path of the current crawling job statistics
 	 */
 	public static String getJobStatsPath() {
 		return getSEPath() + "stats/" + STATS_FILE_NAME + "_" + jobIndex + ".json";

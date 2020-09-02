@@ -1,6 +1,8 @@
 package utils.crawler;
 
 /**
+ * The crawling status for each PFN analysed
+ *
  * @author anegru
  */
 enum CrawlingResult {
@@ -120,10 +122,10 @@ enum CrawlingResult {
 	}
 
 	/**
-	 * @param type
-	 * @return
+	 * @param crawlingResultType A crawling result whose type must be checked
+	 * @return true if the crawling result matches the parameter, false otherwise
 	 */
-	public boolean resultHasType(CrawlingResultType type) {
-		return this.type == type;
+	public boolean resultHasType(CrawlingResultType crawlingResultType) {
+		return this.type == crawlingResultType;
 	}
 }

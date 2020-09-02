@@ -16,54 +16,67 @@ class CrawlingStatistics {
 	/**
 	 * The total number of PFNs analysed.
 	 */
-	public Integer pfnCount;
+	long pfnCount;
 
 	/**
 	 * The percentage of PFNs that are ok from the total number of PFNs crawled
 	 */
-	public Integer pfnOkPct;
+	long pfnOkCount;
 
 	/**
 	 * The percentage of PFNs that are inaccessible from the total number of PFNs crawled
 	 */
-	public Integer pfnInaccessiblePct;
+	long pfnInaccessibleCount;
 
 	/**
 	 * The percentage of PFNs that are corrupt from the total number of PFNs crawled
 	 */
-	public Integer pfnCorruptPct;
+	long pfnCorruptCount;
 
 	/**
 	 * Minimum duration in milliseconds of the crawling process for one single PFN
 	 */
-	public Long crawlingMinDurationMillis;
+	long crawlingMinDurationMillis;
 
 	/**
 	 * Maximum duration in milliseconds of the crawling process for one single PFN
 	 */
-	public Long crawlingMaxDurationMillis;
+	long crawlingMaxDurationMillis;
 
 	/**
 	 * Average duration in milliseconds of the crawling process
 	 */
-	public Long crawlingAvgDurationMillis;
+	long crawlingAvgDurationMillis;
 
 	/**
 	 * Total duration in milliseconds of the crawling process
 	 */
-	public Long crawlingTotalDurationMillis;
+	long crawlingTotalDurationMillis;
 
 	/**
 	 * Total duration in milliseconds of the current iteration
 	 */
-	public Long iterationTotalDurationMillis;
+	long iterationTotalDurationMillis;
 
-	public CrawlingStatistics(Integer pfnCount, Integer pfnOkPct, Integer pfnInaccessiblePct, Integer pfnCorruptPct, Long crawlingMinDurationMillis,
-	                          Long crawlingMaxDurationMillis, Long crawlingAvgDurationMillis, Long crawlingTotalDurationMillis, Long iterationTotalDurationMillis) {
+	private static final int DEFAULT_VALUE = -1;
+
+	private CrawlingStatistics() {
+		this.pfnCount = 0;
+		this.pfnOkCount = 0;
+		this.pfnInaccessibleCount = 0;
+		this.pfnCorruptCount = 0;
+		this.crawlingMinDurationMillis = Long.MAX_VALUE;
+		this.crawlingMaxDurationMillis = Long.MAX_VALUE;
+		this.crawlingAvgDurationMillis = 0;
+		this.crawlingTotalDurationMillis = 0;
+		this.iterationTotalDurationMillis = 0;
+	}
+
+	CrawlingStatistics(long pfnCount, long pfnOkCount, long pfnInaccessibleCount, long pfnCorruptCount, long crawlingMinDurationMillis, long crawlingMaxDurationMillis, long crawlingAvgDurationMillis, long crawlingTotalDurationMillis, long iterationTotalDurationMillis) {
 		this.pfnCount = pfnCount;
-		this.pfnOkPct = pfnOkPct;
-		this.pfnInaccessiblePct = pfnInaccessiblePct;
-		this.pfnCorruptPct = pfnCorruptPct;
+		this.pfnOkCount = pfnOkCount;
+		this.pfnInaccessibleCount = pfnInaccessibleCount;
+		this.pfnCorruptCount = pfnCorruptCount;
 		this.crawlingMinDurationMillis = crawlingMinDurationMillis;
 		this.crawlingMaxDurationMillis = crawlingMaxDurationMillis;
 		this.crawlingAvgDurationMillis = crawlingAvgDurationMillis;
@@ -71,12 +84,12 @@ class CrawlingStatistics {
 		this.iterationTotalDurationMillis = iterationTotalDurationMillis;
 	}
 
-	public static CrawlingStatistics fromJSON(JSONObject jsonObject) {
+	static CrawlingStatistics fromJSON(JSONObject jsonObject) {
 		return new CrawlingStatistics(
-				getIntegerFromJSON(jsonObject, "pfnCount"),
-				getIntegerFromJSON(jsonObject, "pfnOkPct"),
-				getIntegerFromJSON(jsonObject, "pfnInaccessiblePct"),
-				getIntegerFromJSON(jsonObject, "pfnCorruptPct"),
+				getLongFromJSON(jsonObject, "pfnCount"),
+				getLongFromJSON(jsonObject, "pfnOkCount"),
+				getLongFromJSON(jsonObject, "pfnInaccessibleCount"),
+				getLongFromJSON(jsonObject, "pfnCorruptCount"),
 				getLongFromJSON(jsonObject, "crawlingMinDurationMillis"),
 				getLongFromJSON(jsonObject, "crawlingMaxDurationMillis"),
 				getLongFromJSON(jsonObject, "crawlingAvgDurationMillis"),
@@ -86,92 +99,86 @@ class CrawlingStatistics {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static JSONObject toJSON(CrawlingStatistics stats) {
+	static JSONObject toJSON(CrawlingStatistics stats) {
 
 		JSONObject json = new JSONObject();
 
-		json.put("pfnCount", stats.pfnCount);
-		json.put("pfnOkPct", stats.pfnOkPct);
-		json.put("pfnInaccessiblePct", stats.pfnInaccessiblePct);
-		json.put("pfnCorruptPct", stats.pfnCorruptPct);
-		json.put("crawlingMinDurationMillis", stats.crawlingMinDurationMillis);
-		json.put("crawlingMaxDurationMillis", stats.crawlingMaxDurationMillis);
-		json.put("crawlingAvgDurationMillis", stats.crawlingAvgDurationMillis);
-		json.put("crawlingTotalDurationMillis", stats.crawlingTotalDurationMillis);
-		json.put("iterationTotalDurationMillis", stats.iterationTotalDurationMillis);
+		json.put("pfnCount", getValueForJSON(stats.pfnCount));
+		json.put("pfnOkCount", getValueForJSON(stats.pfnOkCount));
+		json.put("pfnInaccessibleCount", getValueForJSON(stats.pfnInaccessibleCount));
+		json.put("pfnCorruptCount", getValueForJSON(stats.pfnCorruptCount));
+		json.put("crawlingMinDurationMillis", getValueForJSON(stats.crawlingMinDurationMillis));
+		json.put("crawlingMaxDurationMillis", getValueForJSON(stats.crawlingMaxDurationMillis));
+		json.put("crawlingAvgDurationMillis", getValueForJSON(stats.crawlingAvgDurationMillis));
+		json.put("crawlingTotalDurationMillis", getValueForJSON(stats.crawlingTotalDurationMillis));
+		json.put("iterationTotalDurationMillis", getValueForJSON(stats.iterationTotalDurationMillis));
 
 		return json;
 	}
 
-	public static CrawlingStatistics getAveragedStats(List<CrawlingStatistics> statsList) {
+	private static Long getValueForJSON(long value) {
+		return  value != DEFAULT_VALUE ? Long.valueOf(value) : null;
+	}
+
+	static CrawlingStatistics getAveragedStats(List<CrawlingStatistics> statsList) {
 
 		if (statsList == null || statsList.size() == 0)
 			return null;
 
-		CrawlingStatistics averagedStats = new CrawlingStatistics(0, 0, 0, 0, Long.MAX_VALUE, Long.MIN_VALUE, 0L, 0L, 0L);
+		CrawlingStatistics averagedStats = new CrawlingStatistics();
 
-		Integer pfnOkCount = 0, pfnInaccessibleCount = 0, pfnCorruptCount = 0, crawlingAvgDurationCount = 0;
+		int pfnOkCount = 0, pfnInaccessibleCount = 0, pfnCorruptCount = 0, crawlingAvgDurationCount = 0;
 
 		for (CrawlingStatistics stats : statsList) {
 
-			if (stats.crawlingMinDurationMillis != null && stats.crawlingMinDurationMillis < averagedStats.crawlingMinDurationMillis)
+			if (stats.crawlingMinDurationMillis != DEFAULT_VALUE && stats.crawlingMinDurationMillis < averagedStats.crawlingMinDurationMillis)
 				averagedStats.crawlingMinDurationMillis = stats.crawlingMinDurationMillis;
 
-			if (stats.crawlingMaxDurationMillis != null && stats.crawlingMaxDurationMillis > averagedStats.crawlingMaxDurationMillis)
+			if (stats.crawlingMaxDurationMillis != DEFAULT_VALUE && stats.crawlingMaxDurationMillis > averagedStats.crawlingMaxDurationMillis)
 				averagedStats.crawlingMaxDurationMillis = stats.crawlingMaxDurationMillis;
 
-			if (stats.iterationTotalDurationMillis != null && stats.iterationTotalDurationMillis > averagedStats.iterationTotalDurationMillis)
+			if (stats.iterationTotalDurationMillis != DEFAULT_VALUE && stats.iterationTotalDurationMillis > averagedStats.iterationTotalDurationMillis)
 				averagedStats.iterationTotalDurationMillis = stats.iterationTotalDurationMillis;
 
-			if (stats.pfnOkPct != null) {
-				averagedStats.pfnOkPct += stats.pfnOkPct;
+			if (stats.pfnOkCount != DEFAULT_VALUE) {
+				averagedStats.pfnOkCount += stats.pfnOkCount;
 				pfnOkCount++;
 			}
 
-			if (stats.pfnInaccessiblePct != null) {
-				averagedStats.pfnInaccessiblePct += stats.pfnInaccessiblePct;
+			if (stats.pfnInaccessibleCount != DEFAULT_VALUE) {
+				averagedStats.pfnInaccessibleCount += stats.pfnInaccessibleCount;
 				pfnInaccessibleCount++;
 			}
 
-			if (stats.pfnCorruptPct != null) {
-				averagedStats.pfnCorruptPct += stats.pfnCorruptPct;
+			if (stats.pfnCorruptCount != DEFAULT_VALUE) {
+				averagedStats.pfnCorruptCount += stats.pfnCorruptCount;
 				pfnCorruptCount++;
 			}
 
-			if (stats.crawlingAvgDurationMillis != null) {
+			if (stats.crawlingAvgDurationMillis != DEFAULT_VALUE) {
 				averagedStats.crawlingAvgDurationMillis += stats.crawlingAvgDurationMillis;
 				crawlingAvgDurationCount++;
 			}
 
-			averagedStats.pfnCount += stats.pfnCount == null ? 0 : stats.pfnCount;
-			averagedStats.crawlingTotalDurationMillis += stats.crawlingTotalDurationMillis == null ? 0 : stats.crawlingTotalDurationMillis;
+			averagedStats.pfnCount += stats.pfnCount == DEFAULT_VALUE ? 0 : stats.pfnCount;
+			averagedStats.crawlingTotalDurationMillis += stats.crawlingTotalDurationMillis == DEFAULT_VALUE ? 0 : stats.crawlingTotalDurationMillis;
 		}
 
-		averagedStats.crawlingAvgDurationMillis = crawlingAvgDurationCount == 0 ? null : averagedStats.crawlingAvgDurationMillis / crawlingAvgDurationCount;
-		averagedStats.pfnOkPct = pfnOkCount == 0 ? null : averagedStats.pfnOkPct / pfnOkCount;
-		averagedStats.pfnInaccessiblePct = pfnInaccessibleCount == 0 ? null : averagedStats.pfnInaccessiblePct / pfnInaccessibleCount;
-		averagedStats.pfnCorruptPct = pfnCorruptCount == 0 ? null : averagedStats.pfnCorruptPct / pfnCorruptCount;
+		averagedStats.crawlingAvgDurationMillis = crawlingAvgDurationCount == 0 ? DEFAULT_VALUE : averagedStats.crawlingAvgDurationMillis / crawlingAvgDurationCount;
+		averagedStats.pfnOkCount = pfnOkCount == 0 ? DEFAULT_VALUE : averagedStats.pfnOkCount / pfnOkCount;
+		averagedStats.pfnInaccessibleCount = pfnInaccessibleCount == 0 ? DEFAULT_VALUE : averagedStats.pfnInaccessibleCount / pfnInaccessibleCount;
+		averagedStats.pfnCorruptCount = pfnCorruptCount == 0 ? DEFAULT_VALUE : averagedStats.pfnCorruptCount / pfnCorruptCount;
 
 		return averagedStats;
 	}
 
-	public static Integer getIntegerFromJSON(JSONObject json, String key) {
+	private static long getLongFromJSON(JSONObject json, String key) {
 		try {
-			return ((Long) json.get(key)).intValue();
+			return ((Long) json.get(key)).longValue();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
-			return null;
-		}
-	}
-
-	public static Long getLongFromJSON(JSONObject json, String key) {
-		try {
-			return (Long) json.get(key);
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			return DEFAULT_VALUE;
 		}
 	}
 
