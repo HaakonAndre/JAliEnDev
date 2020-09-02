@@ -330,9 +330,9 @@ class IterationPrepare {
 				throw new Exception("Cannot get LFNs for path " + outputDirectoryPath);
 
 			if (outputFileType.equals("json"))
-				fw.append("{");
+				fw.write("{");
 			else if (outputFileType.equals("csv"))
-				fw.append(PFNData.CSV_HEADER);
+				fw.write(PFNData.CSV_HEADER);
 
 			boolean firstSEWithData = true;
 
@@ -361,7 +361,7 @@ class IterationPrepare {
 							fileContents = fileContents.substring(fileContents.indexOf('\n') + 1);
 						}
 
-						fw.append(fileContents);
+						fw.write(fileContents);
 					}
 					else
 						logger.log(Level.WARNING, "File contents is null. Something went wrong with file read for SE " + se.seName);
@@ -378,7 +378,7 @@ class IterationPrepare {
 			}
 
 			if (outputFileType.equals("json"))
-				fw.append("}");
+				fw.write("}");
 
 			fw.flush();
 		}
