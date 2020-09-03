@@ -19,6 +19,7 @@ import alien.api.token.TokenCertificateType;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.site.SiteMap;
 import alien.user.AliEnPrincipal;
 import lazyj.DBFunctions;
 import lazyj.DBFunctions.DBConnection;
@@ -435,7 +436,10 @@ public class JobBroker {
 					bindValues.add(matchRequest.get("Packages"));
 				}
 
-			if (matchRequest.containsKey("Partition")) {
+			final HashMap<String, Object> CeConfig = ConfigUtils.getConfigFromLdap(false, matchRequest.get("CEhost").toString());
+			
+			matchRequest.putIfAbsent("Partition", CeConfig.get("ce_partition"));
+			if (matchRequest.get("Partition") != null) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}
@@ -451,8 +455,11 @@ public class JobBroker {
 				where += " and noce not like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("CE"));
 			}
+			
+			String CeRequirements = CeConfig.get("ce_requirements").toString();
 
-			if (matchRequest.containsKey("Users")) {
+			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, "Users"));
+			if (matchRequest.get("Users") != null) {
 				@SuppressWarnings("unchecked")
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
@@ -468,7 +475,8 @@ public class JobBroker {
 				where += ")";
 			}
 
-			if (matchRequest.containsKey("NoUsers")) {
+			matchRequest.putIfAbsent("NoUsers", SiteMap.getFieldContentsFromCerequirements(CeRequirements, "NoUsers"));
+			if (matchRequest.get("NoUsers") != null) {
 				@SuppressWarnings("unchecked")
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("NoUsers");
 				for (final String user : users) {

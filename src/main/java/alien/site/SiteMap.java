@@ -98,22 +98,10 @@ public class SiteMap {
 		}
 
 		// Get users from cerequirements field
-		final ArrayList<String> users = new ArrayList<>();
-		if (!ceRequirements.equals("")) {
-			final Pattern p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
-			final Matcher m = p.matcher(ceRequirements);
-			while (m.find())
-				users.add(m.group(1));
-		}
+		final ArrayList<String> users = getFieldContentsFromCerequirements(ceRequirements, "users");
 
 		// Get nousers from cerequirements field
-		final ArrayList<String> nousers = new ArrayList<>();
-		if (!ceRequirements.equals("")) {
-			final Pattern p = Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\"");
-			final Matcher m = p.matcher(ceRequirements);
-			while (m.find())
-				nousers.add(m.group(1));
-		}
+		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, "nousers");
 
 		// Workdir
 		String workdir = UserFactory.getUserHome();
@@ -188,4 +176,25 @@ public class SiteMap {
 		}
 	}
 
+	public static ArrayList<String> getFieldContentsFromCerequirements(String cereqs, String field) {
+		final ArrayList<String> fieldContents = new ArrayList<>();
+
+		if (!cereqs.equals("")) {
+			final Pattern p;
+			switch (field) {
+				case "Users":
+					p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
+					break;
+				case "NoUsers":
+					p = Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\"");
+					break;
+				default:
+					return null;
+			}
+			final Matcher m = p.matcher(cereqs);
+			while (m.find())
+				fieldContents.add(m.group(1));
+		}
+		return fieldContents;
+	}
 }

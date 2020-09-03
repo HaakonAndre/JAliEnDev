@@ -300,10 +300,6 @@ public class ComputingElement extends Thread {
 		before += "export APMON_CONFIG=\"" + ConfigUtils.getLocalHostname() + "\"\n";
 		if (config.containsKey("ce_installationmethod"))
 			before += "export installationMethod=\"" + config.get("ce_installationmethod") + "\"\n";
-		if (config.containsKey("ce_cerequirements"))
-			before += "export cerequirements=\"" + config.get("ce_cerequirements") + "\"\n";
-		if (config.containsKey("ce_partition"))
-			before += "export partition=\"" + config.get("ce_partition") + "\"\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE=\"" + siteMap.get("closeSE") + "\"\n";
 		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
