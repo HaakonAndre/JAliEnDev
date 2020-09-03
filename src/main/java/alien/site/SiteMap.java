@@ -98,10 +98,10 @@ public class SiteMap {
 		}
 
 		// Get users from cerequirements field
-		final ArrayList<String> users = getFieldContentsFromCerequirements(ceRequirements, "users");
+		final ArrayList<String> users = getFieldContentsFromCerequirements(ceRequirements, "Users");
 
 		// Get nousers from cerequirements field
-		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, "nousers");
+		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, "NoUsers");
 
 		// Workdir
 		String workdir = UserFactory.getUserHome();
