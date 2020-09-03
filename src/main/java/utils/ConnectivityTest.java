@@ -103,7 +103,8 @@ public class ConnectivityTest {
 						try (Timing t2 = new Timing()) {
 							s.setSoTimeout(10000);
 
-							try (SSLSocket sslSocket = (SSLSocket) sslSF.createSocket(s, addr.getHostAddress(), port, true)) {
+							try (@SuppressWarnings("resource")
+							SSLSocket sslSocket = (SSLSocket) sslSF.createSocket(s, addr.getHostAddress(), port, true)) {
 								sslSocket.startHandshake();
 								sslOK++;
 								sslHandshakeTime += t2.getMillis();
