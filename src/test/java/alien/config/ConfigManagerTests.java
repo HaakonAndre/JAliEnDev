@@ -6,9 +6,6 @@ import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import alien.config.ConfigManager;
-import alien.config.ConfigSource;
-
 import lazyj.ExtProperties;
 
 class ConfigManagerTests {
