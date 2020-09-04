@@ -65,9 +65,13 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 					case "host":
 						tokentype = TokenCertificateType.HOST;
 						break;
-					default:
+					case "user":
 						tokentype = TokenCertificateType.USER_CERTIFICATE;
 						break;
+					default:
+						commander.setReturnCode(ErrNo.EINVAL, "Unknown token type " + tokentype);
+						setArgumentsOk(false);
+						return;
 				}
 			}
 
@@ -192,7 +196,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-u <username>", "switch to another role of yours"));
 		commander.printOutln(helpOption("-v <validity (days)>", "default depends on token type"));
-		commander.printOutln(helpOption("-t <tokentype>", "can be one of: job, jobagent, host, user token (default)"));
+		commander.printOutln(helpOption("-t <tokentype>", "can be one of: job, jobagent, host, user (default)"));
 		commander.printOutln(helpOption("-jobid <job DN extension>", "expected to be present in a job token"));
 		commander.printOutln(helpOption("-hostname <FQDN>", "required for a host certificate"));
 		commander.printOutln();
