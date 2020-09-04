@@ -258,7 +258,7 @@ public class JobBroker {
 
 			try {
 				dbc.setReadOnly(false);
-				
+
 				@SuppressWarnings("resource")
 				final Connection conn = dbc.getConnection();
 
@@ -437,7 +437,7 @@ public class JobBroker {
 				}
 
 			final HashMap<String, Object> CeConfig = ConfigUtils.getConfigFromLdap(false, matchRequest.get("CEhost").toString());
-			
+
 			matchRequest.putIfAbsent("Partition", CeConfig.get("ce_partition"));
 			if (matchRequest.get("Partition") != null) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
@@ -455,10 +455,10 @@ public class JobBroker {
 				where += " and noce not like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("CE"));
 			}
-			
+
 			String CeRequirements = CeConfig.get("ce_requirements").toString();
 
-			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, "Users"));
+			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
 			if (matchRequest.get("Users") != null) {
 				@SuppressWarnings("unchecked")
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
@@ -475,7 +475,7 @@ public class JobBroker {
 				where += ")";
 			}
 
-			matchRequest.putIfAbsent("NoUsers", SiteMap.getFieldContentsFromCerequirements(CeRequirements, "NoUsers"));
+			matchRequest.putIfAbsent("NoUsers", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.NoUsers));
 			if (matchRequest.get("NoUsers") != null) {
 				@SuppressWarnings("unchecked")
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("NoUsers");

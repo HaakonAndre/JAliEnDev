@@ -98,10 +98,10 @@ public class SiteMap {
 		}
 
 		// Get users from cerequirements field
-		final ArrayList<String> users = getFieldContentsFromCerequirements(ceRequirements, "Users");
+		final ArrayList<String> users = getFieldContentsFromCerequirements(ceRequirements, CE_FIELD.Users);
 
 		// Get nousers from cerequirements field
-		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, "NoUsers");
+		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, CE_FIELD.NoUsers);
 
 		// Workdir
 		String workdir = UserFactory.getUserHome();
@@ -176,25 +176,42 @@ public class SiteMap {
 		}
 	}
 
-	public static ArrayList<String> getFieldContentsFromCerequirements(String cereqs, String field) {
+	/**
+	 * The two options that can be extracted from the CE requirements (allowed or denied account names)
+	 */
+	public static enum CE_FIELD {
+		/**
+		 * Allowed account pattern
+		 */
+		Users(Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"")),
+
+		/**
+		 * Denied account pattern
+		 */
+		NoUsers(Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\""));
+
+		private final Pattern pattern;
+
+		private CE_FIELD(final Pattern pattern) {
+			this.pattern = pattern;
+		}
+	}
+
+	/**
+	 * @param cereqs the CE requirements LDAP content
+	 * @param field which field to extract (either "Users" or "NoUsers")
+	 * @return the account names that match the given field constraint, or <code>null</code> if the field is not one of the above
+	 */
+	public static ArrayList<String> getFieldContentsFromCerequirements(final String cereqs, final CE_FIELD field) {
 		final ArrayList<String> fieldContents = new ArrayList<>();
 
-		if (!cereqs.equals("")) {
-			final Pattern p;
-			switch (field) {
-				case "Users":
-					p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
-					break;
-				case "NoUsers":
-					p = Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\"");
-					break;
-				default:
-					return null;
-			}
-			final Matcher m = p.matcher(cereqs);
+		if (cereqs != null && !cereqs.isBlank()) {
+			final Matcher m = field.pattern.matcher(cereqs);
+
 			while (m.find())
 				fieldContents.add(m.group(1));
 		}
+
 		return fieldContents;
 	}
 }
