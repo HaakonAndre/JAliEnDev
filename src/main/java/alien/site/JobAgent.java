@@ -473,7 +473,7 @@ public class JobAgent implements Runnable {
 			}
 		}
 		else
-			commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (default): " + workdirMaxSizeMB + "MB");
+			commander.q_api.putJobLog(queueId, "trace", "Local disk space limit (default): " + "Unlimited");
 
 		final Integer requestedCPUCores = jdl.getInteger("CPUCores");
 
@@ -616,7 +616,13 @@ public class JobAgent implements Runnable {
 			return 1;
 		}
 
+
 		if (monitorJob) {
+			final String process_res_format = String.format("EXEC_TIME", "RES_FRUNTIME", "RES_RUNTIME", "RES_CPUUSAGE", "RES_MEMUSAGE", "RES_CPUTIME", "RES_RMEM", "RES_VMEM",
+					"RES_NOCPUS", "RES_CPUFAMILY", "RES_CPUMHZ", "RES_RESOURCEUSAGE", "RES_RMEMMAX", "RES_VMEMMAX");
+			logger.log(Level.INFO, process_res_format);
+			commander.q_api.putJobLog(queueId, "proc", process_res_format);
+
 			wrapperPID = (int) p.pid();
 
 			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
@@ -630,20 +636,8 @@ public class JobAgent implements Runnable {
 		final TimerTask killPayload = new TimerTask() {
 			@Override
 			public void run() {
-				final Vector<Integer> childProcs = mj.getChildren();
-				if (childProcs != null && childProcs.size() > 1) {
-					try {
-						Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
-						Thread.sleep(60 * 1000); // Give the JobWrapper 60s to clean things up
-					}
-					catch (final Exception e) {
-						logger.log(Level.INFO, "Cannot kill the child processes " + childProcs, e);
-					}
-				}
-				// If still alive, kill everything, including the JW
-				if (p.isAlive()) {
-					p.destroyForcibly();
-				}
+				commander.q_api.putJobLog(queueId, "trace", "Timeout has occurred. Killing job!");
+				killPayload(p);
 			}
 		};
 
@@ -663,8 +657,9 @@ public class JobAgent implements Runnable {
 					monitor_loops++;
 					final String error = checkProcessResources();
 					if (error != null) {
-						// killProcess.run(); //TODO: Temporarily disabled
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
+						commander.q_api.putJobLog(queueId, "trace", "Process overusing resources. Killing job!");
+						// killProcess.run(); //TODO: Temporarily disabled
 						// return 1;
 					}
 					if (monitor_loops == 10) {
@@ -813,7 +808,7 @@ public class JobAgent implements Runnable {
 		final Integer iTTL = jdl.getInteger("TTL");
 
 		int ttl = (iTTL != null ? iTTL.intValue() : 3600);
-		commander.q_api.putJobLog(queueId, "trace", "Job asks to run for " + ttl + " seconds");
+		commander.q_api.putJobLog(queueId, "trace", "Job asks for a TTL of " + ttl + " seconds");
 		ttl += 300; // extra time (saving)
 
 		final String proxyttl = jdl.gets("ProxyTTL");
@@ -977,6 +972,29 @@ public class JobAgent implements Runnable {
 			return childPids.get(idx + 1).intValue();
 
 		return 0;
+	}
+
+	/**
+	 * 
+	 * Kills the payload of a given JobWrapper process
+	 * 
+	 * @param p JobWrapper process
+	 */
+	private void killPayload(Process p){
+		final Vector<Integer> childProcs = mj.getChildren();
+		if (childProcs != null && childProcs.size() > 1) {
+			try {
+				Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
+				Thread.sleep(60 * 1000); // Give the JobWrapper 60s to clean things up
+			}
+			catch (final Exception e) {
+				logger.log(Level.INFO, "Cannot kill the child processes " + childProcs, e);
+			}
+		}
+		// If still alive, kill everything, including the JW
+		if (p.isAlive()) {
+			p.destroyForcibly();
+		}
 	}
 
 	private final static String[] batchSystemVars = {

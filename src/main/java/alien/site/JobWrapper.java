@@ -184,6 +184,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		final int runCode = runJob();
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
+		commander.q_api.putJobLog(queueId, "trace", "JobWrapper has finished execution");
 
 		if (runCode > 0)
 			System.exit(0); // Positive runCodes originate from the payload. Ignore. All OK here as far as we're concerned.
@@ -459,8 +460,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
 
-			logger.log(Level.INFO, "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
-			commander.q_api.putJobLog(queueId, "trace", "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
+			logger.log(Level.INFO, g + ". entry.getvalue(): " + entry.getValue());
+			commander.q_api.putJobLog(queueId, "trace", g + ". entry.getvalue(): " + entry.getValue());
 			
 			final File f = IOUtils.get(g, entry.getValue());
 

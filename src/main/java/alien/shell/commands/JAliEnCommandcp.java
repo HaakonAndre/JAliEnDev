@@ -95,6 +95,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	private boolean noCommit = false;
 
+	private String protocolUploadErrors = "";
+
 	// public long timingChallenge = 0;
 
 	// public boolean isATimeChallenge = false;
@@ -968,7 +970,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
 				commander.setReturnCode(301,
-						"From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
+						"From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") +
+								" were registered. We had the following errors: " + protocolUploadErrors);
 		}
 
 		if (sourceFile != null && envelopes.size() > 0)
@@ -987,7 +990,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			return true;
 		}
 		else if (report) {
-			commander.setReturnCode(302, "Upload failed, sorry!");
+			commander.setReturnCode(302, "Upload failed, sorry! We had the following errors: " + protocolUploadErrors);
 			if (isSilent()) {
 				final IOException ex = new IOException("Upload failed");
 
@@ -1029,6 +1032,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, will try next protocol or fetch another
 						// replica to replace this one
+						protocolUploadErrors+=ioe.toString() + System.lineSeparator();
 					}
 				}
 				catch (@SuppressWarnings("unused") final Exception e) {
