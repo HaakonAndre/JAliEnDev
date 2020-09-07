@@ -1679,6 +1679,11 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> userIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
 
 		@Override
 		protected Integer resolve(final String key) {
@@ -1690,9 +1695,9 @@ public class TaskQueueUtils {
 
 				db.query("SELECT userId FROM QUEUE_USER where user=?;", false, key);
 
-				db.setReadOnly(false);
-
 				if (!db.moveNext()) {
+					db.setReadOnly(false);
+					
 					db.setLastGeneratedKey(true);
 
 					final Set<String> ids = LDAPHelper.checkLdapInformation("uid=" + key, "ou=People,", "CCID");
@@ -1759,7 +1764,12 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> commandIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
+		
 		@Override
 		protected Integer resolve(final String key) {
 			try (DBFunctions db = getQueueDB()) {
@@ -1802,7 +1812,12 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> hostIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
+		
 		@Override
 		protected Integer resolve(final String key) {
 			try (DBFunctions db = getQueueDB()) {
@@ -1845,6 +1860,11 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> notifyIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
 
 		@Override
 		protected Integer resolve(final String key) {
@@ -1890,6 +1910,11 @@ public class TaskQueueUtils {
 		private static final long serialVersionUID = 1L;
 
 		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
+		
+		@Override
 		protected String resolve(final Integer key) {
 			try (DBFunctions db = getQueueDB()) {
 				if (db == null)
@@ -1925,6 +1950,11 @@ public class TaskQueueUtils {
 		protected int getMaximumSize() {
 			return 20000;
 		}
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
 
 		@Override
 		protected String resolve(final Integer key) {
@@ -1957,6 +1987,11 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<Integer, String> notifyCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
 
 		@Override
 		protected String resolve(final Integer key) {
@@ -1989,6 +2024,11 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<Integer, String> commandCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
 
 		@Override
 		protected String resolve(final Integer key) {
@@ -2904,7 +2944,12 @@ public class TaskQueueUtils {
 		protected int getMaximumSize() {
 			return 20000;
 		}
-
+		
+		@Override
+		protected boolean cacheNulls() {
+			return false;
+		}
+		
 		@Override
 		protected String resolve(final Integer key) {
 			try (DBFunctions db = getQueueDB()) {
