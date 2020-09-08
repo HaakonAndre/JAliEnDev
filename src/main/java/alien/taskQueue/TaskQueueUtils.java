@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1432,6 +1433,22 @@ public class TaskQueueUtils {
 
 		jdl.append("JDLVariables", "CPUCores");
 
+		// remove any JDLVariable that doesn't have an associated value at this point
+		final Object o = jdl.get("JDLVariables");
+
+		if (o != null && o instanceof Collection) {
+			final Collection<?> values = (Collection<?>) o;
+
+			final Iterator<?> it = values.iterator();
+
+			while (it.hasNext()) {
+				final String variable = it.next().toString();
+
+				if (jdl.get(variable) == null)
+					it.remove();
+			}
+		}
+
 		jdl.set("User", account.getName());
 
 		// set the requirements anew
@@ -1679,7 +1696,7 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> userIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
@@ -1697,7 +1714,7 @@ public class TaskQueueUtils {
 
 				if (!db.moveNext()) {
 					db.setReadOnly(false);
-					
+
 					db.setLastGeneratedKey(true);
 
 					final Set<String> ids = LDAPHelper.checkLdapInformation("uid=" + key, "ou=People,", "CCID");
@@ -1764,12 +1781,12 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> commandIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
 		}
-		
+
 		@Override
 		protected Integer resolve(final String key) {
 			try (DBFunctions db = getQueueDB()) {
@@ -1812,12 +1829,12 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> hostIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
 		}
-		
+
 		@Override
 		protected Integer resolve(final String key) {
 			try (DBFunctions db = getQueueDB()) {
@@ -1860,7 +1877,7 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<String, Integer> notifyIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
@@ -1913,7 +1930,7 @@ public class TaskQueueUtils {
 		protected boolean cacheNulls() {
 			return false;
 		}
-		
+
 		@Override
 		protected String resolve(final Integer key) {
 			try (DBFunctions db = getQueueDB()) {
@@ -1950,7 +1967,7 @@ public class TaskQueueUtils {
 		protected int getMaximumSize() {
 			return 20000;
 		}
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
@@ -1987,7 +2004,7 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<Integer, String> notifyCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
@@ -2024,7 +2041,7 @@ public class TaskQueueUtils {
 
 	private static final GenericLastValuesCache<Integer, String> commandCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
@@ -2888,7 +2905,7 @@ public class TaskQueueUtils {
 
 		if (idx2 > idx1 && idx2 < ceName.length() - 2 && !ceName.contains("%")) {
 			// it seems to be a fully qualified CE name, get it from cache
-			int singleCDid = getSiteId(ceName);
+			final int singleCDid = getSiteId(ceName);
 
 			if (singleCDid > 0)
 				return Arrays.asList(Integer.valueOf(singleCDid));
@@ -2944,12 +2961,12 @@ public class TaskQueueUtils {
 		protected int getMaximumSize() {
 			return 20000;
 		}
-		
+
 		@Override
 		protected boolean cacheNulls() {
 			return false;
 		}
-		
+
 		@Override
 		protected String resolve(final Integer key) {
 			try (DBFunctions db = getQueueDB()) {
