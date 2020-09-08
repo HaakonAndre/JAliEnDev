@@ -980,15 +980,25 @@ public class JobAgent implements Runnable {
 	 * 
 	 * @param p JobWrapper process
 	 */
-	private void killPayload(Process p){
+	private void killPayload(Process p) {
 		final Vector<Integer> childProcs = mj.getChildren();
 		if (childProcs != null && childProcs.size() > 1) {
 			try {
 				Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
-				Thread.sleep(60 * 1000); // Give the JobWrapper 60s to clean things up
 			}
 			catch (final Exception e) {
 				logger.log(Level.INFO, "Cannot kill the child processes " + childProcs, e);
+			}
+		}
+
+		// Give the JW up to an hour to clean things up
+		int minCounter = 60;
+		while (p.isAlive() && minCounter > 0) {
+			try {
+				Thread.sleep(60 * 1000);
+				minCounter--;
+			}
+			catch (final Exception e) {
 			}
 		}
 		// If still alive, kill everything, including the JW
