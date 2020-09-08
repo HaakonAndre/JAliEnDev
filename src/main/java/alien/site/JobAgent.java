@@ -618,8 +618,7 @@ public class JobAgent implements Runnable {
 
 
 		if (monitorJob) {
-			final String process_res_format = String.format("EXEC_TIME", "RES_FRUNTIME", "RES_RUNTIME", "RES_CPUUSAGE", "RES_MEMUSAGE", "RES_CPUTIME", "RES_RMEM", "RES_VMEM",
-					"RES_NOCPUS", "RES_CPUFAMILY", "RES_CPUMHZ", "RES_RESOURCEUSAGE", "RES_RMEMMAX", "RES_VMEMMAX");
+			final String process_res_format = "FRUNTIME | RUNTIME | CPUUSAGE | MEMUSAGE | CPUTIME | RMEM | VMEM | NOCPUS | CPUFAMILY | CPUMHZ | RESOURCEUSAGE | RMEMMAX | VMEMMAX";
 			logger.log(Level.INFO, process_res_format);
 			commander.q_api.putJobLog(queueId, "proc", process_res_format);
 
