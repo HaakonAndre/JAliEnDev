@@ -273,6 +273,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Unable to handle job" + e);
+			commander.q_api.putJobLog(queueId, "trace", "ERROR: Unable to handle job: " + e);
 			return -1;
 		}
 	}

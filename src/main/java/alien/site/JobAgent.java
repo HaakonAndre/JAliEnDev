@@ -677,6 +677,7 @@ public class JobAgent implements Runnable {
 			code = p.exitValue();
 
 			logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
+			commander.q_api.putJobLog(queueId, "trace", "JobWrapper exit code: " + code);
 			if (code != 0)
 				logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log " + " for more details");
 
