@@ -45,7 +45,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	private boolean bD = false;
 
 	/**
-	 * marker for -c argument :files in the catalogue
+	 * marker for -y: (FOR THE OCDB) return only the biggest version of each file
 	 */
 	private boolean bY = false;
 
@@ -215,16 +215,16 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		commander.printOutln(helpOption("-a", "show hidden .* files"));
 		commander.printOutln(helpOption("-s", "no sorting"));
-		commander.printOutln(helpOption("-c", "collection filename (put the output in a collection)"));
-		commander.printOutln(helpOption("-y", "(FOR THE OCDB) return only the biggest version of each file"));
-		commander.printOutln(helpOption("-x", "xml collection name (return the LFN list through XmlCollection)"));
+		// commander.printOutln(helpOption("-c", "collection filename (put the output in a collection)"));
+		commander.printOutln(helpOption("-x <target LFN>", "create the indicated XML collection with the results of the find operation"));
 		commander.printOutln(helpOption("-d", "return also the directories"));
 		commander.printOutln(helpOption("-w[h]", "long format, optionally human readable file sizes"));
-		commander.printOutln(helpOption("-j <queueid>", "filter files created by a certain job"));
+		commander.printOutln(helpOption("-j <queueid>", "filter files created by a certain job ID"));
 		commander.printOutln(helpOption("-l <count>", "limit the number of returned entries to at most the indicated value"));
 		commander.printOutln(helpOption("-o <offset>", "skip over the first /offset/ results"));
 		commander.printOutln(helpOption("-r", "pattern is a regular expression"));
 		commander.printOutln(helpOption("-f", "return all LFN data as JSON fields (API flag only)"));
+		commander.printOutln(helpOption("-y", "(FOR THE OCDB) return only the biggest version of each file"));
 		commander.printOutln();
 	}
 
