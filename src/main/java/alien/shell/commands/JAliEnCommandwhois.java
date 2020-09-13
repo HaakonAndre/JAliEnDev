@@ -126,7 +126,7 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * whereis cannot run without arguments
+	 * whois cannot run without arguments
 	 *
 	 * @return <code>false</code>
 	 */
