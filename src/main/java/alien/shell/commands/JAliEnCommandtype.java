@@ -59,7 +59,9 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		// ignore
+		commander.printOutln();
+		commander.printOutln(helpUsage("type", "<lfn>"));
+		commander.printOutln(helpParameter("Print the LFN type (file / directory / collection)"));
 	}
 
 	/**
