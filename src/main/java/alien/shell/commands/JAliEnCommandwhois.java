@@ -166,8 +166,7 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 				searchFor.add(o.toString());
 
 			if (searchFor.size() == 0)
-				throw new IllegalArgumentException();
-
+				setArgumentsOk(false);
 		}
 		catch (final OptionException | IllegalArgumentException e) {
 			printHelp();
