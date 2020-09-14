@@ -1252,7 +1252,7 @@ public class LFNUtils {
 			if (g != null)
 				g.chmod(newMode);
 		}
-		catch (IllegalAccessError err) {
+		catch (@SuppressWarnings("unused") IllegalAccessError err) {
 			return false;
 		}
 
