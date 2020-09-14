@@ -691,7 +691,7 @@ public class TaskQueueUtils {
 				q = "SELECT status FROM QUEUE where queueId=?;";
 
 			db.setReadOnly(true);
-			db.setQueryTimeout(30);
+			db.setQueryTimeout(600);
 
 			if (!db.query(q, false, Long.valueOf(job))) {
 				logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
@@ -742,7 +742,7 @@ public class TaskQueueUtils {
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
 			}
 
-			db.setQueryTimeout(120);
+			db.setQueryTimeout(600);
 
 			if (!db.query(q, false, newstatus, Long.valueOf(job)))
 				return false;
