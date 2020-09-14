@@ -1229,6 +1229,37 @@ public class LFNUtils {
 	}
 
 	/**
+	 * Change owner
+	 *
+	 * @param path
+	 * @param newMode
+	 * @return <code>true</code> if successful
+	 */
+	public static boolean chmodLFN(final String path, final String newMode) {
+		final LFN lfn = getLFN(path);
+
+		if (lfn == null)
+			return false;
+
+		if (newMode == null || newMode.isBlank())
+			return false;
+
+		try {
+			lfn.chmod(newMode);
+
+			final GUID g = GUIDUtils.getGUID(lfn);
+
+			if (g != null)
+				g.chmod(newMode);
+		}
+		catch (IllegalAccessError err) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * @param path
 	 * @param dstSE
 	 * @param is_guid

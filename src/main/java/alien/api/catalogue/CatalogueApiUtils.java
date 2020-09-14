@@ -590,6 +590,32 @@ public class CatalogueApiUtils {
 
 	/**
 	 * @param lfn_name
+	 * @param newMode
+	 * @param recursive
+	 * @return command result for each lfn or <code>null</code>
+	 */
+	public HashMap<String, Boolean> chmodLFN(final String lfn_name, final String newMode, final boolean recursive) {
+		if (lfn_name == null || lfn_name.length() == 0)
+			return null;
+
+		final LFN lfn = this.getLFN(lfn_name);
+
+		if (lfn == null)
+			return null;
+		try {
+			final ChmodLFN cl = Dispatcher.execute(new ChmodLFN(commander.getUser(), lfn_name, newMode, recursive));
+			if (cl != null)
+				return cl.getResults();
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not chmod " + lfn_name + " to " + newMode);
+			e.getCause().printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * @param lfn_name
 	 * @param ses
 	 * @param exses
 	 * @param qos
