@@ -36,6 +36,9 @@ public class Dispatcher {
 			names.add("object_cache_size");
 			values.add(Double.valueOf(cache.size()));
 		});
+
+		// make sure the Version class is initialized
+		ConfigUtils.getVersion();
 	}
 
 	/**
