@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.config.Version;
 import alien.site.JobAgent;
 import lazyj.commands.SystemCommand;
 
@@ -144,12 +145,14 @@ public class CVMFS extends PackMan {
 				if (jalienVersionString.contains(":"))
 					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
 			}
-			return jalienVersionString;
+			if (!jalienVersionString.equals(""))
+				return jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get JAliEn version", e);
-			return "";
+			logger.log(Level.WARNING, "Could not get JAliEn version");
 		}
+
+		return "/Git: " + Version.getGitHash() + ". Build date: " + Version.getCompilationTimestamp();
 	}
 
 	/**
