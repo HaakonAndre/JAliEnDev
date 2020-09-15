@@ -1,5 +1,7 @@
 package alien.site;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -17,6 +19,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
@@ -33,6 +36,7 @@ import alien.site.batchqueue.BatchQueue;
 import alien.site.packman.CVMFS;
 import apmon.ApMon;
 import apmon.ApMonException;
+import lazyj.ExtProperties;
 
 /**
  * @author mmmartin
@@ -68,6 +72,14 @@ public class ComputingElement extends Thread {
 			config = ConfigUtils.getConfigFromLdap();
 			site = (String) config.get("site_accountname");
 			getSiteMap();
+
+			ExtProperties ep = ConfigUtils.getConfiguration("ce-logging");
+			if (ep != null) {
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				ep.getProperties().store(output, null);
+				ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+				LogManager.getLogManager().readConfiguration(input);
+			}
 
 			queue = getBatchQueue((String) config.get("ce_type"));
 			
