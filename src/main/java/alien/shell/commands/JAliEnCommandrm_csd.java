@@ -105,9 +105,9 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 
 			alPaths = optionToString(options.nonOptionArguments());
 		}
-		catch (@SuppressWarnings("unused") final OptionException e) {
-			printHelp();
-			// throw e;
+		catch (final OptionException e) {
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 }

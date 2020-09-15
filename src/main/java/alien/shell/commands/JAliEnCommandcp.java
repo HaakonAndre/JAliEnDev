@@ -44,6 +44,7 @@ import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.io.protocols.TempFileManager;
 import alien.se.SE;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -1294,8 +1295,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				concurrentOperations = ((Integer) options.valueOf("T")).intValue();
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

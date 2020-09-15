@@ -100,8 +100,8 @@ public class JAliEnCommandchmod extends JAliEnBaseCommand {
 			this.files = params.subList(1, params.size());
 		}
 		catch (final OptionException e) {
-			// printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

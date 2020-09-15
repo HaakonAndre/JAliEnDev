@@ -262,7 +262,5 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 		catch (@SuppressWarnings("unused") final OptionException e) {
 			setArgumentsOk(false);
 		}
-
 	}
-
 }

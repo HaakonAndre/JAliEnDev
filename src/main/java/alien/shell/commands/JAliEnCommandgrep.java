@@ -217,8 +217,8 @@ public class JAliEnCommandgrep extends JAliEnBaseCommand {
 			}
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

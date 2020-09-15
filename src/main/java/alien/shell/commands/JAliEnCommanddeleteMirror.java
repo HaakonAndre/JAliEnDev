@@ -98,12 +98,13 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 
 			final List<String> lfns = optionToString(options.nonOptionArguments());
 			if (lfns == null) {
-				System.out.println(lfns);
+				setArgumentsOk(false);
 				return;
 			}
+
 			final int argLen = lfns.size();
 			if (argLen != 2) {
-				this.printHelp();
+				setArgumentsOk(false);
 				return;
 			}
 
@@ -113,9 +114,8 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 			useLFNasGuid = options.has("g");
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
-
 	}
 }

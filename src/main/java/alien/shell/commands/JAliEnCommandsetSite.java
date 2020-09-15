@@ -97,5 +97,4 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 		if (alArguments.size() > 0)
 			targetSiteName = alArguments.get(0).trim();
 	}
-
 }

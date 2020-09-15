@@ -90,8 +90,8 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandrmdir(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
+		
 		try {
-
 			final OptionParser parser = new OptionParser();
 
 			parser.accepts("p");
@@ -105,12 +105,10 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 			if (options.has("s"))
 				silent();
 			bP = options.has("p");
-
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
-
 	}
 }

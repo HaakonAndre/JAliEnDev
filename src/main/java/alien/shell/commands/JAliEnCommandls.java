@@ -238,8 +238,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			bL = options.has("l") || bH;
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

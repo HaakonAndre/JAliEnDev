@@ -90,8 +90,8 @@ public class JAliEnCommandmkdir_csd extends JAliEnBaseCommand {
 			bP = options.has("p");
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 }

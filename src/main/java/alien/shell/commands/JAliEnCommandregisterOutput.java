@@ -60,7 +60,9 @@ public class JAliEnCommandregisterOutput extends JAliEnBaseCommand {
 				jobId = Long.parseLong(arg);
 			}
 			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-				commander.printErrln("Invalid job ID: " + arg);
+				commander.setReturnCode(ErrNo.EINVAL, "Invalid job ID: " + arg);
+				setArgumentsOk(false);
+				return;
 			}
 		}
 	}

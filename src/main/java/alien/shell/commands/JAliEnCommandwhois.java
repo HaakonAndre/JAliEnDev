@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
 import alien.user.UserFactory;
@@ -169,9 +170,8 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 				setArgumentsOk(false);
 		}
 		catch (final OptionException | IllegalArgumentException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
-
 }

@@ -129,8 +129,8 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			alPaths = optionToString(options.nonOptionArguments());
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 }

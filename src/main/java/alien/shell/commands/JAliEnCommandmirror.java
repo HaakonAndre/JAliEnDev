@@ -97,8 +97,8 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			}
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

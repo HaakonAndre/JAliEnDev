@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.List;
 
 import alien.io.TransferDetails;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -96,11 +97,12 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.toSE = (String) options.valueOf("destination");
 		}
 		catch (final OptionException e) {
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
-		catch (final NumberFormatException e) {
-			commander.printErrln("Please provide a valid number for -list argument");
-			throw e;
+		catch (@SuppressWarnings("unused") final NumberFormatException e) {
+			commander.setReturnCode(ErrNo.EINVAL, "Please provide a valid number for -list argument");
+			setArgumentsOk(false);
 		}
 	}
 }

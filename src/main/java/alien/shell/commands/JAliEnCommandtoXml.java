@@ -267,8 +267,8 @@ public class JAliEnCommandtoXml extends JAliEnBaseCommand {
 				lfns.add(FileSystemUtils.getAbsolutePath(commander.getUsername(), commander.getCurrentDirName(), o.toString()));
 		}
 		catch (final OptionException | IllegalArgumentException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 }

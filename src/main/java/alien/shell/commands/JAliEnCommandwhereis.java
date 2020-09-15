@@ -228,8 +228,8 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				setArgumentsOk(false);
 		}
 		catch (final OptionException e) {
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
-
 }

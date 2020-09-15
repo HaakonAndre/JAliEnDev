@@ -89,6 +89,5 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandw(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
-
 	}
 }

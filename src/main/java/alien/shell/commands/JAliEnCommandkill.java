@@ -65,8 +65,10 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 			try {
 				queueIds.add(Long.valueOf(id));
 			}
-			catch (final NumberFormatException e) {
-				throw new JAliEnCommandException("Invalid job ID: " + id, e);
+			catch (@SuppressWarnings("unused") final NumberFormatException e) {
+				commander.setReturnCode(ErrNo.EINVAL, "Invalid job ID: " + id);
+				setArgumentsOk(false);
+				return;
 			}
 	}
 

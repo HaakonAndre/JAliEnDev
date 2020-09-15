@@ -234,8 +234,8 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 			bC = options.has("c");
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

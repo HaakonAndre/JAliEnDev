@@ -9,6 +9,7 @@ import java.util.List;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CSD;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -205,8 +206,8 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 			bY = options.has("y");
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

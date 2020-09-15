@@ -222,8 +222,8 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 			bS = options.has("s");
 		}
 		catch (final OptionException e) {
-			// printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 }

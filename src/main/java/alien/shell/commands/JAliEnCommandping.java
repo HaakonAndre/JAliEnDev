@@ -8,6 +8,7 @@ import alien.api.Dispatcher;
 import alien.api.Ping;
 import alien.api.ServerException;
 import alien.monitoring.Timing;
+import alien.shell.ErrNo;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -207,8 +208,8 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 			}
 		}
 		catch (final OptionException | IllegalArgumentException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

@@ -78,9 +78,8 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 			alPaths.addAll(optionToString(options.nonOptionArguments()));
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
-
 }

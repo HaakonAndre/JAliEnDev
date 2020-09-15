@@ -152,8 +152,8 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 				printHelp();
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 

@@ -344,8 +344,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				jobId = ((Long) options.valueOf("j")).longValue();
 		}
 		catch (final OptionException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
 		}
 	}
 }

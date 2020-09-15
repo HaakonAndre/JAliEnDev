@@ -464,8 +464,9 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 			}
 		}
 		catch (final OptionException | IllegalArgumentException e) {
-			printHelp();
-			throw e;
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
+			setArgumentsOk(false);
+			return;
 		}
 
 		if (sesToTest.isEmpty()) {

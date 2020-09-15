@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
 import joptsimple.OptionException;
@@ -131,7 +132,8 @@ public class JAliEnCommandwhoami extends JAliEnBaseCommand {
 
 			verbose = options.has("v");
 		}
-		catch (@SuppressWarnings("unused") final OptionException | IllegalArgumentException e) {
+		catch (final OptionException | IllegalArgumentException e) {
+			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
 			setArgumentsOk(false);
 		}
 	}
