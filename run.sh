@@ -32,7 +32,7 @@ if [ -z "$JALIEN_MEM" ]; then
 fi
 
 if [ -z "$JALIEN_GC" ]; then
-    export JALIEN_GC=" -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+UseCompressedOops -XX:MaxTrivialSize=1K"
+    export JALIEN_GC=" -XX:+UseG1GC -XX:+DisableExplicitGC -XX:MaxTrivialSize=1K"
 fi
 
 if [ -z "$JALIEN_JVM_OPTIONS" ]; then
