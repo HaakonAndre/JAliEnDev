@@ -59,11 +59,11 @@ public class Version {
 	}
 
 	/**
-	 * @return the time when the jar file was generated
+	 * @return the epoch time (in millis) when the jar file was generated
 	 */
 	public static long getCompilationTimestamp() {
 		if (versionConfig != null)
-			return versionConfig.getl("build_timestamp", 0);
+			return versionConfig.getl("build_timestamp", 0) * 1000;
 
 		return 0;
 	}
