@@ -8,7 +8,7 @@ public class JAliEnIAm {
 
 	private static final String thathsMe = "jsh";
 
-	private static final String myVersion = "v0.7";
+	private static final String myVersion = "v" + Version.getTag();
 
 	private static final String myFullName = thathsMe + " " + myVersion;
 
