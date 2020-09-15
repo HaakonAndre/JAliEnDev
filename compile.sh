@@ -37,6 +37,15 @@ export CLASSPATH="${CLASSPATH}:${JAR_LIST_LIB}"
 cp ${JALIEN_HOME}/trusted_authorities.jks ${BUILDDIR}/
 cp ${JALIEN_HOME}/config/config.properties ${JALIEN_HOME}/config/monitoring.properties ${JALIEN_HOME}/config/ce-logging.properties ${BUILDDIR}/config/
 
+(
+    echo "git_hash=`git rev-parse HEAD`"
+    echo "git_last_tag=`git describe --tags`"
+    echo "build_timestamp=`date +%s`"
+    echo "build_date=`date`"
+    echo "build_hostname=`hostname -f`"
+    echo "build_javac=`javac -version`"
+) > ${BUILDDIR}/config/version.properties
+
 # always generate alien.jar
 find ${JALIEN_HOME}/src/main -name "*.java" | xargs javac -Xlint:-options -source 11 -target 11 -O -g -d ${BUILDDIR} $* || { echo "javac of src/*.java failed" ; exit 1; }
 
