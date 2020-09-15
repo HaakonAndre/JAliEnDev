@@ -376,12 +376,15 @@ public class ConfigUtils {
 		return l;
 	}
 
-	private static final String jAliEnVersion = "0.0.1";
+	private static String jAliEnVersion = null;
 
 	/**
 	 * @return JAlien version
 	 */
 	public static final String getVersion() {
+		if (jAliEnVersion == null)
+			jAliEnVersion = Version.getTag();
+
 		return jAliEnVersion;
 	}
 
