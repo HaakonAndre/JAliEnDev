@@ -174,11 +174,13 @@ public class DispatchSSLServer extends Thread {
 		}
 
 		remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
+		
+		final int clientPortNumber = connection.getPort();
 
 		try (RequestEvent event = new RequestEvent(getAccessLog())) {
 			event.command = "login";
 			event.identity = remoteIdentity;
-			event.clientPort = connection.getPort();
+			event.clientPort = clientPortNumber;
 
 			event.arguments = new ArrayList<>();
 
@@ -211,6 +213,7 @@ public class DispatchSSLServer extends Thread {
 
 						try (RequestEvent event = new RequestEvent(getAccessLog())) {
 							event.clientAddress = remoteIdentity.getRemoteEndpoint();
+							event.clientPort = clientPortNumber;
 							event.command = r.getClass().getSimpleName();
 							event.clientID = r.getVMUUID();
 							event.requestId = r.getRequestID();
