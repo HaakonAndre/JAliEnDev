@@ -36,7 +36,7 @@ public class JAliEnCommandversion extends JAliEnBaseCommand {
 	public void printHelp() {
 		commander.printOutln();
 		commander.printOutln(helpUsage("version", ""));
-		commander.printOutln(helpStartOptions());
+		commander.printOutln();
 		commander.printOutln(helpParameter("Get information about the JAliEn version that answers your requests"));
 	}
 
