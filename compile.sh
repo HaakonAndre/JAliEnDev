@@ -43,6 +43,7 @@ cp ${JALIEN_HOME}/config/config.properties ${JALIEN_HOME}/config/monitoring.prop
     echo "build_timestamp=`date +%s`"
     echo "build_date=`date`"
     echo "build_hostname=`hostname -f`"
+    echo "build_username=`id -u -n`"
     echo "build_javac=`javac -version`"
 ) > ${BUILDDIR}/config/version.properties
 
