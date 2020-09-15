@@ -1,5 +1,9 @@
 package alien.config;
 
+import java.util.Date;
+
+import lazyj.Format;
+
 /**
  * @author ron
  *
@@ -8,7 +12,7 @@ public class JAliEnIAm {
 
 	private static final String thathsMe = "jsh";
 
-	private static final String myVersion = "v" + Version.getTag();
+	private static final String myVersion = "v" + Version.getTag() + " (" + Format.showNamedDate(new Date(Version.getCompilationTimestamp())) + ")";
 
 	private static final String myFullName = thathsMe + " " + myVersion;
 
