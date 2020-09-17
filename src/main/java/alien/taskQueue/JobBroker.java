@@ -461,7 +461,12 @@ public class JobBroker {
 				bindValues.add(matchRequest.get("CE"));
 			}
 
-			String CeRequirements = !CeConfig.isEmpty() ? CeConfig.get("ce_requirements").toString() : "";
+
+
+			String CeRequirements = null;
+			if(CeConfig.get("ce_requirements") != null)
+				CeRequirements = CeConfig.get("ce_requirements").toString();
+
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
 			if (matchRequest.get("Users") != null) {
 				@SuppressWarnings("unchecked")
