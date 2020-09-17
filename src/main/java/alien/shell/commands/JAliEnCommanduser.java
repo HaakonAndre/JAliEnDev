@@ -5,6 +5,7 @@ import java.util.List;
 import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
+import alien.user.UsersHelper;
 import joptsimple.OptionException;
 
 /**
@@ -28,10 +29,16 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 				commander.user = switchUser;
 			else {
 				commander.setReturnCode(ErrNo.EINVAL, "User " + user + " cannot be found. Abort");
+				return;
 			}
 
 			commander.user.setUserCert(cert);
 			commander.user.setDefaultUser(defaultuser);
+
+			final String userHomeDir = UsersHelper.getHomeDir(commander.user.getName());
+
+			if (userHomeDir != null)
+				commander.printOut("homedir", userHomeDir);
 		}
 		else {
 			commander.setReturnCode(ErrNo.EPERM, "Switching user " + commander.user.getName() + " to [" + user + "] failed");
@@ -75,6 +82,5 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 			user = alArguments.get(0);
 		else
 			setArgumentsOk(false);
-
 	}
 }
