@@ -47,17 +47,27 @@ public class JAliEnCommanduuid extends JAliEnBaseCommand {
 			}
 
 			if (u != null) {
-				final long timestamp = GUIDUtils.epochTime(u);
-				commander.printOutln(lfnName + " : created on " + (new Date(timestamp)) + " (" + timestamp + ") on " + GUIDUtils.getMacAddr(u));
+				if (u.version() == 1) {
+					final long timestamp = GUIDUtils.epochTime(u);
+					final String macAddr = GUIDUtils.getMacAddr(u);
+					commander.printOutln(lfnName + " : created on " + (new Date(timestamp)) + " (" + timestamp + ") by " + macAddr);
+					commander.printOut("mtime", String.valueOf(timestamp));
+					commander.printOut("mac", macAddr);
+				}
+				else
+					commander.setReturnCode(ErrNo.EINVAL, "UUID version " + u.version() + " is not supported (not created by us)");
 			}
+			else
+				commander.setReturnCode(ErrNo.ENOENT, lfnName + " is neither an UUID nor a LFN");
 		}
 	}
 
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("md5sum", "<filename1> [<filename2>] ..."));
+		commander.printOutln(helpUsage("uuid", "<uuid|filename> [<uuid|filename> ...]"));
 		commander.printOutln();
+		commander.printOutln(helpParameter("Decode v1 UUIDs and display the interesting bits"));
 	}
 
 	@Override
@@ -88,5 +98,4 @@ public class JAliEnCommanduuid extends JAliEnBaseCommand {
 			setArgumentsOk(false);
 		}
 	}
-
 }
