@@ -436,15 +436,15 @@ public class JobBroker {
 					bindValues.add(matchRequest.get("Packages"));
 				}
 
-			HashMap<String, Object> CeConfig = new HashMap<String, Object>();
-			try {
-				CeConfig = ConfigUtils.getConfigFromLdap(false, matchRequest.get("CEhost").toString());
-			}
-			catch (NullPointerException e) {
-			}
+			HashMap<String, Object> CeConfig = null;
 
-			matchRequest.putIfAbsent("Partition", CeConfig.get("ce_partition"));
-			if (matchRequest.get("Partition") != null) {
+			if (matchRequest.containsKey("CEhost"))
+				CeConfig = ConfigUtils.getConfigFromLdap(false, matchRequest.get("CEhost").toString());
+
+			if (CeConfig != null && CeConfig.containsKey("ce_partition"))
+				matchRequest.putIfAbsent("Partition", CeConfig.get("ce_partition"));
+
+			if (matchRequest.containsKey("Partition")) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}
@@ -461,10 +461,8 @@ public class JobBroker {
 				bindValues.add(matchRequest.get("CE"));
 			}
 
-
-
 			String CeRequirements = null;
-			if(CeConfig.get("ce_requirements") != null)
+			if (CeConfig != null && CeConfig.containsKey("ce_requirements"))
 				CeRequirements = CeConfig.get("ce_requirements").toString();
 
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
