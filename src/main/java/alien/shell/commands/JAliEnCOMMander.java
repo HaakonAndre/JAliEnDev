@@ -491,7 +491,7 @@ public class JAliEnCOMMander implements Runnable {
 	 *
 	 */
 	private void bootMessage() {
-		logger.log(Level.INFO, "Starting Commander");
+		logger.log(Level.FINE, "Starting Commander");
 
 		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
 			event.command = "login";
