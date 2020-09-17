@@ -9,6 +9,7 @@ import java.util.Set;
 import alien.shell.ErrNo;
 import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
+import alien.user.UsersHelper;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -88,6 +89,15 @@ public class JAliEnCommandwhoami extends JAliEnBaseCommand {
 
 			if (verbose)
 				commander.printOutln("Connected from: " + user.getRemoteEndpoint().getHostAddress());
+		}
+
+		final String userHomeDir = UsersHelper.getHomeDir(user.getName());
+
+		if (userHomeDir != null) {
+			commander.printOut("homedir", userHomeDir);
+
+			if (verbose)
+				commander.printOutln("Home directory: " + userHomeDir);
 		}
 	}
 
