@@ -126,33 +126,7 @@ public class CVMFS extends PackMan {
 	 * @return the command to get the full environment to run JAliEn components
 	 */
 	public static String getAlienvPrint() {
-		return ALIEN_BIN_DIR + "/alienv printenv JAliEn" + getJAliEnVersion();
-	}
-
-	/**
-	 *
-	 * @return JAliEn version as a string
-	 */
-	public static String getJAliEnVersion() {
-		try {
-			final String loadedmodules = System.getenv().get("LOADEDMODULES");
-			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
-
-			String jalienVersionString = "";
-			if (jalienModulePos > 0) {
-				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
-
-				if (jalienVersionString.contains(":"))
-					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
-			}
-			if (!jalienVersionString.equals(""))
-				return jalienVersionString;
-		}
-		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get JAliEn version");
-		}
-
-		return "/Git: " + Version.getGitHash() + ". Build date: " + Version.getCompilationTimestamp();
+		return ALIEN_BIN_DIR + "/alienv printenv JAliEn" + Version.getTag();
 	}
 
 	/**

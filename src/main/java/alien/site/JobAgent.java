@@ -37,6 +37,7 @@ import alien.api.Request;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.config.ConfigUtils;
+import alien.config.Version;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
@@ -300,7 +301,9 @@ public class JobAgent implements Runnable {
 			}
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
-			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent" + CVMFS.getJAliEnVersion());
+
+			final String version = Version.getTagFromEnv().isEmpty() ? Version.getTagFromEnv() : "/Git: " + Version.getGitHash() + ". Builddate: " + Version.getCompilationTimestamp();
+			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent" + version);
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
 			// Set up constraints

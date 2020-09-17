@@ -3,6 +3,8 @@ package alien.config;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import lazyj.ExtProperties;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author costing
@@ -15,6 +17,11 @@ public class Version {
 	private final static String UNKNOWN = "unknown";
 
 	private static Monitor monitor = MonitorFactory.getMonitor(Version.class.getCanonicalName());
+
+	/**
+	 * logger object
+	 */
+	static final Logger logger = ConfigUtils.getLogger(Version.class.getCanonicalName());
 
 	static {
 		if (monitor != null)
@@ -69,12 +76,36 @@ public class Version {
 	}
 
 	/**
-	 * @return the hostname that compiled tha package
+	 * @return the hostname that compiled that package
 	 */
 	public static String getCompilingHostname() {
 		if (versionConfig != null)
 			return versionConfig.gets("build_hostname", UNKNOWN);
 
 		return UNKNOWN;
+	}
+
+		/**
+	 *
+	 * @return the tag present in env (in case of AliEnv)
+	 */
+	public static String getTagFromEnv() {
+		try {
+			final String loadedmodules = System.getenv().get("LOADEDMODULES");
+			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
+
+			String jalienVersionString = "";
+			if (jalienModulePos > 0) {
+				jalienVersionString = loadedmodules.substring(jalienModulePos + 7);
+
+				if (jalienVersionString.contains(":"))
+					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
+			}
+			return jalienVersionString;
+		}
+		catch (StringIndexOutOfBoundsException | NullPointerException e) {
+			logger.log(Level.WARNING, "Could not get JAliEn version");
+		}
+		return "";
 	}
 }
