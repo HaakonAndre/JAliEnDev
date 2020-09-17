@@ -436,7 +436,12 @@ public class JobBroker {
 					bindValues.add(matchRequest.get("Packages"));
 				}
 
-			final HashMap<String, Object> CeConfig = ConfigUtils.getConfigFromLdap(false, matchRequest.get("CEhost").toString());
+			HashMap<String, Object> CeConfig = new HashMap<String, Object>();
+			try {
+				CeConfig = ConfigUtils.getConfigFromLdap(false, matchRequest.get("CEhost").toString());
+			}
+			catch (NullPointerException e) {
+			}
 
 			matchRequest.putIfAbsent("Partition", CeConfig.get("ce_partition"));
 			if (matchRequest.get("Partition") != null) {
@@ -457,7 +462,6 @@ public class JobBroker {
 			}
 
 			String CeRequirements = CeConfig.get("ce_requirements").toString();
-
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
 			if (matchRequest.get("Users") != null) {
 				@SuppressWarnings("unchecked")
