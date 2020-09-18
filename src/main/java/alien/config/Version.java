@@ -1,10 +1,11 @@
 package alien.config;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import lazyj.ExtProperties;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * @author costing
@@ -85,7 +86,7 @@ public class Version {
 		return UNKNOWN;
 	}
 
-		/**
+	/**
 	 *
 	 * @return the tag present in env (in case of AliEnv)
 	 */
@@ -104,8 +105,9 @@ public class Version {
 			return jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
-			logger.log(Level.WARNING, "Could not get JAliEn version");
+			logger.log(Level.WARNING, "Could not get JAliEn version", e);
 		}
+
 		return "";
 	}
 }
