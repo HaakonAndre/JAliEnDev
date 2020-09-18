@@ -82,7 +82,7 @@ public class ComputingElement extends Thread {
 			}
 
 			queue = getBatchQueue((String) config.get("ce_type"));
-			
+
 			host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
@@ -131,7 +131,7 @@ public class ComputingElement extends Thread {
 	 */
 	public static void main(final String[] args) {
 		ConfigUtils.setApplicationName("CE");
-		
+
 		final ComputingElement CE = new ComputingElement();
 		CE.run();
 	}
@@ -238,7 +238,7 @@ public class ComputingElement extends Thread {
 
 		logger.info("Going to submit " + slots_to_submit + " agents");
 
-		final String script = createAgentStartup();
+		final String script = getAgentStartupScript();
 		if (script == null) {
 			logger.info("Cannot create startup script");
 			return;
@@ -253,6 +253,38 @@ public class ComputingElement extends Thread {
 		logger.info("Submitted " + slots_to_submit);
 
 		return;
+	}
+
+	private String lastStartupScript = null;
+	private long lastStartupScriptGenerated = 0;
+
+	private static final long SCRIPT_REFRESH_INTERVAL = 5 * 60 * 1000L;
+
+	private String getAgentStartupScript() {
+		// reuse the previously generated JA startup script for 5 minutes, but check that it still exists on disk
+		if (System.currentTimeMillis() - lastStartupScriptGenerated < SCRIPT_REFRESH_INTERVAL && lastStartupScript != null) {
+			final File fTest = new File(lastStartupScript);
+
+			if (fTest.exists())
+				return lastStartupScript;
+		}
+
+		final String newStartupScript = createAgentStartup();
+
+		// only update the pointer if the new script could be written to disk, otherwise try to reuse the previous one
+		if (newStartupScript != null) {
+			if (lastStartupScript != null) {
+				final File fPrevious = new File(lastStartupScript);
+
+				if (fPrevious.exists())
+					fPrevious.delete();
+			}
+
+			lastStartupScript = newStartupScript;
+			lastStartupScriptGenerated = System.currentTimeMillis();
+		}
+
+		return lastStartupScript;
 	}
 
 	/*
@@ -327,17 +359,17 @@ public class ComputingElement extends Thread {
 			agent_startup_file.setExecutable(true);
 		}
 		catch (final IOException e1) {
-			logger.info("Error creating Agent Sturtup file: " + e1.toString());
+			logger.info("Error creating Agent Startup file: " + e1.toString());
 			return null;
 		}
 
 		try (PrintWriter writer = new PrintWriter(agent_startup_path, "UTF-8")) {
 			writer.println("#!/bin/bash");
-			//writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); // Used to start with a clean env
+			// writer.println("[ \"$HOME\" != \"\" ] && exec -c $0"); // Used to start with a clean env
 			writer.println(content_str);
 		}
 		catch (final FileNotFoundException e) {
-			logger.info("Agent Sturtup file not found: " + e.toString());
+			logger.info("Agent Startup file not found: " + e.toString());
 		}
 		catch (final UnsupportedEncodingException e) {
 			logger.info("Encoding error while writing Agent Sturtup file: " + e.toString());
