@@ -42,33 +42,38 @@ if [ "$1" == "setup" ]; then
 
 elif [ "$1" == "login" ]; then
     shift
-    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} alien.JBox"
-
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR}"
+    ENTRYPOINT="alien.JBox"
 elif [ "$1" == "JobAgent" ]; then
     shift
     #RUNSH_OPTS="-Djavax.net.debug=ssl -DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent"
     #RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent"
-    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent"
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true"
+    ENTRYPOINT="alien.site.JobAgent"
 
 elif [ "$1" == "ComputingElement" ]; then
     shift
-    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.ComputingElement"
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true"
+    ENTRYPOINT="alien.site.ComputingElement"
 
 elif [ "$1" == "TitanJobService" ]; then
     shift
     #RUNSH_OPTS="-Djavax.net.debug=ssl -DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent"
     #RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent"
-    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.site.TitanJobService"
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true"
+    ENTRYPOINT="alien.site.TitanJobService"
 
 elif [ "$1" == "ArchiveMemberDelete" ]; then
     shift
-    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true alien.ArchiveMemberDelete"
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true"
+    ENTRYPOINT="alien.ArchiveMemberDelete"
 
 else
-    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} alien.JSh"
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR}"
+    ENTRYPOINT="alien.JSh"
 fi
 
 [[ -n "${JALIEN_OPTS}" ]] && RUNSH_OPTS="${RUNSH_OPTS} ${JALIEN_OPTS}"
 
 # use the selected options with RUNSH script
-${RUNSH} "${RUNSH_OPTS}" "$@"
+${RUNSH} "${RUNSH_OPTS}" "${ENTRYPOINT}" "$@"
