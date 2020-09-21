@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -461,10 +462,12 @@ public class JobBroker {
 				bindValues.add(matchRequest.get("CE"));
 			}
 
-			String CeRequirements = null;
-			if (CeConfig != null && CeConfig.containsKey("ce_requirements"))
-				CeRequirements = CeConfig.get("ce_requirements").toString();
+			if (CeConfig != null && CeConfig.containsKey("ce_requirements")){
+				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_requirements").toString());
+			} 
 
+			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
+			
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
 			if (matchRequest.get("Users") != null) {
 				@SuppressWarnings("unchecked")
