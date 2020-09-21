@@ -94,16 +94,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void run() {
-		if (alPaths.size() < 2) {
-			printHelp();
-			return;
-		}
-
 		int flags = 0;
 		String query = "";
-		/*
-		 * try { if (alArguments.size() == 3) flags = Integer.parseInt(alArguments.get(2)); } catch (NumberFormatException e) { // ignore }
-		 */
 
 		if (bD)
 			flags = flags | LFNUtils.FIND_INCLUDE_DIRS;
@@ -112,8 +104,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			flags = flags | LFNUtils.FIND_NO_SORT;
 
 		if (bY) {
-			for (int i = 2; i < alPaths.size(); i++)
-				query += alPaths.get(i) + " ";
+			query = String.join(" ", alPaths.subList(2, alPaths.size()));
+
+			query = query.replaceFirst("^\\s*['\"]\\s*", "");
+			query = query.replaceFirst("\\s*['\"]\\s*$", "");
 
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
 		}
@@ -308,6 +302,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 					commander.printErrln("Offset value cannot be negative, ignoring indicated value (" + offset + ")");
 					offset = 0;
 				}
+			}
+
+			if (alPaths.size() < 2) {
+				setArgumentsOk(false);
+				commander.setReturnCode(ErrNo.EINVAL, "Not enough parameters to `find`");
 			}
 		}
 		catch (final OptionException e) {
