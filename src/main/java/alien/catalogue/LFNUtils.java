@@ -750,6 +750,8 @@ public class LFNUtils {
 		return ret;
 	}
 
+	private static final String[] CATALOGUE_DBS = new String[] { "alice_data", "alice_users" };
+
 	/**
 	 * @param path starting path
 	 * @param tag tag to search for
@@ -759,17 +761,25 @@ public class LFNUtils {
 	public static Set<String> getTagTableNames(final String path, final String tag, final boolean includeParents) {
 		final Set<String> ret = new HashSet<>();
 
-		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
-			db.setReadOnly(true);
-			db.setQueryTimeout(30);
+		for (final String database : CATALOGUE_DBS) {
+			try (DBFunctions db = ConfigUtils.getDB(database)) {
+				if (db == null)
+					continue;
 
-			if (includeParents)
-				db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc;", false, tag, path);
-			else
-				db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND path LIKE ?", false, tag, path + "%");
+				db.setReadOnly(true);
+				db.setQueryTimeout(30);
 
-			while (db.moveNext())
-				ret.add(db.gets(1));
+				if (includeParents)
+					db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc;", false, tag, path);
+				else
+					db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND path LIKE ?", false, tag, path + "%");
+
+				while (db.moveNext())
+					ret.add(database + "." + db.gets(1));
+
+				if (ret.size() > 0)
+					return ret;
+			}
 		}
 
 		return ret;
@@ -1252,7 +1262,7 @@ public class LFNUtils {
 			if (g != null)
 				g.chmod(newMode);
 		}
-		catch (@SuppressWarnings("unused") IllegalAccessError err) {
+		catch (@SuppressWarnings("unused") final IllegalAccessError err) {
 			return false;
 		}
 
