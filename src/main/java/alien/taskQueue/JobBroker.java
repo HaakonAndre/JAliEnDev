@@ -374,6 +374,7 @@ public class JobBroker {
 	 * @return number of jobs waiting for a site given its parameters, or an
 	 *         entry to JOBAGENT if asked for
 	 */
+	@SuppressWarnings("unchecked")
 	public static HashMap<String, Object> getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
 		boolean isRemoteAccessAllowed = false;
 
@@ -414,7 +415,6 @@ public class JobBroker {
 			}
 
 			if (matchRequest.containsKey("Extrasites")) {
-				@SuppressWarnings("unchecked")
 				final ArrayList<String> extrasites = (ArrayList<String>) matchRequest.get("Extrasites");
 				for (final String site : extrasites) {
 					where += " or site like concat('%,',?,',%') ";
@@ -469,8 +469,7 @@ public class JobBroker {
 			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
 			
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
-			if (matchRequest.get("Users") != null) {
-				@SuppressWarnings("unchecked")
+			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {
@@ -486,8 +485,7 @@ public class JobBroker {
 			}
 
 			matchRequest.putIfAbsent("NoUsers", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.NoUsers));
-			if (matchRequest.get("NoUsers") != null) {
-				@SuppressWarnings("unchecked")
+			if (matchRequest.get("NoUsers") != null && !((ArrayList<String>) matchRequest.get("NoUsers")).isEmpty()) {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("NoUsers");
 				for (final String user : users) {
 					final Integer userId = TaskQueueUtils.getUserId(user);
