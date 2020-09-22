@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyStoreException;
@@ -173,14 +174,11 @@ public class DispatchSSLServer extends Thread {
 			return;
 		}
 
-		remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
-		
-		final int clientPortNumber = connection.getPort();
+		remoteIdentity.setRemoteEndpoint((InetSocketAddress) connection.getRemoteSocketAddress());
 
 		try (RequestEvent event = new RequestEvent(getAccessLog())) {
 			event.command = "login";
 			event.identity = remoteIdentity;
-			event.clientPort = clientPortNumber;
 
 			event.arguments = new ArrayList<>();
 
@@ -213,7 +211,7 @@ public class DispatchSSLServer extends Thread {
 
 						try (RequestEvent event = new RequestEvent(getAccessLog())) {
 							event.clientAddress = remoteIdentity.getRemoteEndpoint();
-							event.clientPort = clientPortNumber;
+							event.clientPort = remoteIdentity.getRemotePort();
 							event.command = r.getClass().getSimpleName();
 							event.clientID = r.getVMUUID();
 							event.requestId = r.getRequestID();
@@ -312,7 +310,7 @@ public class DispatchSSLServer extends Thread {
 
 	private static OutputStream accessLogStream = null;
 
-	private static synchronized OutputStream getAccessLog() {
+	static synchronized OutputStream getAccessLog() {
 		if (accessLogStream == null) {
 			final String accessLogFile = ConfigUtils.getConfig().gets("alien.api.DispatchSSLServer.access_log");
 

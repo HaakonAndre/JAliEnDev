@@ -2,6 +2,7 @@ package alien.user;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -50,6 +51,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 	private long lRolesChecked = 0;
 
 	private transient InetAddress remoteEndpoint = null;
+
+	private transient int remotePort = 0;
 
 	/**
 	 * building a Principal for ALICE user
@@ -371,6 +374,13 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	/**
+	 * @return client's port number on its side of the socket
+	 */
+	public int getRemotePort() {
+		return remotePort;
+	}
+
+	/**
 	 * Upon accepting a request, set this address to where the connection came from
 	 *
 	 * @param remoteEndpoint
@@ -380,6 +390,28 @@ public class AliEnPrincipal implements Principal, Serializable {
 			this.remoteEndpoint = remoteEndpoint;
 		else
 			throw new IllegalAccessError("You are not allowed to overwrite this field!");
+	}
+
+	/**
+	 * Upon accepting a request, set this port number to client's remote port number
+	 *
+	 * @param remotePort
+	 */
+	public void setRemotePort(final int remotePort) {
+		if (this.remotePort <= 0)
+			this.remotePort = remotePort;
+		else
+			throw new IllegalAccessError("You are not allowed to overwrite this field!");
+	}
+
+	/**
+	 * Set complete client details from the socket address
+	 * 
+	 * @param socketAddress
+	 */
+	public void setRemoteEndpoint(final InetSocketAddress socketAddress) {
+		setRemoteEndpoint(socketAddress.getAddress());
+		setRemotePort(socketAddress.getPort());
 	}
 
 	/**
