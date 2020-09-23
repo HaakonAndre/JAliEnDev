@@ -270,7 +270,7 @@ public class DispatchSSLClient {
 				// initialize factory, with clientCert(incl. priv+pub)
 				kmf.init(JAKeyStore.getKeyStore(), JAKeyStore.pass);
 
-				java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1.2");
+				java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1.2,TLSv1.3");
 				final SSLContext ssc = SSLContext.getInstance("TLS");
 
 				// initialize SSL with certificate and the trusted CA and pub certs
