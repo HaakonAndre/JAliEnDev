@@ -987,7 +987,11 @@ public class JobAgent implements Runnable {
 		final Vector<Integer> childProcs = mj.getChildren();
 		if (childProcs != null && childProcs.size() > 1) {
 			try {
-				Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
+				final int payloadPid = getPayloadPid(childProcs);
+				if (payloadPid != 0)
+					Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
+				else
+					logger.log(Level.INFO, "Could not kill payload: not found. Already done?");
 			}
 			catch (final Exception e) {
 				logger.log(Level.INFO, "Cannot kill the child processes " + childProcs, e);
