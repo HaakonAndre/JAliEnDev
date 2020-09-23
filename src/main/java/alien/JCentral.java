@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.DispatchSSLServer;
+import alien.api.DispatchSSLServerNIO;
 import alien.api.TomcatServer;
 import alien.config.ConfigUtils;
 import alien.user.JAKeyStore;
@@ -37,13 +38,15 @@ public class JCentral {
 			// catalogueAPIService.start();
 			JAKeyStore.loadKeyStore();
 			TomcatServer.startTomcatServer();
-			DispatchSSLServer.runService();
 
+			if (ConfigUtils.getConfig().getb("jalien.nio", false))
+				DispatchSSLServerNIO.runService();
+			else
+				DispatchSSLServer.runService();
 		}
 		catch (final Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 }
