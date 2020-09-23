@@ -110,7 +110,7 @@ public class RequestEvent implements Closeable {
 			if (clientAddress == null && identity.getRemoteEndpoint() != null)
 				clientAddress = identity.getRemoteEndpoint();
 
-			if (clientPort == 0)
+			if (clientPort <= 0)
 				clientPort = identity.getRemotePort();
 		}
 
