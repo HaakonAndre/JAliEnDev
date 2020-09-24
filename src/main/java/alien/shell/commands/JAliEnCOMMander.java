@@ -117,7 +117,8 @@ public class JAliEnCOMMander implements Runnable {
 	 */
 	private static final String[] jAliEnCommandList = new String[] {
 			"cd", "pwd", "mkdir", "rmdir",
-			"ls", "find", "toXml", "cat", "whereis", "cp", "rm", "mv", "touch", "type", "lfn2guid", "guid2lfn", "access", "commit", "chown", "chmod", "deleteMirror", "md5sum", "mirror", "grep",
+			"ls", "find", "toXml", "cat", "whereis", "cp", "rm", "mv", "touch", "type", "lfn2guid", "guid2lfn", "access", "commit", "chown", "chmod", "deleteMirror", "md5sum", "mirror",
+			"grep",
 			"changeDiff",
 			"listFilesFromCollection", "addFileToCollection",
 			"packages",
@@ -125,7 +126,7 @@ public class JAliEnCOMMander implements Runnable {
 			"df", "du", "fquota", "jquota",
 			"listSEs", "listSEDistance", "setSite", "testSE", "listTransfer", "uuid", "stat", "xrdstat", "randomPFNs",
 			"showTagValue",
-			"time", "commandlist", "motd", "ping", "version",
+			"time", "timing", "commandlist", "motd", "ping", "version",
 			"whoami", "user", "whois", "groups", "token" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
@@ -157,7 +158,7 @@ public class JAliEnCOMMander implements Runnable {
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "roleami", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color", "setshell", "randomPFNs" };
+	private static final String[] hiddenCommandList = new String[] { "roleami", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color", "setshell", "randomPFNs", "timing" };
 
 	private UIPrintWriter out = null;
 
@@ -183,6 +184,8 @@ public class JAliEnCOMMander implements Runnable {
 	private static JAliEnCOMMander lastInstance = null;
 
 	private long commandCount = 0;
+
+	private boolean returnTiming = false;
 
 	/**
 	 * @return a commander instance
@@ -668,9 +671,36 @@ public class JAliEnCOMMander implements Runnable {
 			}
 		}
 
+		if (returnTiming)
+			out.setMetaInfo("timing_ms", String.valueOf(event.timing.getMillis()));
+		else
+			out.setMetaInfo("timing_ms", null);
+
 		event.exitCode = out.getReturnCode();
 		event.errorMessage = out.getErrorMessage();
 		flush();
+	}
+
+	/**
+	 * Set the timing flag, to return server side command execution timing to the client
+	 * 
+	 * @param timingInfo
+	 * @return the previous value of this flag
+	 */
+	public boolean setTiming(final boolean timingInfo) {
+		final boolean previousValue = returnTiming;
+
+		returnTiming = timingInfo;
+
+		return previousValue;
+	}
+
+	/**
+	 * @return the timing flag
+	 * @see #setTiming(boolean)
+	 */
+	public boolean getTiming() {
+		return returnTiming;
 	}
 
 	/**
