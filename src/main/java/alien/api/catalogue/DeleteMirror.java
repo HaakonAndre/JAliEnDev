@@ -61,8 +61,14 @@ public class DeleteMirror extends Request {
 			final LFN lfn = LFNUtils.getLFN(path, true);
 			g = GUIDUtils.getGUID(lfn);
 		}
+
+		if (g == null) {
+			result = -1;
+			return;
+		}
+
 		// Here check authorization for delete mirror procedure
-		if (!AuthorizationChecker.isOwner(g, this.getEffectiveRequester())) {
+		if (!AuthorizationChecker.isOwner(g, this.getEffectiveRequester()) && !this.getEffectiveRequester().canBecome(g.owner) && !this.getEffectiveRequester().canBecome("admin")) {
 			result = -3; // not authorized
 			return;
 		}
