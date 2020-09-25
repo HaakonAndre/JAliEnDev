@@ -1099,7 +1099,8 @@ public final class SEUtils {
 						gdb.setReadOnly(true);
 
 						if (realPFNs) {
-							gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
+							gdb.query("select distinct pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber="
+									+ se.seNumber + ";");
 
 							while (gdb.moveNext()) {
 								pw.print(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
@@ -1119,7 +1120,8 @@ public final class SEUtils {
 							}
 						}
 						else {
-							gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
+							gdb.query("select distinct binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber
+									+ ";");
 
 							while (gdb.moveNext()) {
 								final String guid = gdb.gets(1);
