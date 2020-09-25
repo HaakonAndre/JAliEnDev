@@ -158,7 +158,7 @@ public class JAliEnCOMMander implements Runnable {
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "roleami", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color", "setshell", "randomPFNs", "timing" };
+	private static final String[] hiddenCommandList = new String[] { "roleami", "cdir", "gfilecomplete", "cdirtiled", "blackwhite", "color", "setshell", "randomPFNs" };
 
 	private UIPrintWriter out = null;
 
