@@ -631,7 +631,7 @@ public final class TransferUtils {
 		}
 	}
 
-	private static ExpirationCache<SE, Map<Integer, ProtocolStats>> protocolStatCache = new ExpirationCache<>();
+	private static ExpirationCache<SE, Map<Integer, ProtocolStats>> protocolStatCache = new ExpirationCache<>(1024);
 
 	/**
 	 * @param target

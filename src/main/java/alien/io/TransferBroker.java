@@ -131,7 +131,7 @@ public class TransferBroker {
 
 	private DBFunctions dbCached = ConfigUtils.getDB("transfers");
 
-	private final ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>();
+	private final ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>(1024);
 
 	private int getMaxTransfers(final String seName) {
 		final Integer i = maxTransfersCache.get(seName.toLowerCase());

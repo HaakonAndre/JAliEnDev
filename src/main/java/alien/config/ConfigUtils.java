@@ -56,7 +56,7 @@ import lia.Monitor.monitor.AppConfig;
  * @since Nov 3, 2010
  */
 public class ConfigUtils {
-	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<>();
+	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<>(1024);
 
 	private static Logger logger;
 

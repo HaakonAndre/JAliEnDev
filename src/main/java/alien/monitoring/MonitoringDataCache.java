@@ -14,6 +14,13 @@ import lazyj.cache.ExpirationCache;
  */
 public class MonitoringDataCache extends ExpirationCache<String, Map.Entry<Long, Object>> implements MonitorDataCallback {
 
+	/**
+	 * 
+	 */
+	public MonitoringDataCache() {
+		super(10240);
+	}
+	
 	private long ttl = 300000;
 
 	@Override

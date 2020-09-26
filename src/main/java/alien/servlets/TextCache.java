@@ -55,7 +55,7 @@ import lia.util.StringFactory;
 public class TextCache extends HttpServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 
-	private static final ExpirationCache<String, Integer> defaultNamespaceExpiration = new ExpirationCache<>();
+	private static final ExpirationCache<String, Integer> defaultNamespaceExpiration = new ExpirationCache<>(1024);
 
 	private static int getDefaultExpiration(final String namespace) {
 		final Integer i = defaultNamespaceExpiration.get(namespace);

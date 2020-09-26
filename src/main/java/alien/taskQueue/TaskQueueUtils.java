@@ -2864,7 +2864,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static final ExpirationCache<String, Integer> siteIdCache = new ExpirationCache<>();
+	private static final ExpirationCache<String, Integer> siteIdCache = new ExpirationCache<>(1024);
 
 	/**
 	 * @param ceName
