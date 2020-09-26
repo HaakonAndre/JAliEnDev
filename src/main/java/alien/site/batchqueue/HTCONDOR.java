@@ -366,7 +366,7 @@ public class HTCONDOR extends BatchQueue {
 
 				logger.info(String.format(
 						"--> %s has idle fraction %d / %d = %5.3f vs. weight %5.3f",
-						ce, idle, Integer.valueOf(tot_waiting), f, w));
+						ce, idle.intValue(), Integer.valueOf(tot_waiting), f, w));
 
 				if (f.doubleValue() < w.doubleValue()) {
 					break;
@@ -554,7 +554,7 @@ public class HTCONDOR extends BatchQueue {
 		logger.info("Found " + tot_waiting + " idle (and " + tot_running + " running) jobs:");
 
 		for (String ce : ce_list) {
-			logger.info(String.format("%5d (%5d) for %s", waiting.get(ce), running.get(ce), ce));
+			logger.info(String.format("%5d (%5d) for %s", waiting.get(ce).intValue(), running.get(ce).intValue(), ce));
 		}
 
 		job_numbers_timestamp = now;
