@@ -297,7 +297,7 @@ public class TaskQueueUtils {
 
 			while (db.moveNext())
 				ret.add(new Job(db, loadJDL));
-			
+
 			Collections.sort(ret);
 		}
 
@@ -368,9 +368,9 @@ public class TaskQueueUtils {
 			final String q;
 
 			if (dbStructure2_20)
-				q = "select split,statusId,count(1) from QUEUE where split in (" + sb.toString() + ") AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " group by split,statusId order by 1,2;";
+				q = "select split,statusId,count(1) from QUEUE where split in (" + sb.toString() + ") AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " group by split,statusId order by 1;";
 			else
-				q = "select split,status,count(1) from QUEUE where split in (" + sb.toString() + ") AND status!='KILLED' group by split,status order by 1,2;";
+				q = "select split,status,count(1) from QUEUE where split in (" + sb.toString() + ") AND status!='KILLED' group by split,status order by 1;";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
@@ -472,12 +472,12 @@ public class TaskQueueUtils {
 				else
 					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
 
-				q += " WHERE split=? AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ORDER BY queueId ASC";
+				q += " WHERE split=? AND statusId!=" + JobStatus.KILLED.getAliEnLevel();
 			}
 			else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED';";
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED';";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(300);
@@ -488,6 +488,8 @@ public class TaskQueueUtils {
 
 			while (db.moveNext())
 				ret.add(new Job(db, loadJDL));
+
+			Collections.sort(ret);
 		}
 
 		return ret;
@@ -1196,7 +1198,7 @@ public class TaskQueueUtils {
 				monitor.incrementCounter("TQ_matching_jobs_summary");
 			}
 
-			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site order by site;");
+			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site;");
 
 			while (db.moveNext()) {
 				final String sites = db.gets(1);
@@ -2549,7 +2551,7 @@ public class TaskQueueUtils {
 			else
 				q = "SELECT substring_index(submithost,'@',1),count(1) FROM QUEUE WHERE status IN (" + sb + ")";
 
-			q += "GROUP BY 1 ORDER BY 1;";
+			q += "GROUP BY 1;";
 
 			db.setReadOnly(true);
 
