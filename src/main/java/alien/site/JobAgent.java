@@ -660,7 +660,7 @@ public class JobAgent implements Runnable {
 					final String error = checkProcessResources();
 					if (error != null) {
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
-						commander.q_api.putJobLog(queueId, "trace", "Process overusing resources. Killing job!");
+						//commander.q_api.putJobLog(queueId, "trace", "Process overusing resources. Killing job!");
 						// killProcess.run(); //TODO: Temporarily disabled
 						// return 1;
 					}
