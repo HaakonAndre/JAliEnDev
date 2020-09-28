@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import alien.shell.ErrNo;
 import alien.taskQueue.Job;
@@ -18,13 +19,31 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-
 		final List<Job> jobs = commander.q_api.getJobs(queueIds);
 
-		for (final Job job : jobs)
-			if (AuthorizationChecker.canModifyJob(job, commander.user))
-				if (!commander.q_api.killJob(job.queueId))
+		for (final Job job : jobs) {
+			if (job == null)
+				continue;
+
+			commander.printOut("jobid", String.valueOf(job.queueId));
+			if (AuthorizationChecker.canModifyJob(job, commander.user)) {
+				if (!commander.q_api.killJob(job.queueId)) {
+					commander.printOutln("Could not kill: " + job.queueId);
 					commander.setReturnCode(ErrNo.EREMOTEIO, "Could not kill the job with id: [" + job.queueId + "]");
+					commander.printOut("status", "failed_to_kill");
+				}
+				else {
+					commander.printOutln("Killed: " + job.queueId);
+					commander.printOut("status", "killed");
+				}
+			}
+			else {
+				commander.printOutln("You are not allowed to kill " + job.queueId);
+				commander.printOut("status", "not_allowed");
+			}
+
+			commander.outNextResult();
+		}
 	}
 
 	/**
@@ -61,15 +80,22 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 		queueIds = new ArrayList<>(alArguments.size());
 
-		for (final String id : alArguments)
-			try {
-				queueIds.add(Long.valueOf(id));
+		for (final String id : alArguments) {
+			final StringTokenizer st = new StringTokenizer(id, " \r\n\t,;");
+
+			while (st.hasMoreTokens()) {
+				final String tok = st.nextToken();
+
+				try {
+					queueIds.add(Long.valueOf(tok));
+				}
+				catch (@SuppressWarnings("unused") final NumberFormatException e) {
+					commander.setReturnCode(ErrNo.EINVAL, "Invalid job ID: " + id);
+					setArgumentsOk(false);
+					return;
+				}
 			}
-			catch (@SuppressWarnings("unused") final NumberFormatException e) {
-				commander.setReturnCode(ErrNo.EINVAL, "Invalid job ID: " + id);
-				setArgumentsOk(false);
-				return;
-			}
+		}
 	}
 
 }
