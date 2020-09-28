@@ -13,6 +13,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -285,7 +286,7 @@ public class TaskQueueUtils {
 				else
 					q += "AND submitHost LIKE '" + Format.escSQL(account) + "@%'";
 
-			q += " AND received>UNIX_TIMESTAMP(now())-60*60*24*14 ORDER BY queueId ASC;";
+			q += " AND received>UNIX_TIMESTAMP(now())-60*60*24*14";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
@@ -296,6 +297,8 @@ public class TaskQueueUtils {
 
 			while (db.moveNext())
 				ret.add(new Job(db, loadJDL));
+			
+			Collections.sort(ret);
 		}
 
 		return ret;
