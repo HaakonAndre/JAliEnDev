@@ -860,7 +860,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 */
 	private void registerEntries(ArrayList<OutputEntry> entries, String outputDir) {
 		for (final OutputEntry entry : entries) {
-			CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
+			boolean status = CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
+			commander.q_api.putJobLog(queueId, "trace", "Registering: " + entry.getName() + ". Return status: " + status);
 		}
 	}
 
