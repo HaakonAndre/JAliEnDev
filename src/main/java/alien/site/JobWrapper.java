@@ -618,7 +618,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
 						break;
 					}
-					else if (lower_output.contains("failed")) {
+					else if (lower_output.contains("failed") || lower_output.contains("err")) {
 						uploadedAllOutFiles = false;
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
 						break;
