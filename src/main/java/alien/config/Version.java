@@ -42,7 +42,7 @@ public class Version {
 	}
 
 	/**
-	 * @return the latest defined tag at the time of the compilation
+	 * @return the latest defined tag at the time of the compilation. Format: "1.x.x"
 	 */
 	public static String getTag() {
 		if (versionConfig == null)
@@ -88,7 +88,7 @@ public class Version {
 
 	/**
 	 *
-	 * @return the tag present in env (in case of AliEnv)
+	 * @return the tag present in env (in case of AliEnv). Format: "/1.x.x-y"
 	 */
 	public static String getTagFromEnv() {
 		try {
