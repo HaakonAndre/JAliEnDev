@@ -985,6 +985,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			return true;
 		}
 		else if (envelopes.size() > 0) {
+			// Warning: do NOT touch this message, it is used in particular by JobWrapper to decide upon the job status
 			if (report)
 				commander.printOutln("Only " + envelopes.size() + " out of " + desiredCount + " requested replicas could be uploaded");
 
