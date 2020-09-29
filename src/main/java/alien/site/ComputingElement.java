@@ -336,6 +336,8 @@ public class ComputingElement extends Thread {
 			before += "export TMPDIR=\"" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "\"\n";
 		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
 			before += "export WORKDIR=\"" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "\"\n";
+		if (System.getenv().containsKey("cerequirements"))
+			before += "export cerequirements=\"" + System.getenv().get("cerequirements")+ "\"\n";
 		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
 		before += "export site=\"" + site + "\"\n";
 		before += "export CE=\"" + siteMap.get("CE") + "\"\n";
@@ -357,6 +359,7 @@ public class ComputingElement extends Thread {
 		try {
 			agent_startup_file.createNewFile();
 			agent_startup_file.setExecutable(true);
+			agent_startup_file.deleteOnExit();
 		}
 		catch (final IOException e1) {
 			logger.info("Error creating Agent Startup file: " + e1.toString());
@@ -469,7 +472,9 @@ public class ComputingElement extends Thread {
 
 		smenv.put("Disk", "100000000"); // TODO: df
 
-		if (config.containsKey("ce_cerequirements"))
+		if (System.getenv().containsKey("cerequirements"))
+			smenv.put("cerequirements", System.getenv().get("cerequirements")); //Local overrides value in LDAP if present
+		else if (config.containsKey("ce_cerequirements"))
 			smenv.put("cerequirements", config.get("ce_cerequirements").toString());
 
 		if (config.containsKey("ce_partition"))
