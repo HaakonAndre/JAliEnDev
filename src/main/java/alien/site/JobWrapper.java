@@ -425,7 +425,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			commander.q_api.putJobLog(queueId, "trace", "ERROR: No requested files could be located: getLFNs returned null");
 			return false;
 		}
-		
+
 		if (iFiles.size() != filesToDownload.size()) {
 			logger.log(Level.WARNING, "Not all requested files could be located");
 			commander.q_api.putJobLog(queueId, "trace", "ERROR: Not all requested files could be located. Located files " + iFiles.size() + ", but expected " + filesToDownload.size());
@@ -446,7 +446,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (localFile.exists()) {
 				logger.log(Level.WARNING, "Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
-				commander.q_api.putJobLog(queueId, "trace","ERROR: Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
+				commander.q_api.putJobLog(queueId, "trace", "ERROR: Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
 				return false;
 			}
 
@@ -458,7 +458,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			if (pfns == null || pfns.size() == 0) {
 				logger.log(Level.WARNING, "No replicas of " + entry.getKey().getCanonicalName() + " to read from");
-				commander.q_api.putJobLog(queueId, "trace","ERROR: No replicas of " + entry.getKey().getCanonicalName() + " to read from");
+				commander.q_api.putJobLog(queueId, "trace", "ERROR: No replicas of " + entry.getKey().getCanonicalName() + " to read from");
 				return false;
 			}
 
@@ -468,12 +468,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 			logger.log(Level.INFO, g + ". entry.getvalue(): " + entry.getValue());
 			commander.q_api.putJobLog(queueId, "trace", g + ". entry.getvalue(): " + entry.getValue());
-			
+
 			final File f = IOUtils.get(g, entry.getValue());
 
 			if (f == null) {
 				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
-				commander.q_api.putJobLog(queueId, "trace","ERROR: Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+				commander.q_api.putJobLog(queueId, "trace", "ERROR: Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				return false;
 			}
 
@@ -586,53 +586,63 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		final ArrayList<OutputEntry> entries = filesTable.getEntries();
 
 		for (final OutputEntry entry : entries) {
-			File localFile;
 			try {
-				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
+				final File localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 				logger.log(Level.INFO, "Processing output file: " + localFile);
 
 				if (entry.isArchive())
 					entry.createZip(currentDir.getAbsolutePath());
 
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
-					// Use upload instead
 					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName() + " to " + outputDir);
 
-					String args = "-w,-S," +
-							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") +
-							",-j," + String.valueOf(queueId);
+					final List<String> cpOptions = new ArrayList<>();
+					cpOptions.add("-w");
+					cpOptions.add("-S");
+
+					if (entry.getOptions() != null && entry.getOptions().length() > 0)
+						cpOptions.add(entry.getOptions());
+					else
+						cpOptions.add("disk:2");
+
+					cpOptions.add("-j");
+					cpOptions.add(String.valueOf(queueId));
 
 					// Don't commit in case of ERROR_E or ERROR_V
 					if (exitStatus == JobStatus.ERROR_E || exitStatus == JobStatus.ERROR_V)
-						args += ",-nc";
+						cpOptions.add("-nc");
 
 					final ByteArrayOutputStream out = new ByteArrayOutputStream();
-					IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, args.split(","));
-					final String output_upload = out.toString("UTF-8");
-					final String lower_output = output_upload.toLowerCase();
+					final LFN uploadResult = IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, cpOptions.toArray(new String[0]));
 
-					logger.log(Level.INFO, "Output upload: " + output_upload);
+					final String output_upload = out.toString();
+					logger.log(Level.INFO,
+							"Output result of " + localFile.getAbsolutePath() + " to " + outputDir + "/" + entry.getName() + " is:\nLFN = " + uploadResult + "\nFull `cp` output:\n" + output_upload);
 
-					if (lower_output.contains("only")) {
+					if (uploadResult == null) {
+						// complete failure to upload the file, mark the job as failed, not trying further to upload anything
+						uploadedAllOutFiles = false;
+						commander.q_api.putJobLog(queueId, "trace", "Failed to upload to " + outputDir + "/" + entry.getName() + ": " + out.toString());
+						break;
+					}
+
+					// success, but could all the copies requested in the JDL be created as per user specs?
+					if (output_upload.contains("requested replicas could be uploaded")) {
+						// partial success, will lead to a DONE_WARN state
 						uploadedNotAllCopies = true;
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
-						break;
 					}
-					else if (lower_output.contains("failed") || lower_output.contains("err")) {
-						uploadedAllOutFiles = false;
-						commander.q_api.putJobLog(queueId, "trace", output_upload);
-						break;
-					}
+					else
+						commander.q_api.putJobLog(queueId, "trace", uploadResult.getCanonicalName() + ": uploaded as requested");
 				}
 				else {
 					logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 					commander.q_api.putJobLog(queueId, "trace", "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 				}
-
 			}
 			catch (final IOException e) {
-				logger.log(Level.WARNING, "IOException received while attempting to upload files", e);
-				commander.q_api.putJobLog(queueId, "trace", e.getMessage());
+				logger.log(Level.WARNING, "IOException received while attempting to upload " + entry.getName(), e);
+				commander.q_api.putJobLog(queueId, "trace", "Failed to upload " + entry.getName() + " due to: " + e.getMessage());
 				uploadedAllOutFiles = false;
 			}
 		}
