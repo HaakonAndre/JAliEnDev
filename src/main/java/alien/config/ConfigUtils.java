@@ -602,23 +602,29 @@ public class ConfigUtils {
 		if (siteset.size() == 0 && !checkContent)
 			return configuration;
 
-		String site = getConfig().gets("this.ce");
-		if (site == null || site.isEmpty())
+		HashMap<String, Object> hostConfig = null;
+		String site = null;
+
+		// siteset might contain more than one site. Let's see if one of them matches the given hostname
+		while (siteset.iterator().hasNext()) {
 			site = siteset.iterator().next();
+
+			// Get the hostConfig from LDAP based on the site and hostname
+			hostConfig = LDAPHelper.checkLdapTree("(&(host=" + hostName + "))", "ou=Config,ou=" + site + ",ou=Sites,", "host");
+
+			if (hostConfig.size() != 0)
+				break;
+		}
+		if (checkContent && hostConfig.size() == 0) {
+			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
+			return null;
+		}
 
 		// Get the root site config based on site name
 		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
 
 		if (checkContent && siteConfig.size() == 0) {
 			logger.severe("Error: cannot find site root configuration in LDAP for site: " + site);
-			return null;
-		}
-
-		// Get the hostConfig from LDAP based on the site and hostname
-		final HashMap<String, Object> hostConfig = LDAPHelper.checkLdapTree("(&(host=" + hostName + "))", "ou=Config,ou=" + site + ",ou=Sites,", "host");
-
-		if (checkContent && hostConfig.size() == 0) {
-			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
 			return null;
 		}
 
