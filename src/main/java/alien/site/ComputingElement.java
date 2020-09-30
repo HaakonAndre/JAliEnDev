@@ -348,6 +348,8 @@ public class ComputingElement extends Thread {
 			before += "export installationMethod=\"" + config.get("ce_installationmethod") + "\"\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE=\"" + siteMap.get("closeSE") + "\"\n";
+		if (siteMap.containsKey("partition"))
+			before += "export partition=\"" + siteMap.get("partition") + "\"\n";
 		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
 
 		startup_script = getStartup() + "\n";
