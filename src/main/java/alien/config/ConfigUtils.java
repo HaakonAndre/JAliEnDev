@@ -1,6 +1,3 @@
-/**
- *
- */
 package alien.config;
 
 import java.beans.PropertyChangeEvent;
@@ -572,7 +569,6 @@ public class ConfigUtils {
 	 */
 	public static HashMap<String, Object> getConfigFromLdap(final boolean checkContent) {
 		// Get hostname and domain
-
 		return getConfigFromLdap(checkContent, getLocalHostname());
 	}
 
@@ -619,9 +615,6 @@ public class ConfigUtils {
 			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
 			return null;
 		}
-
-		// Get the root site config based on site name
-		final HashMap<String, Object> siteConfig = getSiteConfigFromLdap(checkContent, site);
 		
 		if (checkContent && !hostConfig.containsKey("host_ce")) {
 			logger.severe("Error: cannot find ce configuration in hostConfig for host: " + hostName);
@@ -653,6 +646,11 @@ public class ConfigUtils {
 
 			// TODO: check to which partitions it belongs
 		}
+
+		final HashMap<String, Object> siteConfig = getSiteConfigFromLdap(checkContent, site);
+		if (siteConfig == null || siteConfig.size() == 0)
+		return null;
+		
 		// We put the config together
 		configuration.putAll(voConfig);
 		configuration.putAll(siteConfig);
@@ -706,8 +704,12 @@ public class ConfigUtils {
 		return configuration;
 	}
 
+	/**
+	 * @param checkContent
+	 * @param site
+	 * @return // root site config based on site name
+	 */
 	public static HashMap<String, Object> getSiteConfigFromLdap(final boolean checkContent, final String site) {
-		// Get the root site config based on site name
 		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
 
 		if (checkContent && siteConfig.size() == 0) {
