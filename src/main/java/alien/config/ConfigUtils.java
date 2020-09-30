@@ -621,13 +621,8 @@ public class ConfigUtils {
 		}
 
 		// Get the root site config based on site name
-		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
-
-		if (checkContent && siteConfig.size() == 0) {
-			logger.severe("Error: cannot find site root configuration in LDAP for site: " + site);
-			return null;
-		}
-
+		final HashMap<String, Object> siteConfig = getSiteConfigFromLdap(checkContent, site);
+		
 		if (checkContent && !hostConfig.containsKey("host_ce")) {
 			logger.severe("Error: cannot find ce configuration in hostConfig for host: " + hostName);
 			return null;
@@ -709,6 +704,17 @@ public class ConfigUtils {
 		}
 
 		return configuration;
+	}
+
+	public static HashMap<String, Object> getSiteConfigFromLdap(final boolean checkContent, final String site) {
+		// Get the root site config based on site name
+		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
+
+		if (checkContent && siteConfig.size() == 0) {
+			logger.severe("Error: cannot find site root configuration in LDAP for site: " + site);
+			return null;
+		}
+		return siteConfig;
 	}
 
 	/**
