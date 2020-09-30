@@ -263,6 +263,7 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 					l.type = type != null && type.length() > 0 ? type.charAt(0) : 'f';
 					l.guidtime = guidtime;
 					l.replicated = Utils.stringToBool(replicated, false);
+					l.exists = true;
 
 					if (!this.add(l))
 						logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
