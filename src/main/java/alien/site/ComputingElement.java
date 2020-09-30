@@ -337,7 +337,9 @@ public class ComputingElement extends Thread {
 		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
 			before += "export WORKDIR=\"" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "\"\n";
 		if (System.getenv().containsKey("cerequirements"))
-			before += "export cerequirements=\"" + System.getenv().get("cerequirements")+ "\"\n";
+			before += "export cerequirements=\"" + System.getenv().get("cerequirements") + "\"\n";
+		if (System.getenv().containsKey("partition"))
+			before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
 		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
 		before += "export site=\"" + site + "\"\n";
 		before += "export CE=\"" + siteMap.get("CE") + "\"\n";
@@ -348,8 +350,6 @@ public class ComputingElement extends Thread {
 			before += "export installationMethod=\"" + config.get("ce_installationmethod") + "\"\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE=\"" + siteMap.get("closeSE") + "\"\n";
-		if (siteMap.containsKey("partition"))
-			before += "export partition=\"" + siteMap.get("partition") + "\"\n";
 		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
 
 		startup_script = getStartup() + "\n";
