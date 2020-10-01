@@ -25,6 +25,10 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 
 	private boolean fullNameSearch = false;
 
+	private boolean emailSearch = false;
+
+	private boolean dnSearch = false;
+
 	private final List<String> searchFor = new ArrayList<>();
 
 	/**
@@ -35,11 +39,23 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 		final Set<String> usernames = new TreeSet<>();
 
 		for (final String s : searchFor)
-			if (search || fullNameSearch) {
+			if (search || fullNameSearch || emailSearch || dnSearch) {
 				String searchQuery = "(uid=*" + s + "*)";
 
 				if (fullNameSearch)
 					searchQuery = "(|" + searchQuery + "(gecos=*" + s + "*)(cn=*" + s + "*))";
+
+				if (emailSearch)
+					if (searchQuery.endsWith("))"))
+						searchQuery = searchQuery.substring(0, searchQuery.length() - 1) + "(email=*" + s + "*))";
+					else
+						searchQuery = "(|" + searchQuery + "(email=*" + s + "*))";
+
+				if (dnSearch)
+					if (searchQuery.endsWith("))"))
+						searchQuery = searchQuery.substring(0, searchQuery.length() - 1) + "(subject=*" + s + "*))";
+					else
+						searchQuery = "(|" + searchQuery + "(subject=*" + s + "*))";
 
 				final Set<String> uids = LDAPHelper.checkLdapInformation(searchQuery, "ou=People,", "uid");
 
@@ -122,6 +138,9 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-s", "search for the given string(s) in usernames"));
 		commander.printOutln(helpOption("-f", "also search in full names"));
+		commander.printOutln(helpOption("-e", "search in email addresses too"));
+		commander.printOutln(helpOption("-d", "search in X509 DN (subject) fields"));
+		commander.printOutln(helpOption("-a", "search for the given string in all the above fields"));
 
 		commander.printOutln();
 	}
@@ -153,6 +172,9 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 			parser.accepts("h");
 			parser.accepts("s");
 			parser.accepts("f");
+			parser.accepts("e");
+			parser.accepts("d");
+			parser.accepts("a");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -160,8 +182,11 @@ public class JAliEnCommandwhois extends JAliEnBaseCommand {
 				printHelp();
 				return;
 			}
-			search = options.has("s");
-			fullNameSearch = options.has("f");
+
+			search = options.has("s") || options.has("a");
+			fullNameSearch = options.has("f") || options.has("a");
+			emailSearch = options.has("e") || options.has("a");
+			dnSearch = options.has("d") || options.has("a");
 
 			for (final Object o : options.nonOptionArguments())
 				searchFor.add(o.toString());
