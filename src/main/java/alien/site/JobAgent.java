@@ -978,6 +978,13 @@ public class JobAgent implements Runnable {
 
 	private final Object notificationEndpoint = new Object();
 
+	// TODO call this method when there is a positive notification that the JW has exited. Should only be called _after_ the process has exited, otherwise the checks are still done.
+	void notifyOnJWCompletion() {
+		synchronized (notificationEndpoint) {
+			notificationEndpoint.notifyAll();
+		}
+	}
+
 	/**
 	 *
 	 * Kills the payload of a given JobWrapper process
