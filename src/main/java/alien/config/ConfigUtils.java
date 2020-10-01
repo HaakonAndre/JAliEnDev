@@ -595,8 +595,12 @@ public class ConfigUtils {
 		}
 
 		// users won't be always in a registered domain so we can exit here
-		if (siteset.size() == 0 && !checkContent)
+		if (siteset.size() == 0) {
+			if (checkContent)
+				return null;
+
 			return configuration;
+		}
 
 		HashMap<String, Object> hostConfig = null;
 		String site = null;
@@ -611,11 +615,19 @@ public class ConfigUtils {
 			if (hostConfig.size() != 0)
 				break;
 		}
+
+		if (hostConfig == null) {
+			if (checkContent)
+				return null;
+
+			hostConfig = new HashMap<>();
+		}
+
 		if (checkContent && hostConfig.size() == 0) {
 			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
 			return null;
 		}
-		
+
 		if (checkContent && !hostConfig.containsKey("host_ce")) {
 			logger.severe("Error: cannot find ce configuration in hostConfig for host: " + hostName);
 			return null;
@@ -649,8 +661,8 @@ public class ConfigUtils {
 
 		final HashMap<String, Object> siteConfig = getSiteConfigFromLdap(checkContent, site);
 		if (siteConfig == null || siteConfig.size() == 0)
-		return null;
-		
+			return null;
+
 		// We put the config together
 		configuration.putAll(voConfig);
 		configuration.putAll(siteConfig);
