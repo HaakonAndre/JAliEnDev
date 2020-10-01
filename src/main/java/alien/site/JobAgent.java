@@ -619,7 +619,6 @@ public class JobAgent implements Runnable {
 			return 1;
 		}
 
-
 		if (monitorJob) {
 			final String process_res_format = "FRUNTIME | RUNTIME | CPUUSAGE | MEMUSAGE | CPUTIME | RMEM | VMEM | NOCPUS | CPUFAMILY | CPUMHZ | RESOURCEUSAGE | RMEMMAX | VMEMMAX";
 			logger.log(Level.INFO, process_res_format);
@@ -660,7 +659,7 @@ public class JobAgent implements Runnable {
 					final String error = checkProcessResources();
 					if (error != null) {
 						logger.log(Level.SEVERE, "Process overusing resources: " + error);
-						//commander.q_api.putJobLog(queueId, "trace", "Process overusing resources. Killing job!");
+						// commander.q_api.putJobLog(queueId, "trace", "Process overusing resources. Killing job!");
 						// killProcess.run(); //TODO: Temporarily disabled
 						// return 1;
 					}
@@ -977,13 +976,15 @@ public class JobAgent implements Runnable {
 		return 0;
 	}
 
+	private final Object notificationEndpoint = new Object();
+
 	/**
-	 * 
+	 *
 	 * Kills the payload of a given JobWrapper process
-	 * 
+	 *
 	 * @param p JobWrapper process
 	 */
-	private void killPayload(Process p) {
+	private void killPayload(final Process p) {
 		final Vector<Integer> childProcs = mj.getChildren();
 		if (childProcs != null && childProcs.size() > 1) {
 			try {
@@ -999,15 +1000,20 @@ public class JobAgent implements Runnable {
 		}
 
 		// Give the JW up to an hour to clean things up
-		int minCounter = 60;
-		while (p.isAlive() && minCounter > 0) {
-			try {
-				Thread.sleep(60 * 1000);
-				minCounter--;
-			}
-			catch (final Exception e) {
+		final long deadLine = System.currentTimeMillis() + 1000L * 60 * 60;
+
+		synchronized (notificationEndpoint) {
+			while (p.isAlive() && System.currentTimeMillis() < deadLine) {
+				try {
+					notificationEndpoint.wait(1000 * 5);
+				}
+				catch (final InterruptedException e) {
+					logger.log(Level.WARNING, "I was interrupted while waiting for the payload to clean up", e);
+					break;
+				}
 			}
 		}
+
 		// If still alive, kill everything, including the JW
 		if (p.isAlive()) {
 			p.destroyForcibly();
