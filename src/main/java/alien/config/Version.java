@@ -86,11 +86,16 @@ public class Version {
 		return UNKNOWN;
 	}
 
+	private static String tagFromEnv = null;
+
 	/**
 	 *
 	 * @return the tag present in env (in case of AliEnv). Format: "/1.x.x-y"
 	 */
 	public static String getTagFromEnv() {
+		if (tagFromEnv != null)
+			return tagFromEnv;
+
 		try {
 			final String loadedmodules = System.getenv().get("LOADEDMODULES");
 			final int jalienModulePos = loadedmodules.lastIndexOf(":JAliEn/");
@@ -102,12 +107,13 @@ public class Version {
 				if (jalienVersionString.contains(":"))
 					jalienVersionString = jalienVersionString.substring(0, jalienVersionString.indexOf(':'));
 			}
-			return jalienVersionString;
+			tagFromEnv = jalienVersionString;
 		}
 		catch (StringIndexOutOfBoundsException | NullPointerException e) {
 			logger.log(Level.WARNING, "Could not get JAliEn version", e);
+			tagFromEnv = "";
 		}
 
-		return "";
+		return tagFromEnv;
 	}
 }
