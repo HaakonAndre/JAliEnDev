@@ -785,7 +785,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return null;
 	}
 
-	private void createAndAddResultsJDL(ParsedOutput filesTable) {
+	private void createAndAddResultsJDL(@SuppressWarnings("unused") ParsedOutput filesTable) {
 
 /*		final ArrayList<String> jdlOutput = new ArrayList<>();
 		for (final OutputEntry entry : filesTable.getEntries()) {
