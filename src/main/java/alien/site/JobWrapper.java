@@ -787,7 +787,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	private void createAndAddResultsJDL(ParsedOutput filesTable) {
 
-		final ArrayList<String> jdlOutput = new ArrayList<>();
+/*		final ArrayList<String> jdlOutput = new ArrayList<>();
 		for (final OutputEntry entry : filesTable.getEntries()) {
 
 			String entryString = entry.getName();
@@ -822,8 +822,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				}
 			}
 
-		}
-		jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput));
+		} 
+		jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput)); */
 
 		TaskQueueApiUtils.addResultsJdl(jdl, queueId);
 	}
