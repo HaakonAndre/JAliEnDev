@@ -304,9 +304,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				}
 			}
 
-			if (alPaths.size() < 2) {
+			if (alPaths.size() == 1) {
 				setArgumentsOk(false);
-				commander.setReturnCode(ErrNo.EINVAL, "Not enough parameters to `find`");
+				commander.setReturnCode(ErrNo.EINVAL, "Not enough parameters to `find`, check out the command usage instructions");
+				printHelp();
 			}
 		}
 		catch (final OptionException e) {
