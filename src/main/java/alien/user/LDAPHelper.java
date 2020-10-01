@@ -160,12 +160,12 @@ public class LDAPHelper {
 							tsResult.add(result.getName());
 							continue;
 						}
-						
+
 						final Attributes attribs = result.getAttributes();
 
 						if (attribs == null)
 							continue;
-						
+
 						final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
 
 						if (ba == null)
@@ -212,7 +212,7 @@ public class LDAPHelper {
 	 * @return Map of result from the query, keys are fields-values from the LDAP tree
 	 */
 	public static final HashMap<String, Object> checkLdapTree(final String sParam, final String sRootExt) {
-		return checkLdapTree(sParam, sRootExt, "");
+		return checkLdapTree(sParam, sRootExt, null);
 	}
 
 	/**
@@ -223,11 +223,13 @@ public class LDAPHelper {
 	 * @param prependKey
 	 * @return Map of result from the query, keys are fields-values from the LDAP tree
 	 */
-	public static final HashMap<String, Object> checkLdapTree(final String sParam, final String sRootExt, String prependKey) {
-		final String sCacheKey = sParam + "\n" + sRootExt;
+	public static final HashMap<String, Object> checkLdapTree(final String sParam, final String sRootExt, final String prependKey) {
 		String prepend = "";
-		if (!prependKey.equals(""))
+
+		if (prependKey != null && !prependKey.isBlank())
 			prepend = prependKey + "_";
+
+		final String sCacheKey = sParam + "\n" + sRootExt + "\n" + prepend;
 
 		HashMap<String, Object> result = cacheTree.get(sCacheKey);
 
