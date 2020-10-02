@@ -305,9 +305,26 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			}
 
 			if (alPaths.size() == 1) {
-				setArgumentsOk(false);
-				commander.setReturnCode(ErrNo.EINVAL, "Not enough parameters to `find`, check out the command usage instructions");
-				printHelp();
+				// can we infer the path and the pattern from the only argument we have?
+				String path = alPaths.get(0);
+
+				int idx = path.indexOf('*');
+
+				if (idx > 0) {
+					idx = path.lastIndexOf('/', idx);
+
+					if (idx > 0) {
+						alPaths.clear();
+						alPaths.add(path.substring(0, idx));
+						alPaths.add(path.substring(idx + 1));
+					}
+				}
+
+				if (alPaths.size() == 1) {
+					setArgumentsOk(false);
+					commander.setReturnCode(ErrNo.EINVAL, "I can't infer the search pattern from `" + path + "`, please pass the base directory and the search pattern separately");
+					printHelp();
+				}
 			}
 		}
 		catch (final OptionException e) {
