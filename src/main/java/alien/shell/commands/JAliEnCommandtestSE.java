@@ -469,9 +469,7 @@ public class JAliEnCommandtestSE extends JAliEnBaseCommand {
 			return;
 		}
 
-		if (sesToTest.isEmpty()) {
-			commander.printErrln("No SE to test");
+		if (sesToTest.isEmpty())
 			setArgumentsOk(false);
-		}
 	}
 }
