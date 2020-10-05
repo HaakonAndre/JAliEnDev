@@ -1,5 +1,7 @@
 package alien.shell.commands;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -19,16 +21,24 @@ public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 		}
 
 		final Set<String> users = commander.q_api.getGroupMembers(this.group);
-		commander.printOut("Members of " + this.group + ": ");
-		for (final String user : users)
-			commander.printOut(user + " ");
+
+		if (users == null || users.isEmpty()) {
+			commander.setReturnCode(ErrNo.ENOENT, "Group " + this.group + " does not exist");
+			return;
+		}
+
+		final List<String> sortedUsers = new ArrayList<>(users);
+		Collections.sort(sortedUsers);
+
+		commander.printOut("Members of " + this.group + ": " + String.join(" ", sortedUsers));
 
 		commander.printOutln();
 	}
 
 	@Override
 	public void printHelp() {
-		commander.printOutln("groupmembers <group> : displays group members ");
+		commander.printOutln("Show the accounts that can take the given role name");
+		commander.printOutln(helpUsage("groupmembers", "<group name>"));
 		commander.printOutln();
 	}
 
