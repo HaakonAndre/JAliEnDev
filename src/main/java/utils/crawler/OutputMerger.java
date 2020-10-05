@@ -92,12 +92,11 @@ class OutputMerger {
 		outputFileType = args[2];
 	}
 
-
 	/**
 	 * Start the merging procedure for the output and statistics
 	 *
-	 * @param storageElement  The SE whose outputs must be merged
-	 * @param previousIterationUnixTimestamp 
+	 * @param storageElement The SE whose outputs must be merged
+	 * @param previousIterationUnixTimestamp
 	 */
 	private static void mergeFilesFromPreviousIteration(SE storageElement, @Nullable String previousIterationUnixTimestamp) {
 
@@ -120,7 +119,7 @@ class OutputMerger {
 			String mergedOutputPath = previousIterationSEPath + "merged_output." + outputFileType;
 			String mergedStatsPath = previousIterationSEPath + "merged_stats.json";
 
-			//merge output files
+			// merge output files
 			try {
 				mergedFile = mergeOutputs(storageElement, outputDirectoryPath);
 				CrawlerUtils.writeToDisk(commander, logger, mergedFile, mergedOutputPath);
@@ -171,9 +170,9 @@ class OutputMerger {
 				throw new Exception("Cannot get LFNs for path " + outputDirectoryPath);
 
 			if (outputFileType.equals("json"))
-				fw.append("{");
+				fw.write("{");
 			else if (outputFileType.equals("csv"))
-				fw.append(PFNData.CSV_HEADER);
+				fw.write(PFNData.CSV_HEADER);
 
 			boolean firstSEWithData = true;
 
@@ -202,7 +201,7 @@ class OutputMerger {
 							fileContents = fileContents.substring(fileContents.indexOf('\n') + 1);
 						}
 
-						fw.append(fileContents);
+						fw.write(fileContents);
 					}
 					else
 						logger.log(Level.WARNING, "File contents is null. Something went wrong with file read for SE " + se.seName);
@@ -219,7 +218,7 @@ class OutputMerger {
 			}
 
 			if (outputFileType.equals("json"))
-				fw.append("}");
+				fw.write("}");
 
 			fw.flush();
 		}
