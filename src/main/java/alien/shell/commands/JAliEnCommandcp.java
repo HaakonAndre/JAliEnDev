@@ -1149,17 +1149,21 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("cp", "[-options] < file:///localfile /gridfile >  |  < /gridfile file:///localfile >  |  < -t /gridfile >"));
+		commander.printOutln(helpUsage("cp", "[-options] <source> [<target>]"));
+		commander.printOutln("Source and target paths can be one of the following formats:");
+		commander.printOutln("\tfile://<local file on disk>");
+		commander.printOutln("\talien://<path in the Grid catalogue>");
+		commander.printOutln("\tor without a prefix, in which case it's treated as a Grid path");
 		commander.printOutln(helpStartOptions());
-		commander.printOutln(helpOption("-g", "get by GUID"));
-		commander.printOutln(helpOption("-S", "[se[,se2[,!se3[,qos:count]]]]"));
-		commander.printOutln(helpOption("-t", "create a local temp file"));
+		commander.printOutln(helpOption("-g", "treat the Grid path as a GUID"));
+		commander.printOutln(helpOption("-S <SEs|QoS:count>", "Storage target specifications for uploading, default is 'disk:2'"));
+		commander.printOutln(helpOption("-t", "no target needed, create a local temporary file instead, print out the local path at the end"));
 		commander.printOutln(helpOption("-silent", "execute command silently"));
 		commander.printOutln(helpOption("-w", "wait for all replicas to complete upload before returning (default " + bW + ")"));
 		commander.printOutln(helpOption("-W", "do _not_ wait for all replicas to complete upload, return as soon as the first replica is available"));
-		commander.printOutln(helpOption("-T", "Use this many concurrent threads (where possible) - default 1"));
+		commander.printOutln(helpOption("-T", "Use this many concurrent download threads (where possible) - default 1"));
 		commander.printOutln(helpOption("-d", "delete local file after a successful upload (i.e. move local to Grid)"));
-		commander.printOutln(helpOption("-j", "the job ID that has created the file"));
+		commander.printOutln(helpOption("-j <job ID>", "the job ID that has created the file"));
 		commander.printOutln();
 	}
 
