@@ -181,14 +181,12 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		commander.printOutln("Gives the disk space usge of one or more directories");
-		commander.printOutln("Usage: du [-ncs] <path> ...");
-		commander.printOutln();
-		commander.printOutln("Options:");
-		commander.printOutln("	-n: Print raw numbers in machine readable format");
-		commander.printOutln("	-c: Include collections in the summary information");
-		commander.printOutln("	-s: Print a summary of all parameters");
-		commander.printOutln();
+		commander.printOutln("Gives the disk space usage of one or more directories");
+		commander.printOutln(helpUsage("du", "[-ncs] <path>"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-n", "Print raw numbers in machine readable format"));
+		commander.printOutln(helpOption("-c", "Include collections in the summary information"));
+		commander.printOutln(helpOption("-s", "Print a summary of all parameters"));
 	}
 
 	@Override
