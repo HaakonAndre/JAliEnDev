@@ -63,8 +63,7 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("uptime", ""));
-		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpUsage("w", "Show currently active users on the Grid"));
 		commander.printOutln();
 	}
 
