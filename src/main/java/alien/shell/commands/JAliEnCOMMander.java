@@ -129,7 +129,7 @@ public class JAliEnCOMMander implements Runnable {
 			"time", "timing", "commandlist", "motd", "ping", "version",
 			"whoami", "user", "whois", "groups", "token" };
 
-	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
+	private static final String[] jAliEnAdminCommandList = new String[] { "groupmembers" };
 
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
