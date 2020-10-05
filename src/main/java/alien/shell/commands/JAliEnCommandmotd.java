@@ -18,19 +18,18 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-
-		final String sMotdMessage = "\n###############################################################\n" + "# AliEn Service Message: All is well in the Grid world. Enjoy!#\n"
-				+ "##############################################################\n" + "* Operational problems: Latchezar.Betev@cern.ch\n"
-				+ "* Bug reports: http://savannah.cern.ch/bugs/?group=alien&func=additem\n" + "###############################################################\n";
-
-		commander.printOutln(sMotdMessage);
-
+		commander.printOutln();
+		commander.printOutln("AliEn Service Message: All is well in the Grid world. Enjoy!");
+		commander.printOutln();
+		commander.printOutln("Project links:");
+		commander.printOutln("\tDocumentation: https://jalien.docs.cern.ch/");
+		commander.printOutln("\tBug reporting: https://alice.its.cern.ch/jira/projects/JAL/");
+		commander.printOutln("\tOperational issues: alice-analysis-operations@cern.ch");
 	}
 
 	@Override
 	public void printHelp() {
-		// ignore
-
+		commander.printOut(helpUsage("motd", "Message of the day"));
 	}
 
 	@Override
