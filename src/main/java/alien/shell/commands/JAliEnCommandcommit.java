@@ -109,7 +109,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		// ignore
+		commander.printOutln(helpUsage("commit", "API command only, you should not need to call this directly"));
 	}
 
 	/**
