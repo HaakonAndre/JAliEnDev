@@ -22,7 +22,7 @@ class PFNData {
 	/**
 	 * The result of the analysis
 	 */
-	private final CrawlingResult crawlingResults;
+	private final CrawlingStatus crawlingResults;
 
 	/**
 	 * Time in milliseconds it takes to download the PFN
@@ -55,9 +55,9 @@ class PFNData {
 	private final String catalogueMD5;
 
 
-	static final String CSV_HEADER = "SeName,PFN,StatusCode,StatusMessage,ObservedSize,CatalogueSize,ObservedMD5,CatalogueMD5,DownloadDurationMillis,XrdfsDurationMillis,seName,StatusCode,StatusMessage\n";
+	static final String CSV_HEADER = "Guid,SeName,PFN,ObservedSize,CatalogueSize,ObservedMD5,CatalogueMD5,DownloadDurationMillis,XrdfsDurationMillis,StatusCode,StatusMessage\n";
 
-	PFNData(String seName, String pfn, CrawlingResult crawlingResults, Long observedSize, Long catalogueSize, String observedMD5, String catalogueMD5, Long downloadDurationMillis, Long xrdfsDurationMillis) {
+	PFNData(String seName, String pfn, CrawlingStatus crawlingResults, Long observedSize, Long catalogueSize, String observedMD5, String catalogueMD5, Long downloadDurationMillis, Long xrdfsDurationMillis) {
 		this.seName = seName;
 		this.pfn = pfn;
 		this.crawlingResults = crawlingResults;

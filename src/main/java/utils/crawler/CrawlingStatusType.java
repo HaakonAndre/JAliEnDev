@@ -3,7 +3,7 @@ package utils.crawler;
 /**
  * @author anegru
  */
-enum CrawlingResultType {
+enum CrawlingStatusType {
 	FILE_OK,
 	FILE_CORRUPT,
 	FILE_INACCESSIBLE,

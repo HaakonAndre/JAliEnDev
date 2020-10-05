@@ -150,7 +150,7 @@ class SEFileCrawler {
 	private static void parseArguments(String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
-			throw new Exception("Number of arguments supplied is incorrect " + args.length + " " + ARGUMENT_COUNT);
+			throw new Exception("Number of arguments supplied is incorrect. Expected " + ARGUMENT_COUNT + ", but got " + args.length);
 
 		se = SEUtils.getSE(Integer.parseInt(args[0]));
 
@@ -181,9 +181,11 @@ class SEFileCrawler {
 			List<PFN> pfnsToCrawl = pfns.subList(pfnStartIndex, pfnEndIndex);
 			long[] timestamps = new long[pfnsToCrawl.size()];
 			
-			int totalPFNCount = pfnsToCrawl.size(), inaccessiblePFNs = 0, corruptPFNs = 0, okPFNs = 0;
+			int totalPFNCount = 0, inaccessiblePFNs = 0, corruptPFNs = 0, okPFNs = 0, unknownStatusPFNs = 0;
+			long fileSizeBytes = 0, downloadTotalDurationMillis = 0, downloadedPFNsTotalCount = 0;
+			long xrdfsTotalDurationMillis = 0, xrdfsPFNsTotalCount = 0;
 
-			if (totalPFNCount == 0)
+			if (pfnsToCrawl.size() == 0)
 				return null;
 
 			for (int i = 0; i < pfnsToCrawl.size(); i++) {
@@ -193,15 +195,23 @@ class SEFileCrawler {
 				long endTimestamp = System.currentTimeMillis();
 
 				timestamps[i++] = endTimestamp - startTimestamp;
+				fileSizeBytes += crawlingResult.getFileSizeTotalBytes();
+				downloadedPFNsTotalCount += crawlingResult.getDownloadedPFNsTotalCount();
+				downloadTotalDurationMillis += crawlingResult.getDownloadTotalDurationMillis();
+				xrdfsPFNsTotalCount += crawlingResult.getXrdfsPFNsTotalCount();
+				xrdfsTotalDurationMillis += crawlingResult.getXrdfsTotalDurationMillis();
 
-				if (crawlingResult.resultHasType(CrawlingResultType.FILE_OK))
+				if (crawlingResult.getStatus().statusHasType(CrawlingStatusType.FILE_OK))
 					okPFNs += 1;
-
-				if (crawlingResult.resultHasType(CrawlingResultType.FILE_CORRUPT))
+				else if (crawlingResult.getStatus().statusHasType(CrawlingStatusType.FILE_CORRUPT))
 					corruptPFNs += 1;
-
-				if (crawlingResult.resultHasType(CrawlingResultType.FILE_INACCESSIBLE))
+				else if (crawlingResult.getStatus().statusHasType(CrawlingStatusType.FILE_INACCESSIBLE))
 					inaccessiblePFNs += 1;
+				else
+					unknownStatusPFNs += 1;
+
+				totalPFNCount += 1;
+				logger.log(Level.WARNING, "Result has type " + crawlingResult.getStatus());
 			}
 
 			CrawlingStatistics stats = new CrawlingStatistics(
@@ -209,11 +219,17 @@ class SEFileCrawler {
 					okPFNs,
 					inaccessiblePFNs,
 					corruptPFNs,
+					unknownStatusPFNs,
 					Long.MAX_VALUE,
 					Long.MIN_VALUE,
 					0L,
 					0L,
-					0L
+					0L,
+					fileSizeBytes,
+					downloadedPFNsTotalCount,
+					downloadTotalDurationMillis,
+					xrdfsPFNsTotalCount,
+					xrdfsTotalDurationMillis
 			);
 
 			for (int i = 0; i < timestamps.length; i++) {
@@ -292,12 +308,14 @@ class SEFileCrawler {
 	 * @return Status of the crawling
 	 */
 	private static CrawlingResult crawlPFN(PFN currentPFN) {
-		CrawlingResult result = null;
+		CrawlingStatus status = null;
 		PFN pfnToRead = null;
 		GUID guid = null;
 		Long catalogueFileSize = null, observedFileSize = null;
 		String catalogueMD5 = null, observedMD5 = null;
 		Long downloadDurationMillis = null, xrdfsDurationMillis = null;
+
+		long fileSize = 0, downloadDuration = 0, downloadedPFN = 0, xrdfsDuration = 0, xrdfsPFN = 0;
 
 		// fill PFN access token
 		try {
@@ -305,7 +323,7 @@ class SEFileCrawler {
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
-			result = CrawlingResult.E_PFN_NOT_READABLE;
+			status = CrawlingStatus.E_PFN_NOT_READABLE;
 		}
 
 		// check if file exists
@@ -315,36 +333,38 @@ class SEFileCrawler {
 				guid = commander.c_api.getGUID(pfnToRead.getGuid().guid.toString(), false, true);
 
 				if (guid == null) {
-					result = CrawlingResult.E_GUID_NOT_FOUND;
+					status = CrawlingStatus.E_GUID_NOT_FOUND;
 				}
 				else if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
 					final LFN lfn = it.next();
 					if (!lfn.exists)
-						result = CrawlingResult.E_LFN_DOES_NOT_EXIST;
+						status = CrawlingStatus.E_LFN_DOES_NOT_EXIST;
 					else
 						catalogueFileSize = Long.valueOf(lfn.size);
 				}
 				else
-					result = CrawlingResult.E_LFN_NOT_FOUND;
+					status = CrawlingStatus.E_LFN_NOT_FOUND;
 			}
 			catch (Exception exception) {
 				exception.printStackTrace();
-				result = CrawlingResult.E_UNEXPECTED_ERROR;
+				status = CrawlingStatus.E_UNEXPECTED_ERROR;
 				logger.log(Level.WARNING, exception.getMessage());
 			}
 		}
 
 		// check if file is online
-		if (pfnToRead != null && result == null) {
+		if (pfnToRead != null && status == null) {
 			try {
 				long start = System.currentTimeMillis();
 				String stat = xrootd.xrdstat(pfnToRead, false, false, false);
 				long end = System.currentTimeMillis();
 				xrdfsDurationMillis = Long.valueOf(end - start);
+				xrdfsDuration = xrdfsDurationMillis.longValue();
+				xrdfsPFN = 1;
 				if (stat != null) {
 					final int idx = stat.indexOf("Flags");
 					if (idx >= 0 && stat.indexOf("Offline", idx) > 0)
-						result = CrawlingResult.E_PFN_NOT_ONLINE;
+						status = CrawlingStatus.E_PFN_NOT_ONLINE;
 				}
 			}
 			catch (IOException e) {
@@ -354,7 +374,7 @@ class SEFileCrawler {
 		}
 
 		// check size and checksum
-		if (pfnToRead != null && result == null) {
+		if (pfnToRead != null && status == null) {
 			File downloadedFile = null;
 
 			try {
@@ -362,49 +382,52 @@ class SEFileCrawler {
 				downloadedFile = xrootd.get(pfnToRead, null);
 				long end = System.currentTimeMillis();
 				downloadDurationMillis = Long.valueOf(end - start);
+				downloadDuration = downloadDurationMillis.longValue();
+				downloadedPFN = 1;
 			}
 			catch (IOException e) {
 				e.printStackTrace();
-				result = CrawlingResult.E_PFN_DOWNLOAD_FAILED;
+				status = CrawlingStatus.E_PFN_DOWNLOAD_FAILED;
 			}
 
-			if (downloadedFile != null && guid != null) {
+			if (status == null && downloadedFile != null && guid != null) {
 				try {
 					observedFileSize = Long.valueOf(downloadedFile.length());
 					observedMD5 = IOUtils.getMD5(downloadedFile);
 					catalogueMD5 = guid.md5;
+					fileSize = observedFileSize.longValue();
 
 					if (downloadedFile.exists() && !downloadedFile.delete())
 						logger.log(Level.INFO, "Cannot delete " + downloadedFile.getName());
 
-					if (observedFileSize.longValue() == 0)
-						result = CrawlingResult.E_FILE_EMPTY;
+					if (fileSize == 0)
+						status = CrawlingStatus.E_FILE_EMPTY;
 					else if (!observedFileSize.equals(catalogueFileSize))
-						result = CrawlingResult.E_FILE_SIZE_MISMATCH;
+						status = CrawlingStatus.E_FILE_SIZE_MISMATCH;
 					else if (catalogueMD5 == null)
-						result = CrawlingResult.E_FILE_MD5_IS_NULL;
+						status = CrawlingStatus.E_FILE_MD5_IS_NULL;
 					else if (!observedMD5.equalsIgnoreCase(catalogueMD5))
-						result = CrawlingResult.E_FILE_CHECKSUM_MISMATCH;
+						status = CrawlingStatus.E_FILE_CHECKSUM_MISMATCH;
 					else
-						result = CrawlingResult.S_FILE_CHECKSUM_MATCH;
+						status = CrawlingStatus.S_FILE_CHECKSUM_MATCH;
 				}
 				catch (IOException e) {
 					e.printStackTrace();
-					result = CrawlingResult.E_FILE_MD5_COMPUTATION_FAILED;
+					status = CrawlingStatus.E_FILE_MD5_COMPUTATION_FAILED;
 				}
 			}
 			else
-				result = CrawlingResult.E_PFN_DOWNLOAD_FAILED;
+				status = CrawlingStatus.E_PFN_DOWNLOAD_FAILED;
 		}
 
-		if (result == null)
-			result = CrawlingResult.E_UNEXPECTED_ERROR;
+		if (status == null)
+			status = CrawlingStatus.E_UNEXPECTED_ERROR;
 
-		if (pfnToRead != null && guid != null) {
+		if (guid != null) {
 			PFNData pfnData = new PFNData(
 					se.seName,
-					pfnToRead.pfn,
-					result,
+					currentPFN.pfn,
+					status,
 					observedFileSize,
 					catalogueFileSize,
 					observedMD5,
@@ -412,11 +435,11 @@ class SEFileCrawler {
 					downloadDurationMillis,
 					xrdfsDurationMillis
 			);
+
 			mapGuidToPFN.put(guid.guid.toString(), pfnData);
-			return result;
 		}
 
-		return result;
+		return new CrawlingResult(status, fileSize, downloadDuration, downloadedPFN, xrdfsDuration, xrdfsPFN);
 	}
 
 	/**

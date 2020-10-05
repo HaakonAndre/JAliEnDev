@@ -1,131 +1,73 @@
 package utils.crawler;
 
-/**
- * The crawling status for each PFN analysed
- *
- * @author anegru
- */
-enum CrawlingResult {
+class CrawlingResult {
 
 	/**
-	 * Success. Checksum from catalogue matches recomputed checksum
+	 * The status of the crawling
 	 */
-
-	S_FILE_CHECKSUM_MATCH(1, CrawlingResultType.FILE_OK, "Checksum from catalogue matches recomputed checksum"),
+	private CrawlingStatus status;
 
 	/**
-	 * Error. Computation of MD5 failed
+	 * Total file size analysed
 	 */
-	E_FILE_MD5_COMPUTATION_FAILED(2, CrawlingResultType.FILE_INACCESSIBLE, "Computation of MD5 failed"),
+	private long fileSizeTotalBytes;
 
 	/**
-	 * Error. LFN cannot be found
+	 * Total duration of file download in milliseconds
 	 */
-	E_LFN_NOT_FOUND(3, CrawlingResultType.FILE_INACCESSIBLE, "LFN cannot be found"),
+	private long downloadTotalDurationMillis;
 
 	/**
-	 * Error. LFN does not exist
+	 * Total number of PFNs that could be downloaded
 	 */
-	E_LFN_DOES_NOT_EXIST(4, CrawlingResultType.FILE_INACCESSIBLE, "LFN does not exist"),
+	private long downloadedPFNsTotalCount;
 
 	/**
-	 * Error. Checksum from catalogue does not match recomputed checksum
+	 * Total duration of xrdfs in milliseconds
 	 */
-	E_FILE_CHECKSUM_MISMATCH(5, CrawlingResultType.FILE_CORRUPT, "Checksum from catalogue does not match recomputed checksum"),
+	private long xrdfsTotalDurationMillis;
 
 	/**
-	 * Error. Observed file size is 0
+	 * Total number of PFNs that were tested with xrdfs
 	 */
-	E_FILE_EMPTY(6, CrawlingResultType.FILE_CORRUPT, "Observed file size is 0"),
+	private long xrdfsPFNsTotalCount;
 
-	/**
-	 * Error. Observed file size does not match size from the catalogue
-	 */
-	E_FILE_SIZE_MISMATCH(7, CrawlingResultType.FILE_CORRUPT, "Observed file size does not match size from the catalogue"),
-
-	/**
-	 * Error. MD5 value from the catalogue is null
-	 */
-	E_FILE_MD5_IS_NULL(8, CrawlingResultType.FILE_CORRUPT, "MD5 value from the catalogue is null"),
-
-	/**
-	 * Error. Cannot get PFN access for reading
-	 */
-	E_PFN_NOT_READABLE(9, CrawlingResultType.FILE_INACCESSIBLE, "Cannot get PFN access for reading"),
-
-	/**
-	 * Error. PFN is not online
-	 */
-	E_PFN_NOT_ONLINE(10, CrawlingResultType.FILE_INACCESSIBLE, "PFN is not online"),
-
-	/**
-	 * Error. Cannot get GUID from PFN
-	 */
-	E_GUID_NOT_FOUND(11, CrawlingResultType.FILE_INACCESSIBLE, "Cannot get GUID from PFN"),
-
-	/**
-	 * Error. PFN cannot be downloaded
-	 */
-	E_PFN_DOWNLOAD_FAILED(12, CrawlingResultType.FILE_INACCESSIBLE, "PFN cannot be downloaded"),
-
-	/**
-	 * Error. PFN cannot be downloaded
-	 */
-	E_XROOTD_RETURNS_NULL(13, CrawlingResultType.FILE_INACCESSIBLE, "PFN cannot be downloaded"),
-
-	/**
-	 * Error. The error encountered is unexpected
-	 */
-	E_UNEXPECTED_ERROR(14, CrawlingResultType.UNEXPECTED_ERROR, "The error encountered is unexpected");
-
-
-	/**
-	 * Status code
-	 */
-	private final int code;
-
-	/**
-	 * CrawlingResultType of the status.
-	 */
-	private final CrawlingResultType type;
-
-	/**
-	 * Default error message
-	 */
-	private final String message;
-
-	CrawlingResult(final int code, final CrawlingResultType type, final String message) {
-		this.code = code;
-		this.type = type;
-		this.message = message;
+	CrawlingResult(CrawlingStatus status, long fileSizeTotalBytes, long downloadTotalDurationMillis,
+		long downloadedPFNsTotalCount, long xrdfsTotalDurationMillis, long xrdfsPFNsTotalCount) {
+		this.status = status;
+		this.fileSizeTotalBytes = fileSizeTotalBytes;
+		this.downloadTotalDurationMillis = downloadTotalDurationMillis;
+		this.downloadedPFNsTotalCount = downloadedPFNsTotalCount;
+		this.xrdfsTotalDurationMillis = xrdfsTotalDurationMillis;
+		this.xrdfsPFNsTotalCount = xrdfsPFNsTotalCount;
 	}
 
-	/**
-	 * @return the status code associated to this constant
-	 */
-	public int getCode() {
-		return code;
+	CrawlingStatus getStatus() {
+		return status;
 	}
 
-	/**
-	 * @return the status type associated to this constant
-	 */
-	public CrawlingResultType getCrawlingResultType() {
-		return type;
+	long getFileSizeTotalBytes() {
+		return fileSizeTotalBytes;
 	}
 
-	/**
-	 * @return message for this constant
-	 */
-	public String getMessage() {
-		return message;
+	long getDownloadTotalDurationMillis() {
+		return downloadTotalDurationMillis;
 	}
 
-	/**
-	 * @param crawlingResultType A crawling result whose type must be checked
-	 * @return true if the crawling result matches the parameter, false otherwise
-	 */
-	public boolean resultHasType(CrawlingResultType crawlingResultType) {
-		return this.type == crawlingResultType;
+	long getDownloadedPFNsTotalCount() {
+		return downloadedPFNsTotalCount;
+	}
+
+	long getXrdfsTotalDurationMillis() {
+		return xrdfsTotalDurationMillis;
+	}
+
+	long getXrdfsPFNsTotalCount() {
+		return xrdfsPFNsTotalCount;
+	}
+
+	@Override
+	public String toString() {
+		return "CrawlingResult{" + "status=" + status + ", fileSizeTotalBytes=" + fileSizeTotalBytes + ", downloadTotalDurationMillis=" + downloadTotalDurationMillis + ", downloadedPFNsTotalCount=" + downloadedPFNsTotalCount + ", xrdfsTotalDurationMillis=" + xrdfsTotalDurationMillis + ", xrdfsPFNsTotalCount=" + xrdfsPFNsTotalCount + '}';
 	}
 }

@@ -62,7 +62,7 @@ class CrawlingPrepare {
 	private static long iterationUnixTimestamp;
 
 	/**
-	 * The Unix timestamp associated with the start of the current iteration
+	 * The file type of the output
 	 */
 	private static String outputFileType;
 
@@ -111,7 +111,7 @@ class CrawlingPrepare {
 	private static void parseArguments(String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
-			throw new Exception("Number of arguments supplied is incorrect");
+			throw new Exception("Number of arguments supplied is incorrect. Expected " + ARGUMENT_COUNT + ", but got " + args.length);
 
 		sampleSize = Integer.parseInt(args[0]);
 		crawlingJobCount = Integer.parseInt(args[1]);

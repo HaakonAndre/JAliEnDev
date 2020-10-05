@@ -6,22 +6,24 @@ import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
+import alien.taskQueue.Job;
+import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
-import jline.internal.Nullable;
-import joptsimple.internal.Strings;
-import lazyj.Utils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import jline.internal.Nullable;
+import joptsimple.internal.Strings;
+import org.json.simple.JSONObject;
 
 /**
  * Kills jobs launched from the previous iteration
@@ -35,6 +37,7 @@ class IterationPrepare {
 
 	private static final String FILE_SEPARATOR = " ";
 	private static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_iteration_prepare";
+	private static final String FILE_NAME_JOBS_OUTPUT_MERGER = "jobs_output_merger";
 	private static final int ARGUMENT_COUNT = 7;
 	static final Integer TIME_TO_LIVE = Integer.valueOf(21600);
 	static final Integer MAX_WAITING_TIME = Integer.valueOf(18000);
@@ -186,8 +189,8 @@ class IterationPrepare {
 			if (previousIterationPath == null)
 				return;
 
-			killJobsFromFile(previousIterationPath + FILE_NAME_JOBS_TO_KILL);
-			killJobsFromFile(previousIterationPath + IterationEntrypoint.FILE_NAME_JOBS_TO_KILL);
+			killJobsFromFile(previousIterationPath, FILE_NAME_JOBS_TO_KILL, false);
+			killJobsFromFile(previousIterationPath, IterationEntrypoint.FILE_NAME_JOBS_TO_KILL, false);
 
 			List<LFN> filePaths = commander.c_api.getLFNs(previousIterationPath);
 
@@ -200,7 +203,7 @@ class IterationPrepare {
 
 			for (LFN lfn : filePaths)
 				if (lfn.isDirectory() && seNames.contains(lfn.getFileName()))
-					killJobsFromFile(lfn.getCanonicalName() + CrawlingPrepare.FILE_NAME_JOBS_TO_KILL);
+					killJobsFromFile(lfn.getCanonicalName(), CrawlingPrepare.FILE_NAME_JOBS_TO_KILL, true);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -213,11 +216,18 @@ class IterationPrepare {
 	 * The file contains space separated integers that represent job ids launched in the previous
 	 * iteration
 	 *
-	 * @param jobFilePath The file that contains the job ids to kill
+	 * @param jobFileDirectory The directory path that contains the file with job ids (must end with '/')
+	 * @param jobFileName The file that contains the job ids to kill
+	 * @param generateStatistics Flag that tells whether to generate job statistics or not
 	 */
-	private static void killJobsFromFile(String jobFilePath) {
+	@SuppressWarnings("unchecked")
+	private static void killJobsFromFile(String jobFileDirectory, String jobFileName, boolean generateStatistics) {
 		try {
+			String jobFilePath = jobFileDirectory + jobFileName;
 			File downloadedFile = new File(FILE_NAME_JOBS_TO_KILL);
+			JSONObject jobStatsJSON = new JSONObject();
+			HashMap<JobStatus, Integer> mapJobStatusToCount = new HashMap<>();
+			long jobsNotFound = 0;
 
 			if (downloadedFile.exists() && !downloadedFile.delete())
 				logger.log(Level.INFO, "Cannot delete file " + downloadedFile.getName());
@@ -231,10 +241,31 @@ class IterationPrepare {
 					String buffer = bufferedReader.readLine();
 					String[] jobIds = buffer.split(FILE_SEPARATOR);
 					for (String jobId : jobIds) {
-						logger.log(Level.INFO, "Killing " + jobId);
-						if (!commander.q_api.killJob(Long.parseLong(jobId)))
-							logger.log(Level.WARNING, "Cannot kill job with id " + jobId);
+						long id = Long.parseLong(jobId);
+						Job job = commander.q_api.getJob(id);
+
+						if(job != null) {
+							if (generateStatistics) {
+								mapJobStatusToCount.merge(job.status(), Integer.valueOf(1), Integer::sum);
+							}
+							if (!job.isFinalState()) {
+								logger.log(Level.INFO, "Killing " + jobId);
+								if (!commander.q_api.killJob(id)) logger.log(Level.WARNING, "Cannot kill job with id " + jobId);
+							}
+						}
+						else
+							jobsNotFound += 1;
 					}
+				}
+
+				if (generateStatistics) {
+					String remoteFilePath = jobFileDirectory + jobFileName + "_stats.json";
+
+					jobStatsJSON.putAll(mapJobStatusToCount);
+					if(jobsNotFound > 0)
+						jobStatsJSON.put("NOT_FOUND", Long.valueOf(jobsNotFound));
+
+					CrawlerUtils.writeToDisk(commander, logger, jobStatsJSON.toJSONString(), jobFileName + "_stats.json", remoteFilePath);
 				}
 			}
 			else {
@@ -254,197 +285,34 @@ class IterationPrepare {
 	 */
 	private static void mergeFilesFromPreviousIteration(List<SE> ses, @Nullable String previousIterationPath) {
 
+		if (previousIterationPath == null) {
+			return;
+		}
+
+		List<String> jobIds = new ArrayList<>();
+
+		for (SE se : ses) {
+			try {
+				JDL jdl = getJDLOutputMerger(se);
+				logger.log(Level.INFO, "Submitting jobs");
+				long jobId = commander.q_api.submitJob(jdl);
+				jobIds.add(Long.toString(jobId));
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				logger.log(Level.WARNING, "Cannot submit OutputMerger job to " + se.seName + " " + e.getMessage());
+			}
+		}
+
 		try {
-			if (previousIterationPath == null) {
-				logger.log(Level.WARNING, "Previous iteration is null");
-				return;
-			}
-
-			logger.log(Level.INFO, "Merging files from the previous iteration " + previousIterationPath);
-
-			for (SE se : ses) {
-				File mergedFile = null;
-				try {
-					logger.log(Level.INFO, "Merging for SE " + se.seName);
-
-					String previousIterationSEPath = previousIterationPath + CrawlerUtils.getSEName(se) + "/";
-					String outputDirectoryPath = previousIterationSEPath + "output";
-					String statsDirectoryPath = previousIterationSEPath + "stats";
-					String mergedOutputPath = previousIterationSEPath + "merged_output." + outputFileType;
-					String mergedStatsPath = previousIterationSEPath + "merged_stats.json";
-
-					//merge output files
-					try {
-						mergedFile = mergeOutputs(se, outputDirectoryPath);
-						CrawlerUtils.writeToDisk(commander, logger, mergedFile, mergedOutputPath);
-					}
-					catch (Exception exception) {
-						exception.printStackTrace();
-						logger.log(Level.WARNING, exception.getMessage());
-					}
-
-					// merge stat files
-					try {
-						mergedFile = mergeStats(se, statsDirectoryPath);
-						CrawlerUtils.writeToDisk(commander, logger, mergedFile, mergedStatsPath);
-					}
-					catch (Exception exception) {
-						exception.printStackTrace();
-						logger.log(Level.WARNING, exception.getMessage());
-					}
-
-				}
-				finally {
-					if (mergedFile != null && mergedFile.exists() && !mergedFile.delete())
-						logger.log(Level.WARNING, "Cannot delete " + mergedFile.getName());
-				}
-			}
+			String fileContents = Strings.join(jobIds, FILE_SEPARATOR) + FILE_SEPARATOR;
+			String fullPath = previousIterationPath + FILE_NAME_JOBS_OUTPUT_MERGER;
+			CrawlerUtils.writeToDisk(commander, logger, fileContents, FILE_NAME_JOBS_OUTPUT_MERGER, fullPath);
 		}
 		catch (Exception e) {
-			e.printStackTrace();
-			logger.log(Level.INFO, "Cannot merge files from previous iteration. " + e.getMessage());
+			logger.log(Level.WARNING, "Cannot upload file with OutputMerger job ids " + e.getMessage());
 		}
 	}
-
-	/**
-	 * Merge job outputs
-	 *
-	 * @param se The SE for which to merge the output
-	 * @param outputDirectoryPath The path of the output directory
-	 * @return Merged file
-	 * @throws Exception
-	 */
-	private static File mergeOutputs(SE se, String outputDirectoryPath) throws Exception {
-
-		if (se == null) {
-			throw new Exception("SE cannot be null");
-		}
-
-		File outputFile = new File("merged_output_" + se.seNumber);
-
-		try (FileWriter fw = new FileWriter(outputFile)) {
-
-			List<LFN> lfns = commander.c_api.getLFNs(outputDirectoryPath);
-
-			if (lfns == null)
-				throw new Exception("Cannot get LFNs for path " + outputDirectoryPath);
-
-			if (outputFileType.equals("json"))
-				fw.write("{");
-			else if (outputFileType.equals("csv"))
-				fw.write(PFNData.CSV_HEADER);
-
-			boolean firstSEWithData = true;
-
-			for (LFN lfn : lfns) {
-				logger.log(Level.INFO, "Merging " + lfn.getFileName());
-				File downloadedFile = new File(lfn.getFileName());
-
-				try {
-					commander.c_api.downloadFile(lfn.getCanonicalName(), downloadedFile);
-
-					String fileContents = Utils.readFile(downloadedFile.getCanonicalPath());
-
-					if (fileContents != null) {
-
-						if (outputFileType.equals("json")) {
-							fileContents = fileContents.substring(1, fileContents.length() - 1);
-
-							if (firstSEWithData)
-								firstSEWithData = false;
-							else
-								fileContents = "," + fileContents;
-
-						}
-						else if (outputFileType.equals("csv")) {
-							// remove csv header
-							fileContents = fileContents.substring(fileContents.indexOf('\n') + 1);
-						}
-
-						fw.write(fileContents);
-					}
-					else
-						logger.log(Level.WARNING, "File contents is null. Something went wrong with file read for SE " + se.seName);
-				}
-				catch (final IOException ioe) {
-					ioe.printStackTrace();
-					logger.log(Level.WARNING, ioe.getMessage());
-				}
-				finally {
-					if (downloadedFile.exists() && !downloadedFile.delete()) {
-						logger.log(Level.INFO, "Downloaded file cannot be deleted " + downloadedFile.getCanonicalPath());
-					}
-				}
-			}
-
-			if (outputFileType.equals("json"))
-				fw.write("}");
-
-			fw.flush();
-		}
-		catch (Exception exception) {
-			exception.printStackTrace();
-			logger.log(Level.INFO, exception.getMessage());
-		}
-
-		return outputFile;
-	}
-
-	private static File mergeStats(SE se, String outputDirectoryPath) throws Exception {
-
-		if (se == null)
-			throw new Exception("SE cannot be null");
-
-		File outputFile = new File("merged_output_" + se.seNumber);
-		List<LFN> lfns = commander.c_api.getLFNs(outputDirectoryPath);
-
-		if (lfns == null)
-			throw new Exception("Cannot get LFNs for path " + outputDirectoryPath);
-
-		JSONParser parser = new JSONParser();
-		ArrayList<CrawlingStatistics> jobCrawlingStatistics = new ArrayList<>();
-
-		for (LFN lfn : lfns) {
-			File downloadedFile = new File(lfn.getFileName());
-
-			try {
-				commander.c_api.downloadFile(lfn.getCanonicalName(), downloadedFile);
-
-				String fileContents = Utils.readFile(downloadedFile.getCanonicalPath());
-
-				if (fileContents != null) {
-					try {
-						JSONObject statsJSON = (JSONObject) parser.parse(fileContents);
-						jobCrawlingStatistics.add(CrawlingStatistics.fromJSON(statsJSON));
-					}
-					catch (ParseException e) {
-						e.printStackTrace();
-					}
-				}
-				else {
-					logger.log(Level.WARNING, "File contents is null. Something went wrong with file read for SE " + se.seName);
-				}
-			}
-			catch (final IOException ioe) {
-				ioe.printStackTrace();
-				logger.log(Level.WARNING, ioe.getMessage());
-			}
-			finally {
-				if (downloadedFile.exists() && !downloadedFile.delete())
-					logger.log(Level.INFO, "Downloaded file cannot be deleted " + downloadedFile.getCanonicalPath());
-			}
-		}
-
-		CrawlingStatistics averagedStats = CrawlingStatistics.getAveragedStats(jobCrawlingStatistics);
-
-		try (FileWriter fw = new FileWriter(outputFile)) {
-			fw.write(CrawlingStatistics.toJSON(averagedStats).toJSONString());
-			fw.flush();
-		}
-
-		return outputFile;
-	}
-
 
 	/**
 	 * Submit jobs for the SEs given as parameter. The jobs are of type crawling_prepare.
@@ -476,7 +344,7 @@ class IterationPrepare {
 				int crawlingJobsCount = linearMathFunction(minFileCount, maxFileCount, minCrawlingJobs, maxCrawlingJobs, se.seNumFiles);
 				logger.log(Level.INFO, "Computed values " + sampleSize + " " + crawlingJobsCount);
 
-				JDL jdl = getJDLIteration(se, sampleSize, crawlingJobsCount);
+				JDL jdl = getJDLCrawlingPrepare(se, sampleSize, crawlingJobsCount);
 				logger.log(Level.INFO, "Submitting jobs");
 				long jobId = commander.q_api.submitJob(jdl);
 				if (jobId > 0)
@@ -511,6 +379,26 @@ class IterationPrepare {
 	}
 
 	/**
+	 * Get JDL to be used to start the merging  process for the previous iteration, for a specific SE
+	 *
+	 * @param se The SE for which the job is launched
+	 * @return JDL
+	 */
+	private static JDL getJDLOutputMerger(SE se) {
+		JDL jdl = new JDL();
+		jdl.append("JobTag", "OutputMerger_" + se.seNumber);
+		jdl.set("OutputDir", getSEIterationDirectoryPath(se, previousIterationUnixTimestamp));
+		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");
+		jdl.set("Arguments", se.seNumber + " " + previousIterationUnixTimestamp + " " + outputFileType);
+		jdl.set("Executable", commander.getCurrentDirName() + "output_merger.sh");
+		jdl.append("Output", "output_merger.log");
+		jdl.append("Workdirectorysize", "11000MB");
+		jdl.set("TTL", OutputMerger.TIME_TO_LIVE);
+		jdl.set("Requirements", GetCEs.getSiteJDLRequirement(se.seName));
+		return jdl;
+	}
+
+	/**
 	 * Get JDL to be used to start the crawling process for an iteration, for a specific SE
 	 *
 	 * @param se The SE for which the job is launched
@@ -518,10 +406,10 @@ class IterationPrepare {
 	 * @param crawlingJobsCount The number of crawling jobs to launch
 	 * @return JDL
 	 */
-	private static JDL getJDLIteration(SE se, int sampleSize, int crawlingJobsCount) {
+	private static JDL getJDLCrawlingPrepare(SE se, int sampleSize, int crawlingJobsCount) {
 		JDL jdl = new JDL();
 		jdl.append("JobTag", "CrawlingPrepare_" + se.seNumber);
-		jdl.set("OutputDir", getSECurrentIterationDirectoryPath(se));
+		jdl.set("OutputDir", getSEIterationDirectoryPath(se, currentIterationUnixTimestamp));
 		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");
 		jdl.set("Arguments", sampleSize + " " + crawlingJobsCount + " " + se.seNumber + " " + currentIterationUnixTimestamp + " " + outputFileType);
 		jdl.set("Executable", commander.getCurrentDirName() + "crawling_prepare.sh");
@@ -539,8 +427,8 @@ class IterationPrepare {
 	 * @param se The SE for which to get the directory path
 	 * @return String
 	 */
-	private static String getSECurrentIterationDirectoryPath(SE se) {
-		return getCurrentIterationDirectoryPath() + CrawlerUtils.getSEName(se) + "/";
+	private static String getSEIterationDirectoryPath(SE se, String iterationUnixTimestamp) {
+		return getIterationDirectoryPath(iterationUnixTimestamp) + CrawlerUtils.getSEName(se) + "/";
 	}
 
 	/**
@@ -548,7 +436,7 @@ class IterationPrepare {
 	 *
 	 * @return String
 	 */
-	private static String getCurrentIterationDirectoryPath() {
-		return commander.getCurrentDirName() + "iteration_" + currentIterationUnixTimestamp + "/";
+	private static String getIterationDirectoryPath(String iterationUnixTimestamp) {
+		return commander.getCurrentDirName() + "iteration_" + iterationUnixTimestamp + "/";
 	}
 }
