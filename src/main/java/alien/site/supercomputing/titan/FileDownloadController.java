@@ -93,7 +93,13 @@ public class FileDownloadController extends Thread {
 			final String dstFilename = getCachedFilename(l);
 			System.out.println("Downloading to " + dstFilename);
 			createCacheFolders(dstFilename);
-			final File f = IOUtils.get(g, new File(dstFilename));
+			final File f;
+			try {
+				f = IOUtils.get(g, new File(dstFilename));
+			} catch (IOException e){
+				System.out.println(e);
+				return null;
+			}
 
 			if (f == null) {
 				// System.out.println("Could not download " + entry.getKey().getCanonicalName() +

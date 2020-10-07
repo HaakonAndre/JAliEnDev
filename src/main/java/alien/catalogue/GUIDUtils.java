@@ -669,7 +669,12 @@ public final class GUIDUtils {
 				return false;
 			}
 
-			final File temp = IOUtils.get(g);
+			File temp;
+			try{
+				temp = IOUtils.get(g);
+			} catch (IOException e){
+				temp = null;
+			}
 
 			if (temp != null)
 				try {

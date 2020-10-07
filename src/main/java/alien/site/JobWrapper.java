@@ -469,14 +469,20 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, g + ". entry.getvalue(): " + entry.getValue());
 			commander.q_api.putJobLog(queueId, "trace", g + ". entry.getvalue(): " + entry.getValue());
 
-			final File f = IOUtils.get(g, entry.getValue());
+			final File f;
+			try {
+				f = IOUtils.get(g, entry.getValue());
+			}
+			catch (IOException e) {
+				commander.q_api.putJobLog(queueId, "trace", e.toString());
+				return false;
+			}
 
 			if (f == null) {
 				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				commander.q_api.putJobLog(queueId, "trace", "ERROR: Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				return false;
 			}
-
 		}
 
 		dumpInputDataList();
