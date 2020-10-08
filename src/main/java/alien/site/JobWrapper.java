@@ -469,18 +469,16 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, g + ". entry.getvalue(): " + entry.getValue());
 			commander.q_api.putJobLog(queueId, "trace", g + ". entry.getvalue(): " + entry.getValue());
 
-			final File f;
-			try {
-				f = IOUtils.get(g, entry.getValue());
-			}
-			catch (IOException e) {
-				commander.q_api.putJobLog(queueId, "trace", e.toString());
-				return false;
-			}
+			final StringBuilder errorMessage = new StringBuilder();
+
+			final File f = IOUtils.get(g, entry.getValue(), errorMessage);
 
 			if (f == null) {
 				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
-				commander.q_api.putJobLog(queueId, "trace", "ERROR: Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+
+				commander.q_api.putJobLog(queueId, "trace",
+						"ERROR: Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath() + " due to:\n" + errorMessage);
+
 				return false;
 			}
 		}
@@ -490,6 +488,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Sandbox populated: " + currentDir.getAbsolutePath());
 
 		return true;
+
 	}
 
 	private void dumpInputDataList() {
@@ -793,43 +792,45 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	private void createAndAddResultsJDL(@SuppressWarnings("unused") ParsedOutput filesTable) {
 
-/*		final ArrayList<String> jdlOutput = new ArrayList<>();
-		for (final OutputEntry entry : filesTable.getEntries()) {
-
-			String entryString = entry.getName();
-			File entryFile = new File(currentDir.getAbsolutePath() + "/" + entryString);
-
-			entryString += ";" + String.valueOf(entryFile.length());
-
-			try {
-				entryString += ";" + IOUtils.getMD5(entryFile);
-			}
-			catch (IOException e) {
-				logger.log(Level.WARNING, "Could not generate MD5 for a file: " + e);
-			}
-
-			jdlOutput.add(entryString);
-
-			// Also add the archive files to outputlist
-			if (entry.isArchive()) {
-
-				final ArrayList<String> archiveFiles = entry.getFilesIncluded();
-				final HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
-				final HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
-				for (final String archiveEntry : archiveFiles) {
-
-					String archiveEntryString = archiveEntry;
-
-					archiveEntryString += ";" + archiveSizes.get(archiveEntry);
-					archiveEntryString += ";" + archiveMd5s.get(archiveEntry);
-					archiveEntryString += ";" + entry.getName(); // name of its archive
-
-					jdlOutput.add(archiveEntryString);
-				}
-			}
-
-		} 
-		jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput)); */
+		/*
+		 * final ArrayList<String> jdlOutput = new ArrayList<>();
+		 * for (final OutputEntry entry : filesTable.getEntries()) {
+		 * 
+		 * String entryString = entry.getName();
+		 * File entryFile = new File(currentDir.getAbsolutePath() + "/" + entryString);
+		 * 
+		 * entryString += ";" + String.valueOf(entryFile.length());
+		 * 
+		 * try {
+		 * entryString += ";" + IOUtils.getMD5(entryFile);
+		 * }
+		 * catch (IOException e) {
+		 * logger.log(Level.WARNING, "Could not generate MD5 for a file: " + e);
+		 * }
+		 * 
+		 * jdlOutput.add(entryString);
+		 * 
+		 * // Also add the archive files to outputlist
+		 * if (entry.isArchive()) {
+		 * 
+		 * final ArrayList<String> archiveFiles = entry.getFilesIncluded();
+		 * final HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
+		 * final HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
+		 * for (final String archiveEntry : archiveFiles) {
+		 * 
+		 * String archiveEntryString = archiveEntry;
+		 * 
+		 * archiveEntryString += ";" + archiveSizes.get(archiveEntry);
+		 * archiveEntryString += ";" + archiveMd5s.get(archiveEntry);
+		 * archiveEntryString += ";" + entry.getName(); // name of its archive
+		 * 
+		 * jdlOutput.add(archiveEntryString);
+		 * }
+		 * }
+		 * 
+		 * }
+		 * jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput));
+		 */
 
 		TaskQueueApiUtils.addResultsJdl(jdl, queueId);
 	}

@@ -1224,16 +1224,12 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
 
-			final File f;
-			try {
-				f = IOUtils.get(g, entry.getValue());
-			} catch (IOException e){
-				System.out.println("Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath() + ":" + e);
-				return false;
-			}
+			final StringBuilder errorMessage = new StringBuilder();
+
+			final File f = IOUtils.get(g, entry.getValue(), errorMessage);
 
 			if (f == null) {
-				System.out.println("Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+				System.out.println("Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath() + " due to:\n" + errorMessage);
 				return false;
 			}
 		}

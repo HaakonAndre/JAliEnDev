@@ -121,13 +121,12 @@ public class IOUtils {
 	 *
 	 * @param guid
 	 * @return the temporary file name. You should handle the deletion of this temporary file!
-	 * @throws IOException
 	 * @see TempFileManager#release(File)
 	 * @see #get(GUID, File)
 	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
 	 */
-	public static File get(final GUID guid) throws IOException {
-		return get(guid, null);
+	public static File get(final GUID guid) {
+		return get(guid, null, null);
 	}
 
 	private static final CachedThreadPool PARALLEL_DW_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.timeOutSeconds", 2),
@@ -145,11 +144,25 @@ public class IOUtils {
 	 * @param localFile
 	 *            path where the file should be downloaded. Can be <code>null</code> in which case a temporary location will be used, but then you should handle the temporary files.
 	 * @return the downloaded file, or <code>null</code> if the file could not be retrieved
-	 * @throws IOException
 	 * @see TempFileManager#release(File)
 	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
 	 */
-	public static File get(final GUID guid, final File localFile) throws IOException {
+	public static File get(final GUID guid, final File localFile) {
+		return get(guid, localFile, null);
+	}
+
+	/**
+	 * Download the file in a specified location. The GUID should be filled with authorization tokens before calling this method.
+	 *
+	 * @param guid
+	 * @param localFile
+	 *            path where the file should be downloaded. Can be <code>null</code> in which case a temporary location will be used, but then you should handle the temporary files.
+	 * @param errorLogging where the error messages will go, filled for any hickups and thus available for both transient errors and permanent ones (when the method returned value is <code>null</code>)
+	 * @return the downloaded file, or <code>null</code> if the file could not be retrieved
+	 * @see TempFileManager#release(File)
+	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
+	 */
+	public static File get(final GUID guid, final File localFile, final StringBuilder errorLogging) {
 		final File cachedContent = TempFileManager.getAny(guid);
 
 		if (cachedContent != null) {
@@ -196,7 +209,6 @@ public class IOUtils {
 		}
 
 		final String site = ConfigUtils.getCloseSite();
-		String downloadErrors = "";
 		File f = null;
 
 		if (realPFNsSet.size() > 1 && guid.size < ConfigUtils.getConfig().getl("alien.io.IOUtils.parallel_downloads.size_limit", 10 * 1024 * 1024)
@@ -223,8 +235,15 @@ public class IOUtils {
 							break;
 					}
 					catch (final IOException e) {
-						logger.log(Level.INFO, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
-						downloadErrors += e + "\n\r";
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
+
+						if (errorLogging != null) {
+							if (errorLogging.length() > 0)
+								errorLogging.append('\n');
+
+							errorLogging.append(e.getMessage());
+						}
 					}
 
 				if (f != null)
@@ -233,8 +252,12 @@ public class IOUtils {
 		}
 
 		if (f == null || !zipArchive) {
-			throw new IOException("Error(s) occurred during download: " + downloadErrors);
-			// return f;
+			if (errorLogging != null)
+				logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid + " due to " + errorLogging);
+			else
+				logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid);
+
+			return f;
 		}
 
 		try {
@@ -478,14 +501,7 @@ public class IOUtils {
 			return null;
 		}
 
-		final File f;
-		try {
-			f = get(guid);
-		}
-		catch (IOException e) {
-			logger.log(Level.WARNING, "Could not fetch files: " + e);
-			return null;
-		}
+		final File f = get(guid);
 
 		if (f != null)
 			try {

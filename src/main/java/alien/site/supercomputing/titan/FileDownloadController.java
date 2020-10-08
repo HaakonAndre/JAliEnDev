@@ -93,20 +93,18 @@ public class FileDownloadController extends Thread {
 			final String dstFilename = getCachedFilename(l);
 			System.out.println("Downloading to " + dstFilename);
 			createCacheFolders(dstFilename);
-			final File f;
-			try {
-				f = IOUtils.get(g, new File(dstFilename));
-			} catch (IOException e){
-				System.out.println(e);
-				return null;
-			}
+
+			final StringBuilder errorMessage = new StringBuilder();
+
+			final File f = IOUtils.get(g, new File(dstFilename), errorMessage);
 
 			if (f == null) {
 				// System.out.println("Could not download " + entry.getKey().getCanonicalName() +
 				// " to " + entry.getValue().getAbsolutePath());
-				System.out.println("Could not download " + l.getCanonicalName() + " to " + dstFilename);
+				System.out.println("Could not download " + l.getCanonicalName() + " to " + dstFilename + ", due to:\n" + errorMessage);
 				return null;
 			}
+			
 			// return f.getName();
 			return dstFilename;
 		}

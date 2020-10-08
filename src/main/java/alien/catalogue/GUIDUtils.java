@@ -669,12 +669,7 @@ public final class GUIDUtils {
 				return false;
 			}
 
-			File temp;
-			try{
-				temp = IOUtils.get(g);
-			} catch (IOException e){
-				temp = null;
-			}
+			final File temp = IOUtils.get(g);
 
 			if (temp != null)
 				try {
@@ -699,6 +694,7 @@ public final class GUIDUtils {
 					TempFileManager.release(temp);
 					temp.delete();
 				}
+
 			logger.log(Level.WARNING, "Could not download " + g.guid);
 
 			return false;
