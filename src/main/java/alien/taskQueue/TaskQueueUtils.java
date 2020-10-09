@@ -665,6 +665,10 @@ public class TaskQueueUtils {
 		return setJobStatus(job, newStatus, oldStatusConstraint, null);
 	}
 
+	private static final Set<String> QUEUEID = Set.of("queueId");
+
+	private static ApMon centralMLService = null;
+
 	/**
 	 * @param job
 	 * @param newStatus
@@ -763,51 +767,61 @@ public class TaskQueueUtils {
 
 			if (extrafields != null) {
 				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
-				for (final String key : extrafields.keySet())
-					if (fieldMap.containsKey(key + "_table")) {
+
+				for (final Map.Entry<String, Object> entry : extrafields.entrySet()) {
+					final String key = entry.getKey();
+					final Object value = entry.getValue();
+
+					if (fieldMap.containsKey(entry.getKey() + "_table")) {
 						final HashMap<String, Object> map = new HashMap<>();
 
 						int hostId;
 						if (key.contains("node") || key.contains("exechost")) {
-							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", extrafields.get(key).toString());
+							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", value.toString());
 							map.put(fieldMap.get(key + "_field"), Integer.valueOf(hostId));
 						}
 						else
-							map.put(fieldMap.get(key + "_field"), extrafields.get(key));
+							map.put(fieldMap.get(key + "_field"), value);
 
-						String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, null);
-						query += " where queueId = ?";
-						db.query(query, false, Long.valueOf(job));
+						map.put("queueId", Long.valueOf(job));
+
+						final String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, QUEUEID);
+						db.query(query);
 					}
-				if (extrafields.containsKey("exechost"))
-					execHost = (String) extrafields.get("exechost");
+				}
+
+				execHost = extrafields.getOrDefault("exechost", execHost).toString();
+			}
+
+			// lazy initialization of the ML service collecting job transitions
+			if (centralMLService == null) {
+				final Vector<String> targets = new Vector<>();
+				try {
+					targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+					centralMLService = new ApMon(targets);
+				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Could not initialize apmon (" + targets + ")", e);
+				}
 			}
 
 			// send status change to ML
-			ApMon apmon = null;
-
-			try {
-				final Vector<String> targets = new Vector<>();
-				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
-				apmon = new ApMon(targets);
-
+			if (centralMLService != null) {
 				final Vector<String> parameters = new Vector<>();
 				final Vector<Object> values = new Vector<>();
 
 				parameters.add("jobId");
-				values.add(Integer.valueOf((int) job));
+				values.add(Double.valueOf(job));
 
 				parameters.add("statusID");
 				values.add(Integer.valueOf(newStatus.getAliEnLevel()));
 
-				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), parameters.size(), parameters, values);
-			}
-			catch (final Exception e) {
-				logger.log(Level.WARNING, "Could not initialize apmon (" + execHost + ")", e);
-			}
-			finally {
-				if (apmon != null)
-					apmon.stopIt();
+				try {
+					centralMLService.sendParameters("TaskQueue_Jobs_ALICE", execHost, parameters.size(), parameters, values);
+				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Failed to send job status update to central ML", e);
+				}
 			}
 
 			return updated;
