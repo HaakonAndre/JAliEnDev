@@ -79,7 +79,7 @@ public class SpaceInfo {
 
 		if (spaceInfoSet) {
 			sb.append("Path:  ").append(path);
-			sb.append("\nTotal: ").append(Format.size(totalSpace));
+			sb.append("\nTotal: ").append(Format.size(totalSpace)).append(" (LDAP setting: ").append(totalSpace / 1024).append(")");
 			sb.append("\nFree:  ").append(Format.size(freeSpace));
 			sb.append("\nUsed:  ").append(Format.size(usedSpace));
 			sb.append("\nChunk: ").append(Format.size(largestFreeChunk)).append("\n");
