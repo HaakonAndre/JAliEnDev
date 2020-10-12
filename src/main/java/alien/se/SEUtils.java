@@ -1083,10 +1083,10 @@ public final class SEUtils {
 		final NumberFormat twoDigits = new DecimalFormat("00");
 		final NumberFormat fiveDigits = new DecimalFormat("00000");
 
-		long fileCount = 0;
-		long totalSize = 0;
-
 		for (final String seName : ses) {
+			long fileCount = 0;
+			long totalSize = 0;
+
 			final SE se = SEUtils.getSE(seName);
 
 			try (PrintWriter pw = new PrintWriter(new FileWriter(seName + ".file_list"))) {
