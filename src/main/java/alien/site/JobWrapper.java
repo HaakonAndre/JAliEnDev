@@ -321,11 +321,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				}
 
 		// Check if we can put the payload in its own container
-		Containerizer cont = ContainerizerFactory.getContainerizer();
-		if (cont != null) {
-			monitor.sendParameter("containerLayer", Integer.valueOf(2));
-			cmd = cont.containerize(String.join(" ", cmd));
-		}
+		//TODO: Put back later
+		//Containerizer cont = ContainerizerFactory.getContainerizer();
+		//if (cont != null) {
+		//	monitor.sendParameter("containerLayer", Integer.valueOf(2));
+		//	cmd = cont.containerize(String.join(" ", cmd));
+		//}
 
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 

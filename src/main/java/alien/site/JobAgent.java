@@ -558,6 +558,7 @@ public class JobAgent implements Runnable {
 			// Check if there is container support at present on site. If yes, add to launchCmd
 			final Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
+				commander.q_api.putJobLog(queueId, "trace", "Support for containers detected. Will use: " + cont.getContainerizerName());
 				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
 				monitor.sendParameter("containerLayer", Integer.valueOf(1));
 				cont.setWorkdir(jobWorkdir);
@@ -741,8 +742,8 @@ public class JobAgent implements Runnable {
 				RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
 
 			if (jobinfo != null) {
-				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_PSS).doubleValue() / 1024);
-				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_SWAPPSS).doubleValue() / 1024 + RES_RMEM.doubleValue());
+				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_PSS).doubleValue());
+				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_SWAPPSS).doubleValue() + RES_RMEM.doubleValue());
 
 				RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
 				RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
