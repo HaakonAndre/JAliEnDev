@@ -159,24 +159,12 @@ public class Monitor implements Runnable {
 	 * @return the new absolute value of the counter
 	 */
 	public long incrementCounter(final String counterKey, final long count) {
-		final MonitoringObject mo = monitoringObjects.get(counterKey);
+		final MonitoringObject mo = monitoringObjects.computeIfAbsent(counterKey, (k) -> new Counter(k));
 
-		Counter c;
+		if (mo instanceof Counter)
+			return ((Counter) mo).increment(count);
 
-		if (mo == null) {
-			c = new Counter(counterKey);
-
-			final MonitoringObject old = monitoringObjects.putIfAbsent(counterKey, c);
-
-			if (old != null && (old instanceof Counter))
-				c = (Counter) old;
-		}
-		else if (mo instanceof Counter)
-			c = (Counter) mo;
-		else
-			return -1;
-
-		return c.increment(count);
+		return -1;
 	}
 
 	/**
@@ -188,24 +176,12 @@ public class Monitor implements Runnable {
 	 * @return accumulated so far, or <code>-1</code> if there was any error
 	 */
 	public double addMeasurement(final String key, final double quantity) {
-		final MonitoringObject mo = monitoringObjects.get(key);
+		final MonitoringObject mo = monitoringObjects.computeIfAbsent(key, (k) -> new Measurement(key));
 
-		Measurement t;
+		if (mo instanceof Measurement)
+			return ((Measurement) mo).addMeasurement(quantity);
 
-		if (mo == null) {
-			t = new Measurement(key);
-
-			final MonitoringObject old = monitoringObjects.putIfAbsent(key, t);
-
-			if (old != null && (old instanceof Measurement))
-				t = (Measurement) old;
-		}
-		else if (mo instanceof Measurement)
-			t = (Measurement) mo;
-		else
-			return -1;
-
-		return t.addMeasurement(quantity);
+		return -1;
 	}
 
 	/**
@@ -226,25 +202,12 @@ public class Monitor implements Runnable {
 	 * @return the existing, or newly created, object, or <code>null</code> if a different type of object was already associated to this key
 	 */
 	public CacheMonitor getCacheMonitor(final String key) {
-		final MonitoringObject mo = monitoringObjects.get(key);
+		final MonitoringObject mo = monitoringObjects.computeIfAbsent(key, (k) -> new CacheMonitor(k));
 
-		CacheMonitor cm;
+		if (mo instanceof CacheMonitor)
+			return (CacheMonitor) mo;
 
-		if (mo == null) {
-			cm = new CacheMonitor(key);
-
-			final MonitoringObject old = monitoringObjects.putIfAbsent(key, cm);
-
-			if (old != null && (old instanceof CacheMonitor))
-				cm = (CacheMonitor) old;
-		}
-		else if (mo instanceof CacheMonitor)
-			cm = (CacheMonitor) mo;
-		else
-			return null;
-
-		return cm;
-
+		return null;
 	}
 
 	/**
