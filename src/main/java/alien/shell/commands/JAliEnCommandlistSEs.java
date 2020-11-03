@@ -20,7 +20,7 @@ import lazyj.Format;
  */
 public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 	private List<String> sesToQuery = new ArrayList<>();
-	private final Set<String> requestQos = new HashSet<>();
+	private final List<Set<String>> requestQosList = new ArrayList<>();
 
 	@Override
 	public void run() {
@@ -37,8 +37,18 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			if (!se.seName.contains("::"))
 				continue;
 
-			if (!se.qos.containsAll(requestQos))
-				continue;
+			if (requestQosList.size() > 0) {
+				boolean any = false;
+
+				for (final Set<String> qosSet : requestQosList)
+					if (se.qos.containsAll(qosSet)) {
+						any = true;
+						break;
+					}
+
+				if (!any)
+					continue;
+			}
 
 			int qosLen = 0;
 
@@ -120,7 +130,7 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 		commander.printOutln("listSEs: print all (or a subset) of the defined SEs with their details");
 		commander.printOutln(helpUsage("listSEs", "[-qos filter,by,qos] [SE name] [SE name] ..."));
 		commander.printOutln(helpStartOptions());
-		commander.printOutln(helpOption("-qos", "filter the SEs by the given QoS classes"));
+		commander.printOutln(helpOption("-qos", "filter the SEs by the given QoS classes. Comma separate entries for 'AND', pass multiple -qos options for an 'OR'"));
 	}
 
 	@Override
@@ -142,10 +152,17 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 		if (options.has("qos")) {
-			final StringTokenizer st = new StringTokenizer(options.valueOf("qos").toString(), " ,;");
+			for (final Object qosObj : options.valuesOf("qos")) {
+				final StringTokenizer st = new StringTokenizer(qosObj.toString(), " ,;");
 
-			while (st.hasMoreTokens())
-				requestQos.add(st.nextToken());
+				final Set<String> set = new HashSet<>();
+
+				while (st.hasMoreTokens())
+					set.add(st.nextToken());
+
+				if (set.size() > 0)
+					requestQosList.add(set);
+			}
 		}
 
 		sesToQuery = optionToString(options.nonOptionArguments());
