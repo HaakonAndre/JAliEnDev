@@ -902,6 +902,8 @@ public class ConfigUtils {
 					}
 				});
 
+				tokenFile.deleteOnExit();
+				
 				fw.flush();
 				fw.close();
 
