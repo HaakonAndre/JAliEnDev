@@ -10,6 +10,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -351,7 +352,7 @@ public class JBoxServer extends Thread {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			}
 			finally {
-				if (commander!=null){
+				if (commander != null) {
 					commander.setLine(null, null);
 					commander.kill = true;
 				}
@@ -454,8 +455,12 @@ public class JBoxServer extends Thread {
 		// Get port range from config
 		final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
 
-		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", portAny ? String.valueOf(portMin + 1) : "10700"));
+		final Random rnd = new Random(System.nanoTime());
+
+		final int randomStartingPort = rnd.nextInt(1000);
+
+		final int portMin = ConfigUtils.getConfig().geti("port.range.start", 10100 + randomStartingPort);
+		final int portMax = ConfigUtils.getConfig().geti("port.range.end", portAny ? portMin + 1 : 200);
 
 		for (int port = portMin; port < portMax; port++)
 			try {
