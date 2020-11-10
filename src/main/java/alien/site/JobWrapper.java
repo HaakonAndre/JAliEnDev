@@ -156,9 +156,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		c_api = new CatalogueApiUtils(commander);
 
 		// use same tmpdir everywhere
-		String tmpdir = Functions.resolvePathWithEnv(System.getenv("TMPDIR"));
-		if (tmpdir != null)
-			System.setProperty("java.io.tmpdir", tmpdir);
+		System.setProperty("java.io.tmpdir", currentDir.getAbsolutePath() + "/tmp");
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
@@ -343,6 +341,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		processEnv.put("JALIEN_TOKEN_KEY", tokenKey);
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); // add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
+		processEnv.put("TMPDIR", currentDir.getAbsolutePath() + "/tmp");
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(currentDir, "stderr")));
