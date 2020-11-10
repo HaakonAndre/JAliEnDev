@@ -857,10 +857,16 @@ public class ConfigUtils {
 		}
 
 		vars.put("JALIEN_HOST", sHost);
-		vars.put("JALIEN_PORT", Integer.toString(JBoxServer.getPort()));
-		vars.put("JALIEN_WSPORT", Integer.toString(TomcatServer.getPort()));
+
+		if (JBoxServer.getPort() > 0) {
+			vars.put("JALIEN_PORT", Integer.toString(JBoxServer.getPort()));
+			vars.put("JALIEN_PASSWORD", JBoxServer.getPassword());
+		}
+
+		if (TomcatServer.getPort() > 0)
+			vars.put("JALIEN_WSPORT", Integer.toString(TomcatServer.getPort()));
+
 		vars.put("JALIEN_PID", Integer.toString(MonitorFactory.getSelfProcessID()));
-		vars.put("JALIEN_PASSWORD", JBoxServer.getPassword());
 
 		return vars;
 	}
