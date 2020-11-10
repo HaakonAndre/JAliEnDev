@@ -22,6 +22,8 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 	private List<String> sesToQuery = new ArrayList<>();
 	private final List<Set<String>> requestQosList = new ArrayList<>();
 
+	private boolean printSummary = false;
+
 	@Override
 	public void run() {
 		final List<SE> results = commander.c_api.getSEs(sesToQuery);
@@ -68,6 +70,11 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 		commander.printOutln(padRight(" ", maxSENameLength) + "\t\t                Capacity\t  \t\t\t\t\tDemote");
 		commander.printOutln(padLeft("SE name", maxSENameLength) + "\t ID\t   Total  \t    Used  \t    Free      File count\t   Read   Write\t" + padRight("QoS", maxQosLength) + "\t  Endpoint URL");
 
+		long summaryTotalSpace = 0;
+		long summaryUsedSpace = 0;
+		long summaryFreeSpace = 0;
+		long summaryFileCount = 0;
+
 		for (final SE se : filteredSEs) {
 			String qos = "";
 
@@ -104,6 +111,11 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			final long usedSpace = se.seUsedSpace;
 			final long freeSpace = usedSpace <= totalSpace ? totalSpace - usedSpace : 0;
 
+			summaryTotalSpace += totalSpace;
+			summaryUsedSpace += usedSpace;
+			summaryFreeSpace += freeSpace;
+			summaryFileCount += se.seNumFiles;
+
 			commander.printOutln(String.format("%1$" + maxSENameLength + "s", se.originalName) + "\t" + String.format("%3d", Integer.valueOf(se.seNumber)) + "\t" + padLeft(Format.size(totalSpace), 8)
 					+ "\t" + padLeft(Format.size(usedSpace), 8) + "\t" + padLeft(Format.size(freeSpace), 8)
 					+ String.format("%16d", Long.valueOf(se.seNumFiles))
@@ -122,15 +134,23 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 			commander.printOut("endpointUrl", se.generateProtocol());
 			commander.outNextResult();
 		}
+
+		if (printSummary && filteredSEs.size() > 1) {
+			commander.printOutln();
+			commander.printOutln(String.format("%1$" + maxSENameLength + "s", "TOTAL: " + filteredSEs.size() + " SEs") + "\t \t" + padLeft(Format.size(summaryTotalSpace), 8)
+					+ "\t" + padLeft(Format.size(summaryUsedSpace), 8) + "\t" + padLeft(Format.size(summaryFreeSpace), 8)
+					+ String.format("%16d", Long.valueOf(summaryFileCount)) + " files");
+		}
 	}
 
 	@Override
 	public void printHelp() {
 		commander.printOutln();
 		commander.printOutln("listSEs: print all (or a subset) of the defined SEs with their details");
-		commander.printOutln(helpUsage("listSEs", "[-qos filter,by,qos] [SE name] [SE name] ..."));
+		commander.printOutln(helpUsage("listSEs", "[-qos filter,by,qos] [-s] [SE name] [SE name] ..."));
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-qos", "filter the SEs by the given QoS classes. Comma separate entries for 'AND', pass multiple -qos options for an 'OR'"));
+		commander.printOutln(helpOption("-s", "print summary information"));
 	}
 
 	@Override
@@ -148,8 +168,11 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 
 		final OptionParser parser = new OptionParser();
 		parser.accepts("qos").withRequiredArg();
+		parser.accepts("s");
 
 		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
+
+		printSummary = options.has("s");
 
 		if (options.has("qos")) {
 			for (final Object qosObj : options.valuesOf("qos")) {
