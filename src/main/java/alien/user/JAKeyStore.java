@@ -483,6 +483,7 @@ public class JAKeyStore {
 
 			try {
 				ks.store(fo, password);
+				f.deleteOnExit();
 			}
 			catch (final KeyStoreException e) {
 				e.printStackTrace();
