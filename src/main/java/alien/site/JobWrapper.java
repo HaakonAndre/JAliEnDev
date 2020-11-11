@@ -36,8 +36,6 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.site.containers.Containerizer;
-import alien.site.containers.ContainerizerFactory;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
