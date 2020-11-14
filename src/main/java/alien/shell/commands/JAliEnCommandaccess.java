@@ -307,6 +307,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			parser.accepts("j").withRequiredArg().ofType(Long.class);
 			parser.accepts("m").withRequiredArg();
 			parser.accepts("f");
+			parser.accepts("u");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
