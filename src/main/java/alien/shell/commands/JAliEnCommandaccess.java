@@ -73,6 +73,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	private boolean filter = false;
 
 	/**
+	 * Flag to print http(s) URLs where available, and urlencoded envelopes for them
+	 */
+	private boolean httpURLs = false;
+
+	/**
 	 * execute the access
 	 */
 	@Override
@@ -209,7 +214,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		for (final PFN pfn : pfns) {
 			commander.outNextResult();
-			commander.printOutln(pfn.pfn);
+			commander.printOutln(httpURLs ? pfn.getHttpURL() : pfn.pfn);
 			final SE se = commander.c_api.getSE(pfn.seNumber);
 
 			if (se != null) {
@@ -220,8 +225,13 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 					if (!"alice::cern::setest".equals(se.getName().toLowerCase()))
 						if (se.needsEncryptedEnvelope) {
-							commander.printOut("envelope", env.getEncryptedEnvelope());
-							commander.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
+							String envelope = env.getEncryptedEnvelope();
+
+							if (httpURLs)
+								envelope = XrootDEnvelope.urlEncodeEnvelope(envelope);
+
+							commander.printOut("envelope", envelope);
+							commander.printOutln("Encrypted envelope:\n" + envelope);
 						}
 						else {
 							commander.printOut("envelope", env.getSignedEnvelope());
@@ -259,6 +269,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-m", "for write requests, MD5 checksum of the file to be uploaded, when known"));
 		commander.printOutln(helpOption("-j", "for write requests, the job ID that created these files, when applicable"));
 		commander.printOutln(helpOption("-f", "for read requests, filter the SEs based on the given specs list"));
+		commander.printOutln(helpOption("-u", "for read requests, print http(s) URLs where available, and the envelopes in urlencoded format"));
 		commander.printOutln();
 	}
 
@@ -382,6 +393,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				jobId = ((Long) options.valueOf("j")).longValue();
 
 			filter = options.has("f") && (ses.size() > 0 || exses.size() > 0);
+
+			httpURLs = options.has("u");
 		}
 		catch (final OptionException e) {
 			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
