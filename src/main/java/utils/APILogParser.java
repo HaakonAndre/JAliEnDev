@@ -11,6 +11,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
@@ -73,7 +77,12 @@ public class APILogParser {
 	public static void main(final String[] args) throws IOException, InterruptedException {
 		final String searchFor = " access read ";
 
+		final String jsonSearch = "\"command\":\"access\",\"arguments\":[\"read\"";
+
 		final CachedThreadPool mtResolver = new CachedThreadPool(12, 5, TimeUnit.SECONDS);
+
+		final long startTime = args.length > 0 ? Long.parseLong(args[0]) : 0;
+		final long endTime = args.length > 1 ? Long.parseLong(args[1]) : Long.MAX_VALUE;
 
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); PrintWriter pw = new PrintWriter(args.length > 0 ? args[0] : "apicommands.log")) {
 			String line;
@@ -98,20 +107,48 @@ public class APILogParser {
 
 				int idx = line.indexOf(searchFor);
 
-				if (idx < 0)
+				final long timestamp;
+
+				final String lfn;
+
+				final String site;
+
+				if (idx >= 0) {
+					final String date = line.substring(8, 37).trim();
+
+					final Date d = Format.parseDate(date);
+
+					timestamp = d.getTime();
+
+					idx += searchFor.length();
+
+					lfn = line.substring(idx, line.indexOf(' ', idx + 1));
+
+					site = line.substring(line.lastIndexOf(' ') + 1);
+				}
+				else if (line.indexOf(jsonSearch) > 0) {
+					final JSONParser parser = new JSONParser();
+
+					try {
+						final JSONObject entry = (JSONObject) parser.parse(line);
+
+						timestamp = ((Long) entry.get("timestamp")).longValue();
+
+						site = entry.get("site").toString();
+						lfn = ((JSONArray) entry.get("arguments")).get(1).toString();
+					}
+					catch (final Exception e) {
+						System.err.println("Exception json parsing " + line + ": " + e.getMessage());
+						continue;
+					}
+				}
+				else
+					continue;
+
+				if (timestamp < startTime && timestamp > endTime)
 					continue;
 
 				accessNo++;
-
-				final String date = line.substring(8, 37).trim();
-
-				final Date d = Format.parseDate(date);
-
-				idx += searchFor.length();
-
-				final String lfn = line.substring(idx, line.indexOf(' ', idx + 1));
-
-				final String site = line.substring(line.lastIndexOf(' ') + 1);
 
 				mtResolver.submit(() -> {
 					final LFN l = lfnCache.get(lfn);
@@ -135,7 +172,7 @@ public class APILogParser {
 						replicaOrder = replicas.iterator().next().getSE().getName();
 					}
 
-					final String outString = d.getTime() + "," + l.getCanonicalName() + "," + l.getSize() + "," + site + "," + replicaOrder;
+					final String outString = timestamp + "," + l.getCanonicalName() + "," + l.getSize() + "," + site + "," + replicaOrder;
 
 					synchronized (pw) {
 						pw.println(outString);
