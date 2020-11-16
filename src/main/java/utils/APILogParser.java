@@ -84,7 +84,7 @@ public class APILogParser {
 		final long startTime = args.length > 0 ? Long.parseLong(args[0]) : 0;
 		final long endTime = args.length > 1 ? Long.parseLong(args[1]) : Long.MAX_VALUE;
 
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); PrintWriter pw = new PrintWriter(args.length > 0 ? args[0] : "apicommands.log")) {
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in)); PrintWriter pw = new PrintWriter("apicommands.log")) {
 			String line;
 
 			int lineNo = 0;
