@@ -53,6 +53,10 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 	private boolean bringOnline = false;
 
+	private boolean ipv4only = false;
+
+	private boolean ipv6only = false;
+
 	@Override
 	public void run() {
 		Xrootd xrootd = null;
@@ -209,8 +213,15 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 				commander.printOut("pfn", p.getPFN());
 
-				if (xrootd == null)
+				if (xrootd == null) {
 					xrootd = (Xrootd) Factory.xrootd.clone();
+
+					if (ipv4only)
+						xrootd.setEnvVariable("XRD_NETWORKSTACK", "IPv4");
+
+					if (ipv6only)
+						xrootd.setEnvVariable("XRD_NETWORKSTACK", "IPv6");
+				}
 
 				if (onlineStatusCheck)
 					isPFNOnline(xrootd, onePfnToCheck, p);
@@ -423,6 +434,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-p", "Comma-separated list of job IDs to check the input data of"));
 		commander.printOutln(helpOption("-o", "Only show the online status (for files with tape replicas in particular)"));
 		commander.printOutln(helpOption("-O", "Request the file to be brought online"));
+		commander.printOutln(helpOption("-4", "Force IPv4 usage on all commands"));
+		commander.printOutln(helpOption("-6", "Force IPv6 usage on all commands"));
 		commander.printOutln();
 	}
 
@@ -452,6 +465,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			parser.accepts("p").withRequiredArg().withValuesSeparatedBy(',').describedAs("Comma-separated list of job IDs to check the input data of");
 			parser.accepts("o");
 			parser.accepts("O");
+			parser.accepts("4");
+			parser.accepts("6");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 			printCommand = options.has("c");
@@ -460,6 +475,9 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			onlineStatusCheck = options.has("o");
 			bringOnline = options.has("O");
 			bDownload = !onlineStatusCheck && !bringOnline && options.has("d");
+
+			ipv4only = options.has("4");
+			ipv6only = options.has("6") && !ipv4only;
 
 			if (options.has("s")) {
 				final StringTokenizer st = new StringTokenizer(options.valueOf("s").toString(), ",;");
