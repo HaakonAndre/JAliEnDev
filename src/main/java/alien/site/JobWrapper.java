@@ -766,7 +766,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		String outputDir = jdl.getOutputDir();
 
 		if (exitStatus == JobStatus.ERROR_V || exitStatus == JobStatus.ERROR_E)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle" + "/alien-job-" + queueId);
 		else if (outputDir == null)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
