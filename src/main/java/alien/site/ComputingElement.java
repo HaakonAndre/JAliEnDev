@@ -401,7 +401,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=fork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
+		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=vfork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
 	}
 
 	/**
