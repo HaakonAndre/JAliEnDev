@@ -13,6 +13,7 @@ import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.ErrNo;
+import alien.shell.ShellColor;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -115,6 +116,16 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 				commander.printOutln("Permissions: " + lfn.perm);
 				commander.printOutln("Last change: " + lfn.ctime + " (" + lfn.ctime.getTime() + ")");
 
+				if (lfn.expiretime != null) {
+					commander.printOut("expiretime", String.valueOf(lfn.expiretime.getTime() / 1000));
+					commander.printOut("Expires: " + lfn.expiretime + " (" + lfn.expiretime.getTime() + ")");
+
+					if (lfn.expiretime.getTime() <= System.currentTimeMillis())
+						commander.printOutln(ShellColor.jobStateRed() + " EXPIRED" + ShellColor.reset());
+					else
+						commander.printOutln(" which is in " + Format.toInterval(lfn.expiretime.getTime() - System.currentTimeMillis()));
+				}
+
 				if (bV && lfn.indexTableEntry != null) {
 					commander.printOutln("LFN shard: " + lfn.indexTableEntry.hostIndex + " / " + lfn.indexTableEntry.tableName);
 					commander.printOut("hostIndex", String.valueOf(lfn.indexTableEntry.hostIndex));
@@ -161,13 +172,13 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 			commander.printOutln();
 		}
 	}
-	
+
 	private static final OptionParser parser = new OptionParser();
 
 	static {
 		parser.accepts("v");
 	}
-	
+
 	@Override
 	public void printHelp() {
 		commander.printOutln();
