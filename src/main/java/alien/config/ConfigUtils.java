@@ -157,10 +157,29 @@ public class ConfigUtils {
 	}
 
 	/**
+	 * @return forced process launching mechanism
+	 */
+	public static String getProcessLaunchMethod() {
+		if (getConfig().getb("forceFork", false))
+			return "FORK";
+
+		if (getConfig().getb("forceVFork", false))
+			return "VFORK";
+
+		if (getConfig().getb("forcePosixSpawn", false))
+			return "POSIX_SPAWN";
+
+		return null;
+	}
+
+	/**
 	 * Explicitly configure JVM to use the FORK method of launching processes. WARNING: this is impacting a *lot* the performance. Only set it for leaf services that don't process much anyway.
 	 */
 	public static void switchToForkProcessLaunching() {
-		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
+		final String method = getProcessLaunchMethod();
+
+		if (method != null)
+			System.setProperty("jdk.lang.Process.launchMechanism", method);
 	}
 
 	static {
@@ -903,7 +922,7 @@ public class ConfigUtils {
 				});
 
 				tokenFile.deleteOnExit();
-				
+
 				fw.flush();
 				fw.close();
 
