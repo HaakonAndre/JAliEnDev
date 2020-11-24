@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 import java.util.Scanner;
 
 import alien.site.Functions;
+import lazyj.Utils;
 
 /**
  * 
@@ -167,19 +168,16 @@ public class SLURM extends BatchQueue {
 		submit_cmd += "#SBATCH --no-requeue\n";
 		submit_cmd += String.format("%s\n%s\n", out_cmd, err_cmd);
 
-		String encodedScriptContent = "";
+		String scriptContent;
 		try {
-			final Process runbase64 = Runtime.getRuntime().exec("base64 " + script);
-			runbase64.waitFor();
-			try (Scanner cmdScanner = new Scanner(runbase64.getInputStream())) {
-				while (cmdScanner.hasNext()) {
-					encodedScriptContent += cmdScanner.nextLine() + "\n";
-				}
-			}
+			scriptContent = Files.readString(Paths.get(script));
 		}
-		catch (final Exception e) {
-			this.logger.warning("Could not encode contents of script: " + script + ", due to: " + e);
+		catch (IOException e2) {
+			this.logger.warning("Error reading agent startup script!");
+			return;
 		}
+
+		String encodedScriptContent = Utils.base64Encode(scriptContent.getBytes()).replaceAll("(\\w{76})", "$1\n");;
 
 		submit_cmd += "cat<<__EOF__ | base64 -d > " + script + "\n";
 		submit_cmd += encodedScriptContent;
