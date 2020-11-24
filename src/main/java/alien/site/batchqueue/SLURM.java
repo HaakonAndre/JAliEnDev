@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.Scanner;
 
 import alien.site.Functions;
 
@@ -98,6 +99,7 @@ public class SLURM extends BatchQueue {
 		statusCmd = statusCmd + " " + statusOpts;
 
 		killArgs += " --ctld -Q -u " + user;
+		// killArgs += " --ctld -Q";
 
 		killCmd = killCmd + killArgs;
 	}
@@ -136,14 +138,16 @@ public class SLURM extends BatchQueue {
 		String name = String.format("jobagent_%s_%d", this.config.get("host_host"),
 				timestamp);
 		File enable_sandbox_file = new File(environment.get("TMP") + "/enable-sandbox");
-		if (enable_sandbox_file.exists() || (this.logger.getLevel() != null)) {
-			out_cmd = String.format("#SBATCH -o %s.out", file_base_name);
-			err_cmd = String.format("#SBATCH -e %s.err", file_base_name);
-		}
-		else {
-			out_cmd = "#SBATCH -o /dev/null";
-			err_cmd = "#SBATCH -e /dev/null";
-		}
+		// if (enable_sandbox_file.exists() || (this.logger.getLevel() != null)) {
+		// out_cmd = String.format("#SBATCH -o %s.out", file_base_name);
+		// err_cmd = String.format("#SBATCH -e %s.err", file_base_name);
+		// }
+		// else {
+		// out_cmd = "#SBATCH -o /dev/null";
+		// err_cmd = "#SBATCH -e /dev/null";
+		// }
+		out_cmd = "#SBATCH -o /dev/null";
+		err_cmd = "#SBATCH -e /dev/null";
 
 		// Build SLURM script
 		String submit_cmd = "#!/bin/bash\n";
@@ -156,17 +160,34 @@ public class SLURM extends BatchQueue {
 		workdir_file.mkdir();
 
 		submit_cmd += String.format("#SBATCH -J %s\n", name);
-		submit_cmd += String.format("#SBATCH -D %s\n", workdir_path_resolved);
+		// submit_cmd += String.format("#SBATCH -D %s\n", workdir_path_resolved);
+		submit_cmd += String.format("#SBATCH -D /tmp\n");
 		submit_cmd += "#SBATCH -N 1\n";
 		submit_cmd += "#SBATCH -n 1\n";
 		submit_cmd += "#SBATCH --no-requeue\n";
 		submit_cmd += String.format("%s\n%s\n", out_cmd, err_cmd);
 
-		/**
-		 * We need the runArgs here in order to start using shifter
-		 */
-		submit_cmd += "srun " + runArgs + " ";
-		submit_cmd += script + "\n";
+		String encodedScriptContent = "";
+		try {
+			final Process runbase64 = Runtime.getRuntime().exec("base64 " + script);
+			runbase64.waitFor();
+			try (Scanner cmdScanner = new Scanner(runbase64.getInputStream())) {
+				while (cmdScanner.hasNext()) {
+					encodedScriptContent += cmdScanner.nextLine() + "\n";
+				}
+			}
+		}
+		catch (final Exception e) {
+			this.logger.warning("Could not encode contents of script: " + script + ", due to: " + e);
+		}
+
+		submit_cmd += "cat<<__EOF__ | base64 -d > " + script + "\n";
+		submit_cmd += encodedScriptContent;
+		submit_cmd += "__EOF__\n";
+		submit_cmd += "chmod a+x " + script + "\n";
+		submit_cmd += "srun " + runArgs + " " + script + "\n";
+
+		submit_cmd += "rm " + script;
 
 		// Create temp file
 		if (this.temp_file != null) {
@@ -223,13 +244,12 @@ public class SLURM extends BatchQueue {
 			e.printStackTrace();
 		}
 
-		String temp_file_cmd = String.format("%s %s %s", this.submitCmd, this.submitArgs, this.temp_file.getAbsolutePath());
-		ArrayList<String> output = executeCommand(temp_file_cmd);
+		String cmd = "cat " + this.temp_file.getAbsolutePath() + " | " + this.submitCmd + " " + this.submitArgs;
+		ArrayList<String> output = executeCommand(cmd);
 		for (String line : output) {
 			String trimmed_line = line.trim();
 			this.logger.info(trimmed_line);
 		}
-
 	}
 
 	/**
