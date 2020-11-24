@@ -637,7 +637,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (exists) {
 			// otherwise insert() will set the correct expiration value
 
-			final String q = "UPDATE L" + indexTableEntry.tableName + "L SET expiretime=" + e(format(ctime)) + " WHERE entryId=" + entryId;
+			final String q = "UPDATE L" + indexTableEntry.tableName + "L SET expiretime=" + e(format(expiretime)) + " WHERE entryId=" + entryId;
 
 			if (monitor != null)
 				monitor.incrementCounter("LFN_set_expire");
