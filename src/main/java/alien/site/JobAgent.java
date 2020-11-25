@@ -627,8 +627,8 @@ public class JobAgent implements Runnable {
 
 			wrapperPID = (int) p.pid();
 
-			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
-			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce, hostName);
+			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce + "_Jobs", matchedJob.get("queueId").toString());
+			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce + "_Jobs", matchedJob.get("queueId").toString());
 
 			final String fs = checkProcessResources();
 			if (fs == null)
