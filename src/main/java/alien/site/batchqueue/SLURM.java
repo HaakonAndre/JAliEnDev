@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.Scanner;
 
 import alien.site.Functions;
 import lazyj.Utils;
@@ -61,14 +60,14 @@ public class SLURM extends BatchQueue {
 		this.temp_file = null;
 
 		// Get SLURM
-		this.submitCmd = (String) config.getOrDefault("CE_SUBMITCMD", "sbatch");
-		this.killCmd = (String) config.getOrDefault("CE_KILLCMD", "scancel");
-		this.statusCmd = (String) config.getOrDefault("CE_STATUSCMD", "squeue");
+		this.submitCmd = (String) config.getOrDefault("ce_submitcmd", "sbatch");
+		this.killCmd = (String) config.getOrDefault("ce_killcmd", "scancel");
+		this.statusCmd = (String) config.getOrDefault("ce_statuscmd", "squeue");
 
-		this.submitArgs = (String) config.getOrDefault("CE_SUBMITARG", "");
-		this.killArgs = (String) config.getOrDefault("CE_KILLARG", "");
-		this.runArgs = (String) config.getOrDefault("CE_RUNARG", "");
-		this.statusArgs = (String) config.getOrDefault("CE_STATUSARG", "");
+		this.submitArgs = (String) config.getOrDefault("ce_submitarg", "");
+		this.killArgs = (String) config.getOrDefault("ce_killarg", "");
+		this.runArgs = (String) config.getOrDefault("ce_runarg", "");
+		this.statusArgs = (String) config.getOrDefault("ce_statusarg", "");
 
 		// Get args from the environment
 		if (envFromConfig != null) {
