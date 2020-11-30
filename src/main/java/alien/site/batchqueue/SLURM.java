@@ -180,7 +180,7 @@ public class SLURM extends BatchQueue {
 
 		submit_cmd += "cat<<__EOF__ | base64 -d > " + script + "\n";
 		submit_cmd += encodedScriptContent;
-		submit_cmd += "__EOF__\n";
+		submit_cmd += "\n__EOF__\n";
 		submit_cmd += "chmod a+x " + script + "\n";
 		submit_cmd += "srun " + runArgs + " " + script + "\n";
 
