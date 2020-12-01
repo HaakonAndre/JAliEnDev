@@ -3,6 +3,7 @@
  */
 package alien.io.protocols;
 
+import static alien.io.protocols.SourceExceptionCode.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -468,7 +469,7 @@ public class Xrootd extends Protocol {
 
 		if (localFile != null) {
 			if (localFile.exists())
-				throw new SourceException("Local file " + localFile.getCanonicalPath() + " exists already. Xrdcp would fail.");
+				throw new SourceException(LOCAL_FILE_ALREADY_EXISTS, "Local file " + localFile.getCanonicalPath() + " exists already. Xrdcp would fail.");
 			target = localFile;
 		}
 
@@ -538,7 +539,7 @@ public class Xrootd extends Protocol {
 
 			if (xrdcpPath == null) {
 				logger.log(Level.SEVERE, "Could not find xrdcp in path.");
-				throw new SourceException("Could not find xrdcp in path.");
+				throw new SourceException(XRDCP_NOT_FOUND_IN_PATH, "Could not find xrdcp in path.");
 			}
 
 			command.add(xrdcpPath);
@@ -592,48 +593,63 @@ public class Xrootd extends Protocol {
 					setLastExitStatus(exitStatus);
 				}
 				else
-					throw new SourceException("Cannot start the process");
+					throw new SourceException(CANNOT_START_PROCESS, "Cannot start the process");
 			}
 			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 
 				p.destroy();
 
-				throw new SourceException("Interrupted while waiting for the following command to finish:\n" + getFormattedLastCommand(), ie);
+				throw new SourceException(INTERRUPTED_WHILE_WAITING_FOR_COMMAND, "Interrupted while waiting for the following command to finish:\n" + getFormattedLastCommand(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
+				SourceExceptionCode errCode;
 
 				logger.log(Level.WARNING, "GET of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null) {
-					if (exitStatus.getExtProcExitStatus() < 0)
+					if (exitStatus.getExtProcExitStatus() < 0) {
+						errCode = XROOTD_TIMED_OUT;
 						sMessage = xrdcpPath + " timed out and was killed after " + maxTime + "s: " + sMessage;
-					else
+					}
+					else {
+						errCode = XROOTD_EXITED_WITH_CODE;
 						sMessage = xrdcpPath + " exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+					}
 				}
-				else if (exitStatus.getExtProcExitStatus() < 0)
+				else if (exitStatus.getExtProcExitStatus() < 0) {
+					errCode = XROOTD_TIMED_OUT;
 					sMessage = "The following command has timed out and was killed after " + maxTime + "s:\n" + getFormattedLastCommand();
-				else
+				}
+				else {
+					errCode = XROOTD_EXITED_WITH_CODE;
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
+				}
 
-				throw new SourceException(sMessage);
+				throw new SourceException(errCode, sMessage);
 			}
 
 			if (!checkDownloadedFile(target, pfn)) {
 				String message = "Local file doesn't match catalogue details";
+				SourceExceptionCode errCode;
 
 				if (target.exists()) {
-					if (target.length() != guid.size)
+					if (target.length() != guid.size) {
+						errCode = LOCAL_FILE_SIZE_DIFFERENT;
 						message += ", local file size is different from the expected value (" + target.length() + " vs " + guid.size + ")";
-					else
+					}
+					else {
+						errCode = MD5_CHECKSUMS_DIFFER;
 						message += ", MD5 checksums differ";
+					}
 				}
-				else
+				else {
+					errCode = LOCAL_FILE_CANNOT_BE_CREATED;
 					message += ", local file could not be created";
-
-				throw new SourceException(message);
+				}
+				throw new SourceException(errCode, message);
 			}
 		}
 		catch (final SourceException ioe) {
@@ -658,7 +674,7 @@ public class Xrootd extends Protocol {
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new SourceException("Get aborted because " + t);
+			throw new SourceException(INTERNAL_ERROR, "Get aborted because " + t);
 		}
 
 		if (localFile == null)
@@ -829,7 +845,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Set some extra environment variable. See the xrdcp manual for all the options.
-	 * 
+	 *
 	 * @param key environment variable name
 	 * @param value value to set, can be <code>null</code> to remove any existing value
 	 * @return the previously set value for this key
@@ -1061,7 +1077,7 @@ public class Xrootd extends Protocol {
 		final SE se = pfn.getSE();
 
 		if (se == null)
-			throw new IOException("SE " + pfn.seNumber + " doesn't exist");
+			throw new SourceException(SE_DOES_NOT_EXIST, "SE " + pfn.seNumber + " doesn't exist");
 
 		final int[] statRetryTimes = se.seName.toLowerCase().contains("dcache") ? statRetryTimesDCache : statRetryTimesXrootd;
 
@@ -1126,20 +1142,29 @@ public class Xrootd extends Protocol {
 					}
 					else {
 						setLastCommand(command);
-						throw new IOException("Cannot execute command:\n" + getFormattedLastCommand());
+						throw new SourceException(CANNOT_START_PROCESS, "Cannot execute command:\n" + getFormattedLastCommand());
 					}
 				}
 				catch (final InterruptedException ie) {
 					setLastExitStatus(null);
 					setLastCommand(command);
-					throw new IOException("Interrupted while waiting for the following command to finish:\n" + getFormattedLastCommand(), ie);
+					throw new SourceException(INTERRUPTED_WHILE_WAITING_FOR_COMMAND, "Interrupted while waiting for the following command to finish:\n" + getFormattedLastCommand(), ie);
 				}
 
 				if (exitStatus.getExtProcExitStatus() != 0) {
 					if (sleep == 0 || !retryWithDelay) {
-						final String message = exitStatus.getExtProcExitStatus() > 0 ? "Exit code was " + exitStatus.getExtProcExitStatus()
-								: "Command has timed out and was killed after " + processTimeout + "s";
-						throw new IOException(
+						final String message;
+						SourceExceptionCode code;
+						if (exitStatus.getExtProcExitStatus() > 0) {
+							message = "Exit code was " + exitStatus.getExtProcExitStatus();
+							code = XROOTD_EXITED_WITH_CODE;
+						}
+						else {
+							message = "Command has timed out and was killed after " + processTimeout + "s";
+							code = XROOTD_TIMED_OUT;
+						}
+
+						throw new SourceException(code,
 								message + ", retry #" + (statRetryCounter + 1) + ", output was " + cleanupXrdOutput(exitStatus.getStdOut()) + ", " + "for command:\n" + getFormattedLastCommand());
 					}
 
@@ -1154,7 +1179,7 @@ public class Xrootd extends Protocol {
 
 				if (sleep == 0 || !retryWithDelay) {
 					setLastCommand(command);
-					throw new IOException(command.toString() + ": could not confirm the upload after " + (statRetryCounter + 1) + " retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
+					throw new SourceException(XRDFS_CANNOT_CONFIRM_UPLOAD, command.toString() + ": could not confirm the upload after " + (statRetryCounter + 1) + " retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
 				}
 
 				Thread.sleep(sleep * 1000);
@@ -1166,7 +1191,7 @@ public class Xrootd extends Protocol {
 			catch (final Throwable t) {
 				logger.log(Level.WARNING, "Caught exception", t);
 
-				final IOException ioe = new IOException("xrdstat internal failure " + t);
+				final SourceException ioe = new SourceException(INTERNAL_ERROR, "xrdstat internal failure " + t);
 
 				ioe.setStackTrace(t.getStackTrace());
 
@@ -1357,8 +1382,10 @@ public class Xrootd extends Protocol {
 						|| sMessage.indexOf("dest-size=0 (source or destination has 0 size!)") >= 0)
 					throw new TargetException(sMessage);
 
-				if (sMessage.indexOf("No servers have the file") >= 0 || sMessage.indexOf("No such file or directory") >= 0)
-					throw new SourceException(sMessage);
+				if (sMessage.indexOf("No servers have the file") >= 0)
+					throw new SourceException(NO_SERVERS_HAVE_THE_FILE, sMessage);
+				if (sMessage.indexOf("No such file or directory") >= 0)
+					throw new SourceException(NO_SUCH_FILE_OR_DIRECTORY, sMessage);
 
 				throw new IOException(sMessage);
 			}

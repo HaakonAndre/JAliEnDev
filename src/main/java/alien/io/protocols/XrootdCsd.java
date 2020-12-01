@@ -3,6 +3,18 @@
  */
 package alien.io.protocols;
 
+import static alien.io.protocols.SourceExceptionCode.CANNOT_START_PROCESS;
+import static alien.io.protocols.SourceExceptionCode.INTERNAL_ERROR;
+import static alien.io.protocols.SourceExceptionCode.INTERRUPTED_WHILE_WAITING_FOR_COMMAND;
+import static alien.io.protocols.SourceExceptionCode.LOCAL_FILE_ALREADY_EXISTS;
+import static alien.io.protocols.SourceExceptionCode.LOCAL_FILE_CANNOT_BE_CREATED;
+import static alien.io.protocols.SourceExceptionCode.LOCAL_FILE_SIZE_DIFFERENT;
+import static alien.io.protocols.SourceExceptionCode.MD5_CHECKSUMS_DIFFER;
+import static alien.io.protocols.SourceExceptionCode.NO_SERVERS_HAVE_THE_FILE;
+import static alien.io.protocols.SourceExceptionCode.NO_SUCH_FILE_OR_DIRECTORY;
+import static alien.io.protocols.SourceExceptionCode.XRDCP_NOT_FOUND_IN_PATH;
+import static alien.io.protocols.SourceExceptionCode.XROOTD_EXITED_WITH_CODE;
+import static alien.io.protocols.SourceExceptionCode.XROOTD_TIMED_OUT;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -436,7 +448,7 @@ public class XrootdCsd extends Protocol {
 
 		if (localFile != null) {
 			if (localFile.exists())
-				throw new SourceException("Local file " + localFile.getCanonicalPath() + " exists already. Xrdcp would fail.");
+				throw new SourceException(LOCAL_FILE_ALREADY_EXISTS, "Local file " + localFile.getCanonicalPath() + " exists already. Xrdcp would fail.");
 			target = localFile;
 		}
 
@@ -506,7 +518,7 @@ public class XrootdCsd extends Protocol {
 
 			if (xrdcpPath == null) {
 				logger.log(Level.SEVERE, "Could not find xrdcp in path.");
-				throw new SourceException("Could not find xrdcp in path.");
+				throw new SourceException(XRDCP_NOT_FOUND_IN_PATH, "Could not find xrdcp in path.");
 			}
 
 			command.add(xrdcpPath);
@@ -559,48 +571,63 @@ public class XrootdCsd extends Protocol {
 					setLastExitStatus(exitStatus);
 				}
 				else
-					throw new SourceException("Cannot start the process");
+					throw new SourceException(CANNOT_START_PROCESS, "Cannot start the process");
 			}
 			catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 
 				p.destroy();
 
-				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+				throw new SourceException(INTERRUPTED_WHILE_WAITING_FOR_COMMAND, "Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
+				SourceExceptionCode errCode;
 
 				logger.log(Level.WARNING, "GET of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null) {
-					if (exitStatus.getExtProcExitStatus() < 0)
+					if (exitStatus.getExtProcExitStatus() < 0) {
+						errCode = XROOTD_TIMED_OUT;
 						sMessage = xrdcpPath + " timed out and was killed after " + maxTime + "s: " + sMessage;
-					else
+					}
+					else {
+						errCode = XROOTD_EXITED_WITH_CODE;
 						sMessage = xrdcpPath + " exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+					}
 				}
-				else if (exitStatus.getExtProcExitStatus() < 0)
-					sMessage = "The following command has timed out and was killed after " + maxTime + "s: " + command.toString();
-				else
-					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+				else if (exitStatus.getExtProcExitStatus() < 0) {
+					errCode = XROOTD_TIMED_OUT;
+					sMessage = "The following command has timed out and was killed after " + maxTime + "s:\n" + getFormattedLastCommand();
+				}
+				else {
+					errCode = XROOTD_EXITED_WITH_CODE;
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command:\n" + getFormattedLastCommand();
+				}
 
-				throw new SourceException(sMessage);
+				throw new SourceException(errCode, sMessage);
 			}
 
 			if (!checkDownloadedFile(target, pfn)) {
 				String message = "Local file doesn't match catalogue details";
+				SourceExceptionCode errCode;
 
 				if (target.exists()) {
-					if (target.length() != guid.size)
+					if (target.length() != guid.size) {
+						errCode = LOCAL_FILE_SIZE_DIFFERENT;
 						message += ", local file size is different from the expected value (" + target.length() + " vs " + guid.size + ")";
-					else
+					}
+					else {
+						errCode = MD5_CHECKSUMS_DIFFER;
 						message += ", MD5 checksums differ";
+					}
 				}
-				else
+				else {
+					errCode = LOCAL_FILE_CANNOT_BE_CREATED;
 					message += ", local file could not be created";
-
-				throw new SourceException(message);
+				}
+				throw new SourceException(errCode, message);
 			}
 		}
 		catch (final SourceException ioe) {
@@ -625,7 +652,7 @@ public class XrootdCsd extends Protocol {
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new SourceException("Get aborted because " + t);
+			throw new SourceException(INTERNAL_ERROR, "Get aborted because " + t);
 		}
 
 		if (localFile == null)
@@ -1280,8 +1307,10 @@ public class XrootdCsd extends Protocol {
 						|| sMessage.indexOf("dest-size=0 (source or destination has 0 size!)") >= 0)
 					throw new TargetException(sMessage);
 
-				if (sMessage.indexOf("No servers have the file") >= 0 || sMessage.indexOf("No such file or directory") >= 0)
-					throw new SourceException(sMessage);
+				if (sMessage.indexOf("No servers have the file") >= 0)
+					throw new SourceException(NO_SERVERS_HAVE_THE_FILE, sMessage);
+				if (sMessage.indexOf("No such file or directory") >= 0)
+					throw new SourceException(NO_SUCH_FILE_OR_DIRECTORY, sMessage);
 
 				throw new IOException(sMessage);
 			}

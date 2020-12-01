@@ -3,6 +3,8 @@
  */
 package alien.io.protocols;
 
+import static alien.io.protocols.SourceExceptionCode.NO_SERVERS_HAVE_THE_FILE;
+import static alien.io.protocols.SourceExceptionCode.NO_SUCH_FILE_OR_DIRECTORY;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -207,8 +209,10 @@ public class Xrd3cp extends Xrootd {
 						|| sMessage.indexOf("dest-size=0 (source or destination has 0 size!)") >= 0)
 					throw new TargetException(sMessage);
 
-				if (sMessage.indexOf("No servers have the file") >= 0 || sMessage.indexOf("No such file or directory") >= 0)
-					throw new SourceException(sMessage);
+				if (sMessage.indexOf("No servers have the file") >= 0)
+					throw new SourceException(NO_SERVERS_HAVE_THE_FILE, sMessage);
+				if (sMessage.indexOf("No such file or directory") >= 0)
+					throw new SourceException(NO_SUCH_FILE_OR_DIRECTORY, sMessage);
 
 				throw new IOException(sMessage);
 			}
