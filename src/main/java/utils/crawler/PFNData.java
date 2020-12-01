@@ -54,8 +54,7 @@ class PFNData {
 	 */
 	private final String catalogueMD5;
 
-
-	static final String CSV_HEADER = "Guid,SeName,PFN,ObservedSize,CatalogueSize,ObservedMD5,CatalogueMD5,DownloadDurationMillis,XrdfsDurationMillis,StatusCode,StatusMessage\n";
+	static final String CSV_HEADER = "Guid,SeName,PFN,ObservedSize,CatalogueSize,ObservedMD5,CatalogueMD5,DownloadDurationMillis,XrdfsDurationMillis,StatusCode,StatusType,StatusMessage\n";
 
 	PFNData(String seName, String pfn, CrawlingStatus crawlingResults, Long observedSize, Long catalogueSize, String observedMD5, String catalogueMD5, Long downloadDurationMillis, Long xrdfsDurationMillis) {
 		this.seName = seName;
@@ -80,7 +79,8 @@ class PFNData {
 	String toCSV() {
 		return seName + "," + pfn + "," + observedSize + "," + catalogueSize + ","
 				+ observedMD5 + "," + catalogueMD5 + "," + downloadDurationMillis + ","
-				+ xrdfsDurationMillis + "," + crawlingResults.getCode() + "," + crawlingResults.getMessage();
+				+ xrdfsDurationMillis + "," + crawlingResults.getCode() + "," + crawlingResults.getCrawlingStatusType() + ","
+				+ crawlingResults.getMessage();
 	}
 
 	@Override
@@ -113,7 +113,8 @@ class PFNData {
 			json.put("xrdfsDurationMillis", xrdfsDurationMillis);
 
 		if (crawlingResults != null) {
-			json.put("statusCode", Integer.valueOf(crawlingResults.getCode()));
+			json.put("statusCode", crawlingResults.getCode().toString());
+			json.put("statusType", crawlingResults.getCrawlingStatusType().toString());
 			json.put("statusMessage", crawlingResults.getMessage());
 		}
 

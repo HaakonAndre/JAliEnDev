@@ -43,7 +43,7 @@ class GetCEs {
 		}
 	}
 
-	public static Set<String> getCloseSites(final String storageName) {
+	private static Set<String> getCloseSites(final String storageName) {
 		final Set<String> dns = LDAPHelper.checkLdapInformation("closese=" + storageName, "ou=Sites,", "dn");
 
 		final Set<String> ret = new LinkedHashSet<>();
@@ -71,7 +71,7 @@ class GetCEs {
 	 * @param se
 	 * @return JDL requirement for closest site to storage element
 	 */
-	public static StringBuilder getSiteJDLRequirement(String se) {
+	static StringBuilder getSiteJDLRequirement(String se) {
 		final Set<String> siteNames = GetCEs.getCloseSites(se);
 
 		final Set<String> matchingCEs = new LinkedHashSet<>();
@@ -89,10 +89,13 @@ class GetCEs {
 			requirements.append("(other.CE==\"ALICE::").append(ce).append("\")");
 		}
 
+		requirements.insert(0, "(");
+		requirements.append(")");
+
 		return requirements;
 	}
 
-	public static Set<String> getCEs(final String siteName) {
+	private static Set<String> getCEs(final String siteName) {
 		return LDAPHelper.checkLdapInformation("(objectClass=AliEnCE)", "ou=CE,ou=Services,ou=" + siteName + ",ou=Sites,", "name");
 	}
 }

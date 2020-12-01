@@ -38,7 +38,7 @@ class IterationPrepare {
 	private static final String FILE_SEPARATOR = " ";
 	private static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_iteration_prepare";
 	private static final String FILE_NAME_JOBS_OUTPUT_MERGER = "jobs_output_merger";
-	private static final int ARGUMENT_COUNT = 7;
+	private static final int ARGUMENT_COUNT = 8;
 	static final Integer TIME_TO_LIVE = Integer.valueOf(21600);
 	static final Integer MAX_WAITING_TIME = Integer.valueOf(18000);
 
@@ -77,6 +77,11 @@ class IterationPrepare {
 	 */
 	private static String currentIterationUnixTimestamp;
 
+	/**
+	 * The JAliEn package to be used in JDL when launching crawling jobs
+	 */
+	private static String jalienPackage;
+
 
 	/**
 	 * logger
@@ -113,7 +118,6 @@ class IterationPrepare {
 			mergeFilesFromPreviousIteration(ses, previousIterationPath);
 
 			List<String> jobIds = submitJobs(ses);
-
 			String fileContents = Strings.join(jobIds, FILE_SEPARATOR) + FILE_SEPARATOR;
 			String fullPath = commander.getCurrentDirName() + "iteration_" + currentIterationUnixTimestamp + "/" + FILE_NAME_JOBS_TO_KILL;
 			CrawlerUtils.writeToDisk(commander, logger, fileContents, FILE_NAME_JOBS_TO_KILL, fullPath);
@@ -142,6 +146,7 @@ class IterationPrepare {
 		outputFileType = args[4];
 		previousIterationUnixTimestamp = args[5];
 		currentIterationUnixTimestamp = args[6];
+		jalienPackage = args[7];
 	}
 
 	/**
@@ -228,6 +233,7 @@ class IterationPrepare {
 			JSONObject jobStatsJSON = new JSONObject();
 			HashMap<JobStatus, Integer> mapJobStatusToCount = new HashMap<>();
 			long jobsNotFound = 0;
+			int totalJobCount = 0;
 
 			if (downloadedFile.exists() && !downloadedFile.delete())
 				logger.log(Level.INFO, "Cannot delete file " + downloadedFile.getName());
@@ -240,6 +246,9 @@ class IterationPrepare {
 				try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(downloadedFile)))) {
 					String buffer = bufferedReader.readLine();
 					String[] jobIds = buffer.split(FILE_SEPARATOR);
+
+					totalJobCount = jobIds.length;
+
 					for (String jobId : jobIds) {
 						long id = Long.parseLong(jobId);
 						Job job = commander.q_api.getJob(id);
@@ -260,8 +269,9 @@ class IterationPrepare {
 
 				if (generateStatistics) {
 					String remoteFilePath = jobFileDirectory + jobFileName + "_stats.json";
-
 					jobStatsJSON.putAll(mapJobStatusToCount);
+					jobStatsJSON.put("TOTAL", Integer.valueOf(totalJobCount));
+
 					if(jobsNotFound > 0)
 						jobStatsJSON.put("NOT_FOUND", Long.valueOf(jobsNotFound));
 
@@ -386,6 +396,7 @@ class IterationPrepare {
 	 */
 	private static JDL getJDLOutputMerger(SE se) {
 		JDL jdl = new JDL();
+		jdl.append("Package", jalienPackage);
 		jdl.append("JobTag", "OutputMerger_" + se.seNumber);
 		jdl.set("OutputDir", getSEIterationDirectoryPath(se, previousIterationUnixTimestamp));
 		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");
@@ -393,8 +404,6 @@ class IterationPrepare {
 		jdl.set("Executable", commander.getCurrentDirName() + "output_merger.sh");
 		jdl.append("Output", "output_merger.log");
 		jdl.append("Workdirectorysize", "11000MB");
-		jdl.set("TTL", OutputMerger.TIME_TO_LIVE);
-		jdl.set("Requirements", GetCEs.getSiteJDLRequirement(se.seName));
 		return jdl;
 	}
 
@@ -408,10 +417,11 @@ class IterationPrepare {
 	 */
 	private static JDL getJDLCrawlingPrepare(SE se, int sampleSize, int crawlingJobsCount) {
 		JDL jdl = new JDL();
+		jdl.append("Package", jalienPackage);
 		jdl.append("JobTag", "CrawlingPrepare_" + se.seNumber);
 		jdl.set("OutputDir", getSEIterationDirectoryPath(se, currentIterationUnixTimestamp));
 		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");
-		jdl.set("Arguments", sampleSize + " " + crawlingJobsCount + " " + se.seNumber + " " + currentIterationUnixTimestamp + " " + outputFileType);
+		jdl.set("Arguments", sampleSize + " " + crawlingJobsCount + " " + se.seNumber + " " + currentIterationUnixTimestamp + " " + outputFileType + " " + jalienPackage);
 		jdl.set("Executable", commander.getCurrentDirName() + "crawling_prepare.sh");
 		jdl.set("TTL", CrawlingPrepare.TIME_TO_LIVE);
 		jdl.set("MaxWaitingTime", CrawlingPrepare.MAX_WAITING_TIME);

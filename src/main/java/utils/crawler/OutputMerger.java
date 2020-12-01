@@ -6,12 +6,6 @@ import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.user.JAKeyStore;
-import jline.internal.Nullable;
-import lazyj.Utils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -19,6 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jline.internal.Nullable;
+import lazyj.Utils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 class OutputMerger {
 	/**
@@ -47,10 +46,6 @@ class OutputMerger {
 	private static String outputFileType;
 
 	private static final int ARGUMENT_COUNT = 3;
-
-	static final Integer TIME_TO_LIVE = Integer.valueOf(86400);
-
-	static final Integer MAX_WAITING_TIME = Integer.valueOf(1209600);
 
 	/**
 	 * Submit jobs that merge the outputs for a specific iteration

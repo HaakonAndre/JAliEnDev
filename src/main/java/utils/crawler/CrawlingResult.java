@@ -32,8 +32,7 @@ class CrawlingResult {
 	 */
 	private long xrdfsPFNsTotalCount;
 
-	CrawlingResult(CrawlingStatus status, long fileSizeTotalBytes, long downloadTotalDurationMillis,
-		long downloadedPFNsTotalCount, long xrdfsTotalDurationMillis, long xrdfsPFNsTotalCount) {
+	CrawlingResult(CrawlingStatus status, long fileSizeTotalBytes, long downloadTotalDurationMillis, long downloadedPFNsTotalCount, long xrdfsTotalDurationMillis, long xrdfsPFNsTotalCount) {
 		this.status = status;
 		this.fileSizeTotalBytes = fileSizeTotalBytes;
 		this.downloadTotalDurationMillis = downloadTotalDurationMillis;
@@ -42,7 +41,7 @@ class CrawlingResult {
 		this.xrdfsPFNsTotalCount = xrdfsPFNsTotalCount;
 	}
 
-	CrawlingStatus getStatus() {
+	public CrawlingStatus getStatus() {
 		return status;
 	}
 
