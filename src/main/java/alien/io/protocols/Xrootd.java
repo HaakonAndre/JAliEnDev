@@ -1156,12 +1156,12 @@ public class Xrootd extends Protocol {
 						final String message;
 						SourceExceptionCode code;
 						if (exitStatus.getExtProcExitStatus() > 0) {
-							message = "Exit code was " + exitStatus.getExtProcExitStatus();
 							code = XROOTD_EXITED_WITH_CODE;
+							message = "Exit code was " + exitStatus.getExtProcExitStatus();
 						}
 						else {
-							message = "Command has timed out and was killed after " + processTimeout + "s";
 							code = XROOTD_TIMED_OUT;
+							message = "Command has timed out and was killed after " + processTimeout + "s";
 						}
 
 						throw new SourceException(code,
