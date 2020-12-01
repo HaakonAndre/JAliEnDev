@@ -9,8 +9,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * @author anegru
@@ -47,10 +52,30 @@ class CrawlerUtils {
 			bufferedWriter.close();
 			writeToDisk(commander, logger, f, remoteFullPath);
 		}
-		finally {
-			if (f.exists() && !f.delete())
-				logger.log(Level.INFO, "Cannot delete already existing local file " + f.getCanonicalPath());
+		catch (IOException e) {
+			e.printStackTrace();
+			logger.log(Level.SEVERE, "Cannot write to disk " + e.getMessage());
 		}
+		finally {
+			try {
+				if (f.exists() && !f.delete())
+					logger.log(Level.INFO, "Cannot delete already existing local file " + f.getCanonicalPath());
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+				logger.log(Level.WARNING, "Cannot delete already existing local file " + e.getMessage());
+			}
+		}
+	}
+
+	static List<SE> getSEs(JAliEnCOMMander commander) throws Exception {
+		Collection<SE> ses = commander.c_api.getSEs(new ArrayList<>());
+
+		if (ses == null)
+			throw new Exception("Cannot retrieve SEs");
+
+		Predicate<SE> byType = se -> se.isQosType("disk");
+		return ses.stream().filter(byType).collect(Collectors.toList());
 	}
 }
 

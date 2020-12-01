@@ -10,8 +10,6 @@ import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.user.JAKeyStore;
-import joptsimple.internal.Strings;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import joptsimple.internal.Strings;
 
 /**
  * Extracts random PFNs from the catalogue and serializes them to disk
@@ -62,11 +61,16 @@ class CrawlingPrepare {
 	private static long iterationUnixTimestamp;
 
 	/**
+	 * The JAliEn package to be used in JDL when launching crawling jobs
+	 */
+	private static String jalienPackage;
+
+	/**
 	 * The file type of the output
 	 */
 	private static String outputFileType;
 
-	private static final int ARGUMENT_COUNT = 5;
+	private static final int ARGUMENT_COUNT = 6;
 
 	static final String FILE_NAME_JOBS_TO_KILL = "jobs_to_kill_crawling";
 
@@ -118,6 +122,7 @@ class CrawlingPrepare {
 		se = SEUtils.getSE(Integer.parseInt(args[2]));
 		iterationUnixTimestamp = Long.parseLong(args[3]);
 		outputFileType = args[4];
+		jalienPackage = args[5];
 	}
 
 	/**
@@ -144,6 +149,7 @@ class CrawlingPrepare {
 				try {
 					int startIndex = i * sampleSize / crawlingJobCount;
 					int endIndex = (i + 1) * sampleSize / crawlingJobCount;
+					logger.warning("JOB with id " + i + " will crawl from " + startIndex + " to " + endIndex);
 					JDL jdlCrawling = getJDLCrawlSE(se, i, startIndex, endIndex);
 					long jobId = commander.q_api.submitJob(jdlCrawling);
 					jobIds.add(Long.toString(jobId));
@@ -182,9 +188,7 @@ class CrawlingPrepare {
 				oos.writeObject(randomPFNs);
 				oos.flush();
 				oos.close();
-
 				LFN lfnUploaded = IOUtils.upload(f, fullPath, commander.getUser(), 3, null, true);
-
 				if(lfnUploaded == null)
 					logger.log(Level.WARNING, "Uploading " + fullPath + " failed");
 				else
@@ -210,6 +214,7 @@ class CrawlingPrepare {
 	 */
 	private static JDL getJDLCrawlSE(SE storageElement, int jobIndex, int pfnStartIndex, int pfnEndIndex) {
 		JDL jdl = new JDL();
+		jdl.append("Package", jalienPackage);
 		jdl.append("JobTag", "Crawling_" + storageElement.seNumber + "_" + jobIndex);
 		jdl.set("OutputDir", getDirectoryPathSE() + "logs/" + jobIndex);
 		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");

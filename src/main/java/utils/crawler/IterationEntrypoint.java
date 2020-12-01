@@ -5,7 +5,6 @@ import alien.config.ConfigUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.user.JAKeyStore;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,7 +18,7 @@ import java.util.logging.Logger;
  */
 class IterationEntrypoint {
 
-	private static final int ARGUMENT_COUNT = 5;
+	private static final int ARGUMENT_COUNT = 6;
 
 	/**
 	 * The minimum number of crawling jobs per SE in each iteration, by default 10
@@ -50,6 +49,11 @@ class IterationEntrypoint {
 	 * The unix timestamp  registered at the beginning of each iteration
 	 */
 	private static long currentIterationUnixTimestamp;
+
+	/**
+	 * The JAliEn package to be used in JDL when launching crawling jobs
+	 */
+	private static String jalienPackage;
 
 	/**
 	 * logger
@@ -113,6 +117,7 @@ class IterationEntrypoint {
 		minRandomPFN = Integer.parseInt(args[2]);
 		maxRandomPFN = Integer.parseInt(args[3]);
 		outputFileType = args[4];
+		jalienPackage = args[5];
 	}
 
 	/**
@@ -127,10 +132,11 @@ class IterationEntrypoint {
 			previousIterationUnixTimestamp = "null";
 
 		JDL jdl = new JDL();
+		jdl.append("Package", jalienPackage);
 		jdl.append("JobTag", "IterationPrepare");
 		jdl.set("OutputDir", commander.getCurrentDirName() + "iteration_" + currentIterationUnixTimestamp);
 		jdl.append("InputFile", "LF:" + commander.getCurrentDirName() + "alien-users.jar");
-		jdl.set("Arguments", minCrawlingJobs + " " + maxCrawlingJobs + " " + minRandomPFN + " " + maxRandomPFN + " " + outputFileType + " " + previousIterationUnixTimestamp + " " + currentIterationUnixTimestamp);
+		jdl.set("Arguments", minCrawlingJobs + " " + maxCrawlingJobs + " " + minRandomPFN + " " + maxRandomPFN + " " + outputFileType + " " + previousIterationUnixTimestamp + " " + currentIterationUnixTimestamp + " " + jalienPackage);
 		jdl.set("Executable", commander.getCurrentDirName() + "iteration_prepare.sh");
 		jdl.set("TTL", IterationPrepare.TIME_TO_LIVE);
 		jdl.set("MaxWaitingTime", IterationPrepare.MAX_WAITING_TIME);
