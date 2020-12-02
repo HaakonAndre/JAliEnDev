@@ -160,6 +160,7 @@ public class TomcatServer {
 		connector.setScheme("https");
 		connector.setProperty("SSLEnabled", "true");
 		connector.setProperty("maxThreads", "200");
+		connector.setProperty("maxConnections", "50000");
 		connector.setProperty("connectionTimeout", "20000");
 		connector.setProperty("compression", "on");
 		connector.setProperty("compressionMinSize", "1");
