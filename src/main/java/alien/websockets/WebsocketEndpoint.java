@@ -515,13 +515,17 @@ public class WebsocketEndpoint extends Endpoint {
 				// If a command takes too long to be executed, start a new thread
 				final ExecutorService commandService = Executors.newSingleThreadExecutor();
 
+				monitor.incrementCounter("long_command", 1);
+
 				commandService.execute(() -> {
 					waitForCommand(false, 1);
 					returnResult();
 				});
 			}
-			else
+			else {
 				returnResult();
+				monitor.incrementCounter("short_command", 1);
+			}
 		}
 
 		/**
