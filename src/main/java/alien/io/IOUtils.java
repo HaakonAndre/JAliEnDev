@@ -251,14 +251,14 @@ public class IOUtils {
 			}
 		}
 
-		if (f == null || !zipArchive) {
-			if (errorLogging != null)
-				logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid + " due to " + errorLogging);
-			else
-				logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid);
+		if (f == null) {
+			logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid + (errorLogging != null ? " due to " + errorLogging : ""));
 
-			return f;
+			return null;
 		}
+
+		if (!zipArchive)
+			return f;
 
 		try {
 			for (final PFN p : pfns)
