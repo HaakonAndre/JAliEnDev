@@ -208,6 +208,9 @@ public class WebsocketEndpoint extends Endpoint {
 
 		session.addMessageHandler(new WSMessageHandler(context, commander, out, os));
 
+		// safety net, let the API also close idle connections, at a slightly later time than our explicit operation
+		session.setMaxIdleTimeout(16 * 60 * 1000L);
+
 		sessionQueue.add(context);
 
 		monitor.incrementCounter("new_sessions");
