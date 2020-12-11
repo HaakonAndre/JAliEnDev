@@ -661,17 +661,9 @@ public class ConfigUtils {
 				return null;
 			}
 
-			final Set<String> partitions = LDAPHelper.checkLdapInformation("(&(CEname=ALICE::" + site + "::" + hostConfig.get("host_ce") + "))", "ou=Partitions,", "name");
+			final String partitions = getPartitions("ALICE::" + site + "::" + hostConfig.get("host_ce"));
 
-			final StringBuilder sb = new StringBuilder(",");
-
-			for (final String s : partitions)
-				sb.append(s).append(",");
-
-			if (sb.length() == 1)
-				sb.append(",");
-
-			ceConfig.put("ce_partition", sb.toString());
+			ceConfig.put("ce_partition", partitions);
 
 			configuration.putAll(ceConfig);
 
@@ -748,6 +740,25 @@ public class ConfigUtils {
 			return null;
 		}
 		return siteConfig;
+	}
+
+	/**
+	 * 
+	 * @param cename
+	 * @return partitions for cename
+	 */
+	public static String getPartitions(String cename) {
+		final Set<String> partitions = LDAPHelper.checkLdapInformation("(&(CEname=" + cename + "))", "ou=Partitions,", "name");
+
+		final StringBuilder sb = new StringBuilder(",");
+
+		for (final String s : partitions)
+			sb.append(s).append(",");
+
+		if (sb.length() == 1)
+			sb.append(",");
+
+		return sb.toString();
 	}
 
 	/**
