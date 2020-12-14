@@ -120,9 +120,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				return;
 
 			while (true) {
-				final Vector<String> paramNames = new Vector<>(2);
-				final Vector<Object> paramValues = new Vector<>(2);
+				final Vector<String> paramNames = new Vector<>(3);
+				final Vector<Object> paramValues = new Vector<>(3);
 
+				paramNames.add("host_pid");
+				paramValues.add(Double.valueOf(MonitorFactory.getSelfProcessID()));
+				
 				if (hostName != null) {
 					paramNames.add("host");
 					paramValues.add(hostName);
