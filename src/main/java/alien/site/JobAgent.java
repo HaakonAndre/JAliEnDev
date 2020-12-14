@@ -888,6 +888,15 @@ public class JobAgent implements Runnable {
 
 	private void changeJobStatus(final JobStatus newStatus, final HashMap<String, Object> extrafields) {
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+
+		if (apmon != null)
+			try {
+				apmon.sendParameter(ce + "_Jobs", String.valueOf(queueId), "status", newStatus.getAliEnLevel());
+			}
+			catch (final Exception e) {
+				logger.log(Level.WARNING, "JA cannot update ML of the job status change", e);
+			}
+
 		return;
 	}
 

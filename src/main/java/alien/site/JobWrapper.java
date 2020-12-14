@@ -42,6 +42,7 @@ import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
+import apmon.ApMon;
 
 /**
  * Job execution wrapper, running an embedded Tomcat server for in/out-bound communications
@@ -108,6 +109,51 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
 
 	/**
+	 * ApMon sender
+	 */
+	static final ApMon apmon = MonitorFactory.getApMonSender();
+
+	private final Thread statusSenderThread = new Thread("JobWrapper.statusSenderThread") {
+		@Override
+		public void run() {
+			if (apmon == null)
+				return;
+
+			while (true) {
+				final Vector<String> paramNames = new Vector<>(2);
+				final Vector<Object> paramValues = new Vector<>(2);
+
+				if (hostName != null) {
+					paramNames.add("host");
+					paramValues.add(hostName);
+				}
+
+				if (jobStatus != null) {
+					paramNames.add("status");
+					paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
+				}
+
+				if (paramNames.size() > 0)
+					try {
+						apmon.sendParameters(ce + "_Jobs", String.valueOf(queueId), paramNames.size(), paramNames, paramValues);
+					}
+					catch (final Exception e) {
+						logger.log(Level.WARNING, "Cannot send status updates to ML", e);
+					}
+
+				synchronized (this) {
+					try {
+						wait(1000 * 60);
+					}
+					catch (@SuppressWarnings("unused") InterruptedException e) {
+						return;
+					}
+				}
+			}
+		}
+	};
+
+	/**
 	 */
 	@SuppressWarnings("unchecked")
 	public JobWrapper() {
@@ -155,6 +201,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		// use same tmpdir everywhere
 		System.setProperty("java.io.tmpdir", currentDir.getAbsolutePath() + "/tmp");
+
+		statusSenderThread.setDaemon(true);
+		statusSenderThread.start();
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
@@ -317,12 +366,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				}
 
 		// Check if we can put the payload in its own container
-		//TODO: Put back later
-		//Containerizer cont = ContainerizerFactory.getContainerizer();
-		//if (cont != null) {
-		//	monitor.sendParameter("containerLayer", Integer.valueOf(2));
-		//	cmd = cont.containerize(String.join(" ", cmd));
-		//}
+		// TODO: Put back later
+		// Containerizer cont = ContainerizerFactory.getContainerizer();
+		// if (cont != null) {
+		// monitor.sendParameter("containerLayer", Integer.valueOf(2));
+		// cmd = cont.containerize(String.join(" ", cmd));
+		// }
 
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
@@ -740,6 +789,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			extrafields.put("spyurl", hostName + ":" + TomcatServer.getPort());
 			extrafields.put("node", hostName);
 		}
+
 		try {
 			// Set the updated status
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
@@ -755,7 +805,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		catch (final Exception e) {
 			logger.log(Level.WARNING, "An error occurred when attempting to change current job status: " + e);
 		}
-		return;
+
+		synchronized (statusSenderThread) {
+			statusSenderThread.notifyAll();
+		}
 	}
 
 	/**
