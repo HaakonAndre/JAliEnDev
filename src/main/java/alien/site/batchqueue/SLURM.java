@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.site.Functions;
@@ -172,11 +173,11 @@ public class SLURM extends BatchQueue {
 			scriptContent = Files.readString(Paths.get(script));
 		}
 		catch (IOException e2) {
-			this.logger.warning("Error reading agent startup script!");
+			this.logger.log(Level.WARNING, "Error reading agent startup script!", e2);
 			return;
 		}
 
-		String encodedScriptContent = Utils.base64Encode(scriptContent.getBytes()).replaceAll("(\\w{76})", "$1\n");;
+		String encodedScriptContent = Utils.base64Encode(scriptContent.getBytes()).replaceAll("(\\w{76})", "$1\n");
 
 		submit_cmd += "cat<<__EOF__ | base64 -d > " + script + "\n";
 		submit_cmd += encodedScriptContent;
