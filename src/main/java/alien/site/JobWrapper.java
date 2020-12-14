@@ -72,6 +72,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 */
 	private JobStatus jobStatus;
 
+	private final Long masterjobID;
+
 	// Other
 	/**
 	 * @uml.property name="packMan"
@@ -120,12 +122,17 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				return;
 
 			while (true) {
-				final Vector<String> paramNames = new Vector<>(3);
-				final Vector<Object> paramValues = new Vector<>(3);
+				final Vector<String> paramNames = new Vector<>(5);
+				final Vector<Object> paramValues = new Vector<>(5);
 
 				paramNames.add("host_pid");
 				paramValues.add(Double.valueOf(MonitorFactory.getSelfProcessID()));
-				
+
+				if (username != null) {
+					paramNames.add("job_user");
+					paramValues.add(username);
+				}
+
 				if (hostName != null) {
 					paramNames.add("host");
 					paramValues.add(hostName);
@@ -136,13 +143,17 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
 				}
 
-				if (paramNames.size() > 0)
-					try {
-						apmon.sendParameters(ce + "_Jobs", String.valueOf(queueId), paramNames.size(), paramNames, paramValues);
-					}
-					catch (final Exception e) {
-						logger.log(Level.WARNING, "Cannot send status updates to ML", e);
-					}
+				if (masterjobID != null) {
+					paramNames.add("masterjob_id");
+					paramValues.add(Double.valueOf(masterjobID.longValue()));
+				}
+
+				try {
+					apmon.sendParameters(ce + "_Jobs", String.valueOf(queueId), paramNames.size(), paramNames, paramValues);
+				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Cannot send status updates to ML", e);
+				}
 
 				synchronized (this) {
 					try {
@@ -157,9 +168,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	};
 
 	/**
+	 * @throws Exception anything bad happening during startup
 	 */
 	@SuppressWarnings("unchecked")
-	public JobWrapper() {
+	public JobWrapper() throws Exception {
 
 		pid = MonitorFactory.getSelfProcessID();
 
@@ -179,9 +191,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
 			logger.log(Level.INFO, "We received the following CE " + ce);
+
+			masterjobID = jdl.getLong("MasterjobID");
 		}
 		catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
+			throw e;
 		}
 
 		if ((tokenCert != null) && (tokenKey != null)) {
@@ -192,6 +207,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			}
 			catch (final Exception e) {
 				logger.log(Level.SEVERE, "Error. Could not load tokenCert and/or tokenKey" + e);
+				throw e;
 			}
 		}
 
@@ -764,9 +780,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	/**
 	 * @param args
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws Exception {
 		ConfigUtils.setApplicationName("JobWrapper");
 		ConfigUtils.switchToForkProcessLaunching();
 
