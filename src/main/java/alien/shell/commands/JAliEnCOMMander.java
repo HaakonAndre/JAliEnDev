@@ -122,7 +122,7 @@ public class JAliEnCOMMander implements Runnable {
 			"changeDiff",
 			"listFilesFromCollection",
 			"packages",
-			"submit", "ps", "masterjob", "kill", "w", "uptime", "resubmit", "top",
+			"submit", "ps", "masterjob", "kill", "w", "uptime", "resubmit", "top", "registerOutput",
 			"df", "du", "fquota", "jquota",
 			"listSEs", "listSEDistance", "setSite", "testSE", "listTransfer", "uuid", "stat", "xrdstat", "randomPFNs",
 			"showTagValue",

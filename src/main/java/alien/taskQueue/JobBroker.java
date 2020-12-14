@@ -436,20 +436,7 @@ public class JobBroker {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("Packages"));
 				}
-
-			HashMap<String, Object> CeConfig = null;
-
-			if (matchRequest.containsKey("site") && matchRequest.get("site") != null) //careful, could contain key that's there but null
-				CeConfig = ConfigUtils.getSiteConfigFromLdap(false, matchRequest.get("site").toString());
-
-			if (CeConfig != null && CeConfig.containsKey("ce_partition"))
-				matchRequest.putIfAbsent("Partition", CeConfig.get("ce_partition"));
-
-			if (matchRequest.containsKey("Partition")) {
-				where += "and ? like concat('%,',`partition`, ',%') ";
-				bindValues.add(matchRequest.get("Partition"));
-			}
-
+				 
 			if (matchRequest.containsKey("CE")) {
 				if (!isRemoteAccessAllowed) {
 					// if remote access is allowed then the CE doesn't have to match any more, any site from the same partition can pick up the job
@@ -460,10 +447,26 @@ public class JobBroker {
 
 				where += " and noce not like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("CE"));
+
+				//If we have the CE, let's use it to look up the partitions if missing here
+				if (!matchRequest.containsKey("Partition")) {
+					String partitions = ConfigUtils.getPartitions((String)matchRequest.get("CE"));
+					if (partitions != null)
+						matchRequest.put("Partition", partitions);
+				}
 			}
 
-			if (CeConfig != null && CeConfig.containsKey("ce_requirements")){
-				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_requirements").toString());
+			if (matchRequest.containsKey("Partition")) {
+				where += "and ? like concat('%,',`partition`, ',%') ";
+				bindValues.add(matchRequest.get("Partition"));
+			}
+
+			HashMap<String, Object> CeConfig = null;
+			if (matchRequest.containsKey("site") && matchRequest.get("site") != null) //careful, could contain key that's there but null
+			CeConfig = ConfigUtils.getSiteConfigFromLdap(false, matchRequest.get("site").toString());
+
+			if (CeConfig != null && CeConfig.containsKey("ce_cerequirements")){
+				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString());
 			} 
 
 			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();

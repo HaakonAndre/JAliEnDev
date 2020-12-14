@@ -73,6 +73,12 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public List<String> getArguments() {
+		if (entity instanceof LFN)
+			return Arrays.asList(((LFN) entity).getCanonicalName(), site, access.toString(), ses != null ? ses.toString() : null, exses != null ? exses.toString() : null);
+
+		if (entity instanceof GUID)
+			return Arrays.asList(((GUID) entity).guid.toString(), site, access.toString(), ses != null ? ses.toString() : null, exses != null ? exses.toString() : null);
+
 		return Arrays.asList(entity.toString(), site, access.toString(), ses != null ? ses.toString() : null, exses != null ? exses.toString() : null);
 	}
 

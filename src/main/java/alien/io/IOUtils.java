@@ -251,14 +251,14 @@ public class IOUtils {
 			}
 		}
 
-		if (f == null || !zipArchive) {
-			if (errorLogging != null)
-				logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid + " due to " + errorLogging);
-			else
-				logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid);
+		if (f == null) {
+			logger.log(Level.INFO, "Failed to fetch the content of " + guid.guid + (errorLogging != null ? " due to " + errorLogging : ""));
 
-			return f;
+			return null;
 		}
+
+		if (!zipArchive)
+			return f;
 
 		try {
 			for (final PFN p : pfns)
@@ -618,7 +618,7 @@ public class IOUtils {
 	 */
 	public static LFN upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload)
 			throws IOException {
-		final ArrayList<String> cpArgs = new ArrayList<>();
+		final ArrayList<String> cpArgs = new ArrayList<>(3);
 
 		if (deleteSourceAfterUpload)
 			cpArgs.add("-d");
@@ -651,6 +651,9 @@ public class IOUtils {
 		final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, null, ConfigUtils.getCloseSite(), out);
 
 		final LFN l = cmd.c_api.getLFN(toLFN, true);
+
+		if (l == null)
+			throw new IOException("Could not query the catalogue for " + toLFN);
 
 		if (l.exists)
 			throw new IOException("LFN already exists: " + toLFN);

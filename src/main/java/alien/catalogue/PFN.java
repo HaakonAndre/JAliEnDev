@@ -227,6 +227,47 @@ public class PFN implements Serializable, Comparable<PFN> {
 	}
 
 	/**
+	 * @return the URL to the same file, if the SE supports HTTP or HTTPS (must have a "http" tag and set at least one of "http_port" or "https_port" options to an integer value), or <code>null</code> if not
+	 */
+	public String getHttpURL() {
+		if (!pfn.startsWith("root://"))
+			return null;
+
+		int httpPort = -1;
+
+		boolean isHttps = false;
+
+		final SE se = getSE();
+
+		if (se != null && se.isQosType("http")) {
+			httpPort = se.getHTTPPort();
+
+			if (httpPort <= 0) {
+				httpPort = se.getHTTPSPort();
+				isHttps = httpPort > 0;
+			}
+		}
+
+		String httpUrl = null;
+
+		if (httpPort > 0) {
+			final String protocol = isHttps ? "https://" : "http://";
+
+			final String url = pfn.substring(7);
+
+			final int idxColumn = url.indexOf(':');
+			final int idxSlash = url.indexOf('/');
+
+			if (idxColumn > 0 && idxSlash > idxColumn)
+				httpUrl = protocol + url.substring(0, idxColumn + 1) + httpPort + url.substring(idxSlash);
+			else if (idxSlash > 0)
+				httpUrl = protocol + url.substring(0, idxSlash) + ":" + httpPort + url.substring(idxSlash);
+		}
+
+		return httpUrl;
+	}
+
+	/**
 	 * @param pfn
 	 * @return the UUID from this PFN, if it's a pointer to an archive, or <code>null</code> if not
 	 */

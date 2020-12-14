@@ -624,6 +624,33 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	}
 
 	/**
+	 * Set a new expiration time for this LFN
+	 * 
+	 * @param newExpiration
+	 * @return the previous value of the LFN expiration time
+	 */
+	public Date setExpireTime(final Date newExpiration) {
+		final Date oldExpiration = expiretime;
+
+		expiretime = newExpiration;
+
+		if (exists) {
+			// otherwise insert() will set the correct expiration value
+
+			final String q = "UPDATE L" + indexTableEntry.tableName + "L SET expiretime=" + e(format(expiretime)) + " WHERE entryId=" + entryId;
+
+			if (monitor != null)
+				monitor.incrementCounter("LFN_set_expire");
+
+			try (DBFunctions db = indexTableEntry.getDB()) {
+				db.query(q);
+			}
+		}
+
+		return oldExpiration;
+	}
+
+	/**
 	 * @return <code>true</code> if the database entry was updated
 	 */
 	boolean update() {

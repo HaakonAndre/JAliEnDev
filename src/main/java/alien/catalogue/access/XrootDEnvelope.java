@@ -690,4 +690,12 @@ public class XrootDEnvelope implements Serializable {
 
 		unEncryptedEnvelope = ret;
 	}
+
+	/**
+	 * @param envelope
+	 * @return the access envelope, encoded in a way that can be passed as either header or CGI parameter to HTTP requests
+	 */
+	public static String urlEncodeEnvelope(final String envelope) {
+		return Format.replace(Format.encode(envelope), "+", "%20");
+	}
 }

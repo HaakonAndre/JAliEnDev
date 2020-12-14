@@ -558,6 +558,7 @@ public class JobAgent implements Runnable {
 			// Check if there is container support at present on site. If yes, add to launchCmd
 			final Containerizer cont = ContainerizerFactory.getContainerizer();
 			if (cont != null) {
+				commander.q_api.putJobLog(queueId, "trace", "Support for containers detected. Will use: " + cont.getContainerizerName());
 				monitor.sendParameter("canRunContainers", Integer.valueOf(1));
 				monitor.sendParameter("containerLayer", Integer.valueOf(1));
 				cont.setWorkdir(jobWorkdir);
@@ -578,7 +579,7 @@ public class JobAgent implements Runnable {
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
-		pBuilder.environment().put("TMPDIR", jobWorkdir + "/tmp");
+		pBuilder.environment().put("TMPDIR", "tmp");
 		pBuilder.redirectError(Redirect.INHERIT);
 		pBuilder.directory(tempDir);
 
@@ -626,8 +627,8 @@ public class JobAgent implements Runnable {
 
 			wrapperPID = (int) p.pid();
 
-			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
-			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce, hostName);
+			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce + "_Jobs", matchedJob.get("queueId").toString());
+			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce + "_Jobs", matchedJob.get("queueId").toString());
 
 			final String fs = checkProcessResources();
 			if (fs == null)
@@ -741,8 +742,8 @@ public class JobAgent implements Runnable {
 				RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
 
 			if (jobinfo != null) {
-				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_PSS).doubleValue() / 1024);
-				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_SWAPPSS).doubleValue() / 1024 + RES_RMEM.doubleValue());
+				RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_PSS).doubleValue());
+				RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_SWAPPSS).doubleValue() + RES_RMEM.doubleValue());
 
 				RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
 				RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
@@ -834,8 +835,8 @@ public class JobAgent implements Runnable {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
 				return false;
 			}
-			final File tempTmpDir = new File(jobWorkdir + "/tmp");
-			tempTmpDir.mkdir();
+			final File jobTmpDir = new File(jobWorkdir + "/tmp");
+			jobTmpDir.mkdir();
 		}
 
 		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
@@ -887,6 +888,15 @@ public class JobAgent implements Runnable {
 
 	private void changeJobStatus(final JobStatus newStatus, final HashMap<String, Object> extrafields) {
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+
+		if (apmon != null)
+			try {
+				apmon.sendParameter(ce + "_Jobs", String.valueOf(queueId), "status", newStatus.getAliEnLevel());
+			}
+			catch (final Exception e) {
+				logger.log(Level.WARNING, "JA cannot update ML of the job status change", e);
+			}
+
 		return;
 	}
 

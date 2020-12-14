@@ -810,7 +810,7 @@ public class TaskQueueUtils {
 				final Vector<String> parameters = new Vector<>();
 				final Vector<Object> values = new Vector<>();
 
-				parameters.add("jobId");
+				parameters.add("jobID");
 				values.add(Double.valueOf(job));
 
 				parameters.add("statusID");

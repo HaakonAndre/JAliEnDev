@@ -286,6 +286,11 @@ public final class FileSystemUtils {
 
 		String path = cataloguePath;
 
+		if (path.startsWith("alien://"))
+			path = path.substring(8);
+		else if (path.startsWith("alien:"))
+			path = path.substring(6);
+
 		if (path.indexOf('~') == 0)
 			path = UsersHelper.getHomeDir(user) + path.substring(1, path.length());
 

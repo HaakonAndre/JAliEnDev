@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
@@ -159,6 +160,7 @@ public class TomcatServer {
 		connector.setScheme("https");
 		connector.setProperty("SSLEnabled", "true");
 		connector.setProperty("maxThreads", "200");
+		connector.setProperty("maxConnections", "50000");
 		connector.setProperty("connectionTimeout", "20000");
 		connector.setProperty("compression", "on");
 		connector.setProperty("compressionMinSize", "1");
@@ -230,16 +232,25 @@ public class TomcatServer {
 		}
 		else {
 			// Set dynamic port range for Tomcat server
-			final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-			final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10700"));
+
+			final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
+
+			final Random rnd = new Random(System.nanoTime());
+
+			final int randomStartingPort = rnd.nextInt(1000);
+
+			final int portMin = ConfigUtils.getConfig().geti("port.range.start", 13150 + randomStartingPort);
+			final int portMax = ConfigUtils.getConfig().geti("port.range.end", portMin + (portAny ? 1 : 200));
 
 			// Try another ports in range
 			for (int port = portMin; port < portMax; port++)
-				try (ServerSocket ssocket = new ServerSocket(port, 1, InetAddress.getByName("localhost"))) // Fast check if port is available
+				try (ServerSocket ssocket = new ServerSocket(portAny ? 0 : port, 1, InetAddress.getByName("localhost"))) // Fast check if port is available
 				{
+					final int portToBindTo = ssocket.getLocalPort();
+
 					ssocket.close();
 					// Actually start Tomcat
-					tomcatServer = new TomcatServer(port, "localhost");
+					tomcatServer = new TomcatServer(portToBindTo, "localhost");
 
 					logger.log(Level.INFO, "Tomcat listening on port " + getListeningAddressAndPort());
 					System.out.println("Tomcat is listening on " + getListeningAddressAndPort());

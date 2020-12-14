@@ -36,14 +36,13 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.site.containers.Containerizer;
-import alien.site.containers.ContainerizerFactory;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
+import apmon.ApMon;
 
 /**
  * Job execution wrapper, running an embedded Tomcat server for in/out-bound communications
@@ -72,6 +71,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @uml.associationEnd
 	 */
 	private JobStatus jobStatus;
+
+	private final Long masterjobID;
 
 	// Other
 	/**
@@ -110,9 +111,67 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
 
 	/**
+	 * ApMon sender
+	 */
+	static final ApMon apmon = MonitorFactory.getApMonSender();
+
+	private final Thread statusSenderThread = new Thread("JobWrapper.statusSenderThread") {
+		@Override
+		public void run() {
+			if (apmon == null)
+				return;
+
+			while (true) {
+				final Vector<String> paramNames = new Vector<>(5);
+				final Vector<Object> paramValues = new Vector<>(5);
+
+				paramNames.add("host_pid");
+				paramValues.add(Double.valueOf(MonitorFactory.getSelfProcessID()));
+
+				if (username != null) {
+					paramNames.add("job_user");
+					paramValues.add(username);
+				}
+
+				if (hostName != null) {
+					paramNames.add("host");
+					paramValues.add(hostName);
+				}
+
+				if (jobStatus != null) {
+					paramNames.add("status");
+					paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
+				}
+
+				if (masterjobID != null) {
+					paramNames.add("masterjob_id");
+					paramValues.add(Double.valueOf(masterjobID.longValue()));
+				}
+
+				try {
+					apmon.sendParameters(ce + "_Jobs", String.valueOf(queueId), paramNames.size(), paramNames, paramValues);
+				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Cannot send status updates to ML", e);
+				}
+
+				synchronized (this) {
+					try {
+						wait(1000 * 60);
+					}
+					catch (@SuppressWarnings("unused") InterruptedException e) {
+						return;
+					}
+				}
+			}
+		}
+	};
+
+	/**
+	 * @throws Exception anything bad happening during startup
 	 */
 	@SuppressWarnings("unchecked")
-	public JobWrapper() {
+	public JobWrapper() throws Exception {
 
 		pid = MonitorFactory.getSelfProcessID();
 
@@ -132,9 +191,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
 			logger.log(Level.INFO, "We received the following CE " + ce);
+
+			masterjobID = jdl.getLong("MasterjobID");
 		}
 		catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
+			throw e;
 		}
 
 		if ((tokenCert != null) && (tokenKey != null)) {
@@ -145,6 +207,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			}
 			catch (final Exception e) {
 				logger.log(Level.SEVERE, "Error. Could not load tokenCert and/or tokenKey" + e);
+				throw e;
 			}
 		}
 
@@ -156,9 +219,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		c_api = new CatalogueApiUtils(commander);
 
 		// use same tmpdir everywhere
-		String tmpdir = Functions.resolvePathWithEnv(System.getenv("TMPDIR"));
-		if (tmpdir != null)
-			System.setProperty("java.io.tmpdir", tmpdir);
+		System.setProperty("java.io.tmpdir", currentDir.getAbsolutePath() + "/tmp");
+
+		statusSenderThread.setDaemon(true);
+		statusSenderThread.start();
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
@@ -321,11 +385,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				}
 
 		// Check if we can put the payload in its own container
-		Containerizer cont = ContainerizerFactory.getContainerizer();
-		if (cont != null) {
-			monitor.sendParameter("containerLayer", Integer.valueOf(2));
-			cmd = cont.containerize(String.join(" ", cmd));
-		}
+		// TODO: Put back later
+		// Containerizer cont = ContainerizerFactory.getContainerizer();
+		// if (cont != null) {
+		// monitor.sendParameter("containerLayer", Integer.valueOf(2));
+		// cmd = cont.containerize(String.join(" ", cmd));
+		// }
 
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
@@ -342,6 +407,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		processEnv.put("JALIEN_TOKEN_KEY", tokenKey);
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); // add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
+		processEnv.put("TMPDIR", currentDir.getAbsolutePath() + "/tmp");
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(currentDir, "stderr")));
@@ -714,9 +780,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	/**
 	 * @param args
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws Exception {
 		ConfigUtils.setApplicationName("JobWrapper");
 		ConfigUtils.switchToForkProcessLaunching();
 
@@ -742,6 +808,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			extrafields.put("spyurl", hostName + ":" + TomcatServer.getPort());
 			extrafields.put("node", hostName);
 		}
+
 		try {
 			// Set the updated status
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
@@ -757,7 +824,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		catch (final Exception e) {
 			logger.log(Level.WARNING, "An error occurred when attempting to change current job status: " + e);
 		}
-		return;
+
+		synchronized (statusSenderThread) {
+			statusSenderThread.notifyAll();
+		}
 	}
 
 	/**
@@ -768,7 +838,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		String outputDir = jdl.getOutputDir();
 
 		if (exitStatus == JobStatus.ERROR_V || exitStatus == JobStatus.ERROR_E)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle" + "/alien-job-" + queueId);
 		else if (outputDir == null)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
