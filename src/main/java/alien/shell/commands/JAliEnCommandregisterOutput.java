@@ -126,6 +126,11 @@ public class JAliEnCommandregisterOutput extends JAliEnBaseCommand {
 
 		final Collection<LFN> bookedLFNs = commander.c_api.registerOutput(jobId);
 
+		if (bookedLFNs == null || bookedLFNs.size() == 0) {
+			commander.setReturnCode(ErrNo.ENODATA, "No files have been commited to the catalogue for job ID " + jobId);
+			return;
+		}
+
 		for (final LFN l : bookedLFNs)
 			commander.printOutln("  " + l.getCanonicalName());
 	}

@@ -505,6 +505,26 @@ public class SE implements Serializable, Comparable<SE> {
 	}
 
 	/**
+	 * Get the HTTPS port where the same content can be accessed
+	 * 
+	 * @return the positive value of the HTTPS port, or a negative value if this is not supported
+	 */
+	public int getHTTPSPort() {
+		final String httpPort = options.get("https_port");
+
+		if (httpPort == null)
+			return -1;
+
+		try {
+			return Integer.parseInt(httpPort);
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			logger.log(Level.WARNING, "HTTPS port is defined but not as a number for " + seName);
+			return -2;
+		}
+	}
+
+	/**
 	 * Debug method
 	 *
 	 * @param args

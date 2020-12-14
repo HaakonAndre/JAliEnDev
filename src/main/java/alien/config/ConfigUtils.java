@@ -157,10 +157,29 @@ public class ConfigUtils {
 	}
 
 	/**
+	 * @return forced process launching mechanism
+	 */
+	public static String getProcessLaunchMethod() {
+		if (getConfig().getb("forceFork", false))
+			return "FORK";
+
+		if (getConfig().getb("forceVFork", false))
+			return "VFORK";
+
+		if (getConfig().getb("forcePosixSpawn", false))
+			return "POSIX_SPAWN";
+
+		return null;
+	}
+
+	/**
 	 * Explicitly configure JVM to use the FORK method of launching processes. WARNING: this is impacting a *lot* the performance. Only set it for leaf services that don't process much anyway.
 	 */
 	public static void switchToForkProcessLaunching() {
-		System.setProperty("jdk.lang.Process.launchMechanism", "FORK");
+		final String method = getProcessLaunchMethod();
+
+		if (method != null)
+			System.setProperty("jdk.lang.Process.launchMechanism", method);
 	}
 
 	static {
@@ -642,17 +661,9 @@ public class ConfigUtils {
 				return null;
 			}
 
-			final Set<String> partitions = LDAPHelper.checkLdapInformation("(&(CEname=ALICE::" + site + "::" + hostConfig.get("host_ce") + "))", "ou=Partitions,", "name");
+			final String partitions = getPartitions("ALICE::" + site + "::" + hostConfig.get("host_ce"));
 
-			final StringBuilder sb = new StringBuilder(",");
-
-			for (final String s : partitions)
-				sb.append(s).append(",");
-
-			if (sb.length() == 1)
-				sb.append(",");
-
-			ceConfig.put("ce_partition", sb.toString());
+			ceConfig.put("ce_partition", partitions);
 
 			configuration.putAll(ceConfig);
 
@@ -729,6 +740,25 @@ public class ConfigUtils {
 			return null;
 		}
 		return siteConfig;
+	}
+
+	/**
+	 * 
+	 * @param cename
+	 * @return partitions for cename
+	 */
+	public static String getPartitions(String cename) {
+		final Set<String> partitions = LDAPHelper.checkLdapInformation("(&(CEname=" + cename + "))", "ou=Partitions,", "name");
+
+		final StringBuilder sb = new StringBuilder(",");
+
+		for (final String s : partitions)
+			sb.append(s).append(",");
+
+		if (sb.length() == 1)
+			sb.append(",");
+
+		return sb.toString();
 	}
 
 	/**
@@ -857,10 +887,16 @@ public class ConfigUtils {
 		}
 
 		vars.put("JALIEN_HOST", sHost);
-		vars.put("JALIEN_PORT", Integer.toString(JBoxServer.getPort()));
-		vars.put("JALIEN_WSPORT", Integer.toString(TomcatServer.getPort()));
+
+		if (JBoxServer.getPort() > 0) {
+			vars.put("JALIEN_PORT", Integer.toString(JBoxServer.getPort()));
+			vars.put("JALIEN_PASSWORD", JBoxServer.getPassword());
+		}
+
+		if (TomcatServer.getPort() > 0)
+			vars.put("JALIEN_WSPORT", Integer.toString(TomcatServer.getPort()));
+
 		vars.put("JALIEN_PID", Integer.toString(MonitorFactory.getSelfProcessID()));
-		vars.put("JALIEN_PASSWORD", JBoxServer.getPassword());
 
 		return vars;
 	}
@@ -895,6 +931,8 @@ public class ConfigUtils {
 						logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e);
 					}
 				});
+
+				tokenFile.deleteOnExit();
 
 				fw.flush();
 				fw.close();

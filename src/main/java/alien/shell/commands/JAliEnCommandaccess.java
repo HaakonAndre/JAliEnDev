@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -65,6 +66,16 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * For write envelopes you can also pass the job ID, when applicable
 	 */
 	private long jobId = -1;
+
+	/**
+	 * Filter the SEs for read command
+	 */
+	private boolean filter = false;
+
+	/**
+	 * Flag to print http(s) URLs where available, and urlencoded envelopes for them
+	 */
+	private boolean httpURLs = false;
 
 	/**
 	 * execute the access
@@ -158,6 +169,36 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		else if (accessRequest == AccessType.READ) {
 			logger.log(Level.INFO, "Access called for a read operation");
 			pfns = commander.c_api.getPFNsToRead(referenceEntity, ses, exses);
+
+			if (pfns != null && filter) {
+				final Iterator<PFN> it = pfns.iterator();
+
+				while (it.hasNext()) {
+					final PFN p = it.next();
+
+					if (p == null) {
+						it.remove();
+						continue;
+					}
+
+					final SE se = p.getSE();
+
+					if (se == null) {
+						it.remove();
+						continue;
+					}
+
+					if (exses.contains(se.seName.toUpperCase())) {
+						it.remove();
+						continue;
+					}
+
+					if (ses.size() > 0 && !ses.contains(se.seName.toUpperCase())) {
+						it.remove();
+						continue;
+					}
+				}
+			}
 		}
 		else {
 			logger.log(Level.SEVERE, "Unknown access type");
@@ -173,7 +214,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		for (final PFN pfn : pfns) {
 			commander.outNextResult();
-			commander.printOutln(pfn.pfn);
+			commander.printOutln(httpURLs ? pfn.getHttpURL() : pfn.pfn);
 			final SE se = commander.c_api.getSE(pfn.seNumber);
 
 			if (se != null) {
@@ -184,8 +225,13 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 					if (!"alice::cern::setest".equals(se.getName().toLowerCase()))
 						if (se.needsEncryptedEnvelope) {
-							commander.printOut("envelope", env.getEncryptedEnvelope());
-							commander.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
+							String envelope = env.getEncryptedEnvelope();
+
+							if (httpURLs)
+								envelope = XrootDEnvelope.urlEncodeEnvelope(envelope);
+
+							commander.printOut("envelope", envelope);
+							commander.printOutln("Encrypted envelope:\n" + envelope);
 						}
 						else {
 							commander.printOut("envelope", env.getSignedEnvelope());
@@ -222,6 +268,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-s", "for write requests, size of the file to be uploaded, when known"));
 		commander.printOutln(helpOption("-m", "for write requests, MD5 checksum of the file to be uploaded, when known"));
 		commander.printOutln(helpOption("-j", "for write requests, the job ID that created these files, when applicable"));
+		commander.printOutln(helpOption("-f", "for read requests, filter the SEs based on the given specs list"));
+		commander.printOutln(helpOption("-u", "for read requests, print http(s) URLs where available, and the envelopes in urlencoded format"));
 		commander.printOutln();
 	}
 
@@ -258,6 +306,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			parser.accepts("s").withRequiredArg().ofType(Long.class);
 			parser.accepts("j").withRequiredArg().ofType(Long.class);
 			parser.accepts("m").withRequiredArg();
+			parser.accepts("f");
+			parser.accepts("u");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -342,6 +392,10 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 			if (options.has("j"))
 				jobId = ((Long) options.valueOf("j")).longValue();
+
+			filter = options.has("f") && (ses.size() > 0 || exses.size() > 0);
+
+			httpURLs = options.has("u");
 		}
 		catch (final OptionException e) {
 			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());

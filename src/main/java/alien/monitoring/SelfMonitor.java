@@ -90,8 +90,11 @@ public class SelfMonitor implements MonitoringObject {
 
 		paramNames.add("jvm_uptime");
 		paramValues.add(Double.valueOf((System.currentTimeMillis() - systemStarted) / 1000d));
-	
+
 		paramNames.add("jvm_threads");
 		paramValues.add(Double.valueOf(ManagementFactory.getThreadMXBean().getThreadCount()));
+
+		paramNames.add("jvm_total_started_threads");
+		paramValues.add(Double.valueOf(ManagementFactory.getThreadMXBean().getTotalStartedThreadCount()));
 	}
 }

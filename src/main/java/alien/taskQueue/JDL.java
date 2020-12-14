@@ -325,6 +325,41 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
+	 * @return the long value, or <code>null</code> if the key is not defined or is not a Number or a valid representation of one
+	 */
+	public Long getLong(final String key) {
+		final Object o = get(key);
+
+		if (o == null)
+			return null;
+
+		if (o instanceof Long)
+			return (Long) o;
+
+		if (o instanceof Long)
+			return Long.valueOf(((Number) o).longValue());
+
+		if (o instanceof CharSequence) {
+			try {
+				return Long.valueOf(((CharSequence) o).toString());
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				// ignore
+			}
+		}
+		else
+			try {
+				return Long.valueOf(getString(o));
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				// ignore
+			}
+
+		return null; // not an integer
+	}
+
+	/**
+	 * @param key
 	 * @return the float value, or <code>null</code> if the key is not defined or is not a number
 	 */
 	public Float getFloat(final String key) {
