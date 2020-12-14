@@ -3,7 +3,8 @@
  */
 package alien.io.protocols;
 
-import static alien.io.protocols.SourceExceptionCode.TORRENT_GET_NOT_IMPLEMENTED;
+import static alien.io.protocols.SourceExceptionCode.GET_METHOD_NOT_IMPLEMENTED;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -70,7 +71,7 @@ public class Torrent extends Protocol {
 
 		lazyj.Utils.download(url, target.getCanonicalPath());
 
-		throw new SourceException(TORRENT_GET_NOT_IMPLEMENTED, "Torrent GET method not implemented yet");
+		throw new SourceException(GET_METHOD_NOT_IMPLEMENTED, "Torrent GET method not implemented yet");
 
 		// TODO implement downloading the actual content!
 

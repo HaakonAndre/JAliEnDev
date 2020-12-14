@@ -4,7 +4,6 @@ import java.io.IOException;
 
 /**
  * @author costing
- *
  */
 public class SourceException extends IOException {
 
@@ -16,25 +15,30 @@ public class SourceException extends IOException {
 	/**
 	 * Status code of the exception
 	 */
-	private SourceExceptionCode code;
+	private final SourceExceptionCode code;
 
 	/**
+	 * @param code error code
 	 * @param reason
 	 */
-	public SourceException(SourceExceptionCode code, final String reason) {
+	public SourceException(final SourceExceptionCode code, final String reason) {
 		super(reason);
 		this.code = code;
 	}
 
 	/**
+	 * @param code error code
 	 * @param reason
 	 * @param cause
 	 */
-	public SourceException(SourceExceptionCode code, final String reason, final Throwable cause) {
+	public SourceException(final SourceExceptionCode code, final String reason, final Throwable cause) {
 		super(reason, cause);
 		this.code = code;
 	}
 
+	/**
+	 * @return the status code associated to this exception
+	 */
 	public SourceExceptionCode getCode() {
 		return code;
 	}

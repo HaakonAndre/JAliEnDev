@@ -3,7 +3,21 @@
  */
 package alien.io.protocols;
 
-import static alien.io.protocols.SourceExceptionCode.*;
+import static alien.io.protocols.SourceExceptionCode.CANNOT_START_PROCESS;
+import static alien.io.protocols.SourceExceptionCode.INTERNAL_ERROR;
+import static alien.io.protocols.SourceExceptionCode.INTERRUPTED_WHILE_WAITING_FOR_COMMAND;
+import static alien.io.protocols.SourceExceptionCode.LOCAL_FILE_ALREADY_EXISTS;
+import static alien.io.protocols.SourceExceptionCode.LOCAL_FILE_CANNOT_BE_CREATED;
+import static alien.io.protocols.SourceExceptionCode.LOCAL_FILE_SIZE_DIFFERENT;
+import static alien.io.protocols.SourceExceptionCode.MD5_CHECKSUMS_DIFFER;
+import static alien.io.protocols.SourceExceptionCode.NO_SERVERS_HAVE_THE_FILE;
+import static alien.io.protocols.SourceExceptionCode.NO_SUCH_FILE_OR_DIRECTORY;
+import static alien.io.protocols.SourceExceptionCode.SE_DOES_NOT_EXIST;
+import static alien.io.protocols.SourceExceptionCode.XRDCP_NOT_FOUND_IN_PATH;
+import static alien.io.protocols.SourceExceptionCode.XRDFS_CANNOT_CONFIRM_UPLOAD;
+import static alien.io.protocols.SourceExceptionCode.XROOTD_EXITED_WITH_CODE;
+import static alien.io.protocols.SourceExceptionCode.XROOTD_TIMED_OUT;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -1179,7 +1193,8 @@ public class Xrootd extends Protocol {
 
 				if (sleep == 0 || !retryWithDelay) {
 					setLastCommand(command);
-					throw new SourceException(XRDFS_CANNOT_CONFIRM_UPLOAD, command.toString() + ": could not confirm the upload after " + (statRetryCounter + 1) + " retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
+					throw new SourceException(XRDFS_CANNOT_CONFIRM_UPLOAD,
+							command.toString() + ": could not confirm the upload after " + (statRetryCounter + 1) + " retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
 				}
 
 				Thread.sleep(sleep * 1000);
