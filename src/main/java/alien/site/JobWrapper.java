@@ -132,12 +132,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					paramNames.add("job_user");
 					paramValues.add(username);
 				}
-
-				if (hostName != null) {
-					paramNames.add("host");
-					paramValues.add(hostName);
-				}
-
+				
+				paramNames.add("host");
+				paramValues.add(ConfigUtils.getLocalHostname());
+				
 				if (jobStatus != null) {
 					paramNames.add("status");
 					paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
