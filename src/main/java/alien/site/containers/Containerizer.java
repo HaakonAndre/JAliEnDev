@@ -34,9 +34,9 @@ public abstract class Containerizer {
 	String workdir = null;
 	
 	/**
-	 * Command to set the environment for payload execution
+	 * Command to set the environment for container
 	 */
-	protected static final String envSetup = "source <( " + CVMFS.getAlienvPrint() + " ); ";
+	protected static final String envSetup = "source <( " + CVMFS.getAlienvPrint() + " && echo export APMON_CONFIG=" + System.getenv("APMON_CONFIG") + " ); ";
 
 	/**
 	 * Simple constructor, initializing the container path from default location or from the environment (DEFAULT_JOB_CONTAINER_PATH key)
