@@ -653,13 +653,7 @@ public class ConfigUtils {
 		}
 
 		if (hostConfig.containsKey("host_ce")) {
-			// Get the CE information based on the site and ce name for the host
-			final HashMap<String, Object> ceConfig = LDAPHelper.checkLdapTree("(&(name=" + hostConfig.get("host_ce") + "))", "ou=CE,ou=Services,ou=" + site + ",ou=Sites,", "ce");
-
-			if (checkContent && ceConfig.size() == 0) {
-				logger.severe("Error: cannot find ce configuration in LDAP for CE: " + hostConfig.get("host_ce"));
-				return null;
-			}
+			final HashMap<String, Object> ceConfig = getCEConfigFromLdap(checkContent, hostConfig.get("host_ce").toString(), site);
 
 			final String partitions = getPartitions("ALICE::" + site + "::" + hostConfig.get("host_ce"));
 
@@ -742,12 +736,25 @@ public class ConfigUtils {
 		return siteConfig;
 	}
 
+	/** 
+	 * @param cename
+	 * @return CE information based on the site and ce name for the host
+	 */
+	public static HashMap<String, Object> getCEConfigFromLdap(final boolean checkContent, final String site, final String cename) {
+		final HashMap<String, Object> ceConfig = LDAPHelper.checkLdapTree("(&(name=" + cename + "))", "ou=CE,ou=Services,ou=" + site + ",ou=Sites,", "ce");
+
+		if (checkContent && ceConfig.size() == 0) {
+			logger.severe("Error: cannot find ce configuration in LDAP for CE: " + cename);
+			return null;
+		}
+		return ceConfig;
+	}
 	/**
 	 * 
 	 * @param cename
 	 * @return partitions for cename
 	 */
-	public static String getPartitions(String cename) {
+	public static String getPartitions(final String cename) {
 		final Set<String> partitions = LDAPHelper.checkLdapInformation("(&(CEname=" + cename + "))", "ou=Partitions,", "name");
 
 		final StringBuilder sb = new StringBuilder(",");
