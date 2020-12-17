@@ -653,7 +653,7 @@ public class ConfigUtils {
 		}
 
 		if (hostConfig.containsKey("host_ce")) {
-			final HashMap<String, Object> ceConfig = getCEConfigFromLdap(checkContent, hostConfig.get("host_ce").toString(), site);
+			final HashMap<String, Object> ceConfig = getCEConfigFromLdap(checkContent, site, hostConfig.get("host_ce").toString());
 
 			final String partitions = getPartitions("ALICE::" + site + "::" + hostConfig.get("host_ce"));
 
