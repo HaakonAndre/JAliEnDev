@@ -463,7 +463,7 @@ public class JobBroker {
 
 			HashMap<String, Object> CeConfig = null;
 			if (matchRequest.containsKey("site") && matchRequest.get("site") != null) //careful, could contain key that's there but null
-			CeConfig = ConfigUtils.getCEConfigFromLdap(false, matchRequest.get("site").toString(), matchRequest.get("CE").toString());
+			CeConfig = ConfigUtils.getCEConfigFromLdap(false, matchRequest.get("site").toString(), matchRequest.get("CE").toString().split("::")[2]);
 
 			if (CeConfig != null && CeConfig.containsKey("ce_cerequirements")){
 				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString());
