@@ -466,7 +466,7 @@ public class JobBroker {
 			CeConfig = ConfigUtils.getCEConfigFromLdap(false, matchRequest.get("site").toString(), matchRequest.get("CE").toString());
 
 			if (CeConfig != null && CeConfig.containsKey("ce_cerequirements")){
-				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString();
+				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString());
 			} 
 
 			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
