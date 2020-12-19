@@ -243,14 +243,14 @@ public class JAliEnCOMMander implements Runnable {
 				this.curDir = curDir;
 		}
 
-		for (String s : jAliEnCommandList)
+		for (final String s : jAliEnCommandList)
 			userAvailableCommands.add(s);
 
 		if (this.user.canBecome("admin"))
-			for (String s : jAliEnAdminCommandList)
+			for (final String s : jAliEnAdminCommandList)
 				userAvailableCommands.add(s);
 
-		for (String s : hiddenCommandList)
+		for (final String s : hiddenCommandList)
 			userAvailableCommands.remove(s);
 
 		bootMessage();
@@ -412,18 +412,37 @@ public class JAliEnCOMMander implements Runnable {
 	 */
 	public volatile boolean kill = false;
 
+	private static File accessLogFile = null;
+
 	private static OutputStream accessLogStream = null;
 
 	private static synchronized OutputStream getAccessLogTarget() {
-		if (accessLogStream == null) {
-			final String accessLogFile = ConfigUtils.getConfig().gets("alien.shell.commands.access_log");
-
-			if (accessLogFile.length() > 0) {
+		if (accessLogFile != null && !accessLogFile.exists()) {
+			// log file was rotated, close the old handle and create a new one
+			if (accessLogStream != null) {
 				try {
+					accessLogStream.close();
+				}
+				catch (@SuppressWarnings("unused") final IOException e) {
+					// ignore
+				}
+				accessLogStream = null;
+			}
+
+			accessLogFile = null;
+		}
+
+		if (accessLogStream == null) {
+			final String accessLogFileName = ConfigUtils.getConfig().gets("alien.shell.commands.access_log");
+
+			if (accessLogFileName.length() > 0) {
+				try {
+					accessLogFile = new File(accessLogFileName);
 					accessLogStream = new FileOutputStream(accessLogFile, true);
 				}
 				catch (final IOException ioe) {
-					logger.log(Level.WARNING, "Cannot write to access log " + accessLogFile + ", will write to stderr instead", ioe);
+					logger.log(Level.WARNING, "Cannot write to access log " + accessLogFileName + ", will write to stderr instead", ioe);
+					accessLogFile = null;
 				}
 			}
 
@@ -683,7 +702,7 @@ public class JAliEnCOMMander implements Runnable {
 
 	/**
 	 * Set the timing flag, to return server side command execution timing to the client
-	 * 
+	 *
 	 * @param timingInfo
 	 * @return the previous value of this flag
 	 */
