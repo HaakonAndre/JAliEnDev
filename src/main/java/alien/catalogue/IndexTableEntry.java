@@ -406,7 +406,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 				q += " AND replicated=0";
 			}
 			else
-				q += "lfn RLIKE '" + Format.escSQL(sSearch + sPattern) + "' AND replicated=0";
+				q += "lfn RLIKE '^" + Format.escSQL(sSearch + sPattern) + "' AND replicated=0";
 
 			if ((flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
 				q += " AND type!='d'";
