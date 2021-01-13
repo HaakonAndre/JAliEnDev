@@ -463,7 +463,7 @@ public class JobBroker {
 
 			HashMap<String, Object> CeConfig = null;
 			if (matchRequest.containsKey("site") && matchRequest.get("site") != null) //careful, could contain key that's there but null
-			CeConfig = ConfigUtils.getSiteConfigFromLdap(false, matchRequest.get("site").toString());
+			CeConfig = ConfigUtils.getCEConfigFromLdap(false, matchRequest.get("site").toString(), matchRequest.get("CE").toString().split("::")[2]);
 
 			if (CeConfig != null && CeConfig.containsKey("ce_cerequirements")){
 				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString());
@@ -472,7 +472,7 @@ public class JobBroker {
 			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
 			
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
-			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) {
+			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) { 
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {

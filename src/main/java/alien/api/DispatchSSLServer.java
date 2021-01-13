@@ -1,6 +1,7 @@
 package alien.api;
 
 import java.io.EOFException;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -308,18 +309,38 @@ public class DispatchSSLServer extends Thread {
 		}
 	}
 
+	private static File accessLogFile = null;
+
 	private static OutputStream accessLogStream = null;
 
 	static synchronized OutputStream getAccessLog() {
-		if (accessLogStream == null) {
-			final String accessLogFile = ConfigUtils.getConfig().gets("alien.api.DispatchSSLServer.access_log");
-
-			if (accessLogFile.length() > 0) {
+		if (accessLogFile != null && !accessLogFile.exists()) {
+			if (accessLogStream != null) {
 				try {
+					accessLogStream.close();
+				}
+				catch (@SuppressWarnings("unused") final IOException ioe) {
+					// ignore
+				}
+
+				accessLogStream = null;
+			}
+
+			accessLogFile = null;
+		}
+
+		if (accessLogStream == null) {
+			final String accessLogFileName = ConfigUtils.getConfig().gets("alien.api.DispatchSSLServer.access_log");
+
+			if (accessLogFileName.length() > 0) {
+				try {
+					accessLogFile = new File(accessLogFileName);
+
 					accessLogStream = new FileOutputStream(accessLogFile, true);
 				}
 				catch (final IOException ioe) {
-					logger.log(Level.WARNING, "Cannot write to access log " + accessLogFile + ", will write to stderr instead", ioe);
+					logger.log(Level.WARNING, "Cannot write to access log " + accessLogFileName + ", will write to stderr instead", ioe);
+					accessLogFile = null;
 				}
 			}
 			else {
