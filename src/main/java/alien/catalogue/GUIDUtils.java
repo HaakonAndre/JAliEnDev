@@ -479,7 +479,10 @@ public final class GUIDUtils {
 
 	private static final String SYS_ENTRY = "/sys/class/net";
 
-	private static synchronized byte[] getMac() {
+	/**
+	 * @return One of the MAC addresses of the machine where this code is running
+	 */
+	public static synchronized byte[] getMac() {
 		if (MACAddress == null) {
 			// figure it out
 			MACAddress = new byte[6];

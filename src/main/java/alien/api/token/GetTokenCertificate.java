@@ -295,8 +295,8 @@ public class GetTokenCertificate extends Request {
 
 		ZonedDateTime notAfter = ZonedDateTime.now().plus(amount);
 
-		if (!isAdmin || certificateType != TokenCertificateType.HOST) {
-			// Admin can generate host certificates unbound by its own certificate duration, anything else is checked against requester's identity
+		if (!isAdmin || (certificateType != TokenCertificateType.HOST && certificateType != TokenCertificateType.USER_CERTIFICATE)) {
+			// Admin can generate host and user certificates unbound by its own certificate duration, anything else is checked against requester's identity
 			if (getEffectiveRequester().getUserCert() != null) {
 				final ZonedDateTime userNotAfter = getEffectiveRequester().getUserCert()[0].getNotAfter().toInstant().atZone(ZoneId.systemDefault());
 
