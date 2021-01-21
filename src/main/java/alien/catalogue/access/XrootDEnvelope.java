@@ -344,8 +344,17 @@ public class XrootDEnvelope implements Serializable {
 
 		final SE se = pfn.getSE();
 
-		ret += "    <size>" + refGUID.size + "</size>" + "\n" + "    <guid>" + Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n" + "    <md5>" + Format.escHtml(refGUID.md5) + "</md5>\n"
-				+ "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n" + "    <se>" + Format.escHtml(se != null ? se.getName() : "VO::UNKNOWN::SE") + "</se>\n" + "  </file>\n</authz>\n";
+		// files opened by ROOT for streaming don't have a known size yet
+		if (refGUID.size > 0)
+			ret += "    <size>" + refGUID.size + "</size>" + "\n";
+
+		ret += "    <guid>" + Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n";
+
+		// same for MD5
+		if (refGUID.md5 != null)
+			ret += "    <md5>" + Format.escHtml(refGUID.md5) + "</md5>\n";
+
+		ret += "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n" + "    <se>" + Format.escHtml(se != null ? se.getName() : "VO::UNKNOWN::SE") + "</se>\n" + "  </file>\n</authz>\n";
 
 		unEncryptedEnvelope = ret;
 	}
