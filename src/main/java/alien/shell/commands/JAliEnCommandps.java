@@ -53,6 +53,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	private int limit = 0;
 
+	private boolean bIDOnly = false;
+
 	private static final transient Map<String, String> SHORT_TO_LONG_STATUS = new HashMap<>() {
 		private static final long serialVersionUID = 1L;
 		{
@@ -152,7 +154,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					commander.printOut("status", j.status().toString());
 					commander.printOut("name", name);
 
-					if (bL) {
+					if (bIDOnly) {
+						commander.printOutln(String.valueOf(j.queueId));
+					}
+					else if (bL) {
 						final String site = (j.site != null) ? j.site : "";
 						final String node = (j.node != null) ? j.node : "";
 
@@ -454,7 +459,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-a", "select jobs of all users"));
 		commander.printOutln(helpOption("-b", "do only black-white output"));
 		commander.printOutln(helpOption("-jdl <jobid>", "display the job jdl"));
-		commander.printOutln(helpOption("-trace <jobid> <tag>*", "display the job trace information (not working yet!)")); // TODO:
+		commander.printOutln(helpOption("-trace <jobid> <tag>*", "display the job trace information"));
+		commander.printOutln(helpOption("-id", "only list the matching job IDs, for batch processing (implies -b)"));
 		commander.printOutln();
 	}
 
@@ -506,6 +512,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			parser.accepts("b");
 			parser.accepts("jdl").withRequiredArg().ofType(Long.class);
 			parser.accepts("trace").withRequiredArg().ofType(Long.class);
+			parser.accepts("id");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -636,9 +643,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				}
 			}
 
-			if (options.has("b"))
-				commander.bColour = false;
+			bIDOnly = options.has("id");
 
+			if (options.has("b") || bIDOnly)
+				commander.bColour = false;
 		}
 		catch (final OptionException e) {
 			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
