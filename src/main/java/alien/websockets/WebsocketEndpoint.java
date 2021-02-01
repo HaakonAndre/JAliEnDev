@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
@@ -142,7 +143,7 @@ public class WebsocketEndpoint extends Endpoint {
 					if (context != null) {
 						if (context.getRunningDeadline() <= System.currentTimeMillis()) {
 							logger.log(Level.FINE, "Closing one idle / too long running session");
-							context.endpoint.onClose(context.session, new CloseReason(null, "Session timed out"));
+							context.endpoint.onClose(context.session, new CloseReason(CloseCodes.TRY_AGAIN_LATER, "Session timed out"));
 
 							monitor.incrementCounter("timedout_sessions");
 						}
@@ -173,11 +174,6 @@ public class WebsocketEndpoint extends Endpoint {
 			values.add(Double.valueOf(sessionQueue.size()));
 		});
 	}
-
-	/**
-	 * Object to send notifications about the state of connection
-	 */
-	final Object stateObject = new Object();
 
 	@Override
 	public void onOpen(final Session session, final EndpointConfig endpointConfig) {
@@ -327,7 +323,7 @@ public class WebsocketEndpoint extends Endpoint {
 	public void onClose(final Session session, final CloseReason closeReason) {
 		monitor.incrementCounter("closed_sessions");
 
-		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId);
+		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason);
 
 		commander.kill = true;
 		commander.setLine(null, null);
@@ -338,8 +334,9 @@ public class WebsocketEndpoint extends Endpoint {
 				os.close();
 		}
 		catch (final IOException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Exception closing session output stream", e);
 		}
+
 		os = null;
 		userIdentity = null;
 
@@ -353,15 +350,11 @@ public class WebsocketEndpoint extends Endpoint {
 					if (sc.session.equals(session))
 						it.remove();
 				}
-				session.close();
+				session.close(closeReason);
 			}
 		}
 		catch (final IOException e) {
-			e.printStackTrace();
-		}
-
-		synchronized (stateObject) {
-			stateObject.notifyAll();
+			logger.log(Level.SEVERE, "Exception closing session", e);
 		}
 	}
 
