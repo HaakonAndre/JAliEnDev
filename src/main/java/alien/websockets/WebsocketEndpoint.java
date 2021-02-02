@@ -187,18 +187,29 @@ public class WebsocketEndpoint extends Endpoint {
 		else
 			setShellPrintWriter(os, "plain");
 
-		final InetAddress remoteIP = getRemoteIP(session);
+		final InetSocketAddress remoteIPandPort = getRemoteIP(session);
 
-		if (remoteIP != null && ipv6Connections != null) {
-			if (remoteIP instanceof Inet6Address)
-				ipv6Connections.incrementHits();
-			else
-				ipv6Connections.incrementMisses();
+		final String remoteHostAddress;
+
+		if (remoteIPandPort != null) {
+			final InetAddress remoteIP = remoteIPandPort.getAddress();
+
+			if (ipv6Connections != null) {
+				if (remoteIP instanceof Inet6Address)
+					ipv6Connections.incrementHits();
+				else
+					ipv6Connections.incrementMisses();
+			}
+
+			userIdentity.setRemoteEndpoint(remoteIP);
+			userIdentity.setRemotePort(remoteIPandPort.getPort());
+
+			remoteHostAddress = remoteIP.getHostAddress();
 		}
+		else
+			remoteHostAddress = null;
 
-		userIdentity.setRemoteEndpoint(remoteIP);
-
-		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteIP != null ? remoteIP.getHostAddress() : null), null);
+		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteHostAddress), null);
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
@@ -256,9 +267,9 @@ public class WebsocketEndpoint extends Endpoint {
 	 * Get the IP address of the client using reflection of the socket object
 	 *
 	 * @param session websocket session which contains the socket
-	 * @return IP address
+	 * @return IP address and port
 	 */
-	private static InetAddress getRemoteIP(final Session session) {
+	private static InetSocketAddress getRemoteIP(final Session session) {
 		try {
 			Object obj = session.getAsyncRemote();
 
@@ -269,7 +280,7 @@ public class WebsocketEndpoint extends Endpoint {
 					return null;
 			}
 
-			return ((InetSocketAddress) obj).getAddress();
+			return (InetSocketAddress) obj;
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Cannot extract the remote IP address from a session", e);
