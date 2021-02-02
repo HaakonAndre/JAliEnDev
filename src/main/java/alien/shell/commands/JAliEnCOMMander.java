@@ -534,6 +534,28 @@ public class JAliEnCOMMander implements Runnable {
 		}
 	}
 
+	private void closeMessage() {
+		try (RequestEvent event = new RequestEvent(getAccessLogTarget())) {
+			event.command = "logout";
+			event.identity = getUser();
+			event.site = getSite();
+			event.serverThreadID = Long.valueOf(commanderId);
+			event.requestId = Long.valueOf(commandCount);
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
+			// ignore any exception in writing out the event
+		}
+	}
+	
+	/**
+	 * Discard any currently running command and stop accepting others
+	 */
+	public void shutdown() {
+		setLine(null, null);
+		kill = true;
+		closeMessage();
+	}
+	
 	/**
 	 * @param out
 	 * @param arg

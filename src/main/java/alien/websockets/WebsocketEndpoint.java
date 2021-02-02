@@ -11,7 +11,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -175,6 +177,29 @@ public class WebsocketEndpoint extends Endpoint {
 		});
 	}
 
+	/**
+	 * @return information about the known active connections
+	 */
+	public static Collection<WebSocketInfo> getActiveConnections() {
+		final List<WebSocketInfo> ret = new ArrayList<>(sessionQueue.size());
+
+		for (SessionContext ctx : sessionQueue) {
+			final WebsocketEndpoint endpoint = ctx.endpoint;
+
+			if (endpoint != null) {
+				final JAliEnCOMMander cmd = endpoint.commander;
+
+				if (cmd != null) {
+					final AliEnPrincipal user = cmd.getUser();
+					
+					ret.add(new WebSocketInfo(user.getDefaultUser(), user.getRemoteEndpoint(), user.getRemotePort(), ctx.startTime, ctx.lastActivityTime));
+				}
+			}
+		}
+
+		return ret;
+	}
+
 	@Override
 	public void onOpen(final Session session, final EndpointConfig endpointConfig) {
 		final Principal userPrincipal = session.getUserPrincipal();
@@ -336,8 +361,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason);
 
-		commander.kill = true;
-		commander.setLine(null, null);
+		commander.shutdown();
 
 		out = null;
 		try {
@@ -555,8 +579,7 @@ public class WebsocketEndpoint extends Endpoint {
 							commander.status.wait(seconds * 1000);
 						}
 						catch (@SuppressWarnings("unused") final InterruptedException e) {
-							commander.setLine(null, null);
-							commander.kill = true;
+							commander.shutdown();
 							break;
 						}
 					}
