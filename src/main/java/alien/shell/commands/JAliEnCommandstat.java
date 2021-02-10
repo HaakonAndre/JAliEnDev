@@ -117,10 +117,14 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
 			if (lfn == null) {
-				if (GUIDUtils.isValidGUID(lfnName))
-					printGUIDInfo(lfnName, false);
-				else
+				if (GUIDUtils.isValidGUID(lfnName)) {
+					if (!printGUIDInfo(lfnName, false))
+						continue;
+				}
+				else {
 					commander.setReturnCode(ErrNo.ENOENT, lfnName);
+					continue;
+				}
 			}
 			else {
 				commander.printOutln("File: " + lfn.getCanonicalName());
