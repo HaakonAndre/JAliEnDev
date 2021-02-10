@@ -46,9 +46,9 @@ public class XMLPrintWriter extends UIPrintWriter {
 
 	private final Map<String, String> metaInfo = new TreeMap<>();
 
-	private final List<Map<String, String>> results = new ArrayList<>();
+	private final List<Map<String, Object>> results = new ArrayList<>();
 
-	private Map<String, String> currentResult = null;
+	private Map<String, Object> currentResult = null;
 
 	@Override
 	protected void blackwhitemode() {
@@ -93,17 +93,35 @@ public class XMLPrintWriter extends UIPrintWriter {
 			for (final Map.Entry<String, String> entry : metaInfo.entrySet())
 				writer.writeAttribute(entry.getKey(), entry.getValue());
 
-			for (final Map<String, String> result : results) {
+			for (final Map<String, Object> result : results) {
 				writer.writeStartElement("r");
 
-				for (final Map.Entry<String, String> entry : result.entrySet()) {
+				for (final Map.Entry<String, Object> entry : result.entrySet()) {
 					writer.writeStartElement(entry.getKey());
 
-					final String value = entry.getValue();
-					if (value.indexOf(' ') >= 0 || value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0)
-						writer.writeCData(value);
-					else
-						writer.writeCharacters(value);
+					final Object o = entry.getValue();
+
+					if (o instanceof String) {
+						String value = (String) o;
+
+						if (value.indexOf(' ') >= 0 || value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0)
+							writer.writeCData(value);
+						else
+							writer.writeCharacters(value);
+					}
+					else {
+						if (o instanceof Map) {
+							@SuppressWarnings("unchecked")
+							final Map<Object, Object> values = (Map<Object, Object>) o;
+
+							for (final Map.Entry<Object, Object> e2 : values.entrySet()) {
+								writer.writeStartElement("r2");
+								writer.writeAttribute("k", e2.getValue().toString());
+								writer.writeAttribute("v", e2.getValue().toString());
+								writer.writeEndElement();
+							}
+						}
+					}
 
 					writer.writeEndElement();
 				}
@@ -144,7 +162,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	public void setField(final String key, final String value) {
+	public void setField(final String key, final Object value) {
 		if (currentResult == null)
 			currentResult = new TreeMap<>();
 

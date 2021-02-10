@@ -27,7 +27,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	private final JSONArray resultArray;
 	private final JSONObject metadataResult;
 
-	private LinkedHashMap<String, String> currentResult;
+	private LinkedHashMap<String, Object> currentResult;
 
 	/**
 	 * @param os
@@ -113,8 +113,9 @@ public class JSONPrintWriter extends UIPrintWriter {
 	protected void nextResult() {
 		if (currentResult != null) {
 			// The ROOT client doesn't expect a newline character at the end of a JSON string, remove it
+
 			if (currentResult.get("message") != null)
-				currentResult.put("message", currentResult.get("message").replaceAll("\n$", ""));
+				currentResult.put("message", currentResult.get("message").toString().replace("\n$", ""));
 
 			resultArray.add(currentResult);
 			currentResult = null;
@@ -122,7 +123,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	public void setField(final String key, final String value) {
+	public void setField(final String key, final Object value) {
 		if (currentResult == null)
 			currentResult = new LinkedHashMap<>();
 

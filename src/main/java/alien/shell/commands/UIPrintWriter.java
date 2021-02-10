@@ -119,7 +119,7 @@ public abstract class UIPrintWriter {
 	 * @param key
 	 * @param value
 	 */
-	abstract public void setField(final String key, final String value);
+	abstract public void setField(final String key, final Object value);
 
 	/**
 	 * Set command exit code
