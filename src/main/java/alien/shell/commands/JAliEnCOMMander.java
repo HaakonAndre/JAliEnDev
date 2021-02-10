@@ -546,7 +546,7 @@ public class JAliEnCOMMander implements Runnable {
 			// ignore any exception in writing out the event
 		}
 	}
-	
+
 	/**
 	 * Discard any currently running command and stop accepting others
 	 */
@@ -555,7 +555,7 @@ public class JAliEnCOMMander implements Runnable {
 		kill = true;
 		closeMessage();
 	}
-	
+
 	/**
 	 * @param out
 	 * @param arg
@@ -806,7 +806,7 @@ public class JAliEnCOMMander implements Runnable {
 	 * @param key
 	 * @param value
 	 */
-	public void printOut(final String key, final String value) {
+	public void printOut(final String key, final Object value) {
 		if (!commandIsSilent() && out.isRootPrinter() && !nokeys)
 			out.setField(key, value);
 	}
