@@ -115,7 +115,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 			// The ROOT client doesn't expect a newline character at the end of a JSON string, remove it
 
 			if (currentResult.get("message") != null)
-				currentResult.put("message", currentResult.get("message").toString().replace("\n$", ""));
+				currentResult.put("message", currentResult.get("message").toString().replaceAll("\n$", ""));
 
 			resultArray.add(currentResult);
 			currentResult = null;
