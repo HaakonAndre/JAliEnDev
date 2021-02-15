@@ -336,7 +336,7 @@ public class JDL implements Serializable {
 		if (o instanceof Long)
 			return (Long) o;
 
-		if (o instanceof Long)
+		if (o instanceof Number)
 			return Long.valueOf(((Number) o).longValue());
 
 		if (o instanceof CharSequence) {
