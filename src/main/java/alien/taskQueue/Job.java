@@ -259,7 +259,7 @@ public class Job implements Comparable<Job>, Serializable {
 	}
 
 	private void init(final DBFunctions db, final boolean loadJDL) {
-		queueId = db.geti("queueId");
+		queueId = db.getl("queueId");
 		priority = db.geti("priority");
 		sent = db.getl("sent");
 		split = db.getl("split");
