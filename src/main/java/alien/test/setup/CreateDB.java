@@ -322,7 +322,7 @@ public class CreateDB {
 
 				"DROP TABLE IF EXISTS `G0L`;",
 				"CREATE TABLE `G0L` (" + "  `guidId` int(11) NOT NULL AUTO_INCREMENT," + "  `ctime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-						+ "  `owner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + "  `ref` int(11) DEFAULT '0'," + "  `jobid` int(11) DEFAULT NULL,"
+						+ "  `owner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + "  `ref` int(11) DEFAULT '0'," + "  `jobid` bigint DEFAULT NULL,"
 						+ "  `seStringlist` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT ','," + "  `seAutoStringlist` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT ',',"
 						+ "  `aclId` int(11) DEFAULT NULL," + "  `expiretime` datetime DEFAULT NULL," + "  `size` bigint(20) NOT NULL DEFAULT '0',"
 						+ "  `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + "  `guid` binary(16) DEFAULT NULL," + "  `type` char(1) COLLATE latin1_general_cs DEFAULT NULL,"
@@ -365,7 +365,7 @@ public class CreateDB {
 				"DROP TABLE IF EXISTS `L0L`;",
 				"CREATE TABLE `L0L` (" + "  `entryId` bigint(11) NOT NULL AUTO_INCREMENT," + "  `owner` varchar(20) COLLATE latin1_general_cs NOT NULL,"
 						+ "  `replicated` smallint(1) NOT NULL DEFAULT '0'," + "  `ctime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-						+ "  `guidtime` varchar(8) COLLATE latin1_general_cs DEFAULT NULL," + "  `jobid` int(11) DEFAULT NULL," + "  `aclId` mediumint(11) DEFAULT NULL,"
+						+ "  `guidtime` varchar(8) COLLATE latin1_general_cs DEFAULT NULL," + "  `jobid` bigint DEFAULT NULL," + "  `aclId` mediumint(11) DEFAULT NULL,"
 						+ "  `lfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL," + "  `broken` smallint(1) NOT NULL DEFAULT '0'," + "  `expiretime` datetime DEFAULT NULL,"
 						+ "  `size` bigint(20) NOT NULL DEFAULT '0'," + "  `dir` bigint(11) DEFAULT NULL," + "  `gowner` varchar(20) COLLATE latin1_general_cs NOT NULL,"
 						+ "  `type` char(1) COLLATE latin1_general_cs NOT NULL DEFAULT 'f'," + "  `guid` binary(16) DEFAULT NULL," + "  `md5` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"
@@ -382,7 +382,7 @@ public class CreateDB {
 				"DROP TABLE IF EXISTS `LFN_BOOKED`;",
 				"CREATE TABLE `LFN_BOOKED` (" + "  `lfn` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT '',"
 						+ "  `owner` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL," + "  `quotaCalculated` smallint(6) DEFAULT NULL,"
-						+ "  `existing` smallint(1) DEFAULT NULL," + "  `jobid` int(11) DEFAULT NULL," + "  `md5sum` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"
+						+ "  `existing` smallint(1) DEFAULT NULL," + "  `jobid` bigint DEFAULT NULL," + "  `md5sum` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"
 						+ "  `expiretime` int(11) DEFAULT NULL," + "  `size` bigint(20) DEFAULT NULL," + "  `pfn` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT '',"
 						+ "  `se` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL," + "  `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL,"
 						+ "  `user` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL," + "  `guid` binary(16) NOT NULL DEFAULT '\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0',"
@@ -512,7 +512,7 @@ public class CreateDB {
 				"USE `" + TestConfig.userDB + "`;", "DROP TABLE IF EXISTS `L" + uid + "L`;",
 				"CREATE TABLE `L" + uid + "L` (" + "  `entryId` bigint(11) NOT NULL AUTO_INCREMENT," + "  `owner` varchar(20) COLLATE latin1_general_cs NOT NULL,"
 						+ "  `replicated` smallint(1) NOT NULL DEFAULT '0'," + "  `ctime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-						+ "  `guidtime` varchar(8) COLLATE latin1_general_cs DEFAULT NULL," + "  `jobid` int(11) DEFAULT NULL," + "  `aclId` mediumint(11) DEFAULT NULL,"
+						+ "  `guidtime` varchar(8) COLLATE latin1_general_cs DEFAULT NULL," + "  `jobid` bigint DEFAULT NULL," + "  `aclId` mediumint(11) DEFAULT NULL,"
 						+ "  `lfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL," + "  `broken` smallint(1) NOT NULL DEFAULT '0'," + "  `expiretime` datetime DEFAULT NULL,"
 						+ "  `size` bigint(20) NOT NULL DEFAULT '0'," + "  `dir` bigint(11) DEFAULT NULL," + "  `gowner` varchar(20) COLLATE latin1_general_cs NOT NULL,"
 						+ "  `type` char(1) COLLATE latin1_general_cs NOT NULL DEFAULT 'f'," + "  `guid` binary(16) DEFAULT NULL," + "  `md5` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"

@@ -120,7 +120,7 @@ public class GuidTable extends Optimizer {
 		}
 
 		String sql = "CREATE TABLE `G" + newTable + "L` (" + " " + "`guidId` int(11) NOT NULL AUTO_INCREMENT," + " `ctime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-				+ " `owner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + " `ref` int(11) DEFAULT '0'," + " `jobid` int(11) DEFAULT NULL,"
+				+ " `owner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + " `ref` int(11) DEFAULT '0'," + " `jobid` bigint DEFAULT NULL,"
 				+ " `seStringlist` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT ','," + " `seAutoStringlist` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT ',',"
 				+ " `aclId` int(11) DEFAULT NULL," + " `expiretime` datetime DEFAULT NULL," + " `size` bigint(20) NOT NULL DEFAULT '0',"
 				+ " `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + " `guid` binary(16) DEFAULT NULL," + " `type` char(1) COLLATE latin1_general_cs DEFAULT NULL,"
