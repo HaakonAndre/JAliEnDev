@@ -30,7 +30,7 @@ public class RemoveSERequirements {
 				}
 
 				while (db.moveNext())
-					cleanupRequirements(db.geti(1), db.gets(2));
+					cleanupRequirements(db.getl(1), db.gets(2));
 			}
 		else
 			for (final String arg : args)
@@ -44,7 +44,7 @@ public class RemoveSERequirements {
 						}
 
 						if (db.moveNext())
-							cleanupRequirements(db.geti(1), db.gets(2));
+							cleanupRequirements(db.getl(1), db.gets(2));
 					}
 					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*" + Format.escSQL(arg) + ".*';")) {
@@ -53,7 +53,7 @@ public class RemoveSERequirements {
 						}
 
 						if (db.moveNext())
-							cleanupRequirements(db.geti(1), db.gets(2));
+							cleanupRequirements(db.getl(1), db.gets(2));
 					}
 				}
 	}
@@ -62,7 +62,7 @@ public class RemoveSERequirements {
 	 * @param geti
 	 * @param gets
 	 */
-	private static void cleanupRequirements(final int queueId, final String jdl) {
+	private static void cleanupRequirements(final long queueId, final String jdl) {
 		final int idx = jdl.indexOf(" Requirements = ");
 
 		if (idx < 0) {
