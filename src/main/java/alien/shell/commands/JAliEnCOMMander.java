@@ -748,8 +748,10 @@ public class JAliEnCOMMander implements Runnable {
 	 * flush the buffer and produce status to be send to client
 	 */
 	public void flush() {
-		out.setenv(getCurrentDirName(), getUsername());
-		out.flush();
+		if (out != null) {
+			out.setenv(getCurrentDirName(), getUsername());
+			out.flush();
+		}
 	}
 
 	/**
@@ -796,7 +798,7 @@ public class JAliEnCOMMander implements Runnable {
 	 * Complete current message and start the next one
 	 */
 	public void outNextResult() {
-		if (!commandIsSilent())
+		if (!commandIsSilent() && out != null)
 			out.nextResult();
 	}
 
@@ -807,7 +809,7 @@ public class JAliEnCOMMander implements Runnable {
 	 * @param value
 	 */
 	public void printOut(final String key, final Object value) {
-		if (!commandIsSilent() && out.isRootPrinter() && !nokeys)
+		if (!commandIsSilent() && out != null && out.isRootPrinter() && !nokeys)
 			out.setField(key, value);
 	}
 
@@ -817,7 +819,7 @@ public class JAliEnCOMMander implements Runnable {
 	 * @param value
 	 */
 	public void printOut(final String value) {
-		if (!commandIsSilent() && !nomsg)
+		if (!commandIsSilent() && out != null && !nomsg)
 			out.printOut(value);
 	}
 
@@ -853,7 +855,7 @@ public class JAliEnCOMMander implements Runnable {
 	 * @param value
 	 */
 	public void printErr(final String value) {
-		if (!commandIsSilent())
+		if (!commandIsSilent() && out != null)
 			out.printErr(value);
 	}
 
@@ -912,7 +914,7 @@ public class JAliEnCOMMander implements Runnable {
 	 *
 	 */
 	public void pending() {
-		if (!commandIsSilent())
+		if (!commandIsSilent() && out != null)
 			out.pending();
 	}
 
