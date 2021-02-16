@@ -696,7 +696,7 @@ public class JAliEnCOMMander implements Runnable {
 						jcommand.run();
 					}
 					else {
-						if (out.getReturnCode() == 0) {
+						if (out != null && out.getReturnCode() == 0) {
 							// if non zero then an error message was already printed to the client, don't bloat the output with a generic help
 							out.setReturnCode(ErrNo.EINVAL, "Command requires an argument");
 							jcommand.printHelp();
@@ -708,18 +708,26 @@ public class JAliEnCOMMander implements Runnable {
 				event.exception = e;
 				e.printStackTrace();
 
-				out.setReturnCode(ErrNo.EREMOTEIO, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
+				if (out != null)
+					out.setReturnCode(ErrNo.EREMOTEIO, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
 			}
 		}
 
-		if (returnTiming)
-			out.setMetaInfo("timing_ms", String.valueOf(event.timing.getMillis()));
-		else
-			out.setMetaInfo("timing_ms", null);
+		if (out != null) {
+			if (returnTiming)
+				out.setMetaInfo("timing_ms", String.valueOf(event.timing.getMillis()));
+			else
+				out.setMetaInfo("timing_ms", null);
 
-		event.exitCode = out.getReturnCode();
-		event.errorMessage = out.getErrorMessage();
-		flush();
+			event.exitCode = out.getReturnCode();
+			event.errorMessage = out.getErrorMessage();
+
+			flush();
+		}
+		else {
+			event.exitCode = ErrNo.ECONNRESET.getErrorCode();
+			event.errorMessage = "Client went away";
+		}
 	}
 
 	/**
