@@ -436,7 +436,7 @@ public class BookingTable {
 			final SE se = SEUtils.getSE(db.gets("se"));
 
 			if (se == null)
-				throw new IOException("This SE doesn't exist: '" + db.gets(2) + "' for '" + pfn + "'");
+				throw new IOException("This SE doesn't exist: '" + db.gets("se") + "' for '" + pfn + "'");
 
 			final GUID guid = GUIDUtils.getGUID(UUID.fromString(db.gets("guid_as_string")), true);
 
