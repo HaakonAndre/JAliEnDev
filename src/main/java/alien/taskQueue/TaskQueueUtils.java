@@ -2953,7 +2953,8 @@ public class TaskQueueUtils {
 
 			final String q = "select siteid,site from SITEQUEUES where site LIKE ?;";
 
-			logger.log(Level.INFO, "Going to find CEs matching pattern: " + pattern);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to find CEs matching pattern: " + pattern);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3153,7 +3154,8 @@ public class TaskQueueUtils {
 		final JobStatus js = j.status();
 
 		if (AuthorizationChecker.canModifyJob(j, user)) {
-			logger.info("Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
 
 			// check job quotas to see if we are allowed to submit
 			final Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(user.getName(), 1);
@@ -3162,7 +3164,8 @@ public class TaskQueueUtils {
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()), "Resubmit: job quota problem: " + quota.getValue());
 			}
 
-			logger.fine("Resubmit: quotas approved: " + queueId);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Resubmit: quotas approved: " + queueId);
 
 			// cleanup active jobtoken
 			if (!deleteJobToken(queueId)) {
@@ -3307,7 +3310,9 @@ public class TaskQueueUtils {
 				}
 
 				// TODO: masterjob
-				logger.info("Resubmit: job is a masterJob, ignore: " + queueId);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Resubmit: job is a masterJob, ignore: " + queueId);
+
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: job is a masterJob, ignore: " + queueId);
 			}
 		}
@@ -3320,7 +3325,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			logger.log(Level.INFO, "Going to select updateOrInsertJobAgent for: " + j.queueId);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select updateOrInsertJobAgent for: " + j.queueId);
 
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
@@ -3330,14 +3336,20 @@ public class TaskQueueUtils {
 
 			// the jobagent doesn't exist anymore, reinsert
 			if (db.getUpdateCount() == 0) {
-				logger.info("updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
+
 				final HashMap<String, Object> params = extractJAParametersFromJDL(jdl);
 				final int agentId = insertJobAgent(params);
-				logger.info("updateOrInsertJobAgent: inserted agentId: " + agentId);
+
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "updateOrInsertJobAgent: inserted agentId: " + agentId);
+
 				if (agentId == 0) {
-					logger.info("updateOrInsertJobAgent: couldn't insertJobAgent : " + j.queueId);
+					logger.log(Level.WARNING, "updateOrInsertJobAgent: couldn't insertJobAgent : " + j.queueId);
 					return 0;
 				}
+
 				return agentId;
 			}
 			return -1;
@@ -3374,7 +3386,8 @@ public class TaskQueueUtils {
 			}
 
 			if (entryId == 0) {
-				logger.info("insertJobAgent: nothing matched request, inserting!");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "insertJobAgent: nothing matched request, inserting!");
 
 				if (params.containsKey("userid")) {
 
@@ -3409,7 +3422,9 @@ public class TaskQueueUtils {
 					return 0;
 				}
 
-				logger.info("insertJobAgent: insertion done: " + db.getLastGeneratedKey().intValue());
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "insertJobAgent: insertion done: " + db.getLastGeneratedKey().intValue());
+
 				return db.getLastGeneratedKey().intValue();
 			}
 
@@ -3429,7 +3444,8 @@ public class TaskQueueUtils {
 	 * @return parameters needed for jobagent
 	 */
 	public static HashMap<String, Object> extractJAParametersFromJDL(final JDL jdl) {
-		logger.info("Going to extractJAParamentersFromJDL");
+		if (logger.isLoggable(Level.FINER))
+			logger.log(Level.FINER, "Going to extractJAParamentersFromJDL");
 
 		if (jdl == null)
 			return null;
@@ -3542,7 +3558,8 @@ public class TaskQueueUtils {
 		if (m.find())
 			params.put("revision", Integer.valueOf(m.group(1)));
 
-		logger.info("extracted params: " + params.toString());
+		if (logger.isLoggable(Level.FINER))
+			logger.log(Level.FINER, "extracted params: " + params.toString());
 
 		return params;
 	}
@@ -3554,7 +3571,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
-			logger.log(Level.INFO, "Going to clean path and resultsjdl in resubmission for: " + queueId);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Going to clean path and resultsjdl in resubmission for: " + queueId);
 
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
