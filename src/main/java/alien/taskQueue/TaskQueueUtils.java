@@ -3282,18 +3282,19 @@ public class TaskQueueUtils {
 					// we need to clean up the previous output
 					if (j.path != null) {
 						final Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
-						for (final LFN l : list) {
-							if (l.jobid == queueId) {
-								logger.info("Resubmit: removing output file: " + l.getCanonicalName());
-								putJobLog(queueId, "trace", "Resubmit: removing output file: " + l.getCanonicalName(), null);
-								if (!LFNUtils.rmLFN(user, l, false)) {
-									logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
-									putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
-									return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
-											"Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+						if (list != null)
+							for (final LFN l : list) {
+								if (l.jobid == queueId) {
+									logger.info("Resubmit: removing output file: " + l.getCanonicalName());
+									putJobLog(queueId, "trace", "Resubmit: removing output file: " + l.getCanonicalName(), null);
+									if (!LFNUtils.rmLFN(user, l, false)) {
+										logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
+										putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
+										return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
+												"Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+									}
 								}
 							}
-						}
 					}
 
 					if (js == JobStatus.SAVING || js == JobStatus.SAVED || js == JobStatus.ERROR_E || js == JobStatus.ERROR_V || js == JobStatus.ZOMBIE) {
