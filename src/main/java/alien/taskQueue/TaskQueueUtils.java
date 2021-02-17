@@ -2899,7 +2899,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3264,7 +3265,10 @@ public class TaskQueueUtils {
 					else if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
 						db.setReadOnly(false);
 						db.setQueryTimeout(60);
-						logger.info("Resubmit: update agentId and statusId in QUEUE");
+
+						if (logger.isLoggable(Level.FINER))
+							logger.log(Level.FINER, "Resubmit: update agentId and statusId in QUEUE");
+
 						if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
 								|| db.getUpdateCount() == 0) {
 							logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
@@ -3274,7 +3278,9 @@ public class TaskQueueUtils {
 
 					// if is a subjob, the master goes to SPLIT
 					if (j.split > 0) {
-						logger.info("Resubmit: put masterjob of the resubmited subjob to SPLIT");
+						if (logger.isLoggable(Level.FINER))
+							logger.log(Level.FINER, "Resubmit: put masterjob of the resubmited subjob to SPLIT");
+
 						if (!db.query("UPDATE QUEUE set statusId=? where queueId=? and statusId!=?", false, Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split),
 								Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()))) {
 							logger.severe("Resubmit: cannot put masterjob back to SPLIT: " + queueId);
