@@ -3234,7 +3234,8 @@ public class TaskQueueUtils {
 				logger.fine("Resubmit: update SITEQUEUES of " + queueId);
 
 				// update queue counters
-				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0) " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
+				db.query(
+						"UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0), " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
 						false, Integer.valueOf(j.siteid));
 
 				// if the job was attached to a node, we tell him to hara-kiri
