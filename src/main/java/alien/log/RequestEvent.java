@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import alien.api.Request;
+import alien.config.ConfigUtils;
+import alien.monitoring.MonitorFactory;
 import alien.monitoring.Timing;
 import alien.user.AliEnPrincipal;
 import lazyj.Format;
@@ -158,6 +161,10 @@ public class RequestEvent implements Closeable {
 		}
 
 		values.put("duration", Double.valueOf(timing.getMillis()));
+
+		values.put("server", ConfigUtils.getLocalHostname());
+		values.put("server_pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
+		values.put("server_uuid", Request.getVMID());
 
 		return values;
 	}
