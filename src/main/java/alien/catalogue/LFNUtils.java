@@ -4,10 +4,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1463,20 +1463,20 @@ public class LFNUtils {
 	 * @param lfn the LFNs
 	 * @param expireTime an ExppireTime object specifying the expire time to add
 	 * @param extend specify if the given expire time should extend or replace the current one
-	 *
-	 * @return void
 	 */
-	public static void setExpireTime(LFN lfn, ExpireTime expireTime, boolean extend) {
+	public static void setExpireTime(final LFN lfn, final ExpireTime expireTime, final boolean extend) {
 		Date currentDate;
 		Date newExpireTime;
-		Calendar c = Calendar.getInstance();
+		final Calendar c = Calendar.getInstance();
 
 		if (expireTime == null) {
 			newExpireTime = null;
-		} else {
+		}
+		else {
 			if (extend && lfn.expiretime != null) {
 				currentDate = lfn.expiretime;
-			} else {
+			}
+			else {
 				currentDate = new Date();
 			}
 
@@ -1487,7 +1487,7 @@ public class LFNUtils {
 			c.add(Calendar.WEEK_OF_YEAR, expireTime.getWeeks());
 			c.add(Calendar.DAY_OF_YEAR, expireTime.getDays());
 
-			newExpireTime = c.getTime();	
+			newExpireTime = c.getTime();
 		}
 
 		lfn.setExpireTime(newExpireTime);
@@ -1496,40 +1496,40 @@ public class LFNUtils {
 	/**
 	 * Add, extend or remove the expire time for given LFNs.
 	 *
+	 * @param user who requested the operation to be performed
 	 * @param paths paths to the LFNs
 	 * @param expireTime an ExppireTime object specifying the expire time to add
 	 * @param extend specify if the given expire time should extend or replace the current one
-	 *
-	 * @return void
 	 */
-	public static void setLFNExpireTime(final AliEnPrincipal user, final List<String> paths, ExpireTime expireTime, boolean extend) {
+	public static void setLFNExpireTime(final AliEnPrincipal user, final List<String> paths, final ExpireTime expireTime, final boolean extend) {
 
-		Set<LFN> lfns = new HashSet<>();
+		final Set<LFN> lfns = new HashSet<>();
 
 		if (user == null) {
 			return;
 		}
 
-		for (String path: paths) {
+		for (final String path : paths) {
 			final LFN lfn = getLFN(path);
 
 			if (lfn == null) {
 				continue;
 			}
 
-			List<LFN> archiveMembers = getArchiveMembers(getRealLFN(lfn));
+			final List<LFN> archiveMembers = getArchiveMembers(getRealLFN(lfn));
 
 			if (archiveMembers == null || archiveMembers.isEmpty()) {
 				lfns.add(lfn);
-			} else {
-				for (LFN memberLFN: archiveMembers) {
+			}
+			else {
+				for (final LFN memberLFN : archiveMembers) {
 					lfns.add(memberLFN);
 				}
 			}
 
 		}
 
-		for (LFN lfn: lfns) {
+		for (final LFN lfn : lfns) {
 			if (!AuthorizationChecker.canWrite(lfn, user)) {
 				continue;
 			}
