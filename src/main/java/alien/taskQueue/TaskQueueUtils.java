@@ -3202,7 +3202,7 @@ public class TaskQueueUtils {
 				}
 			}
 
-			final String path = jdl.gets("Path");
+			final String pathFromJDL = jdl.gets("Path");
 
 			if (!clearPathAndResultsJDL(Long.valueOf(queueId))) {
 				logger.info("Cannot cleanup path and resultsJdl: " + queueId);
@@ -3289,8 +3289,8 @@ public class TaskQueueUtils {
 					}
 
 					// we need to clean up the previous output
-					if (j.path != null) {
-						final Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
+					if (pathFromJDL != null || j.path != null) {
+						final Collection<LFN> list = LFNUtils.find(pathFromJDL != null ? pathFromJDL : j.path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
 						if (list != null)
 							for (final LFN l : list) {
 								if (l.jobid == queueId) {
