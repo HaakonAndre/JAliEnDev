@@ -127,7 +127,9 @@ public class JAliEnCOMMander implements Runnable {
 			"listSEs", "listSEDistance", "setSite", "testSE", "listTransfer", "uuid", "stat", "xrdstat", "randomPFNs",
 			"showTagValue",
 			"time", "timing", "commandlist", "motd", "ping", "version",
-			"whoami", "user", "whois", "groups", "token" };
+			"whoami", "user", "whois", "groups", "token",
+			"lfnexpiretime"
+		};
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "groupmembers" };
 
