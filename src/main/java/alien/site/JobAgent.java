@@ -67,7 +67,7 @@ public class JobAgent implements Runnable {
 
 	// Folders and files
 	private File tempDir;
-	private static final String defaultOutputDirPrefix = "/jalien-job-";
+	private static final String defaultOutputDirPrefix = "/alien-job-";
 	private static final String jobWrapperLogName = "jalien-jobwrapper.log";
 	private String jobWorkdir;
 	private final String jobWrapperLogDir;

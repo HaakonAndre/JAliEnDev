@@ -632,9 +632,15 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles(exitStatus=" + exitStatus + ", outputDir=" + outputDir + ")");
 
-		String tag = "Output";
-		if (exitStatus == JobStatus.ERROR_E)
+		String tag;
+		if (jdl.gets("OutputArchive") != null)
+			tag = "OutputArchive";
+		else if (jdl.gets("OutputFile") != null)
+			tag = "OutputFile";
+		else if (exitStatus == JobStatus.ERROR_E)
 			tag = "OutputErrorE";
+		else 
+			tag = "Output";
 
 		changeStatus(JobStatus.SAVING);
 
