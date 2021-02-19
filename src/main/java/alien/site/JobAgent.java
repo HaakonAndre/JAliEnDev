@@ -302,7 +302,8 @@ public class JobAgent implements Runnable {
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
 
-			final String version = Version.getTagFromEnv().isEmpty() ? Version.getTagFromEnv() : "/Git: " + Version.getGitHash() + ". Builddate: " + Version.getCompilationTimestamp();
+
+			final String version = !Version.getTagFromEnv().isEmpty() ? Version.getTagFromEnv() : "/Git: " + Version.getGitHash() + ". Builddate: " + Version.getCompilationTimestamp();
 			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent" + version);
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
