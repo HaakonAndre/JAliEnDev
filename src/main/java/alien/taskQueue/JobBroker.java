@@ -593,6 +593,9 @@ public class JobBroker {
 		}
 	}
 
+	/**
+	 * @param matchRequest will be checked against LDAP if there's anything to add, if not already provided
+	 */
 	private static void updateWithValuesInLDAP(HashMap<String, Object> matchRequest) {
 		if (!matchRequest.containsKey("CheckedLDAP")) {
 			if (matchRequest.containsKey("CE")) {
