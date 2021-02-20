@@ -115,6 +115,6 @@ public abstract class Containerizer {
 	 * @return Class name of the container wrapping code
 	 */
 	public String getContainerizerName() {
-		return this.getClass().getName();
+		return this.getClass().getSimpleName();
 	}
 }
