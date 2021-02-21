@@ -337,7 +337,7 @@ public class ComputingElement extends Thread {
 		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
 			before += "export WORKDIR=\"" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "\"\n";
 		if (System.getenv().containsKey("cerequirements"))
-			before += "export cerequirements=\"" + System.getenv().get("cerequirements") + "\"\n";
+			before += "export cerequirements=\'" + System.getenv().get("cerequirements") + "\'\n";
 		if (System.getenv().containsKey("partition"))
 			before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
 		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
