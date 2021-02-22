@@ -14,12 +14,14 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
+import alien.api.Request;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
@@ -129,7 +131,7 @@ public class JAliEnCOMMander implements Runnable {
 			"time", "timing", "commandlist", "motd", "ping", "version",
 			"whoami", "user", "whois", "groups", "token",
 			"lfnexpiretime"
-		};
+	};
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "groupmembers" };
 
@@ -146,6 +148,8 @@ public class JAliEnCOMMander implements Runnable {
 	 * Unique identifier of the commander
 	 */
 	public final long commanderId = commanderIDSequence.incrementAndGet();
+
+	private final UUID clientId = UUID.randomUUID();
 
 	static {
 		final List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));
@@ -454,6 +458,7 @@ public class JAliEnCOMMander implements Runnable {
 			try (RequestEvent event = new RequestEvent(accessLogStream)) {
 				event.command = "boot";
 				event.identity = AuthorizationFactory.getDefaultUser();
+				event.clientID = Request.getVMID();
 
 				event.arguments = new ArrayList<>();
 
@@ -487,6 +492,7 @@ public class JAliEnCOMMander implements Runnable {
 			event.site = getSite();
 			event.serverThreadID = Long.valueOf(commanderId);
 			event.requestId = Long.valueOf(++commandCount);
+			event.clientID = clientId;
 
 			try {
 				setName("Commander " + commanderId + ": Executing: " + Arrays.toString(arg));
@@ -521,6 +527,7 @@ public class JAliEnCOMMander implements Runnable {
 			event.command = "login";
 			event.identity = getUser();
 			event.serverThreadID = Long.valueOf(commanderId);
+			event.clientID = clientId;
 
 			if (event.identity != null && event.identity.getUserCert() != null) {
 				final ArrayList<String> certificates = new ArrayList<>();
@@ -543,6 +550,7 @@ public class JAliEnCOMMander implements Runnable {
 			event.site = getSite();
 			event.serverThreadID = Long.valueOf(commanderId);
 			event.requestId = Long.valueOf(commandCount);
+			event.clientID = clientId;
 		}
 		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore any exception in writing out the event

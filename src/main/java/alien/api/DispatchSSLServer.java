@@ -355,6 +355,7 @@ public class DispatchSSLServer extends Thread {
 				event.identity = AuthorizationFactory.getDefaultUser();
 				event.clientAddress = actualServerAddress;
 				event.clientPort = actualServerPort;
+				event.clientID = Request.getVMID();
 
 				event.arguments = new ArrayList<>();
 
