@@ -452,7 +452,7 @@ public class JobBroker {
 				bindValues.add(matchRequest.get("CE"));
 			}
 
-			if (matchRequest.containsKey("Partition")) {
+			if (matchRequest.containsKey("Partition") && !matchRequest.get("Partition").equals(",,")) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
 			} 
