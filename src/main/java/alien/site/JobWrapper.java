@@ -632,16 +632,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles(exitStatus=" + exitStatus + ", outputDir=" + outputDir + ")");
 
-		String tag;
-		if (jdl.gets("OutputArchive") != null)
-			tag = "OutputArchive";
-		else if (jdl.gets("OutputFile") != null)
-			tag = "OutputFile";
-		else if (exitStatus == JobStatus.ERROR_E)
-			tag = "OutputErrorE";
-		else 
-			tag = "Output";
-
 		changeStatus(JobStatus.SAVING);
 
 		logger.log(Level.INFO, "queueId: " + queueId);
@@ -657,85 +647,89 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return false;
 		}
 
-		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
-		final ArrayList<OutputEntry> entries = filesTable.getEntries();
+		ArrayList<String> outputTags = getOutputTags(exitStatus);
+		for (String tag : outputTags) {
+			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
+			final ArrayList<OutputEntry> entries = filesTable.getEntries();
 
-		for (final OutputEntry entry : entries) {
-			try {
-				final File localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
-				logger.log(Level.INFO, "Processing output file: " + localFile);
+			for (final OutputEntry entry : entries) {
+				try {
+					final File localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
+					logger.log(Level.INFO, "Processing output file: " + localFile);
 
-				if (entry.isArchive())
-					entry.createZip(currentDir.getAbsolutePath());
+					if (entry.isArchive())
+						entry.createZip(currentDir.getAbsolutePath());
 
-				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
-					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName() + " to " + outputDir);
+					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
+						commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName() + " to " + outputDir);
 
-					final List<String> cpOptions = new ArrayList<>();
-					cpOptions.add("-w");
-					cpOptions.add("-S");
+						final List<String> cpOptions = new ArrayList<>();
+						cpOptions.add("-w");
+						cpOptions.add("-S");
 
-					if (entry.getOptions() != null && entry.getOptions().length() > 0)
-						cpOptions.add(entry.getOptions());
-					else
-						cpOptions.add("disk:2");
+						if (entry.getOptions() != null && entry.getOptions().length() > 0)
+							cpOptions.add(entry.getOptions());
+						else
+							cpOptions.add("disk:2");
 
-					cpOptions.add("-j");
-					cpOptions.add(String.valueOf(queueId));
+						cpOptions.add("-j");
+						cpOptions.add(String.valueOf(queueId));
 
-					// Don't commit in case of ERROR_E or ERROR_V
-					if (exitStatus == JobStatus.ERROR_E || exitStatus == JobStatus.ERROR_V)
-						cpOptions.add("-nc");
+						// Don't commit in case of ERROR_E or ERROR_V
+						if (exitStatus == JobStatus.ERROR_E || exitStatus == JobStatus.ERROR_V)
+							cpOptions.add("-nc");
 
-					final ByteArrayOutputStream out = new ByteArrayOutputStream();
-					final LFN uploadResult = IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, cpOptions.toArray(new String[0]));
+						final ByteArrayOutputStream out = new ByteArrayOutputStream();
+						final LFN uploadResult = IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, cpOptions.toArray(new String[0]));
 
-					final String output_upload = out.toString();
-					logger.log(Level.INFO,
-							"Output result of " + localFile.getAbsolutePath() + " to " + outputDir + "/" + entry.getName() + " is:\nLFN = " + uploadResult + "\nFull `cp` output:\n" + output_upload);
+						final String output_upload = out.toString();
+						logger.log(Level.INFO,
+								"Output result of " + localFile.getAbsolutePath() + " to " + outputDir + "/" + entry.getName() + " is:\nLFN = " + uploadResult + "\nFull `cp` output:\n"
+										+ output_upload);
 
-					if (uploadResult == null) {
-						// complete failure to upload the file, mark the job as failed, not trying further to upload anything
-						uploadedAllOutFiles = false;
-						commander.q_api.putJobLog(queueId, "trace", "Failed to upload to " + outputDir + "/" + entry.getName() + ": " + out.toString());
-						break;
+						if (uploadResult == null) {
+							// complete failure to upload the file, mark the job as failed, not trying further to upload anything
+							uploadedAllOutFiles = false;
+							commander.q_api.putJobLog(queueId, "trace", "Failed to upload to " + outputDir + "/" + entry.getName() + ": " + out.toString());
+							break;
+						}
+
+						// success, but could all the copies requested in the JDL be created as per user specs?
+						if (output_upload.contains("requested replicas could be uploaded")) {
+							// partial success, will lead to a DONE_WARN state
+							uploadedNotAllCopies = true;
+							commander.q_api.putJobLog(queueId, "trace", output_upload);
+						}
+						else
+							commander.q_api.putJobLog(queueId, "trace", uploadResult.getCanonicalName() + ": uploaded as requested");
 					}
-
-					// success, but could all the copies requested in the JDL be created as per user specs?
-					if (output_upload.contains("requested replicas could be uploaded")) {
-						// partial success, will lead to a DONE_WARN state
-						uploadedNotAllCopies = true;
-						commander.q_api.putJobLog(queueId, "trace", output_upload);
+					else {
+						logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
+						commander.q_api.putJobLog(queueId, "trace", "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 					}
-					else
-						commander.q_api.putJobLog(queueId, "trace", uploadResult.getCanonicalName() + ": uploaded as requested");
 				}
-				else {
-					logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
-					commander.q_api.putJobLog(queueId, "trace", "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
+				catch (final IOException e) {
+					logger.log(Level.WARNING, "IOException received while attempting to upload " + entry.getName(), e);
+					commander.q_api.putJobLog(queueId, "trace", "Failed to upload " + entry.getName() + " due to: " + e.getMessage());
+					uploadedAllOutFiles = false;
 				}
 			}
-			catch (final IOException e) {
-				logger.log(Level.WARNING, "IOException received while attempting to upload " + entry.getName(), e);
-				commander.q_api.putJobLog(queueId, "trace", "Failed to upload " + entry.getName() + " due to: " + e.getMessage());
-				uploadedAllOutFiles = false;
-			}
+			if (exitStatus == JobStatus.DONE)
+				registerEntries(entries, outputDir);
 		}
 
-		createAndAddResultsJDL(filesTable);
+		createAndAddResultsJDL(null); // Not really used. Set to null for now.
 
 		if (!uploadedAllOutFiles) {
 			changeStatus(JobStatus.ERROR_SV);
 			return false;
 		} // else
 			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
-
 		if (exitStatus == JobStatus.DONE) {
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
 			else
 				changeStatus(JobStatus.DONE);
-			registerEntries(entries, outputDir);
 		}
 		else
 			changeStatus(exitStatus);
@@ -954,6 +948,23 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			boolean status = CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
 			commander.q_api.putJobLog(queueId, "trace", "Registering: " + entry.getName() + ". Return status: " + status);
 		}
+	}
+
+	private ArrayList<String> getOutputTags(JobStatus exitStatus){
+		ArrayList<String> tags = new ArrayList<String>();
+
+		if (exitStatus == JobStatus.ERROR_E)
+			tags.add("OutputErrorE");
+		else {
+			if (jdl.gets("OutputArchive") != null)
+				tags.add("OutputArchive");
+			if (jdl.gets("OutputFile") != null)
+				tags.add("OutputFile");
+			if (jdl.gets("Output") != null)
+				tags.add("Output");
+		}
+
+		return tags;
 	}
 
 }
