@@ -1281,7 +1281,18 @@ public class Xrootd extends Protocol {
 
 			if (iTPC != TPC_DEFAULT) {
 				command.add("--tpc");
-				command.add(iTPC == TPC_ONLY ? "only" : "first");
+
+				if (iTPC == TPC_ONLY) {
+					final SE se = target.getSE();
+
+					if (se != null && se.getName().contains("DCACHE"))
+						command.add("delegate");
+
+					command.add("only");
+				}
+				else {
+					command.add("first");
+				}
 			}
 
 			command.add("--force");
