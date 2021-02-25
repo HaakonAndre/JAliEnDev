@@ -336,7 +336,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	@Override
 	public int compareTo(final SE o) {
-		return seName.compareToIgnoreCase(o.seName);
+		return seName.compareTo(o.seName);
 	}
 
 	@Override
@@ -352,7 +352,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	@Override
 	public int hashCode() {
-		return seName.toUpperCase().hashCode();
+		return seName.hashCode();
 	}
 
 	/**
