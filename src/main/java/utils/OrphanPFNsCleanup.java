@@ -197,7 +197,7 @@ public class OrphanPFNsCleanup {
 					logger.log(Level.SEVERE, "Exception in the main mover", t);
 				}
 				try {
-					sleep(1000L * 60 * 60 * 2);
+					sleep(1000L * 60 * ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.mainMoverSleep", 30));
 				}
 				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					break;
