@@ -711,7 +711,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				catch (final IOException e) {
 					logger.log(Level.WARNING, "IOException received while attempting to upload " + entry.getName(), e);
 					commander.q_api.putJobLog(queueId, "trace", "Failed to upload " + entry.getName() + " due to: " + e.getMessage());
-					uploadedAllOutFiles = false;
+					if (!e.getMessage().contains("exist")) // note that the same file may be asked to be uploaded several times
+						uploadedAllOutFiles = false;
 				}
 			}
 			if (exitStatus == JobStatus.DONE)
