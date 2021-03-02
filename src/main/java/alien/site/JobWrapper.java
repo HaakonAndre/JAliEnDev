@@ -956,8 +956,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		if (exitStatus == JobStatus.ERROR_E)
 			tags.add("OutputErrorE");
-		else if (exitStatus == JobStatus.ERROR_V)
-			tags.add("OutputErrorV");
 		else {
 			if (jdl.gets("OutputArchive") != null)
 				tags.add("OutputArchive");
