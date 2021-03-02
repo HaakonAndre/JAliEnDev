@@ -408,7 +408,8 @@ public class DispatchSSLServerNIO implements Runnable {
 
 			lSerialization += serializationTime;
 
-			logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
 			if (monitor != null) {
 				monitor.addMeasurement("request_processing", requestProcessingDuration);

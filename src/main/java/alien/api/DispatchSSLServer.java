@@ -508,7 +508,9 @@ public class DispatchSSLServer extends Thread {
 		X509Certificate[] peerCertChain = null;
 
 		if (needClientAuth) {
-			logger.log(Level.INFO, "Printing client information:");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Printing client information:");
+
 			Certificate[] peerCerts;
 			try {
 				peerCerts = c.getSession().getPeerCertificates();
@@ -528,7 +530,9 @@ public class DispatchSSLServer extends Thread {
 				for (int i = 0; i < peerCerts.length; i++) {
 					if (peerCerts[i] instanceof X509Certificate) {
 						final X509Certificate xCert = (X509Certificate) peerCerts[i];
-						logger.log(Level.FINE, getClientInfo(xCert));
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, getClientInfo(xCert));
+
 						peerCertChain[i] = xCert;
 					}
 					else {
