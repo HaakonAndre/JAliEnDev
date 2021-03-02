@@ -174,10 +174,10 @@ public class PFNforReadOrDel extends Request {
 				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");
 		}
 		else
-			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
+			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID: " + guid.guid);
 
 		if (pfns.size() < 1)
-			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
+			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID: " + guid.guid);
 	}
 
 	/**

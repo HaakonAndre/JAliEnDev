@@ -207,8 +207,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 
 		if (pfns == null || pfns.isEmpty()) {
-			logger.log(Level.SEVERE, "No PFNs for this LFN");
-			commander.setReturnCode(ErrNo.EBADFD, "No PFNs for this LFN");
+			logger.log(Level.SEVERE, "No " + accessRequest.toString() + " PFNs for this entity: " + referenceEntity.getName() + " / " + ses + " / NOT " + exses);
+			commander.setReturnCode(ErrNo.EBADFD, "No " + accessRequest.toString() + " PFNs");
 			return;
 		}
 
