@@ -191,7 +191,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 				if (cmd != null) {
 					final AliEnPrincipal user = cmd.getUser();
-					
+
 					ret.add(new WebSocketInfo(user.getDefaultUser(), user.getRemoteEndpoint(), user.getRemotePort(), ctx.startTime, ctx.lastActivityTime));
 				}
 			}
@@ -240,8 +240,9 @@ public class WebsocketEndpoint extends Endpoint {
 
 		session.addMessageHandler(new WSMessageHandler(context, commander, out, os));
 
-		// safety net, let the API also close idle connections, at a slightly later time than our explicit operation
-		session.setMaxIdleTimeout(16 * 60 * 1000L);
+		// Safety net, let the API also close idle connections, at a much later time than our explicit operation
+		// The default socket killer doesn't close the underlying socket, leading to server sockets piling up
+		session.setMaxIdleTimeout(6 * 60 * 60 * 1000L);
 
 		sessionQueue.add(context);
 
@@ -359,7 +360,8 @@ public class WebsocketEndpoint extends Endpoint {
 	public void onClose(final Session session, final CloseReason closeReason) {
 		monitor.incrementCounter("closed_sessions");
 
-		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason+", session = "+session+", was opened: "+session.isOpen());
 
 		commander.shutdown();
 
@@ -376,19 +378,27 @@ public class WebsocketEndpoint extends Endpoint {
 		userIdentity = null;
 
 		try {
+			int removedCount = 0;
+
 			if (session != null) {
 				final Iterator<SessionContext> it = sessionQueue.iterator();
 
 				while (it.hasNext()) {
 					final SessionContext sc = it.next();
 
-					if (sc.session.equals(session))
+					if (sc.session.equals(session)){
 						it.remove();
+						removedCount++;
+					}
 				}
-				session.close(closeReason);
+
+				((org.apache.tomcat.websocket.WsSession) session).doClose(closeReason, closeReason, true);
 			}
+
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Removed "+removedCount+" queued entries for commander ID " + commander.commanderId + ", reason is " + closeReason+", session = "+session+", now is opened: "+session.isOpen());
 		}
-		catch (final IOException e) {
+		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Exception closing session", e);
 		}
 	}

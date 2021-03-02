@@ -343,7 +343,9 @@ public class JobBroker {
 			job.put("JDL", jdl);
 			job.put("User", user);
 
-			logger.log(Level.INFO, "Going to return " + queueId + " and " + user + " and " + jdl);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Going to return " + queueId + " and " + user + " and " + jdl);
+
 			return job;
 		}
 	}
@@ -378,7 +380,7 @@ public class JobBroker {
 	@SuppressWarnings("unchecked")
 	public static HashMap<String, Object> getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
 		updateWithValuesInLDAP(matchRequest);
-		
+
 		boolean isRemoteAccessAllowed = false;
 
 		final Object remoteValue = matchRequest.get("Remote");
@@ -439,7 +441,7 @@ public class JobBroker {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("Packages"));
 				}
-				 
+
 			if (matchRequest.containsKey("CE")) {
 				if (!isRemoteAccessAllowed) {
 					// if remote access is allowed then the CE doesn't have to match any more, any site from the same partition can pick up the job
@@ -455,12 +457,12 @@ public class JobBroker {
 			if (matchRequest.containsKey("Partition") && !matchRequest.get("Partition").equals(",,")) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
-			} 
+			}
 
 			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
-			
+
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
-			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) { 
+			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {

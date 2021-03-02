@@ -151,7 +151,7 @@ public class TomcatServer {
 		}
 		JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
 
-		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+		final Connector connector = new Connector("org.apache.coyote.http11.Http11Nio2Protocol");
 
 		connector.setProperty("address", ConfigUtils.getConfig().gets("alien.api.TomcatServer.bindAddress", bindAddress));
 

@@ -709,7 +709,7 @@ public class TaskQueueUtils {
 			}
 
 			if (!db.moveNext()) {
-				logger.log(Level.FINE, "Could not find queueId " + job + " in the queue");
+				logger.log(Level.WARNING, "Could not find queueId " + job + " in the queue");
 
 				return false;
 			}
@@ -766,7 +766,8 @@ public class TaskQueueUtils {
 			String execHost = "NO_SITE";
 
 			if (extrafields != null) {
-				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "extrafields: " + extrafields.toString());
 
 				for (final Map.Entry<String, Object> entry : extrafields.entrySet()) {
 					final String key = entry.getKey();
@@ -2596,7 +2597,7 @@ public class TaskQueueUtils {
 			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status, ce);
 
 			if (db.getUpdateCount() == 0) {
-				logger.log(Level.INFO, "Inserting the site " + ce);
+				logger.log(Level.FINE, "Inserting the site " + ce);
 				insertSiteQueue(ce);
 			}
 		}
@@ -2698,10 +2699,11 @@ public class TaskQueueUtils {
 				return false;
 			}
 
-			logger.log(Level.INFO, "Updating host " + host + " to status " + status);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Updating host " + host + " to status " + status);
 
 			if (!db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?", false, status, host)) {
-				logger.log(Level.INFO, "Update HOSTS failed: " + host + " and " + status);
+				logger.log(Level.WARNING, "Update HOSTS failed: " + host + " and " + status);
 				return false;
 			}
 
@@ -2726,18 +2728,22 @@ public class TaskQueueUtils {
 			final String id = key + "id";
 			final String q = "select " + id + " from " + table + " where " + key + "=?";
 
-			logger.log(Level.INFO, "Going to get hostId, query: " + q);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to get hostId, query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, value);
 
 			// the host exists
 			if (db.moveNext()) {
-				logger.log(Level.INFO, "The host exists: " + db.geti(1));
+				if (logger.isLoggable(Level.FINER))
+					logger.log(Level.FINER, "The host exists: " + db.geti(1));
+
 				return db.geti(1);
 			}
 			// host doesn't exist, we insert it
-			logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "The host doesn't exist. Inserting...");
 
 			db.setLastGeneratedKey(true);
 
@@ -2745,11 +2751,14 @@ public class TaskQueueUtils {
 			db.setReadOnly(false);
 			final boolean ret = db.query(qi, false, value);
 
-			logger.log(Level.INFO, qi + " with ?=" + value + ": " + ret);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, qi + " with ?=" + value + ": " + ret);
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning: " + val);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Returning: " + val);
+
 				return val;
 			}
 
@@ -2771,7 +2780,8 @@ public class TaskQueueUtils {
 
 			final String q = "select hostId from HOSTS where hostName=?";
 
-			logger.log(Level.INFO, "Going to get HOST " + host + ", query: " + q);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to get HOST " + host + ", query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, host);
@@ -2779,11 +2789,15 @@ public class TaskQueueUtils {
 			// the host exists
 			int hostId;
 			if (db.moveNext()) {
-				logger.log(Level.INFO, "The HOST exists");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "The HOST exists");
+
 				hostId = db.geti(1);
 			}
 			else { // we insert the host
-				logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "The host doesn't exist. Inserting " + host + ":" + port + ":" + version);
+
 				hostId = insertHost(host, port, version);
 				if (hostId == 0) {
 					logger.severe("Couldn't insertHost in getFromHostsOrInsert");
@@ -2820,11 +2834,15 @@ public class TaskQueueUtils {
 			db.setLastGeneratedKey(true);
 			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), Integer.valueOf(port), version);
 
-			logger.log(Level.INFO, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning HOST hostId: " + val);
+
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Returning HOST hostId: " + val);
+
 				return val;
 			}
 			return 0;
@@ -2847,7 +2865,9 @@ public class TaskQueueUtils {
 			db.setReadOnly(false);
 			db.setLastGeneratedKey(true);
 
-			logger.log(Level.INFO, "insertIntoSites: " + qi + " with domain: " + domain);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "insertIntoSites: " + qi + " with domain: " + domain);
+
 			final boolean ret = db.query(qi, false, domainInfo.get("ou"), Integer.valueOf(0), Integer.valueOf(0), domainInfo.containsKey("adminsitrator") ? domainInfo.get("administrator") : "",
 					domainInfo.containsKey("location") ? domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? domainInfo.get("longitude") : Double.valueOf(0),
 					domainInfo.containsKey("latitude") ? domainInfo.get("latitude") : Double.valueOf(0.0), domainInfo.containsKey("record") ? domainInfo.get("record") : "",
@@ -2855,7 +2875,10 @@ public class TaskQueueUtils {
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning SITES siteId: " + val);
+
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Returning SITES siteId: " + val);
+
 				return val;
 			}
 
@@ -2872,7 +2895,8 @@ public class TaskQueueUtils {
 
 			final String q = "select siteId from SITES where domain=?";
 
-			logger.log(Level.INFO, "Going to get sites for domain: " + domain + ", query: " + q);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to get sites for domain: " + domain + ", query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, domain);
@@ -3064,7 +3088,8 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(false);
 
-			logger.log(Level.INFO, "Going to updateHost for: " + host + " status: " + status);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to updateHost for: " + host + " status: " + status);
 
 			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
 				return false;
@@ -3082,7 +3107,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
-			logger.log(Level.INFO, "Going to select SITEQUEUES.blocked for: " + ceName);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select SITEQUEUES.blocked for: " + ceName);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3105,12 +3131,13 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
-			logger.log(Level.INFO, "Going to select HOSTS.maxQueued,maxJobs for: " + host + " - " + ceName);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select HOSTS.maxQueued,maxJobs for: " + host + " - " + ceName);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
 
-			final ArrayList<Integer> slots = new ArrayList<>();
+			final ArrayList<Integer> slots = new ArrayList<>(2);
 
 			if (db.query("select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null", false, host, ceName) && db.moveNext()) {
 				slots.add(Integer.valueOf(db.geti(1)));
@@ -3129,7 +3156,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return -1;
 
-			logger.log(Level.INFO, "Going to select resubmission for: " + queueId);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select resubmission for: " + queueId);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3139,6 +3167,7 @@ public class TaskQueueUtils {
 			if (db.query("select resubmission from QUEUE where queueId=?", false, queueId) && db.moveNext()) {
 				resubmission = db.geti(1);
 			}
+
 			return resubmission;
 		}
 	}
@@ -3598,7 +3627,8 @@ public class TaskQueueUtils {
 	 * @return <code>true</code> if the update could be done
 	 */
 	public static boolean addResultsJdl(final JDL jdl, final Long queueId) {
-		logger.log(Level.INFO, "Going to add the following resultsJdl: " + jdl);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Going to add the following resultsJdl to pid " + queueId + ": " + jdl);
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
