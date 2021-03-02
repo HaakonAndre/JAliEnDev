@@ -783,7 +783,7 @@ public class JAliEnCOMMander implements Runnable {
 	 * @throws Exception
 	 */
 	protected static JAliEnBaseCommand getCommand(final String classSuffix, final Object[] objectParm) throws Exception {
-		logger.log(Level.INFO, "Entering command with " + classSuffix + " and options " + Arrays.toString(objectParm));
+		logger.log(Level.FINE, "Entering command with " + classSuffix + " and options " + Arrays.toString(objectParm));
 		try {
 			@SuppressWarnings("rawtypes")
 			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
