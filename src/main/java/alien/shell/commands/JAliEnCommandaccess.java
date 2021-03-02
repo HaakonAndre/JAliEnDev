@@ -102,7 +102,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			}
 
 			if (referenceGUID == null) {
-				logger.log(Level.WARNING, "Not able to retrieve LFN from catalogue");
+				logger.log(Level.WARNING, "Not able to retrieve LFN from catalogue: " + lfnName);
 				commander.setReturnCode(ErrNo.ENOENT, lfnName);
 				return;
 			}

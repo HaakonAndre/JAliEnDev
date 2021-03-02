@@ -191,7 +191,7 @@ public class WebsocketEndpoint extends Endpoint {
 
 				if (cmd != null) {
 					final AliEnPrincipal user = cmd.getUser();
-					
+
 					ret.add(new WebSocketInfo(user.getDefaultUser(), user.getRemoteEndpoint(), user.getRemotePort(), ctx.startTime, ctx.lastActivityTime));
 				}
 			}
@@ -359,7 +359,8 @@ public class WebsocketEndpoint extends Endpoint {
 	public void onClose(final Session session, final CloseReason closeReason) {
 		monitor.incrementCounter("closed_sessions");
 
-		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason);
 
 		commander.shutdown();
 

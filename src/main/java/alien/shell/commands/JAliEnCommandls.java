@@ -14,7 +14,6 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.Format;
-import lazyj.Log;
 
 /**
  * @author ron
@@ -91,7 +90,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		}
 
 		for (final String sPath : expandedPaths) {
-			Log.log(Log.INFO, "LS: listing for directory = \"" + sPath + "\"");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "listing for directory = \"" + sPath + "\"");
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
 
@@ -102,9 +102,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					directory.addAll(subdirectory);
 
 				for (final LFN localLFN : subdirectory) {
-
-					logger.log(Level.FINE, localLFN.toString());
-
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
 
@@ -141,8 +138,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 						commander.printOut("name", localLFN.getFileName() + (bF && localLFN.isDirectory() ? "/" : ""));
 						commander.printOut("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
 					}
-
-					logger.info("LS line : " + ret);
 
 					commander.printOutln(ret);
 				}
