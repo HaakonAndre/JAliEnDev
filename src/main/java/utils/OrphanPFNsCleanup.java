@@ -197,7 +197,7 @@ public class OrphanPFNsCleanup {
 					logger.log(Level.SEVERE, "Exception in the main mover", t);
 				}
 				try {
-					sleep(1000L * 60 * 60 * 2);
+					sleep(1000L * 60 * ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.mainMoverSleep", 30));
 				}
 				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					break;
@@ -244,6 +244,8 @@ public class OrphanPFNsCleanup {
 			while (true) {
 				try {
 					if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
+						logger.log(Level.INFO, "Waking up the cleanup threads");
+
 						startSEThread(null);
 
 						for (final SE se : SEUtils.getSEs(null))
@@ -346,6 +348,8 @@ public class OrphanPFNsCleanup {
 
 								if (executor == null) {
 									// lazy init of the thread pool
+									logger.log(Level.INFO, "Creating a new cached thread pool of " + getPoolSize(seNumber) + " threads for " + (se != null ? se.getName() : "GUIDs"));
+
 									executor = new CachedThreadPool(getPoolSize(seNumber), 1, TimeUnit.MINUTES, r -> {
 										final Thread t = new Thread(r);
 										t.setName("Cleanup of " + (se != null ? se.getName() : "GUIDs") + " - " + seNumber);

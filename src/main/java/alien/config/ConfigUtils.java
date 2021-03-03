@@ -737,6 +737,8 @@ public class ConfigUtils {
 	}
 
 	/** 
+	 * @param checkContent 
+	 * @param site 
 	 * @param cename
 	 * @return CE information based on the site and ce name for the host
 	 */

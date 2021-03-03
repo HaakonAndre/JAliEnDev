@@ -164,7 +164,7 @@ public class DispatchSSLServer extends Thread {
 			this.ois = new ObjectInputStream(connection.getInputStream());
 		}
 		catch (final IOException e) {
-			logger.log(Level.WARNING, "Exception initializing the SSL socket", e);
+			logger.log(Level.SEVERE, "Exception initializing the SSL socket", e);
 			return;
 		}
 
@@ -258,7 +258,8 @@ public class DispatchSSLServer extends Thread {
 
 						lSerialization += serializationTime;
 
-						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
 						if (monitor != null) {
 							monitor.addMeasurement("request_processing", requestProcessingDuration);
@@ -274,8 +275,9 @@ public class DispatchSSLServer extends Thread {
 		catch (
 
 		@SuppressWarnings("unused") final EOFException e) {
-			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted) + " to process and "
-					+ Format.toInterval((long) lSerialization) + " to serialize");
+			if (logger.isLoggable(Level.INFO))
+				logger.log(Level.INFO, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted) + " to process and "
+						+ Format.toInterval((long) lSerialization) + " to serialize");
 		}
 		catch (final Throwable e) {
 			logger.log(Level.WARNING, "Main thread for " + getName() + " threw an error after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted)
@@ -355,6 +357,7 @@ public class DispatchSSLServer extends Thread {
 				event.identity = AuthorizationFactory.getDefaultUser();
 				event.clientAddress = actualServerAddress;
 				event.clientPort = actualServerPort;
+				event.clientID = Request.getVMID();
 
 				event.arguments = new ArrayList<>();
 
@@ -505,7 +508,9 @@ public class DispatchSSLServer extends Thread {
 		X509Certificate[] peerCertChain = null;
 
 		if (needClientAuth) {
-			logger.log(Level.INFO, "Printing client information:");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Printing client information:");
+
 			Certificate[] peerCerts;
 			try {
 				peerCerts = c.getSession().getPeerCertificates();
@@ -525,17 +530,18 @@ public class DispatchSSLServer extends Thread {
 				for (int i = 0; i < peerCerts.length; i++) {
 					if (peerCerts[i] instanceof X509Certificate) {
 						final X509Certificate xCert = (X509Certificate) peerCerts[i];
-						logger.log(Level.FINE, getClientInfo(xCert));
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, getClientInfo(xCert));
+
 						peerCertChain[i] = xCert;
 					}
 					else {
 						logger.log(Level.WARNING, "Peer certificate is not an X509 instance but instead a " + peerCerts[i].getType());
 					}
 				}
-
 			}
 			else
-				logger.log(Level.INFO, "Failed to get peer certificates");
+				logger.log(Level.WARNING, "Failed to get peer certificates");
 		}
 
 		final DispatchSSLServer serv = new DispatchSSLServer(c);

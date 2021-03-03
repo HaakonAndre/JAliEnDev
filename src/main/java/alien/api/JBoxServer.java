@@ -295,8 +295,7 @@ public class JBoxServer extends Thread {
 										logger.log(Level.INFO, "Received [SIGINT] from JSh.");
 
 										try {
-											commander.setLine(null, null);
-											commander.kill = true;
+											commander.shutdown();
 										}
 										catch (@SuppressWarnings("unused") final Throwable t) {
 											// ignore
@@ -352,10 +351,8 @@ public class JBoxServer extends Thread {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			}
 			finally {
-				if (commander != null) {
-					commander.setLine(null, null);
-					commander.kill = true;
-				}
+				if (commander != null)
+					commander.shutdown();
 
 				if (br != null)
 					try {

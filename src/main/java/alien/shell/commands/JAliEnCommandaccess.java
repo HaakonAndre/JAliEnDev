@@ -85,7 +85,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		boolean evenIfNotExists = false;
 
 		if (accessRequest.equals(AccessType.WRITE)) {
-			logger.log(Level.INFO, "Access called for a write operation");
+			logger.log(Level.FINER, "Access called for a write operation");
 			evenIfNotExists = true;
 		}
 
@@ -102,7 +102,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			}
 
 			if (referenceGUID == null) {
-				logger.log(Level.INFO, "Not able to retrieve LFN from catalogue");
+				logger.log(Level.WARNING, "Not able to retrieve LFN from catalogue: " + lfnName);
 				commander.setReturnCode(ErrNo.ENOENT, lfnName);
 				return;
 			}
@@ -167,7 +167,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		}
 		else if (accessRequest == AccessType.READ) {
-			logger.log(Level.INFO, "Access called for a read operation");
+			logger.log(Level.FINE, "Access called for a read operation");
 			pfns = commander.c_api.getPFNsToRead(referenceEntity, ses, exses);
 
 			if (pfns != null && filter) {
@@ -207,8 +207,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 
 		if (pfns == null || pfns.isEmpty()) {
-			logger.log(Level.SEVERE, "No PFNs for this LFN");
-			commander.setReturnCode(ErrNo.EBADFD, "No PFNs for this LFN");
+			logger.log(Level.SEVERE, "No " + accessRequest.toString() + " PFNs for this entity: " + referenceEntity.getName() + " / " + ses + " / NOT " + exses);
+			commander.setReturnCode(ErrNo.EBADFD, "No " + accessRequest.toString() + " PFNs");
 			return;
 		}
 
@@ -315,17 +315,15 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 			if (arg.hasNext()) {
 				final String access = arg.next();
-				logger.log(Level.INFO, "Access = " + access);
+				logger.log(Level.FINE, "Access = " + access);
 				if (access.startsWith("write")) {
-					logger.log(Level.INFO, "We got write accesss");
 					accessRequest = AccessType.WRITE;
 				}
 				else if (access.equals("read")) {
-					logger.log(Level.INFO, "We got read accesss");
 					accessRequest = AccessType.READ;
 				}
 				else
-					logger.log(Level.INFO, "We got unknown accesss request: " + access);
+					logger.log(Level.SEVERE, "We got unknown accesss request: " + access);
 
 				if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
 					lfnName = arg.next();

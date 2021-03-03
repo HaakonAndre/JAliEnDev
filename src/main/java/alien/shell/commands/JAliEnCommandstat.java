@@ -2,7 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import alien.catalogue.FileSystemUtils;
@@ -77,22 +79,33 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 		else {
 			commander.printOutln(prefix + "Replicas:");
 
+			final Map<String, String> replicas = new LinkedHashMap<>();
+
 			for (final PFN p : pfns) {
 				String seName;
 
 				if (p.seNumber > 0) {
 					final SE se = SEUtils.getSE(p.seNumber);
 
-					if (se == null)
+					if (se == null) {
 						seName = "SE #" + p.seNumber + " no longer exists";
-					else
+						replicas.put(String.valueOf(p.seNumber), p.pfn);
+					}
+					else {
 						seName = "SE => " + se.seName;
+						replicas.put(se.seName, p.pfn);
+					}
 				}
-				else
+				else {
 					seName = "ZIP archive member";
+					replicas.put("ZIP", p.pfn);
+				}
 
 				commander.printOutln("\t " + padRight(seName, 30) + " pfn => " + p.pfn + "\n");
 			}
+
+			if (replicas.size() > 0)
+				commander.printOut("replicas", replicas);
 		}
 
 		return true;
@@ -104,10 +117,14 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
 			if (lfn == null) {
-				if (GUIDUtils.isValidGUID(lfnName))
-					printGUIDInfo(lfnName, false);
-				else
+				if (GUIDUtils.isValidGUID(lfnName)) {
+					if (!printGUIDInfo(lfnName, false))
+						continue;
+				}
+				else {
 					commander.setReturnCode(ErrNo.ENOENT, lfnName);
+					continue;
+				}
 			}
 			else {
 				commander.printOutln("File: " + lfn.getCanonicalName());
@@ -167,9 +184,9 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 				}
 			}
 
-			commander.outNextResult();
-
 			commander.printOutln();
+
+			commander.outNextResult();
 		}
 	}
 

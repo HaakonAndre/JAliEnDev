@@ -1,8 +1,10 @@
 package alien.shell.commands;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -50,6 +52,56 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	private String orderByKey = "queueId";
 
 	private int limit = 0;
+
+	private boolean bIDOnly = false;
+
+	private static final transient Map<String, String> SHORT_TO_LONG_STATUS = new HashMap<>() {
+		private static final long serialVersionUID = 1L;
+		{
+			put("K", JobStatus.KILLED.name());
+			put("R", JobStatus.RUNNING.name());
+			put("ST", JobStatus.RUNNING.name());
+			put("D", JobStatus.DONE.name());
+			put("DW", JobStatus.DONE_WARN.name());
+			put("W", JobStatus.WAITING.name());
+			put("OW", JobStatus.OVER_WAITING.name());
+			put("I", JobStatus.INSERTING.name());
+			put("S", JobStatus.SPLIT.name());
+			put("SP", JobStatus.SPLITTING.name());
+			put("SV", JobStatus.SAVING.name());
+			put("SVD", JobStatus.SAVED.name());
+			put("ASG", JobStatus.ASSIGNED.name());
+			put("AST", JobStatus.A_STAGED.name());
+			put("FM", JobStatus.FORCEMERGE.name());
+			put("IDL", JobStatus.IDLE.name());
+			put("INT", JobStatus.INTERACTIV.name());
+			put("M", JobStatus.MERGING.name());
+			put("SW", JobStatus.SAVED_WARN.name());
+			put("ST", JobStatus.STAGING.name());
+			put("TST", JobStatus.TO_STAGE.name());
+			put("EA", JobStatus.ERROR_A.name());
+			put("EE", JobStatus.ERROR_E.name());
+			put("EI", JobStatus.ERROR_I.name());
+			put("EIB", JobStatus.ERROR_IB.name());
+			put("EM", JobStatus.ERROR_M.name());
+			put("ERE", JobStatus.ERROR_RE.name());
+			put("ES", JobStatus.ERROR_S.name());
+			put("ESV", JobStatus.ERROR_SV.name());
+			put("EV", JobStatus.ERROR_V.name());
+			put("EVN", JobStatus.ERROR_VN.name());
+			put("EVT", JobStatus.ERROR_VT.name());
+			put("ESP", JobStatus.ERROR_SPLT.name());
+			put("EW", JobStatus.ERROR_W.name());
+			put("EVE", JobStatus.ERROR_VER.name());
+			put("FF", JobStatus.FAILED.name());
+			put("Z", JobStatus.ZOMBIE.name());
+			put("XP", JobStatus.EXPIRED.name());
+			put("EEW", JobStatus.ERROR_EW.name());
+			put("UP", JobStatus.UPDATING.name());
+			put("F", JobStatus.FAULTY.name());
+			put("INC", JobStatus.INCORRECT.name());
+		}
+	};
 
 	@Override
 	public void run() {
@@ -102,7 +154,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					commander.printOut("status", j.status().toString());
 					commander.printOut("name", name);
 
-					if (bL) {
+					if (bIDOnly) {
+						commander.printOutln(String.valueOf(j.queueId));
+					}
+					else if (bL) {
 						final String site = (j.site != null) ? j.site : "";
 						final String node = (j.node != null) ? j.node : "";
 
@@ -243,7 +298,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					e = " XP";
 					break;
 				case ERROR_EW:
-					e = " EW";
+					e = "EEW";
 					break;
 				case UPDATING:
 					e = " UP";
@@ -358,7 +413,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				e = " XP";
 				break;
 			case ERROR_EW:
-				e = " EW";
+				e = "EEW";
 				break;
 			case UPDATING:
 				e = " UP";
@@ -385,7 +440,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		commander.printOutln(helpUsage("ps", "[-options]"));
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-F l | -Fl | -L", "long output format"));
-		commander.printOutln(helpOption("-f <flags|status>"));
+		commander.printOutln(
+				helpOption("-f <flags|status>", "any number of (long or short) upper case job states, or 'a' for all, 'r' for running states, 'f' for failed, 'd' for done, 's' for queued"));
 		commander.printOutln(helpOption("-u <userlist>"));
 		commander.printOutln(helpOption("-s <sitelist>"));
 		commander.printOutln(helpOption("-n <nodelist>"));
@@ -403,7 +459,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-a", "select jobs of all users"));
 		commander.printOutln(helpOption("-b", "do only black-white output"));
 		commander.printOutln(helpOption("-jdl <jobid>", "display the job jdl"));
-		commander.printOutln(helpOption("-trace <jobid> <tag>*", "display the job trace information (not working yet!)")); // TODO:
+		commander.printOutln(helpOption("-trace <jobid> <tag>*", "display the job trace information"));
+		commander.printOutln(helpOption("-id", "only list the matching job IDs, for batch processing (implies -b)"));
 		commander.printOutln();
 	}
 
@@ -455,6 +512,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			parser.accepts("b");
 			parser.accepts("jdl").withRequiredArg().ofType(Long.class);
 			parser.accepts("trace").withRequiredArg().ofType(Long.class);
+			parser.accepts("id");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -585,9 +643,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				}
 			}
 
-			if (options.has("b"))
-				commander.bColour = false;
+			bIDOnly = options.has("id");
 
+			if (options.has("b") || bIDOnly)
+				commander.bColour = false;
 		}
 		catch (final OptionException e) {
 			commander.setReturnCode(ErrNo.EINVAL, e.getMessage());
@@ -659,7 +718,14 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					continue;
 				}
 
-				final JobStatus status = JobStatus.getStatus(o);
+				JobStatus status = JobStatus.getStatus(o);
+
+				if (status == null) {
+					final String alternativeStatus = SHORT_TO_LONG_STATUS.get(o);
+
+					if (alternativeStatus != null)
+						status = JobStatus.getStatus(alternativeStatus);
+				}
 
 				if (status != null)
 					states.add(status);

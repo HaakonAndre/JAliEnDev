@@ -232,6 +232,7 @@ public class DispatchSSLServerNIO implements Runnable {
 			try (RequestEvent event = new RequestEvent(DispatchSSLServer.getAccessLog())) {
 				event.command = "login";
 				event.identity = remoteIdentity;
+				event.clientID = Request.getVMID();
 
 				System.err.println("Identity address and port: " + event.identity.getRemoteEndpoint() + ":" + event.identity.getRemotePort());
 
@@ -407,7 +408,8 @@ public class DispatchSSLServerNIO implements Runnable {
 
 			lSerialization += serializationTime;
 
-			logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
 			if (monitor != null) {
 				monitor.addMeasurement("request_processing", requestProcessingDuration);

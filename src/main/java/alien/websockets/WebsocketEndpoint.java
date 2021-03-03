@@ -11,7 +11,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -22,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.websocket.CloseReason;
+import javax.websocket.CloseReason.CloseCodes;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
@@ -142,7 +145,7 @@ public class WebsocketEndpoint extends Endpoint {
 					if (context != null) {
 						if (context.getRunningDeadline() <= System.currentTimeMillis()) {
 							logger.log(Level.FINE, "Closing one idle / too long running session");
-							context.endpoint.onClose(context.session, new CloseReason(null, "Session timed out"));
+							context.endpoint.onClose(context.session, new CloseReason(CloseCodes.TRY_AGAIN_LATER, "Session timed out"));
 
 							monitor.incrementCounter("timedout_sessions");
 						}
@@ -175,9 +178,27 @@ public class WebsocketEndpoint extends Endpoint {
 	}
 
 	/**
-	 * Object to send notifications about the state of connection
+	 * @return information about the known active connections
 	 */
-	final Object stateObject = new Object();
+	public static Collection<WebSocketInfo> getActiveConnections() {
+		final List<WebSocketInfo> ret = new ArrayList<>(sessionQueue.size());
+
+		for (SessionContext ctx : sessionQueue) {
+			final WebsocketEndpoint endpoint = ctx.endpoint;
+
+			if (endpoint != null) {
+				final JAliEnCOMMander cmd = endpoint.commander;
+
+				if (cmd != null) {
+					final AliEnPrincipal user = cmd.getUser();
+
+					ret.add(new WebSocketInfo(user.getDefaultUser(), user.getRemoteEndpoint(), user.getRemotePort(), ctx.startTime, ctx.lastActivityTime));
+				}
+			}
+		}
+
+		return ret;
+	}
 
 	@Override
 	public void onOpen(final Session session, final EndpointConfig endpointConfig) {
@@ -191,25 +212,37 @@ public class WebsocketEndpoint extends Endpoint {
 		else
 			setShellPrintWriter(os, "plain");
 
-		final InetAddress remoteIP = getRemoteIP(session);
+		final InetSocketAddress remoteIPandPort = getRemoteIP(session);
 
-		if (remoteIP != null && ipv6Connections != null) {
-			if (remoteIP instanceof Inet6Address)
-				ipv6Connections.incrementHits();
-			else
-				ipv6Connections.incrementMisses();
+		final String remoteHostAddress;
+
+		if (remoteIPandPort != null) {
+			final InetAddress remoteIP = remoteIPandPort.getAddress();
+
+			if (ipv6Connections != null) {
+				if (remoteIP instanceof Inet6Address)
+					ipv6Connections.incrementHits();
+				else
+					ipv6Connections.incrementMisses();
+			}
+
+			userIdentity.setRemoteEndpoint(remoteIP);
+			userIdentity.setRemotePort(remoteIPandPort.getPort());
+
+			remoteHostAddress = remoteIP.getHostAddress();
 		}
+		else
+			remoteHostAddress = null;
 
-		userIdentity.setRemoteEndpoint(remoteIP);
-
-		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteIP != null ? remoteIP.getHostAddress() : null), null);
+		commander = new JAliEnCOMMander(userIdentity, null, getSite(remoteHostAddress), null);
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
 		session.addMessageHandler(new WSMessageHandler(context, commander, out, os));
 
-		// safety net, let the API also close idle connections, at a slightly later time than our explicit operation
-		session.setMaxIdleTimeout(16 * 60 * 1000L);
+		// Safety net, let the API also close idle connections, at a much later time than our explicit operation
+		// The default socket killer doesn't close the underlying socket, leading to server sockets piling up
+		session.setMaxIdleTimeout(6 * 60 * 60 * 1000L);
 
 		sessionQueue.add(context);
 
@@ -260,9 +293,9 @@ public class WebsocketEndpoint extends Endpoint {
 	 * Get the IP address of the client using reflection of the socket object
 	 *
 	 * @param session websocket session which contains the socket
-	 * @return IP address
+	 * @return IP address and port
 	 */
-	private static InetAddress getRemoteIP(final Session session) {
+	private static InetSocketAddress getRemoteIP(final Session session) {
 		try {
 			Object obj = session.getAsyncRemote();
 
@@ -273,7 +306,7 @@ public class WebsocketEndpoint extends Endpoint {
 					return null;
 			}
 
-			return ((InetSocketAddress) obj).getAddress();
+			return (InetSocketAddress) obj;
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Cannot extract the remote IP address from a session", e);
@@ -327,10 +360,10 @@ public class WebsocketEndpoint extends Endpoint {
 	public void onClose(final Session session, final CloseReason closeReason) {
 		monitor.incrementCounter("closed_sessions");
 
-		logger.log(Level.INFO, "Closing session of commander ID " + commander.commanderId);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason+", session = "+session+", was opened: "+session.isOpen());
 
-		commander.kill = true;
-		commander.setLine(null, null);
+		commander.shutdown();
 
 		out = null;
 		try {
@@ -338,30 +371,35 @@ public class WebsocketEndpoint extends Endpoint {
 				os.close();
 		}
 		catch (final IOException e) {
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Exception closing session output stream", e);
 		}
+
 		os = null;
 		userIdentity = null;
 
 		try {
+			int removedCount = 0;
+
 			if (session != null) {
 				final Iterator<SessionContext> it = sessionQueue.iterator();
 
 				while (it.hasNext()) {
 					final SessionContext sc = it.next();
 
-					if (sc.session.equals(session))
+					if (sc.session.equals(session)){
 						it.remove();
+						removedCount++;
+					}
 				}
-				session.close();
-			}
-		}
-		catch (final IOException e) {
-			e.printStackTrace();
-		}
 
-		synchronized (stateObject) {
-			stateObject.notifyAll();
+				((org.apache.tomcat.websocket.WsSession) session).doClose(closeReason, closeReason, true);
+			}
+
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Removed "+removedCount+" queued entries for commander ID " + commander.commanderId + ", reason is " + closeReason+", session = "+session+", now is opened: "+session.isOpen());
+		}
+		catch (final Exception e) {
+			logger.log(Level.SEVERE, "Exception closing session", e);
 		}
 	}
 
@@ -551,8 +589,7 @@ public class WebsocketEndpoint extends Endpoint {
 							commander.status.wait(seconds * 1000);
 						}
 						catch (@SuppressWarnings("unused") final InterruptedException e) {
-							commander.setLine(null, null);
-							commander.kill = true;
+							commander.shutdown();
 							break;
 						}
 					}

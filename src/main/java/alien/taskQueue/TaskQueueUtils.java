@@ -709,7 +709,7 @@ public class TaskQueueUtils {
 			}
 
 			if (!db.moveNext()) {
-				logger.log(Level.FINE, "Could not find queueId " + job + " in the queue");
+				logger.log(Level.WARNING, "Could not find queueId " + job + " in the queue");
 
 				return false;
 			}
@@ -766,7 +766,8 @@ public class TaskQueueUtils {
 			String execHost = "NO_SITE";
 
 			if (extrafields != null) {
-				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "extrafields: " + extrafields.toString());
 
 				for (final Map.Entry<String, Object> entry : extrafields.entrySet()) {
 					final String key = entry.getKey();
@@ -2596,7 +2597,7 @@ public class TaskQueueUtils {
 			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status, ce);
 
 			if (db.getUpdateCount() == 0) {
-				logger.log(Level.INFO, "Inserting the site " + ce);
+				logger.log(Level.FINE, "Inserting the site " + ce);
 				insertSiteQueue(ce);
 			}
 		}
@@ -2698,10 +2699,11 @@ public class TaskQueueUtils {
 				return false;
 			}
 
-			logger.log(Level.INFO, "Updating host " + host + " to status " + status);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Updating host " + host + " to status " + status);
 
 			if (!db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?", false, status, host)) {
-				logger.log(Level.INFO, "Update HOSTS failed: " + host + " and " + status);
+				logger.log(Level.WARNING, "Update HOSTS failed: " + host + " and " + status);
 				return false;
 			}
 
@@ -2726,18 +2728,22 @@ public class TaskQueueUtils {
 			final String id = key + "id";
 			final String q = "select " + id + " from " + table + " where " + key + "=?";
 
-			logger.log(Level.INFO, "Going to get hostId, query: " + q);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to get hostId, query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, value);
 
 			// the host exists
 			if (db.moveNext()) {
-				logger.log(Level.INFO, "The host exists: " + db.geti(1));
+				if (logger.isLoggable(Level.FINER))
+					logger.log(Level.FINER, "The host exists: " + db.geti(1));
+
 				return db.geti(1);
 			}
 			// host doesn't exist, we insert it
-			logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "The host doesn't exist. Inserting...");
 
 			db.setLastGeneratedKey(true);
 
@@ -2745,11 +2751,14 @@ public class TaskQueueUtils {
 			db.setReadOnly(false);
 			final boolean ret = db.query(qi, false, value);
 
-			logger.log(Level.INFO, qi + " with ?=" + value + ": " + ret);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, qi + " with ?=" + value + ": " + ret);
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning: " + val);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Returning: " + val);
+
 				return val;
 			}
 
@@ -2771,7 +2780,8 @@ public class TaskQueueUtils {
 
 			final String q = "select hostId from HOSTS where hostName=?";
 
-			logger.log(Level.INFO, "Going to get HOST " + host + ", query: " + q);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to get HOST " + host + ", query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, host);
@@ -2779,11 +2789,15 @@ public class TaskQueueUtils {
 			// the host exists
 			int hostId;
 			if (db.moveNext()) {
-				logger.log(Level.INFO, "The HOST exists");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "The HOST exists");
+
 				hostId = db.geti(1);
 			}
 			else { // we insert the host
-				logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "The host doesn't exist. Inserting " + host + ":" + port + ":" + version);
+
 				hostId = insertHost(host, port, version);
 				if (hostId == 0) {
 					logger.severe("Couldn't insertHost in getFromHostsOrInsert");
@@ -2820,11 +2834,15 @@ public class TaskQueueUtils {
 			db.setLastGeneratedKey(true);
 			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), Integer.valueOf(port), version);
 
-			logger.log(Level.INFO, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning HOST hostId: " + val);
+
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Returning HOST hostId: " + val);
+
 				return val;
 			}
 			return 0;
@@ -2847,7 +2865,9 @@ public class TaskQueueUtils {
 			db.setReadOnly(false);
 			db.setLastGeneratedKey(true);
 
-			logger.log(Level.INFO, "insertIntoSites: " + qi + " with domain: " + domain);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "insertIntoSites: " + qi + " with domain: " + domain);
+
 			final boolean ret = db.query(qi, false, domainInfo.get("ou"), Integer.valueOf(0), Integer.valueOf(0), domainInfo.containsKey("adminsitrator") ? domainInfo.get("administrator") : "",
 					domainInfo.containsKey("location") ? domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? domainInfo.get("longitude") : Double.valueOf(0),
 					domainInfo.containsKey("latitude") ? domainInfo.get("latitude") : Double.valueOf(0.0), domainInfo.containsKey("record") ? domainInfo.get("record") : "",
@@ -2855,7 +2875,10 @@ public class TaskQueueUtils {
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning SITES siteId: " + val);
+
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Returning SITES siteId: " + val);
+
 				return val;
 			}
 
@@ -2872,7 +2895,8 @@ public class TaskQueueUtils {
 
 			final String q = "select siteId from SITES where domain=?";
 
-			logger.log(Level.INFO, "Going to get sites for domain: " + domain + ", query: " + q);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to get sites for domain: " + domain + ", query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, domain);
@@ -2899,7 +2923,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -2953,7 +2978,8 @@ public class TaskQueueUtils {
 
 			final String q = "select siteid,site from SITEQUEUES where site LIKE ?;";
 
-			logger.log(Level.INFO, "Going to find CEs matching pattern: " + pattern);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to find CEs matching pattern: " + pattern);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3062,7 +3088,8 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(false);
 
-			logger.log(Level.INFO, "Going to updateHost for: " + host + " status: " + status);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to updateHost for: " + host + " status: " + status);
 
 			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
 				return false;
@@ -3080,7 +3107,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
-			logger.log(Level.INFO, "Going to select SITEQUEUES.blocked for: " + ceName);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select SITEQUEUES.blocked for: " + ceName);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3103,12 +3131,13 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
-			logger.log(Level.INFO, "Going to select HOSTS.maxQueued,maxJobs for: " + host + " - " + ceName);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select HOSTS.maxQueued,maxJobs for: " + host + " - " + ceName);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
 
-			final ArrayList<Integer> slots = new ArrayList<>();
+			final ArrayList<Integer> slots = new ArrayList<>(2);
 
 			if (db.query("select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null", false, host, ceName) && db.moveNext()) {
 				slots.add(Integer.valueOf(db.geti(1)));
@@ -3127,7 +3156,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return -1;
 
-			logger.log(Level.INFO, "Going to select resubmission for: " + queueId);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select resubmission for: " + queueId);
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
@@ -3137,6 +3167,7 @@ public class TaskQueueUtils {
 			if (db.query("select resubmission from QUEUE where queueId=?", false, queueId) && db.moveNext()) {
 				resubmission = db.geti(1);
 			}
+
 			return resubmission;
 		}
 	}
@@ -3153,7 +3184,8 @@ public class TaskQueueUtils {
 		final JobStatus js = j.status();
 
 		if (AuthorizationChecker.canModifyJob(j, user)) {
-			logger.info("Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
 
 			// check job quotas to see if we are allowed to submit
 			final Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(user.getName(), 1);
@@ -3162,7 +3194,8 @@ public class TaskQueueUtils {
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()), "Resubmit: job quota problem: " + quota.getValue());
 			}
 
-			logger.fine("Resubmit: quotas approved: " + queueId);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Resubmit: quotas approved: " + queueId);
 
 			// cleanup active jobtoken
 			if (!deleteJobToken(queueId)) {
@@ -3198,7 +3231,7 @@ public class TaskQueueUtils {
 				}
 			}
 
-			final String path = jdl.gets("Path");
+			final String pathFromJDL = jdl.gets("Path");
 
 			if (!clearPathAndResultsJDL(Long.valueOf(queueId))) {
 				logger.info("Cannot cleanup path and resultsJdl: " + queueId);
@@ -3234,7 +3267,8 @@ public class TaskQueueUtils {
 				logger.fine("Resubmit: update SITEQUEUES of " + queueId);
 
 				// update queue counters
-				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0) " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
+				db.query(
+						"UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0), " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
 						false, Integer.valueOf(j.siteid));
 
 				// if the job was attached to a node, we tell him to hara-kiri
@@ -3260,7 +3294,10 @@ public class TaskQueueUtils {
 					else if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
 						db.setReadOnly(false);
 						db.setQueryTimeout(60);
-						logger.info("Resubmit: update agentId and statusId in QUEUE");
+
+						if (logger.isLoggable(Level.FINER))
+							logger.log(Level.FINER, "Resubmit: update agentId and statusId in QUEUE");
+
 						if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
 								|| db.getUpdateCount() == 0) {
 							logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
@@ -3270,7 +3307,9 @@ public class TaskQueueUtils {
 
 					// if is a subjob, the master goes to SPLIT
 					if (j.split > 0) {
-						logger.info("Resubmit: put masterjob of the resubmited subjob to SPLIT");
+						if (logger.isLoggable(Level.FINER))
+							logger.log(Level.FINER, "Resubmit: put masterjob of the resubmited subjob to SPLIT");
+
 						if (!db.query("UPDATE QUEUE set statusId=? where queueId=? and statusId!=?", false, Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split),
 								Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()))) {
 							logger.severe("Resubmit: cannot put masterjob back to SPLIT: " + queueId);
@@ -3279,20 +3318,21 @@ public class TaskQueueUtils {
 					}
 
 					// we need to clean up the previous output
-					if (j.path != null) {
-						final Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
-						for (final LFN l : list) {
-							if (l.jobid == queueId) {
-								logger.info("Resubmit: removing output file: " + l.getCanonicalName());
-								putJobLog(queueId, "trace", "Resubmit: removing output file: " + l.getCanonicalName(), null);
-								if (!LFNUtils.rmLFN(user, l, false)) {
-									logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
-									putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
-									return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
-											"Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+					if (pathFromJDL != null || j.path != null) {
+						final Collection<LFN> list = LFNUtils.find(pathFromJDL != null ? pathFromJDL : j.path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
+						if (list != null)
+							for (final LFN l : list) {
+								if (l.jobid == queueId) {
+									logger.info("Resubmit: removing output file: " + l.getCanonicalName());
+									putJobLog(queueId, "trace", "Resubmit: removing output file: " + l.getCanonicalName(), null);
+									if (!LFNUtils.rmLFN(user, l, false)) {
+										logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
+										putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
+										return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
+												"Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+									}
 								}
 							}
-						}
 					}
 
 					if (js == JobStatus.SAVING || js == JobStatus.SAVED || js == JobStatus.ERROR_E || js == JobStatus.ERROR_V || js == JobStatus.ZOMBIE) {
@@ -3305,7 +3345,9 @@ public class TaskQueueUtils {
 				}
 
 				// TODO: masterjob
-				logger.info("Resubmit: job is a masterJob, ignore: " + queueId);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Resubmit: job is a masterJob, ignore: " + queueId);
+
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: job is a masterJob, ignore: " + queueId);
 			}
 		}
@@ -3318,7 +3360,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			logger.log(Level.INFO, "Going to select updateOrInsertJobAgent for: " + j.queueId);
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Going to select updateOrInsertJobAgent for: " + j.queueId);
 
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
@@ -3328,14 +3371,20 @@ public class TaskQueueUtils {
 
 			// the jobagent doesn't exist anymore, reinsert
 			if (db.getUpdateCount() == 0) {
-				logger.info("updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
+
 				final HashMap<String, Object> params = extractJAParametersFromJDL(jdl);
 				final int agentId = insertJobAgent(params);
-				logger.info("updateOrInsertJobAgent: inserted agentId: " + agentId);
+
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "updateOrInsertJobAgent: inserted agentId: " + agentId);
+
 				if (agentId == 0) {
-					logger.info("updateOrInsertJobAgent: couldn't insertJobAgent : " + j.queueId);
+					logger.log(Level.WARNING, "updateOrInsertJobAgent: couldn't insertJobAgent : " + j.queueId);
 					return 0;
 				}
+
 				return agentId;
 			}
 			return -1;
@@ -3372,7 +3421,8 @@ public class TaskQueueUtils {
 			}
 
 			if (entryId == 0) {
-				logger.info("insertJobAgent: nothing matched request, inserting!");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "insertJobAgent: nothing matched request, inserting!");
 
 				if (params.containsKey("userid")) {
 
@@ -3407,7 +3457,9 @@ public class TaskQueueUtils {
 					return 0;
 				}
 
-				logger.info("insertJobAgent: insertion done: " + db.getLastGeneratedKey().intValue());
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "insertJobAgent: insertion done: " + db.getLastGeneratedKey().intValue());
+
 				return db.getLastGeneratedKey().intValue();
 			}
 
@@ -3427,7 +3479,8 @@ public class TaskQueueUtils {
 	 * @return parameters needed for jobagent
 	 */
 	public static HashMap<String, Object> extractJAParametersFromJDL(final JDL jdl) {
-		logger.info("Going to extractJAParamentersFromJDL");
+		if (logger.isLoggable(Level.FINER))
+			logger.log(Level.FINER, "Going to extractJAParamentersFromJDL");
 
 		if (jdl == null)
 			return null;
@@ -3540,7 +3593,8 @@ public class TaskQueueUtils {
 		if (m.find())
 			params.put("revision", Integer.valueOf(m.group(1)));
 
-		logger.info("extracted params: " + params.toString());
+		if (logger.isLoggable(Level.FINER))
+			logger.log(Level.FINER, "extracted params: " + params.toString());
 
 		return params;
 	}
@@ -3552,7 +3606,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
-			logger.log(Level.INFO, "Going to clean path and resultsjdl in resubmission for: " + queueId);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Going to clean path and resultsjdl in resubmission for: " + queueId);
 
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
@@ -3572,7 +3627,8 @@ public class TaskQueueUtils {
 	 * @return <code>true</code> if the update could be done
 	 */
 	public static boolean addResultsJdl(final JDL jdl, final Long queueId) {
-		logger.log(Level.INFO, "Going to add the following resultsJdl: " + jdl);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Going to add the following resultsJdl to pid " + queueId + ": " + jdl);
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)

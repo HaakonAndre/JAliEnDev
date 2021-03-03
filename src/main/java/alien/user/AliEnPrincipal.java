@@ -211,8 +211,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 		if (allroles.size() == 0 || allroles.contains(getName()))
 			defaultRole = name;
-
-		defaultRole = allroles.iterator().next();
+		else
+			defaultRole = allroles.iterator().next();
 
 		return defaultRole;
 	}

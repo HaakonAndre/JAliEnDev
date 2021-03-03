@@ -46,6 +46,7 @@ public class JobBroker {
 	 *         JDL...)
 	 */
 	public static HashMap<String, Object> getMatchJob(final HashMap<String, Object> matchRequest) {
+		updateWithValuesInLDAP(matchRequest);
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 			if (db == null)
 				return null;
@@ -342,7 +343,9 @@ public class JobBroker {
 			job.put("JDL", jdl);
 			job.put("User", user);
 
-			logger.log(Level.INFO, "Going to return " + queueId + " and " + user + " and " + jdl);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Going to return " + queueId + " and " + user + " and " + jdl);
+
 			return job;
 		}
 	}
@@ -376,6 +379,8 @@ public class JobBroker {
 	 */
 	@SuppressWarnings("unchecked")
 	public static HashMap<String, Object> getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
+		updateWithValuesInLDAP(matchRequest);
+
 		boolean isRemoteAccessAllowed = false;
 
 		final Object remoteValue = matchRequest.get("Remote");
@@ -436,7 +441,7 @@ public class JobBroker {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("Packages"));
 				}
-				 
+
 			if (matchRequest.containsKey("CE")) {
 				if (!isRemoteAccessAllowed) {
 					// if remote access is allowed then the CE doesn't have to match any more, any site from the same partition can pick up the job
@@ -447,32 +452,17 @@ public class JobBroker {
 
 				where += " and noce not like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("CE"));
-
-				//If we have the CE, let's use it to look up the partitions if missing here
-				if (!matchRequest.containsKey("Partition")) {
-					String partitions = ConfigUtils.getPartitions((String)matchRequest.get("CE"));
-					if (partitions != null)
-						matchRequest.put("Partition", partitions);
-				}
 			}
 
-			if (matchRequest.containsKey("Partition")) {
+			if (matchRequest.containsKey("Partition") && !matchRequest.get("Partition").equals(",,")) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}
 
-			HashMap<String, Object> CeConfig = null;
-			if (matchRequest.containsKey("site") && matchRequest.get("site") != null) //careful, could contain key that's there but null
-			CeConfig = ConfigUtils.getCEConfigFromLdap(false, matchRequest.get("site").toString(), matchRequest.get("CE").toString().split("::")[2]);
-
-			if (CeConfig != null && CeConfig.containsKey("ce_cerequirements")){
-				matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString());
-			} 
-
 			final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
-			
+
 			matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
-			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) { 
+			if (matchRequest.get("Users") != null && !((ArrayList<String>) matchRequest.get("Users")).isEmpty()) {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {
@@ -602,6 +592,35 @@ public class JobBroker {
 			code_and_slots.addAll(slots);
 
 			return code_and_slots;
+		}
+	}
+
+	/**
+	 * @param matchRequest will be checked against LDAP if there's anything to add, if not already provided
+	 */
+	private static void updateWithValuesInLDAP(HashMap<String, Object> matchRequest) {
+		if (!matchRequest.containsKey("CheckedLDAP")) {
+			if (matchRequest.containsKey("CE")) {
+				HashMap<String, Object> CeConfig = null;
+				if (matchRequest.containsKey("Site") && matchRequest.get("Site") != null) // careful, could contain key that's there but null
+					CeConfig = ConfigUtils.getCEConfigFromLdap(false, matchRequest.get("Site").toString(), matchRequest.get("CE").toString().split("::")[2]);
+
+				if (CeConfig != null && CeConfig.containsKey("ce_cerequirements")) {
+					matchRequest.putIfAbsent("ce_requirements", CeConfig.get("ce_cerequirements").toString());
+				}
+
+				final String CeRequirements = Objects.isNull(matchRequest.get("ce_requirements")) ? "" : matchRequest.get("ce_requirements").toString();
+
+				matchRequest.putIfAbsent("Users", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.Users));
+				matchRequest.putIfAbsent("NoUsers", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.NoUsers));
+
+				if (!matchRequest.containsKey("Partition")) {
+					String partitions = ConfigUtils.getPartitions((String) matchRequest.get("CE"));
+					if (partitions != null && !partitions.equals(",,"))
+						matchRequest.put("Partition", partitions);
+				}
+			}
+			matchRequest.put("CheckedLDAP", "");
 		}
 	}
 

@@ -31,6 +31,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JAliEnCommandcp;
 import alien.site.OutputEntry;
 import alien.user.AliEnPrincipal;
+import utils.ExpireTime;
 
 /**
  *
@@ -1047,5 +1048,19 @@ public class CatalogueApiUtils {
 			e.getCause().printStackTrace();
 		}
 		return null;
+	}
+
+	/**
+	 * @param paths the paths to the LFNs
+	 * @param expireTime an ExppireTime object specifying the expire time to add
+	 * @param extend specify if the given expire time should extend or replace the current one
+	 */
+	public void setLFNExpireTime(final List<String> paths, ExpireTime expireTime, boolean extend) {
+		try {
+			Dispatcher.execute(new LFNExpireTime(commander.getUser(), paths, expireTime, extend));
+		} catch (ServerException e) {
+			e.printStackTrace();
+		}
+
 	}
 }

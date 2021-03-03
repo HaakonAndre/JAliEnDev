@@ -599,7 +599,9 @@ public final class CatalogueUtils {
 				db.setReadOnly(false);
 				db.setQueryTimeout(60);
 
-				logger.info("cleanLfnBookedForJob: deleting for job " + queueId + " in host: " + h.db);
+				if (logger.isLoggable(Level.FINER))
+					logger.log(Level.FINER, "cleanLfnBookedForJob: deleting for job " + queueId + " in host: " + h.db);
+
 				db.query("update LFN_BOOKED set expiretime=-1 where jobId=?", false, Long.valueOf(queueId));
 			}
 		}

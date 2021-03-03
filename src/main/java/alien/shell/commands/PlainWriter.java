@@ -146,7 +146,7 @@ public class PlainWriter extends UIPrintWriter {
 	}
 
 	@Override
-	public void setField(final String key, final String value) {
+	public void setField(final String key, final Object value) {
 		// ignored
 	}
 
