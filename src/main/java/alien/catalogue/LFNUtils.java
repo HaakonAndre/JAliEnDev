@@ -1365,7 +1365,8 @@ public class LFNUtils {
 	 * @return the file in the same directory with the given file that are members of this zip archive. Can return <code>null</code> if the input is not an archive
 	 */
 	public static List<LFN> getArchiveMembers(final LFN archive) {
-		if (archive == null || !archive.exists || !archive.isFile() || !archive.isReal())
+		// archives are only produced by jobs, thus fail fast if the job ID is not set for this file
+		if (archive == null || !archive.exists || !archive.isFile() || archive.jobid <= 0 || !archive.isReal())
 			return null;
 
 		final List<LFN> ret = new ArrayList<>();
