@@ -667,18 +667,41 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return false;
 		}
 
+		ArrayList<OutputEntry> archivesToUpload = new ArrayList<OutputEntry>();
+		ArrayList<OutputEntry> standaloneFilesToUpload = new ArrayList<OutputEntry>();
+		ArrayList<String> allArchiveEntries = new ArrayList<String>();
+
 		ArrayList<String> outputTags = getOutputTags(exitStatus);
 		for (String tag : outputTags) {
 			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
-			final ArrayList<OutputEntry> entries = filesTable.getEntries();
-
-			for (final OutputEntry entry : entries) {
+			for (OutputEntry entry : filesTable.getEntries()) {
+				if (entry.isArchive()) {
+					logger.log(Level.WARNING, "THIS IS AN ARCHIVE: " + entry.getName());
+					final ArrayList<String> archiveEntries = entry.createZip(currentDir.getAbsolutePath());
+					if (archiveEntries.size() == 0) {
+						logger.log(Level.WARNING, "Ignoring empty archive: " + entry.getName());
+					}
+					else {
+						for (final String archiveEntry : archiveEntries) {
+							allArchiveEntries.add(archiveEntry);
+							logger.log(Level.WARNING, "ADDING TO MEMBERS: " + archiveEntry);
+						}
+						archivesToUpload.add(entry);
+					}
+				}
+				else {
+					logger.log(Level.WARNING, "THIS IS NOT AN ARCHIVE: " + entry.getName());
+					standaloneFilesToUpload.add(entry);
+					logger.log(Level.WARNING, "ADDING TO STANDALONE: " + entry.getName());
+				}
+			}
+		}
+		
+		ArrayList<OutputEntry> toUpload = mergeAndRemoveDuplicatesEntries(standaloneFilesToUpload, archivesToUpload, allArchiveEntries);
+			for (final OutputEntry entry : toUpload) {
 				try {
 					final File localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 					logger.log(Level.INFO, "Processing output file: " + localFile);
-
-					if (entry.isArchive())
-						entry.createZip(currentDir.getAbsolutePath());
 
 					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 						commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName() + " to " + outputDir);
@@ -731,13 +754,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				catch (final IOException e) {
 					logger.log(Level.WARNING, "IOException received while attempting to upload " + entry.getName(), e);
 					commander.q_api.putJobLog(queueId, "trace", "Failed to upload " + entry.getName() + " due to: " + e.getMessage());
-					if (!e.getMessage().contains("exist")) // note that the same file may be asked to be uploaded several times
-						uploadedAllOutFiles = false;
+					uploadedAllOutFiles = false;
 				}
 			}
 			if (exitStatus == JobStatus.DONE)
-				registerEntries(entries, outputDir);
-		}
+				registerEntries(toUpload, outputDir);
+		
 
 		createAndAddResultsJDL(null); // Not really used. Set to null for now.
 
@@ -986,6 +1008,16 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		return tags;
+	}
+
+	private ArrayList<OutputEntry> mergeAndRemoveDuplicatesEntries(ArrayList<OutputEntry> filesToMerge, ArrayList<OutputEntry> fileList, ArrayList<String> allArchiveEntries) {
+		for (final OutputEntry file : filesToMerge) {
+			if (!allArchiveEntries.contains(file.getName())) {
+				logger.log(Level.INFO, "Standalone file not in any archive. To be uploaded separately: " + file.getName());
+				fileList.add(file);
+			}
+		}
+		return fileList;
 	}
 
 }
