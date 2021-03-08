@@ -50,7 +50,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 			ret += "collection";
 			commander.printOut("type", "collection");
 		}
-		logger.info("Type line : " + ret);
+
 		commander.printOutln(ret);
 	}
 
