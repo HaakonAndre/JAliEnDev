@@ -7,10 +7,12 @@ import java.security.GeneralSecurityException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
@@ -337,7 +339,7 @@ public class OrphanPFNsCleanup {
 									ok = db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns_" + seNumber
 											+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 100000;", true);
 								else
-									ok = db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 100000;");
+									ok = db.query("SELECT binary2string(guid) FROM orphan_pfns_0 ORDER BY size DESC LIMIT 1000000;");
 							}
 							finally {
 								concurrentQueryies.release();
@@ -366,14 +368,30 @@ public class OrphanPFNsCleanup {
 									executor.setMaximumPoolSize(threads);
 								}
 
+								List<UUID> nullUUIDs = new ArrayList<>();
+
 								do {
 									if (seNumber > 0)
 										executor.submit(new CleanupTask(h, db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
-									else
-										executor.submit(new NullSETask(h, db.gets(1)));
+									else {
+										try {
+											nullUUIDs.add(UUID.fromString(db.gets(1)));
+
+											if (nullUUIDs.size() > 10000) {
+												executor.submit(new NullSETask(h, nullUUIDs));
+												nullUUIDs = new ArrayList<>();
+											}
+										}
+										catch (final Throwable t) {
+											logger.log(Level.SEVERE, "Cannot queue the GUID: " + db.gets(1), t);
+										}
+									}
 
 									tasks++;
 								} while (db.moveNext());
+
+								if (nullUUIDs.size() > 0)
+									executor.submit(new NullSETask(h, new ArrayList<>(nullUUIDs)));
 							}
 						}
 
@@ -496,11 +514,11 @@ public class OrphanPFNsCleanup {
 
 	private static class NullSETask implements Runnable {
 		final Host h;
-		final String sGUID;
+		final List<UUID> uuids;
 
-		public NullSETask(final Host h, final String sGUID) {
+		public NullSETask(final Host h, final List<UUID> uuids) {
 			this.h = h;
-			this.sGUID = sGUID;
+			this.uuids = uuids;
 		}
 
 		@Override
@@ -508,12 +526,13 @@ public class OrphanPFNsCleanup {
 			concurrentQueryies.acquireUninterruptibly();
 
 			try (DBFunctions db = h.getDB()) {
-				final GUID g = GUIDUtils.getGUID(sGUID);
+				final Set<GUID> guids = GUIDUtils.getGUIDs(uuids.toArray(new UUID[0]));
 
-				if (g != null)
+				for (GUID g : guids)
 					g.delete(true);
 
-				db.query("DELETE FROM orphan_pfns_0 WHERE guid=string2binary(?);", false, sGUID);
+				for (UUID u : uuids)
+					db.query("DELETE FROM orphan_pfns_0 WHERE guid=string2binary(?);", false, u.toString());
 			}
 			finally {
 				concurrentQueryies.release();
