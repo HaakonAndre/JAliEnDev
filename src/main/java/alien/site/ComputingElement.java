@@ -101,14 +101,12 @@ public class ComputingElement extends Thread {
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
+
 		try {
-			logger.info("Trying to start JBox");
-			JBoxServer.startJBoxService();
-			port = JBoxServer.getPort();
-			Files.writeString(Paths.get(host_logdir_resolved + "/CE.pid"), Integer.toString(MonitorFactory.getSelfProcessID()));
-		}
-		catch (final Exception e) {
-			logger.severe("Unable to start JBox: " + e.toString());
+			Files.writeString(Paths.get(host_logdir_resolved + "/CE.pid"),
+					Integer.toString(MonitorFactory.getSelfProcessID()));
+		} catch (IOException e) {
+			logger.log(Level.WARNING, "Could not create a pidfile in: " + host_logdir_resolved + "/CE.pid", e);
 		}
 
 		logger.info("Looping");
