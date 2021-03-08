@@ -9,7 +9,7 @@ import java.util.Set;
  * @author costing
  * @since Apr 15, 2020
  */
-class GetCEs {
+public class GetCEs {
 
 	/**
 	 * Debug method
@@ -18,7 +18,7 @@ class GetCEs {
 	 */
 	public static void main(final String[] args) {
 
-		for (final String se : new String[]{" ALICE::CERN::EOS"}) {
+		for (final String se : new String[]{" ALICE::UPB::EOS"}) {
 			final Set<String> siteNames = getCloseSites(se);
 			System.err.println(siteNames);
 
@@ -71,7 +71,7 @@ class GetCEs {
 	 * @param se
 	 * @return JDL requirement for closest site to storage element
 	 */
-	static StringBuilder getSiteJDLRequirement(String se) {
+	public static StringBuilder getSiteJDLRequirement(String se) {
 		final Set<String> siteNames = GetCEs.getCloseSites(se);
 
 		final Set<String> matchingCEs = new LinkedHashSet<>();
