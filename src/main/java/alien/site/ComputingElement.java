@@ -23,7 +23,6 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
-import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.api.token.GetTokenCertificate;
