@@ -4,7 +4,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.UUID;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -21,31 +23,56 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	/**
 	 * entry the call is executed on, either representing a LFN
 	 */
-	private Collection<String> guidNames = new LinkedHashSet<>();
+	private final Collection<String> guidNames = new LinkedHashSet<>();
 
 	/**
 	 * execute the lfn2guid
 	 */
 	@Override
 	public void run() {
+		final Set<UUID> uuids = new LinkedHashSet<>();
 		for (final String guidName : guidNames) {
-			final GUID guid = commander.c_api.getGUID(guidName, false, true);
+			try {
+				uuids.add(UUID.fromString(guidName));
+			}
+			catch (@SuppressWarnings("unused") final Throwable t) {
+				commander.setReturnCode(ErrNo.EINVAL, "Not a GUID: " + guidName);
+				return;
+			}
+		}
+
+		final Collection<GUID> guids = commander.c_api.getGUIDs(uuids, true);
+
+		for (final GUID guid : guids) {
+			uuids.remove(guid.guid);
 
 			final Iterator<LFN> it;
 
-			if (guid == null)
-				commander.setReturnCode(ErrNo.ENXIO, "Could not get the GUID [" + guidName + "].");
-			else if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
+			commander.printOut("guid", String.valueOf(guid.guid));
+
+			if (guid.getLFNs() != null && (it = guid.getLFNs().iterator()).hasNext()) {
 				final LFN lfn = it.next();
 
 				commander.printOutln(padRight(guid.guid + "", 40) + lfn.getCanonicalName());
 
-				commander.printOut("guid", String.valueOf(guid.guid));
 				commander.printOut("lfn", String.valueOf(lfn.getCanonicalName()));
-				commander.outNextResult();
 			}
-			else
+			else {
+				commander.printOut("error", "No LFN");
 				commander.setReturnCode(ErrNo.ENOENT, "No LFNs are associated to this GUID [" + guid.guid + "].");
+			}
+
+			commander.outNextResult();
+		}
+
+		// what's left here are UUIDs for which no GUID object could be found in the database
+		for (final UUID uuid : uuids) {
+			commander.printOut("guid", uuid.toString());
+			commander.printOut("error", "No GUID");
+
+			commander.setReturnCode(ErrNo.ENOENT, "GUID cannot be found in the database: " + uuid);
+
+			commander.outNextResult();
 		}
 	}
 
