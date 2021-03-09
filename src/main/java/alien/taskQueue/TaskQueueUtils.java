@@ -1691,7 +1691,6 @@ public class TaskQueueUtils {
 			if (!db.query(insert))
 				throw new IOException("Could not insert the job in the queue");
 
-			// TODO : change this to long!
 			final Long pid = db.getLastGeneratedKeyLong();
 
 			if (pid == null)
