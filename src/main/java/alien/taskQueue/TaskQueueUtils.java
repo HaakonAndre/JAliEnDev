@@ -1680,6 +1680,10 @@ public class TaskQueueUtils {
 			else
 				values.put("split", Integer.valueOf(0));
 
+			final Integer cpuCores = j.getInteger("CPUCores");
+
+			values.put("cpucores", cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1) : cpuCores);
+
 			final String insert = DBFunctions.composeInsert("QUEUE", values);
 
 			db.setLastGeneratedKey(true);
