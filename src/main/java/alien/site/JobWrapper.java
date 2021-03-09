@@ -952,7 +952,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	}
 
 	private ArrayList<String> getOutputTags(JobStatus exitStatus){
-		ArrayList<String> tags = new ArrayList<String>();
+		ArrayList<String> tags = new ArrayList<>();
 
 		if (exitStatus == JobStatus.ERROR_E)
 			tags.add("OutputErrorE");
