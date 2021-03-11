@@ -576,6 +576,7 @@ public class JobAgent implements Runnable {
 
 	private int launchJobWrapper(final List<String> launchCommand, final boolean monitorJob) {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
+		final long ttl = ttlForJob();
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
@@ -603,6 +604,7 @@ public class JobAgent implements Runnable {
 				stdinObj.writeObject(siteMap);
 				stdinObj.writeObject(defaultOutputDirPrefix);
 				stdinObj.writeObject(legacyToken);
+				stdinObj.writeObject(ttl);
 
 				stdinObj.flush();
 			}
@@ -639,13 +641,14 @@ public class JobAgent implements Runnable {
 		final TimerTask killPayload = new TimerTask() {
 			@Override
 			public void run() {
+				logger.log(Level.SEVERE, "Timeout has occurred. Killing job!");
 				commander.q_api.putJobLog(queueId, "trace", "Timeout has occurred. Killing job!");
-				killPayload(p);
+				killJobWrapperAndPayload(p);
 			}
 		};
 
 		final Timer t = new Timer();
-		t.schedule(killPayload, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
+		t.schedule(killPayload, TimeUnit.MILLISECONDS.convert(ttl, TimeUnit.SECONDS)); // TODO: ttlForJob
 
 		int code = 0;
 
@@ -952,12 +955,13 @@ public class JobAgent implements Runnable {
 
 	/**
 	 *
-	 * Identifies job payload in list of child PIDs
+	 * Identifies the JobWrapper in list of child PIDs 
+	 * (these may be shifted when using containers)
 	 *
 	 * @param childPIDs
-	 * @return job payload PID
+	 * @return JobWrapper PID
 	 */
-	private int getPayloadPid(final Vector<Integer> childPids) {
+	private int getWrapperPid(final Vector<Integer> childPids) {
 		final ArrayList<Integer> wrapperProcs = new ArrayList<>();
 
 		try {
@@ -977,14 +981,7 @@ public class JobAgent implements Runnable {
 		if (wrapperProcs.size() < 1)
 			return 0;
 
-		final Integer wrapperPid = wrapperProcs.get(wrapperProcs.size() - 1); // first entry comes from the env init in container. Ignore if present
-
-		final int idx = childPids.indexOf(wrapperPid);
-
-		if (idx >= 0 && idx < childPids.size() - 1)
-			return childPids.get(idx + 1).intValue();
-
-		return 0;
+		return wrapperProcs.get(wrapperProcs.size() - 1); // may have a first entry coming from the env init in container. Ignore if present
 	}
 
 	private final Object notificationEndpoint = new Object();
@@ -998,22 +995,22 @@ public class JobAgent implements Runnable {
 
 	/**
 	 *
-	 * Kills the payload of a given JobWrapper process
+	 * Gracefully kills the JobWrapper and its payload, with a one-hour window for upload
 	 *
-	 * @param p JobWrapper process
+	 * @param p process for JobWrapper
 	 */
-	private void killPayload(final Process p) {
+	private void killJobWrapperAndPayload(final Process p) {
 		final Vector<Integer> childProcs = mj.getChildren();
 		if (childProcs != null && childProcs.size() > 1) {
 			try {
-				final int payloadPid = getPayloadPid(childProcs);
-				if (payloadPid != 0)
-					Runtime.getRuntime().exec("kill -9 " + getPayloadPid(childProcs));
+				final int jobWrapperPid = getWrapperPid(childProcs);
+				if (jobWrapperPid != 0)
+					Runtime.getRuntime().exec("kill " + jobWrapperPid);
 				else
-					logger.log(Level.INFO, "Could not kill payload: not found. Already done?");
+					logger.log(Level.INFO, "Could not kill JobWrapper: not found. Already done?");
 			}
 			catch (final Exception e) {
-				logger.log(Level.INFO, "Cannot kill the child processes " + childProcs, e);
+				logger.log(Level.INFO, "Unable to kill the JobWrapper", e);
 			}
 		}
 

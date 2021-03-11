@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,6 +67,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private HashMap<String, Object> siteMap;
 	private String ce;
 	private String legacyToken;
+	private long ttl;
 	/**
 	 * @uml.property name="jobStatus"
 	 * @uml.associationEnd
@@ -114,6 +116,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * ApMon sender
 	 */
 	static final ApMon apmon = MonitorFactory.getApMonSender();
+
+	/**
+	 * Payload process
+	 */
+	private Process payload;
 
 	private final Thread statusSenderThread = new Thread("JobWrapper.statusSenderThread") {
 		@Override
@@ -184,6 +191,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			siteMap = (HashMap<String, Object>) inputFromJobAgent.readObject();
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 			legacyToken = (String) inputFromJobAgent.readObject();
+			ttl = (long) inputFromJobAgent.readObject();
 
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
@@ -410,10 +418,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(currentDir, "stderr")));
 
-		final Process p;
-
 		try {
-			p = pBuilder.start();
+			payload = pBuilder.start();
 
 		}
 		catch (final IOException ioe) {
@@ -421,20 +427,34 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return -5;
 		}
 
-		if (!p.isAlive()) {
+		if (!payload.isAlive()) {
 			logger.log(Level.INFO, "The process for: " + cmd + " has terminated. Failed to execute?");
-			return p.exitValue();
+			return payload.exitValue();
 		}
 
 		try {
-			p.waitFor();
-		}
-		catch (final InterruptedException e) {
+			sun.misc.Signal.handle(new sun.misc.Signal("TERM"), new sun.misc.SignalHandler() {
+				@Override
+				public void handle(final sun.misc.Signal sig) {
+					if (payload.isAlive()) {
+						logger.log(Level.SEVERE, "SIGTERM received. Killing payload");
+						payload.destroyForcibly();
+					}
+				}
+			});
+
+			payload.waitFor(ttl, TimeUnit.SECONDS);
+
+			if(payload.isAlive()){
+				payload.destroyForcibly();
+				logger.log(Level.SEVERE, "Payload process destroyed by timeout in wrapper!");
+			}
+			logger.log(Level.SEVERE, "Payload has finished execution.");
+		} catch (final InterruptedException e) {
 			logger.log(Level.INFO, "Interrupted while waiting for process to finish execution" + e);
 		}
 
-		return p.exitValue();
-
+		return payload.exitValue();
 	}
 
 	private int execute() {
