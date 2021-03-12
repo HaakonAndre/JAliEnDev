@@ -1,0 +1,9 @@
+package utils;
+
+public enum StatusType {
+	FILE_OK,
+	FILE_CORRUPT,
+	FILE_INACCESSIBLE,
+	INTERNAL_ERROR,
+	UNEXPECTED_ERROR,
+}

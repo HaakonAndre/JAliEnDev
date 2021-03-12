@@ -29,9 +29,9 @@ public enum CrawlingStatusCode implements StatusCode {
 
     E_PFN_XRDSTAT_FAILED("The xrdstat call for the PFN failed", INTERNAL_ERROR),
 
-    E_CATALOGUE_MD5_IS_NULL("The MD5 registered in the catalogue is null", FILE_CORRUPT),
+    E_CATALOGUE_MD5_IS_NULL("The MD5 registered in the catalogue is null", FILE_OK),
 
-    E_CATALOGUE_MD5_IS_BLANK("The MD5 registered in the catalogue is blank", FILE_CORRUPT),
+    E_CATALOGUE_MD5_IS_BLANK("The MD5 registered in the catalogue is blank", FILE_OK),
 
     E_GUID_NOT_FOUND("The GUID cannot be retrieved from the PFN", INTERNAL_ERROR),
 
