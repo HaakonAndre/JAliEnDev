@@ -68,10 +68,6 @@ public class ComputingElement extends Thread {
 	 */
 	public ComputingElement() {
 		try {
-			config = ConfigUtils.getConfigFromLdap();
-			site = (String) config.get("site_accountname");
-			getSiteMap();
-
 			ExtProperties ep = ConfigUtils.getConfiguration("ce-logging");
 			if (ep != null) {
 				ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -97,6 +93,9 @@ public class ComputingElement extends Thread {
 		}
 	}
 
+	private static final long LDAP_REFRESH_INTERVAL = 5 * 60 * 1000L;
+	private long lastLdapRefresh = 0;
+
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
@@ -110,12 +109,29 @@ public class ComputingElement extends Thread {
 
 		logger.info("Looping");
 		while (true) {
+			if (System.currentTimeMillis() - lastLdapRefresh > LDAP_REFRESH_INTERVAL) {
+				logger.info("Time to sync with LDAP");
+				logger.info("Building new SiteMap.");
+
+				config = ConfigUtils.getConfigFromLdap();
+				site = (String) config.get("site_accountname");
+				getSiteMap();
+
+				logger.info("New sitemap: ");
+
+				siteMap.forEach((field, entry) -> {
+					logger.info("[" + field + ": " + entry + "]");
+				});
+
+				lastLdapRefresh = System.currentTimeMillis();
+			}
+
 			offerAgent();
 
 			try {
-				Thread.sleep(System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
-			}
-			catch (InterruptedException e) {
+				Thread.sleep(
+						System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
+			} catch (InterruptedException e) {
 				logger.severe("Unable to sleep: " + e.toString());
 			}
 
