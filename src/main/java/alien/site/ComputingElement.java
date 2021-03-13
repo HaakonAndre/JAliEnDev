@@ -68,6 +68,10 @@ public class ComputingElement extends Thread {
 	 */
 	public ComputingElement() {
 		try {
+			config = ConfigUtils.getConfigFromLdap();
+			site = (String) config.get("site_accountname");
+			getSiteMap();
+			
 			ExtProperties ep = ConfigUtils.getConfiguration("ce-logging");
 			if (ep != null) {
 				ByteArrayOutputStream output = new ByteArrayOutputStream();
