@@ -13,7 +13,10 @@ if ! echo "$CLASSPATH" | grep -q alien-users.jar -; then
     exit 1
 fi
 
-JALIEN_MAIN=${JALIEN_MAIN:-alien.JSh}
+if [ $# -eq 0 ]
+    then
+        JALIEN_MAIN=${JALIEN_MAIN:-alien.JSh}
+fi
 
 JAVA_OPTS=${JAVA_OPTS:--client -Xms16M -Xmx64M}
 
