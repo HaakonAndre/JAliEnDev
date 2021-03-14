@@ -1666,7 +1666,7 @@ public class TaskQueueUtils {
 			values.put("price", price);
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 
-			Integer masterjobID = j.getInteger("MasterJobID");
+			Long masterjobID = j.getLong("MasterJobID");
 
 			if (jobStatus.equals(JobStatus.SPLIT) || j.get("Split") != null) {
 				values.put("masterjob", Integer.valueOf(1));
