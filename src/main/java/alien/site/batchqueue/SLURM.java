@@ -68,7 +68,7 @@ public class SLURM extends BatchQueue {
 		this.submitArgs = readArgFromLdap("ce_submitarg");
 		this.killArgs = readArgFromLdap("ce_killarg");
 		this.runArgs = readArgFromLdap("ce_runarg");
-		this.statusArgs = readArgFromLdap(("ce_statusarg");
+		this.statusArgs = readArgFromLdap("ce_statusarg");
 
 		// Get args from the environment
 		if (envFromConfig != null) {
