@@ -65,10 +65,10 @@ public class SLURM extends BatchQueue {
 		this.killCmd = (String) config.getOrDefault("ce_killcmd", "scancel");
 		this.statusCmd = (String) config.getOrDefault("ce_statuscmd", "squeue");
 
-		this.submitArgs = (String) config.getOrDefault("ce_submitarg", "");
-		this.killArgs = (String) config.getOrDefault("ce_killarg", "");
-		this.runArgs = (String) config.getOrDefault("ce_runarg", "");
-		this.statusArgs = (String) config.getOrDefault("ce_statusarg", "");
+		this.submitArgs = readArgFromLdap("ce_submitarg");
+		this.killArgs = readArgFromLdap("ce_killarg");
+		this.runArgs = readArgFromLdap("ce_runarg");
+		this.statusArgs = readArgFromLdap(("ce_statusarg");
 
 		// Get args from the environment
 		if (envFromConfig != null) {
@@ -307,5 +307,20 @@ public class SLURM extends BatchQueue {
 				this.temp_file = null;
 		}
 		return 0;
+	}
+
+	@SuppressWarnings("unchecked")
+	private String readArgFromLdap(String argToRead){
+		if (!config.containsKey(argToRead) || config.get(argToRead) == null)
+			return "";
+		else if ((config.get(argToRead) instanceof TreeSet)) {
+			String args = "";
+			for (String arg : (TreeSet<String>) config.get(argToRead)) {
+				args += arg + " ";
+			}
+			return args;
+		} else {
+			return config.get(argToRead).toString();
+		}
 	}
 }
