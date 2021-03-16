@@ -29,6 +29,7 @@ public class OutputEntry implements Serializable {
 	private final HashMap<String, Long> sizemembers;
 	private final String options;
 	private final Long queueId;
+	private final boolean isArchive;
 	private boolean isRootArchive;
 	private final ArrayList<String> ses;
 	private final ArrayList<String> exses;
@@ -42,6 +43,7 @@ public class OutputEntry implements Serializable {
 		this.filesIncluded = null;
 		this.options = null;
 		this.queueId = null;
+		this.isArchive = false;
 		this.isRootArchive = false;
 		this.ses = new ArrayList<>();
 		this.exses = new ArrayList<>();
@@ -56,12 +58,13 @@ public class OutputEntry implements Serializable {
 	 * @param options
 	 * @param jobid
 	 */
-	public OutputEntry(final String name, final ArrayList<String> filesIncluded, final String options, final Long jobid) {
+	public OutputEntry(final String name, final ArrayList<String> filesIncluded, final String options, final Long jobid, final boolean isArchive) {
 		this.name = name;
 		this.filesIncluded = filesIncluded;
 		this.options = options;
 
 		this.queueId = jobid;
+		this.isArchive = isArchive;
 		this.isRootArchive = false;
 		this.ses = new ArrayList<>();
 		this.exses = new ArrayList<>();
@@ -162,7 +165,7 @@ public class OutputEntry implements Serializable {
 	 * @return <code>true</code> if this is an archive
 	 */
 	public boolean isArchive() {
-		return this.filesIncluded != null && this.filesIncluded.size() > 0;
+		return this.filesIncluded != null && this.filesIncluded.size() > 0 || isArchive;
 	}
 
 	/**
@@ -191,8 +194,8 @@ public class OutputEntry implements Serializable {
 				final File f = new File(path + file);
 				if (!f.exists() || !f.isFile() || !f.canRead() || f.length() <= 0) {
 					// filesIncluded.remove(file);
-					System.out.println("File " + file + " doesn't exist, cannot be read or has 0 size!");
-					continue;
+					System.err.println("File " + file + " doesn't exist, cannot be read or has 0 size!");
+					return null;
 				}
 				hasPhysicalFiles = true;
 
