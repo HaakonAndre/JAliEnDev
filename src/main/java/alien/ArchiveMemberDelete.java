@@ -249,7 +249,7 @@ public class ArchiveMemberDelete {
 			final ArrayList<String> listOfFiles = getFileListing(Path.of(usrdir, "extracted"));
 
 			System.out.println("[" + new Date() + "] Zipping the new archive");
-			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
+			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID), true);
 			entry.createZip(usrdir + separator + "extracted");
 
 			final String newArchiveFullPath = registerPath + separator + archiveName;

@@ -679,26 +679,36 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				if (entry.isArchive()) {
 					logger.log(Level.WARNING, "THIS IS AN ARCHIVE: " + entry.getName());
 					final ArrayList<String> archiveEntries = entry.createZip(currentDir.getAbsolutePath());
+					if (archiveEntries == null) {
+						logger.log(Level.SEVERE, "A required outputfile was NOT found! Aborting.");
+						changeStatus(JobStatus.ERROR_SV);
+						return false;
+					}
 					if (archiveEntries.size() == 0) {
 						logger.log(Level.WARNING, "Ignoring empty archive: " + entry.getName());
-					}
-					else {
+					} else {
 						for (final String archiveEntry : archiveEntries) {
 							allArchiveEntries.add(archiveEntry);
 							logger.log(Level.WARNING, "ADDING TO MEMBERS: " + archiveEntry);
 						}
 						archivesToUpload.add(entry);
 					}
-				}
-				else {
+				} else {
 					logger.log(Level.WARNING, "THIS IS NOT AN ARCHIVE: " + entry.getName());
-					standaloneFilesToUpload.add(entry);
-					logger.log(Level.WARNING, "ADDING TO STANDALONE: " + entry.getName());
+					File entryFile = new File(currentDir.getAbsolutePath() + entry);
+					if (entryFile.exists()) {
+						standaloneFilesToUpload.add(entry);
+						logger.log(Level.WARNING, "ADDING TO STANDALONE: " + entry.getName());
+					} else {
+						logger.log(Level.SEVERE,"A required outputfile was NOT found! Aborting. File: " + entry.getName());
+						changeStatus(JobStatus.ERROR_SV);
+						return false;
+					}
 				}
 			}
 		}
 		
-		ArrayList<OutputEntry> toUpload = mergeAndRemoveDuplicatesEntries(standaloneFilesToUpload, archivesToUpload, allArchiveEntries);
+		ArrayList<OutputEntry> toUpload = mergeAndRemoveDuplicateEntries(standaloneFilesToUpload, archivesToUpload, allArchiveEntries);
 			for (final OutputEntry entry : toUpload) {
 				try {
 					final File localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
@@ -1011,7 +1021,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return tags;
 	}
 
-	private ArrayList<OutputEntry> mergeAndRemoveDuplicatesEntries(ArrayList<OutputEntry> filesToMerge, ArrayList<OutputEntry> fileList, ArrayList<String> allArchiveEntries) {
+	private ArrayList<OutputEntry> mergeAndRemoveDuplicateEntries(ArrayList<OutputEntry> filesToMerge, ArrayList<OutputEntry> fileList, ArrayList<String> allArchiveEntries) {
 		for (final OutputEntry file : filesToMerge) {
 			if (!allArchiveEntries.contains(file.getName())) {
 				logger.log(Level.INFO, "Standalone file not in any archive. To be uploaded separately: " + file.getName());
