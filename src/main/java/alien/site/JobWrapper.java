@@ -2,6 +2,7 @@ package alien.site;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.ProcessBuilder.Redirect;
@@ -677,30 +678,31 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
 			for (OutputEntry entry : filesTable.getEntries()) {
 				if (entry.isArchive()) {
-					logger.log(Level.WARNING, "THIS IS AN ARCHIVE: " + entry.getName());
-					final ArrayList<String> archiveEntries = entry.createZip(currentDir.getAbsolutePath());
-					if (archiveEntries == null) {
-						logger.log(Level.SEVERE, "A required outputfile was NOT found! Aborting.");
+					logger.log(Level.INFO, "This is an archive: " + entry.getName());
+					try {
+						final ArrayList<String> archiveEntries = entry.createZip(currentDir.getAbsolutePath());
+						if (archiveEntries.size() == 0) {
+							logger.log(Level.WARNING, "Ignoring empty archive: " + entry.getName());
+						} else {
+							for (final String archiveEntry : archiveEntries) {
+								allArchiveEntries.add(archiveEntry);
+								logger.log(Level.INFO, "Adding to archive members: " + archiveEntry);
+							}
+							archivesToUpload.add(entry);
+						}
+					} catch (NullPointerException ex) {
+						logger.log(Level.SEVERE, "A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
 						changeStatus(JobStatus.ERROR_SV);
 						return false;
 					}
-					if (archiveEntries.size() == 0) {
-						logger.log(Level.WARNING, "Ignoring empty archive: " + entry.getName());
-					} else {
-						for (final String archiveEntry : archiveEntries) {
-							allArchiveEntries.add(archiveEntry);
-							logger.log(Level.WARNING, "ADDING TO MEMBERS: " + archiveEntry);
-						}
-						archivesToUpload.add(entry);
-					}
 				} else {
-					logger.log(Level.WARNING, "THIS IS NOT AN ARCHIVE: " + entry.getName());
+					logger.log(Level.INFO, "This is not an archive: " + entry.getName());
 					File entryFile = new File(currentDir.getAbsolutePath() + entry);
 					if (entryFile.exists()) {
 						standaloneFilesToUpload.add(entry);
-						logger.log(Level.WARNING, "ADDING TO STANDALONE: " + entry.getName());
+						logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
 					} else {
-						logger.log(Level.SEVERE,"A required outputfile was NOT found! Aborting. File: " + entry.getName());
+						logger.log(Level.SEVERE, "A required outputfile was NOT found! Aborting. File: " + entry.getName());
 						changeStatus(JobStatus.ERROR_SV);
 						return false;
 					}
