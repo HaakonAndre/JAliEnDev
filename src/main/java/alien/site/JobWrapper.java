@@ -2,7 +2,6 @@ package alien.site;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.ProcessBuilder.Redirect;
@@ -682,6 +681,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						final ArrayList<String> archiveEntries = entry.createZip(currentDir.getAbsolutePath());
 						if (archiveEntries.size() == 0) {
 							logger.log(Level.WARNING, "Ignoring empty archive: " + entry.getName());
+							commander.q_api.putJobLog(queueId, "trace",  "Ignoring empty archive: " + entry.getName());
 						} else {
 							for (final String archiveEntry : archiveEntries) {
 								allArchiveEntries.add(archiveEntry);
@@ -691,6 +691,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						}
 					} catch (NullPointerException ex) {
 						logger.log(Level.SEVERE, "A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
+						commander.q_api.putJobLog(queueId, "trace", "Error: A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
 						changeStatus(JobStatus.ERROR_SV);
 						return false;
 					}
@@ -702,6 +703,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
 					} else {
 						logger.log(Level.SEVERE, "A required outputfile was NOT found! Aborting. File: " + entry.getName());
+						commander.q_api.putJobLog(queueId, "trace", "A required outputfile was NOT found! Aborting. File: " + entry.getName());
 						changeStatus(JobStatus.ERROR_SV);
 						return false;
 					}
