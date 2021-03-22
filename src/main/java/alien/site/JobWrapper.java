@@ -325,11 +325,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				if (fileTrace != null)
 					commander.q_api.putJobLog(queueId, "trace", fileTrace);
 
-				if (jdl.gets("OutputErrorV") != null)
-					return uploadOutputFiles(JobStatus.ERROR_V) ? execExitCode : -1;
+				final int valUploadExitCode = uploadOutputFiles(JobStatus.ERROR_V) ? valExitCode : -1;
 
 				changeStatus(JobStatus.ERROR_V);
-				return valExitCode;
+				return valUploadExitCode;
 			}
 
 			if (!uploadOutputFiles(JobStatus.DONE)) {
