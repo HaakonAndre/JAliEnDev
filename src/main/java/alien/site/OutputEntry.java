@@ -195,7 +195,7 @@ public class OutputEntry implements Serializable {
 				if (!f.exists() || !f.isFile() || !f.canRead() || f.length() <= 0) {
 					// filesIncluded.remove(file);
 					System.err.println("File " + file + " doesn't exist, cannot be read or has 0 size!");
-					throw new NullPointerException("File " + file + " doesn't exist, cannot be read or has 0 size!");
+					throw new NullPointerException("File " + file + " for archive " + this.name + " doesn't exist, cannot be read or has 0 size!");
 				}
 				hasPhysicalFiles = true;
 
