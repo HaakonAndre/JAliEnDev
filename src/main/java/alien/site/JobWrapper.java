@@ -696,7 +696,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					}
 				} else {
 					logger.log(Level.INFO, "This is not an archive: " + entry.getName());
-					File entryFile = new File(currentDir.getAbsolutePath() + entry);
+					logger.log(Level.INFO, "Verifying if file exists at: " + currentDir.getAbsolutePath() + "/" + entry.getName());
+					File entryFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 					if (entryFile.exists()) {
 						standaloneFilesToUpload.add(entry);
 						logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
