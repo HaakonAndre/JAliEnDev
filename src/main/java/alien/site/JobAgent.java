@@ -958,10 +958,9 @@ public class JobAgent implements Runnable {
 	 * Identifies the JobWrapper in list of child PIDs 
 	 * (these may be shifted when using containers)
 	 *
-	 * @param childPIDs
 	 * @return JobWrapper PID
 	 */
-	private int getWrapperPid(final Vector<Integer> childPids) {
+	private int getWrapperPid() {
 		final ArrayList<Integer> wrapperProcs = new ArrayList<>();
 
 		try {
@@ -972,8 +971,7 @@ public class JobAgent implements Runnable {
 					wrapperProcs.add(Integer.valueOf(cmdScanner.next()));
 				}
 			}
-		}
-		catch (final Exception e) {
+		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Could not get JobWrapper PID", e);
 			return 0;
 		}
@@ -1000,18 +998,14 @@ public class JobAgent implements Runnable {
 	 * @param p process for JobWrapper
 	 */
 	private void killJobWrapperAndPayload(final Process p) {
-		final Vector<Integer> childProcs = mj.getChildren();
-		if (childProcs != null && childProcs.size() > 1) {
-			try {
-				final int jobWrapperPid = getWrapperPid(childProcs);
-				if (jobWrapperPid != 0)
-					Runtime.getRuntime().exec("kill " + jobWrapperPid);
-				else
-					logger.log(Level.INFO, "Could not kill JobWrapper: not found. Already done?");
-			}
-			catch (final Exception e) {
-				logger.log(Level.INFO, "Unable to kill the JobWrapper", e);
-			}
+		try {
+			final int jobWrapperPid = getWrapperPid();
+			if (jobWrapperPid != 0)
+				Runtime.getRuntime().exec("kill " + jobWrapperPid);
+			else
+				logger.log(Level.INFO, "Could not kill JobWrapper: not found. Already done?");
+		} catch (final Exception e) {
+			logger.log(Level.INFO, "Unable to kill the JobWrapper", e);
 		}
 
 		// Give the JW up to an hour to clean things up
@@ -1021,8 +1015,7 @@ public class JobAgent implements Runnable {
 			while (p.isAlive() && System.currentTimeMillis() < deadLine) {
 				try {
 					notificationEndpoint.wait(1000 * 5);
-				}
-				catch (final InterruptedException e) {
+				} catch (final InterruptedException e) {
 					logger.log(Level.WARNING, "I was interrupted while waiting for the payload to clean up", e);
 					break;
 				}
