@@ -148,10 +148,10 @@ public class OutputEntry implements Serializable {
 	}
 
 	/**
-	 * @return list of included files in this archive
+	 * @return list of included files in this archive, or empty list if a file
 	 */
 	public ArrayList<String> getFilesIncluded() {
-		return this.filesIncluded;
+		return isArchive() ? this.filesIncluded : new ArrayList<String>();
 	}
 
 	/**
