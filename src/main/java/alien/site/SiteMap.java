@@ -16,7 +16,6 @@ import alien.config.ConfigUtils;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.user.UserFactory;
-
 import apmon.BkThread;
 
 /**
@@ -84,16 +83,15 @@ public class SiteMap {
 
 		// check if there will be a shutdown
 		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
-					MachineJobFeatures.FeatureType.MACHINEFEATURE);
+				MachineJobFeatures.FeatureType.MACHINEFEATURE);
 		if (shutdownTime != null) {
-			shutdownTime = shutdownTime - System.currentTimeMillis() / 1000;
-			logger.log(Level.INFO, "Shutdown is" + shutdownTime);
+			shutdownTime = Long.valueOf(shutdownTime.longValue() - System.currentTimeMillis() / 1000);
+			logger.log(Level.INFO, "Shutdown is in " + shutdownTime + "s");
 
 			origTtl = Integer.min(origTtl, shutdownTime.intValue());
 		}
 
 		logger.log(Level.INFO, "TTL is" + origTtl);
-
 
 		siteMap.put("TTL", Integer.valueOf(origTtl));
 
@@ -120,7 +118,7 @@ public class SiteMap {
 		// Get nousers from cerequirements field
 		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, CE_FIELD.NoUsers);
 
-		//Get required cpu cores from cerequirements field
+		// Get required cpu cores from cerequirements field
 		final ArrayList<String> requiredCpus = getFieldContentsFromCerequirements(ceRequirements, CE_FIELD.CpuCores);
 
 		// Workdir
@@ -136,7 +134,7 @@ public class SiteMap {
 
 		// This is measured in MB
 		if (env.containsKey("RESERVED_DISK"))
-			space -= Long.valueOf(env.get("RESERVED_DISK"));
+			space -= Long.parseLong(env.get("RESERVED_DISK"));
 
 		logger.log(Level.INFO, "Disk space available " + space);
 
@@ -148,7 +146,7 @@ public class SiteMap {
 
 		// get from env or LDAP to cap number of CPUs
 		if (env.containsKey("RESERVED_RAM"))
-			memorySize -= Long.valueOf(env.get("RESERVED_RAM"));
+			memorySize -= Long.parseLong(env.get("RESERVED_RAM"));
 
 		logger.log(Level.INFO, "Actual RAM: " + memorySize);
 
@@ -157,11 +155,11 @@ public class SiteMap {
 
 		// get from env or LDAP to cap number of CPUs
 		if (env.containsKey("CPUCores")) {
-			numCpus = Long.valueOf(env.get("CPUCores"));
+			numCpus = Long.parseLong(env.get("CPUCores"));
 			if (numCpus == 0) {
 				try {
 					// get from system
-					numCpus = Long.valueOf(BkThread.getNumCPUs());
+					numCpus = BkThread.getNumCPUs();
 
 					potentialCpus = memorySize / (2 * 1024 * 1024 * 1024l);
 					if (numCpus > potentialCpus)
@@ -172,7 +170,7 @@ public class SiteMap {
 				}
 
 				mjfCpus = MachineJobFeatures.getFeatureNumberOrDefault("log_cores",
-						MachineJobFeatures.FeatureType.MACHINEFEATURE, numCpus);
+						MachineJobFeatures.FeatureType.MACHINEFEATURE, Long.valueOf(numCpus)).longValue();
 				if (numCpus > mjfCpus)
 					numCpus = mjfCpus;
 			}
@@ -250,7 +248,7 @@ public class SiteMap {
 	/**
 	 * The two options that can be extracted from the CE requirements (allowed or denied account names)
 	 */
-	public static enum CE_FIELD {
+	public enum CE_FIELD {
 		/**
 		 * Allowed account pattern
 		 */
@@ -268,7 +266,7 @@ public class SiteMap {
 
 		private final Pattern pattern;
 
-		private CE_FIELD(final Pattern pattern) {
+		CE_FIELD(final Pattern pattern) {
 			this.pattern = pattern;
 		}
 	}

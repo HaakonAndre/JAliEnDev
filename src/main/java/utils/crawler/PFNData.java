@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.json.simple.JSONObject;
 
 /**
@@ -16,8 +17,23 @@ import org.json.simple.JSONObject;
 public class PFNData {
 	private Map<String, Object> data = new LinkedHashMap<>();
 
-	public PFNData(String guid, Integer seNumber, String pfn, Long observedSize, Long catalogueSize, String observedMD5, String catalogueMD5,
-		Long downloadDurationMillis, Long xrdfsDurationMillis, String statusCode, String statusType, String statusMessage, Long timestamp) {
+	/**
+	 * @param guid
+	 * @param seNumber
+	 * @param pfn
+	 * @param observedSize
+	 * @param catalogueSize
+	 * @param observedMD5
+	 * @param catalogueMD5
+	 * @param downloadDurationMillis
+	 * @param xrdfsDurationMillis
+	 * @param statusCode
+	 * @param statusType
+	 * @param statusMessage
+	 * @param timestamp
+	 */
+	public PFNData(final String guid, final Integer seNumber, final String pfn, final Long observedSize, final Long catalogueSize, final String observedMD5, final String catalogueMD5,
+			final Long downloadDurationMillis, final Long xrdfsDurationMillis, final String statusCode, final String statusType, final String statusMessage, final Long timestamp) {
 		data.put("guid", guid);
 		data.put("seNumber", seNumber);
 		data.put("pfn", pfn);
@@ -36,157 +52,215 @@ public class PFNData {
 	private PFNData() {
 	}
 
-	private void setData(Map<String, Object> data) {
+	private void setData(final Map<String, Object> data) {
 		this.data = data;
 	}
 
+	/**
+	 * @return
+	 */
 	public String toCSV() {
-		Collection<Object> values = data.values();
+		final Collection<Object> values = data.values();
 		return values.stream().map(Object::toString).collect(Collectors.joining(","));
 	}
 
+	/**
+	 * @return
+	 */
 	public String getCsvHeader() {
-		Set<String> keys = data.keySet();
+		final Set<String> keys = data.keySet();
 		return String.join(",", keys);
 	}
 
+	/**
+	 * @return
+	 */
 	public Collection<Object> getValues() {
 		return data.values();
 	}
 
+	/**
+	 * @return
+	 */
 	public Map<String, Object> getData() {
 		return Collections.unmodifiableMap(data);
 	}
 
+	/**
+	 * @return
+	 */
 	public String getStatusCode() {
 		try {
 			return data.get("statusCode").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getSeNumber() {
 		try {
 			return data.get("seNumber").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getStatusType() {
 		try {
 			return data.get("statusType").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getStatusMessage() {
 		try {
 			return data.get("statusMessage").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getPfn() {
 		try {
 			return data.get("pfn").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getGuid() {
 		try {
 			return data.get("guid").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public Long getObservedSize() {
 		try {
-			return Long.parseLong(this.data.get("observedSize").toString());
+			return Long.valueOf(this.data.get("observedSize").toString());
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public Long getCatalogueSize() {
 		try {
-			return Long.parseLong(this.data.get("catalogueSize").toString());
+			return Long.valueOf(this.data.get("catalogueSize").toString());
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getObservedMD5() {
 		try {
 			return this.data.get("observedMD5").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public String getCatalogueMD5() {
 		try {
 			return this.data.get("catalogueMD5").toString();
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public Long getDownloadDurationMillis() {
 		try {
-			return Long.parseLong(this.data.get("downloadDurationMillis").toString());
+			return Long.valueOf(this.data.get("downloadDurationMillis").toString());
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public Long getXrdfsDurationMillis() {
 		try {
-			return Long.parseLong(this.data.get("xrdfsDurationMillis").toString());
+			return Long.valueOf(this.data.get("xrdfsDurationMillis").toString());
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	public Long getOutputGeneratedTimestamp() {
 		try {
-			return Long.parseLong(this.data.get("timestamp").toString());
+			return Long.valueOf(this.data.get("timestamp").toString());
 		}
-		catch (Exception e) {
+		catch (@SuppressWarnings("unused") final Exception e) {
 			return null;
 		}
 	}
 
+	/**
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public JSONObject toJSON() {
-		JSONObject json = new JSONObject();
+		final JSONObject json = new JSONObject();
 		json.putAll(data);
 		return json;
 	}
 
-	public static PFNData fromJSON(JSONObject jsonObject) {
-		PFNData pfnData = new PFNData();
-		Map<String, Object> data = new LinkedHashMap<>();
+	/**
+	 * @param jsonObject
+	 * @return
+	 */
+	public static PFNData fromJSON(final JSONObject jsonObject) {
+		final PFNData pfnData = new PFNData();
+		final Map<String, Object> data = new LinkedHashMap<>();
 
-		for (Object key : jsonObject.keySet()) {
+		for (final Object key : jsonObject.keySet()) {
 			data.put(key.toString(), jsonObject.get(key));
 		}
 
@@ -196,7 +270,6 @@ public class PFNData {
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
 	public String toString() {
 		return this.toJSON().toJSONString();
 	}

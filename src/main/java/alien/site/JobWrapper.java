@@ -81,10 +81,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @uml.property name="packMan"
 	 * @uml.associationEnd
 	 */
-	private PackMan packMan;
-	private String hostName;
+	private final PackMan packMan;
+	private final String hostName;
 	private final int pid;
-	private String ceHost;
+	private final String ceHost;
 	/**
 	 * @uml.property name="commander"
 	 * @uml.associationEnd
@@ -139,10 +139,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					paramNames.add("job_user");
 					paramValues.add(username);
 				}
-				
+
 				paramNames.add("host");
 				paramValues.add(ConfigUtils.getLocalHostname());
-				
+
 				if (jobStatus != null) {
 					paramNames.add("status");
 					paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
@@ -164,7 +164,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					try {
 						wait(1000 * 60);
 					}
-					catch (@SuppressWarnings("unused") InterruptedException e) {
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						return;
 					}
 				}
@@ -191,7 +191,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			siteMap = (HashMap<String, Object>) inputFromJobAgent.readObject();
 			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 			legacyToken = (String) inputFromJobAgent.readObject();
-			ttl = (long) inputFromJobAgent.readObject();
+			ttl = ((Long) inputFromJobAgent.readObject()).longValue();
 
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
@@ -343,8 +343,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Unable to handle job", e);
-			StringBuilder sb = new StringBuilder("ERROR! Unable to handle job: " + e + "\n\r");
-			for (StackTraceElement elem : e.getStackTrace()) {
+			final StringBuilder sb = new StringBuilder("ERROR! Unable to handle job: " + e + "\n\r");
+			for (final StackTraceElement elem : e.getStackTrace()) {
 				sb.append(elem);
 				sb.append("\n\r");
 			}
@@ -364,7 +364,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		logger.log(Level.INFO, "Starting execution of command: " + command);
 
-		List<String> cmd = new LinkedList<>();
+		final List<String> cmd = new LinkedList<>();
 
 		final int idx = command.lastIndexOf('/');
 
@@ -433,24 +433,22 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		try {
-			sun.misc.Signal.handle(new sun.misc.Signal("TERM"), new sun.misc.SignalHandler() {
-				@Override
-				public void handle(final sun.misc.Signal sig) {
-					if (payload.isAlive()) {
-						logger.log(Level.SEVERE, "SIGTERM received. Killing payload");
-						payload.destroyForcibly();
-					}
+			sun.misc.Signal.handle(new sun.misc.Signal("TERM"), sig -> {
+				if (payload.isAlive()) {
+					logger.log(Level.SEVERE, "SIGTERM received. Killing payload");
+					payload.destroyForcibly();
 				}
 			});
 
 			payload.waitFor(ttl, TimeUnit.SECONDS);
 
-			if(payload.isAlive()){
+			if (payload.isAlive()) {
 				payload.destroyForcibly();
 				logger.log(Level.SEVERE, "Payload process destroyed by timeout in wrapper!");
 			}
 			logger.log(Level.SEVERE, "Payload has finished execution.");
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			logger.log(Level.INFO, "Interrupted while waiting for process to finish execution" + e);
 		}
 
@@ -642,7 +640,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return envmap;
 	}
 
-	private boolean uploadOutputFiles(JobStatus exitStatus) {
+	private boolean uploadOutputFiles(final JobStatus exitStatus) {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
@@ -667,8 +665,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return false;
 		}
 
-		ArrayList<String> outputTags = getOutputTags(exitStatus);
-		for (String tag : outputTags) {
+		final ArrayList<String> outputTags = getOutputTags(exitStatus);
+		for (final String tag : outputTags) {
 			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
 			final ArrayList<OutputEntry> entries = filesTable.getEntries();
 
@@ -799,7 +797,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	/**
 	 * @param args
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static void main(final String[] args) throws Exception {
 		ConfigUtils.setApplicationName("JobWrapper");
@@ -811,7 +809,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	/**
 	 * Updates the current state of the job.
-	 * 
+	 *
 	 * @param newStatus
 	 */
 	public void changeStatus(final JobStatus newStatus) {
@@ -853,7 +851,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @param exitStatus the target job status, affecting the booked directory (`~/recycle` if any error)
 	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
 	 */
-	public String getJobOutputDir(JobStatus exitStatus) {
+	public String getJobOutputDir(final JobStatus exitStatus) {
 		String outputDir = jdl.getOutputDir();
 
 		if (exitStatus == JobStatus.ERROR_V || exitStatus == JobStatus.ERROR_E)
@@ -879,44 +877,44 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return null;
 	}
 
-	private void createAndAddResultsJDL(@SuppressWarnings("unused") ParsedOutput filesTable) {
+	private void createAndAddResultsJDL(@SuppressWarnings("unused") final ParsedOutput filesTable) {
 
 		/*
 		 * final ArrayList<String> jdlOutput = new ArrayList<>();
 		 * for (final OutputEntry entry : filesTable.getEntries()) {
-		 * 
+		 *
 		 * String entryString = entry.getName();
 		 * File entryFile = new File(currentDir.getAbsolutePath() + "/" + entryString);
-		 * 
+		 *
 		 * entryString += ";" + String.valueOf(entryFile.length());
-		 * 
+		 *
 		 * try {
 		 * entryString += ";" + IOUtils.getMD5(entryFile);
 		 * }
 		 * catch (IOException e) {
 		 * logger.log(Level.WARNING, "Could not generate MD5 for a file: " + e);
 		 * }
-		 * 
+		 *
 		 * jdlOutput.add(entryString);
-		 * 
+		 *
 		 * // Also add the archive files to outputlist
 		 * if (entry.isArchive()) {
-		 * 
+		 *
 		 * final ArrayList<String> archiveFiles = entry.getFilesIncluded();
 		 * final HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
 		 * final HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
 		 * for (final String archiveEntry : archiveFiles) {
-		 * 
+		 *
 		 * String archiveEntryString = archiveEntry;
-		 * 
+		 *
 		 * archiveEntryString += ";" + archiveSizes.get(archiveEntry);
 		 * archiveEntryString += ";" + archiveMd5s.get(archiveEntry);
 		 * archiveEntryString += ";" + entry.getName(); // name of its archive
-		 * 
+		 *
 		 * jdlOutput.add(archiveEntryString);
 		 * }
 		 * }
-		 * 
+		 *
 		 * }
 		 * jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput));
 		 */
@@ -937,7 +935,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	/**
 	 * Cleanup processes, using a specialised script in CVMFS
-	 * 
+	 *
 	 * @return script exit code, or -1 in case of error
 	 */
 	private int cleanupProcesses() {
@@ -949,7 +947,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		try {
-			Process process = Runtime.getRuntime().exec((cleanupScript.getAbsolutePath() + " -v -m ALIEN_PROC_ID=" + queueId + " $$ -KILL"));
+			final Process process = Runtime.getRuntime().exec((cleanupScript.getAbsolutePath() + " -v -m ALIEN_PROC_ID=" + queueId + " $$ -KILL"));
 			return process.waitFor();
 		}
 		catch (IOException | InterruptedException e) {
@@ -960,19 +958,19 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	/**
 	 * Register lfn links to archive
-	 * 
+	 *
 	 * @param entries
 	 * @param outputDir
 	 */
-	private void registerEntries(ArrayList<OutputEntry> entries, String outputDir) {
+	private void registerEntries(final ArrayList<OutputEntry> entries, final String outputDir) {
 		for (final OutputEntry entry : entries) {
-			boolean status = CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
+			final boolean status = CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
 			commander.q_api.putJobLog(queueId, "trace", "Registering: " + entry.getName() + ". Return status: " + status);
 		}
 	}
 
-	private ArrayList<String> getOutputTags(JobStatus exitStatus){
-		ArrayList<String> tags = new ArrayList<>();
+	private ArrayList<String> getOutputTags(final JobStatus exitStatus) {
+		final ArrayList<String> tags = new ArrayList<>();
 
 		if (exitStatus == JobStatus.ERROR_E)
 			tags.add("OutputErrorE");

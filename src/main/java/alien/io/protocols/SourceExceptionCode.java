@@ -99,14 +99,16 @@ public enum SourceExceptionCode implements StatusCode {
     /**
      * @return description of the status
      */
-    public String getDescription() {
+    @Override
+	public String getDescription() {
         return description;
     }
 
     /**
      * @return type of the status
      */
-    public StatusType getType() {
+    @Override
+	public StatusType getType() {
         return type;
     }
 }

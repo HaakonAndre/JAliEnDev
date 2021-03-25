@@ -29,10 +29,8 @@ import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -93,7 +91,7 @@ public class JobAgent implements Runnable {
 	private int cpuCores = 1;
 
 	private static AtomicInteger totalJobs = new AtomicInteger(0);
-	private int jobNumber = -1;
+	private final int jobNumber;
 
 	// Other
 	private final String hostName;
@@ -114,7 +112,7 @@ public class JobAgent implements Runnable {
 
 		private final int value;
 
-		private jaStatus(final int value) {
+		jaStatus(final int value) {
 			this.value = value;
 		}
 
@@ -126,7 +124,7 @@ public class JobAgent implements Runnable {
 	/**
 	 * logger object
 	 */
-	final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	private final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	/**
 	 * ML monitor object
@@ -158,20 +156,29 @@ public class JobAgent implements Runnable {
 
 	// Resource management vars
 
-	public static int origTtl;
-	public static final long jobAgentStartTime = System.currentTimeMillis();
+	/**
+	 * TTL for the slot
+	 */
+	protected static int origTtl;
+	private static final long jobAgentStartTime = System.currentTimeMillis();
 
-	public static Long RUNNING_CPU;
-	public static Long RUNNING_DISK;
+	private static Long RUNNING_CPU;
+	private static Long RUNNING_DISK;
 
-	public static Long MAX_CPU;
+	private static Long MAX_CPU;
 
-	public Long reqCPU = 0l;
-	public Long reqDisk = 0l;
+	private Long reqCPU = Long.valueOf(0);
+	private Long reqDisk = Long.valueOf(0);
 
-	public static Integer requestSync = 1;
+	/**
+	 * Allow only one agent to request a job at a time
+	 */
+	protected static final Object requestSync = new Object();
 
-	public static AtomicInteger retries = new AtomicInteger(0);
+	/**
+	 * How many consecutive answers of "no job for you" we got from the broker
+	 */
+	protected static AtomicInteger retries = new AtomicInteger(0);
 
 	/**
 	 */
@@ -185,7 +192,7 @@ public class JobAgent implements Runnable {
 
 		final String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
-		logger.log(Level.INFO, "We have the following DN :" + DN);
+		logger.log(Level.INFO, jobNumber + ". We have the following DN :" + DN);
 
 		if (siteMap == null) {
 			siteMap = (new SiteMap()).getSiteParameters(env);
@@ -239,7 +246,7 @@ public class JobAgent implements Runnable {
 	@SuppressWarnings("boxing")
 	@Override
 	public void run() {
-		logger.log(Level.INFO, "Starting JobAgent in " + hostName);
+		logger.log(Level.INFO, "Starting JobAgent " + jobNumber + " in " + hostName);
 
 		logger.log(Level.INFO, siteMap.toString());
 		try {
@@ -438,7 +445,7 @@ public class JobAgent implements Runnable {
 	public boolean checkParameters() {
 		final long jobAgentCurrentTime = System.currentTimeMillis();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
-		int timeleft = origTtl - time_subs;
+		final int timeleft = origTtl - time_subs;
 
 		if (timeleft <= 0)
 			return false;
@@ -478,7 +485,7 @@ public class JobAgent implements Runnable {
 		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
 				MachineJobFeatures.FeatureType.MACHINEFEATURE);
 		if (shutdownTime != null) {
-			shutdownTime = shutdownTime - System.currentTimeMillis() / 1000;
+			shutdownTime = Long.valueOf(shutdownTime.longValue() - System.currentTimeMillis() / 1000);
 			logger.log(Level.INFO, "Shutdown is" + shutdownTime);
 
 			timeleft = Integer.min(timeleft, shutdownTime.intValue());
@@ -488,7 +495,7 @@ public class JobAgent implements Runnable {
 			return false;
 
 		if (getLhcbMarks() != null)
-			timeleftAdjusted = (int) (((float) timeleft) * Math.max(1f, getLhcbMarks() / LHCB_DEFAULT_FACTOR));
+			timeleftAdjusted = (int) (timeleft * Math.max(1f, getLhcbMarks().floatValue() / LHCB_DEFAULT_FACTOR));
 		else
 			timeleftAdjusted = timeleft;
 
@@ -1039,7 +1046,7 @@ public class JobAgent implements Runnable {
 		if (wrapperProcs.size() < 1)
 			return 0;
 
-		return wrapperProcs.get(wrapperProcs.size() - 1); // may have a first entry coming from the env init in container. Ignore if present
+		return wrapperProcs.get(wrapperProcs.size() - 1).intValue(); // may have a first entry coming from the env init in container. Ignore if present
 	}
 
 	private final Object notificationEndpoint = new Object();

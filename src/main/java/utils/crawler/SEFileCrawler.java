@@ -11,18 +11,7 @@ import static utils.crawler.CrawlingStatusCode.E_PFN_XRDSTAT_FAILED;
 import static utils.crawler.CrawlingStatusCode.E_UNEXPECTED_ERROR;
 import static utils.crawler.CrawlingStatusCode.S_FILE_CHECKSUM_MATCH;
 import static utils.crawler.CrawlingStatusCode.S_FILE_CHECKSUM_MISMATCH;
-import alien.catalogue.GUID;
-import alien.catalogue.PFN;
-import alien.config.ConfigUtils;
-import alien.io.IOUtils;
-import alien.io.protocols.Factory;
-import alien.io.protocols.SourceException;
-import alien.io.protocols.SourceExceptionCode;
-import alien.io.protocols.Xrootd;
-import alien.se.SE;
-import alien.se.SEUtils;
-import alien.shell.commands.JAliEnCOMMander;
-import alien.user.JAKeyStore;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,8 +24,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+
+import alien.catalogue.GUID;
+import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
+import alien.io.IOUtils;
+import alien.io.protocols.Factory;
+import alien.io.protocols.SourceException;
+import alien.io.protocols.SourceExceptionCode;
+import alien.io.protocols.Xrootd;
+import alien.se.SE;
+import alien.se.SEUtils;
+import alien.shell.commands.JAliEnCOMMander;
+import alien.user.JAKeyStore;
 import utils.StatusType;
 
 /**
@@ -67,7 +70,6 @@ public class SEFileCrawler {
 	 * The name of the file that holds statistics about crawled files.
 	 */
 	private static final String STATS_FILE_NAME = "stats";
-
 
 	/**
 	 * The number of command line arguments required
@@ -122,7 +124,7 @@ public class SEFileCrawler {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		ConfigUtils.setApplicationName("SEFileCrawler");
 		System.setProperty("jdk.lang.Process.launchMechanism", "VFORK");
 
@@ -136,20 +138,20 @@ public class SEFileCrawler {
 
 		try {
 			parseArguments(args);
-			CrawlingStatistics stats = startCrawler();
+			final CrawlingStatistics stats = startCrawler();
 
 			// writing output to disk
 			writeJobOutputToDisk(pfnDataList, outputFileType);
 
 			// writing stats to disk
 			if (stats != null) {
-				String fileContents = CrawlingStatistics.toJSON(stats).toJSONString();
+				final String fileContents = CrawlingStatistics.toJSON(stats).toJSONString();
 				CrawlerUtils.uploadToGrid(commander, fileContents, OUTPUT_FILE_NAME, getJobStatsPath());
 			}
 			else
 				logger.log(Level.INFO, "No Stats could be generated in this iteration");
 		}
-		catch (Exception exception) {
+		catch (final Exception exception) {
 			logger.log(Level.INFO, exception.getMessage());
 			exception.printStackTrace();
 		}
@@ -161,7 +163,7 @@ public class SEFileCrawler {
 	 * @param args
 	 * @throws Exception
 	 */
-	private static void parseArguments(String[] args) throws Exception {
+	private static void parseArguments(final String[] args) throws Exception {
 
 		if (args.length != ARGUMENT_COUNT)
 			throw new Exception("Number of arguments supplied is incorrect. Expected " + ARGUMENT_COUNT + ", but got " + args.length);
@@ -174,7 +176,7 @@ public class SEFileCrawler {
 		iterationTimestamp = args[1];
 		jobIndex = Integer.parseInt(args[2]);
 		outputFileType = args[3];
-		crawlingJobsCount = Integer.parseInt(args[4]);
+		crawlingJobsCount = Integer.valueOf(args[4]);
 	}
 
 	/**
@@ -185,25 +187,25 @@ public class SEFileCrawler {
 	private static CrawlingStatistics startCrawler() {
 
 		try {
-			Collection<PFN> randomPFNs = getPFNsFromDisk(getSEPath(), "pfn", 3);
-			ArrayList<PFN> pfns = new ArrayList<>(randomPFNs);
+			final Collection<PFN> randomPFNs = getPFNsFromDisk(getSEPath(), "pfn", 3);
+			final ArrayList<PFN> pfns = new ArrayList<>(randomPFNs);
 
 			// zero based
 			jobIndex = jobIndex - 1;
 
-			int pfnStartIndex = jobIndex * pfns.size() / crawlingJobsCount;
-			int pfnEndIndex = (jobIndex + 1) * pfns.size() / crawlingJobsCount;
+			final int pfnStartIndex = jobIndex * pfns.size() / crawlingJobsCount.intValue();
+			int pfnEndIndex = (jobIndex + 1) * pfns.size() / crawlingJobsCount.intValue();
 
 			if (pfnEndIndex > pfns.size())
 				pfnEndIndex = pfns.size();
 
 			logger.info("(Start, End) " + pfnStartIndex + " " + pfnEndIndex);
 
-			List<PFN> pfnsToCrawl = pfns.subList(pfnStartIndex, pfnEndIndex);
+			final List<PFN> pfnsToCrawl = pfns.subList(pfnStartIndex, pfnEndIndex);
 			logger.info("Job will crawl " + pfnsToCrawl.size() + " pfns");
 
-			long[] timestamps = new long[pfnsToCrawl.size()];
-			
+			final long[] timestamps = new long[pfnsToCrawl.size()];
+
 			int totalPFNCount = 0, inaccessiblePFNs = 0, corruptPFNs = 0, okPFNs = 0, unknownStatusPFNs = 0;
 			long fileSizeBytes = 0, downloadTotalDurationMillis = 0, downloadedPFNsTotalCount = 0;
 			long xrdfsTotalDurationMillis = 0, xrdfsPFNsTotalCount = 0;
@@ -213,30 +215,30 @@ public class SEFileCrawler {
 
 			for (int i = 0; i < pfnsToCrawl.size(); i++) {
 				try {
-					PFN currentPFN = pfnsToCrawl.get(i);
+					final PFN currentPFN = pfnsToCrawl.get(i);
 
-					long startTimestamp = System.currentTimeMillis();
-					PFNData crawlingResult = crawlPFN(currentPFN);
-					long endTimestamp = System.currentTimeMillis();
+					final long startTimestamp = System.currentTimeMillis();
+					final PFNData crawlingResult = crawlPFN(currentPFN);
+					final long endTimestamp = System.currentTimeMillis();
 
 					logger.info("PFN = " + currentPFN.pfn + " Result =" + crawlingResult);
 
 					timestamps[i] = endTimestamp - startTimestamp;
 
 					if (crawlingResult.getObservedSize() != null)
-						fileSizeBytes += crawlingResult.getObservedSize();
+						fileSizeBytes += crawlingResult.getObservedSize().longValue();
 
 					if (crawlingResult.getDownloadDurationMillis() != null) {
-						downloadTotalDurationMillis += crawlingResult.getDownloadDurationMillis();
+						downloadTotalDurationMillis += crawlingResult.getDownloadDurationMillis().longValue();
 						downloadedPFNsTotalCount += 1;
 					}
 
 					if (crawlingResult.getXrdfsDurationMillis() != null) {
-						xrdfsTotalDurationMillis += crawlingResult.getXrdfsDurationMillis();
+						xrdfsTotalDurationMillis += crawlingResult.getXrdfsDurationMillis().longValue();
 						xrdfsPFNsTotalCount += 1;
 					}
 
-					String statusType = crawlingResult.getStatusType();
+					final String statusType = crawlingResult.getStatusType();
 					if (statusType.equals(StatusType.FILE_OK.toString()))
 						okPFNs += 1;
 					else if (statusType.equals(StatusType.FILE_CORRUPT.toString()))
@@ -248,7 +250,7 @@ public class SEFileCrawler {
 
 					totalPFNCount += 1;
 				}
-				catch (Exception e) {
+				catch (final Exception e) {
 					e.printStackTrace();
 					logger.log(Level.SEVERE, "Cannot crawl pfn " + pfns.get(i).pfn + " " + e.getMessage());
 				}
@@ -256,7 +258,7 @@ public class SEFileCrawler {
 
 			logger.info("Crawling finished for all files");
 
-			CrawlingStatistics stats = new CrawlingStatistics(
+			final CrawlingStatistics stats = new CrawlingStatistics(
 					totalPFNCount,
 					okPFNs,
 					inaccessiblePFNs,
@@ -269,16 +271,15 @@ public class SEFileCrawler {
 					downloadTotalDurationMillis,
 					xrdfsPFNsTotalCount,
 					xrdfsTotalDurationMillis,
-					System.currentTimeMillis()
-			);
+					System.currentTimeMillis());
 
-			for (int i = 0; i < timestamps.length; i++)
-				stats.crawlingTotalDurationMillis += timestamps[i];
+			for (final long timestamp : timestamps)
+				stats.crawlingTotalDurationMillis += timestamp;
 
 			stats.crawlingAvgDurationMillis = stats.crawlingTotalDurationMillis / timestamps.length;
 			return stats;
 		}
-		catch (Exception exception) {
+		catch (final Exception exception) {
 			exception.printStackTrace();
 			logger.log(Level.SEVERE, exception.getMessage());
 			return null;
@@ -295,28 +296,27 @@ public class SEFileCrawler {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	private static Collection<PFN> getPFNsFromDisk(String directoryPath, String fileName, int retries) throws IOException, ClassNotFoundException {
+	private static Collection<PFN> getPFNsFromDisk(final String directoryPath, final String fileName, final int retries) throws IOException, ClassNotFoundException {
 
-		String filePath = directoryPath + fileName;
-		Collection<PFN> pfns = new HashSet<>();
+		final String filePath = directoryPath + fileName;
+		final Collection<PFN> pfns = new HashSet<>();
 
 		if (retries == 0)
 			return pfns;
 
 		try (
 				FileInputStream fileInputStream = new FileInputStream(new File(fileName));
-				ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-		) {
-			Collection<?> pfnsContainer = (Collection<?>) objectInputStream.readObject();
+				ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);) {
+			final Collection<?> pfnsContainer = (Collection<?>) objectInputStream.readObject();
 
-			for (Object pfn : pfnsContainer)
+			for (final Object pfn : pfnsContainer)
 				pfns.add((PFN) pfn);
 
 			return pfns;
 		}
-		catch (FileNotFoundException exception) {
+		catch (final FileNotFoundException exception) {
 			try {
-				File downloadedFile = new File(fileName);
+				final File downloadedFile = new File(fileName);
 
 				if (downloadedFile.exists() && !downloadedFile.delete())
 					logger.log(Level.INFO, "Cannot delete downloaded file " + downloadedFile.getCanonicalPath());
@@ -324,7 +324,7 @@ public class SEFileCrawler {
 				commander.c_api.downloadFile(filePath, downloadedFile);
 				return getPFNsFromDisk(directoryPath, fileName, retries - 1);
 			}
-			catch (Exception e) {
+			catch (final Exception e) {
 				e.printStackTrace();
 				// file cannot be downloaded. throw the original exception
 				throw exception;
@@ -338,7 +338,7 @@ public class SEFileCrawler {
 	 * @param currentPFN
 	 * @return Status of the crawling
 	 */
-	private static PFNData crawlPFN(PFN currentPFN) {
+	private static PFNData crawlPFN(final PFN currentPFN) {
 		CrawlingStatus status = null;
 		PFN pfnToRead = null;
 		GUID guid = null;
@@ -346,13 +346,11 @@ public class SEFileCrawler {
 		String catalogueMD5 = null, observedMD5 = null;
 		Long downloadDurationMillis = null, xrdfsDurationMillis = null;
 
-		long fileSize = 0;
-
 		// fill PFN access token
 		try {
 			pfnToRead = getPFNWithAccessToken(currentPFN);
 		}
-		catch (Exception exception) {
+		catch (final Exception exception) {
 			logger.log(Level.WARNING, exception.getMessage());
 			status = new CrawlingStatus(E_PFN_NOT_READABLE, formatError(exception.getMessage()));
 		}
@@ -365,9 +363,9 @@ public class SEFileCrawler {
 				if (guid == null)
 					status = new CrawlingStatus(E_GUID_NOT_FOUND, "Cannot get GUID from PFN");
 				else
-					catalogueFileSize = guid.size;
+					catalogueFileSize = Long.valueOf(guid.size);
 			}
-			catch (Exception exception) {
+			catch (final Exception exception) {
 				exception.printStackTrace();
 				logger.log(Level.WARNING, exception.getMessage());
 				status = new CrawlingStatus(E_UNEXPECTED_ERROR, formatError(exception.getMessage()));
@@ -377,9 +375,9 @@ public class SEFileCrawler {
 		// check if file is online
 		if (pfnToRead != null && status == null) {
 			try {
-				long start = System.currentTimeMillis();
-				String stat = xrootd.xrdstat(pfnToRead, false, false, false);
-				long end = System.currentTimeMillis();
+				final long start = System.currentTimeMillis();
+				final String stat = xrootd.xrdstat(pfnToRead, false, false, false);
+				final long end = System.currentTimeMillis();
 				xrdfsDurationMillis = Long.valueOf(end - start);
 				if (stat != null) {
 					final int idx = stat.indexOf("Flags");
@@ -387,12 +385,12 @@ public class SEFileCrawler {
 						status = new CrawlingStatus(E_PFN_OFFLINE, "PFN is not online");
 				}
 			}
-			catch (IOException exception) {
+			catch (final IOException exception) {
 				exception.printStackTrace();
 				logger.log(Level.WARNING, exception.getMessage());
 
 				if (exception instanceof SourceException) {
-					SourceExceptionCode code = ((SourceException) exception).getCode();
+					final SourceExceptionCode code = ((SourceException) exception).getCode();
 					status = new CrawlingStatus(code, formatError(exception.getMessage()));
 				}
 				else
@@ -405,17 +403,17 @@ public class SEFileCrawler {
 			File downloadedFile = null;
 
 			try {
-				long start = System.currentTimeMillis();
+				final long start = System.currentTimeMillis();
 				downloadedFile = xrootd.get(pfnToRead, null);
-				long end = System.currentTimeMillis();
+				final long end = System.currentTimeMillis();
 				downloadDurationMillis = Long.valueOf(end - start);
 			}
-			catch (IOException exception) {
+			catch (final IOException exception) {
 				exception.printStackTrace();
 				logger.log(Level.WARNING, exception.getMessage());
 
 				if (exception instanceof SourceException) {
-					SourceExceptionCode code = ((SourceException) exception).getCode();
+					final SourceExceptionCode code = ((SourceException) exception).getCode();
 					status = new CrawlingStatus(code, formatError(exception.getMessage()));
 				}
 				else
@@ -426,12 +424,12 @@ public class SEFileCrawler {
 				try {
 					observedFileSize = Long.valueOf(downloadedFile.length());
 					observedMD5 = IOUtils.getMD5(downloadedFile);
-					catalogueMD5 = guid.md5;
+					catalogueMD5 = guid != null ? guid.md5 : null;
 
 					if (downloadedFile.exists() && !downloadedFile.delete())
 						logger.log(Level.INFO, "Cannot delete " + downloadedFile.getName());
 
-					if (catalogueFileSize == 0)
+					if (Long.valueOf(0).equals(catalogueFileSize))
 						status = new CrawlingStatus(E_FILE_EMPTY, "Catalogue file size is 0");
 					else if (catalogueMD5 == null)
 						status = new CrawlingStatus(E_CATALOGUE_MD5_IS_NULL, "Catalogue MD5 is null");
@@ -442,7 +440,7 @@ public class SEFileCrawler {
 					else
 						status = new CrawlingStatus(S_FILE_CHECKSUM_MATCH, "Recomputed checksum matches catalogue checksum");
 				}
-				catch (IOException exception) {
+				catch (final IOException exception) {
 					exception.printStackTrace();
 					logger.log(Level.WARNING, exception.getMessage());
 					status = new CrawlingStatus(E_PFN_DOWNLOAD_FAILED, formatError(exception.getMessage()));
@@ -461,7 +459,7 @@ public class SEFileCrawler {
 
 			pfnData = new PFNData(
 					guid.guid.toString(),
-					se.seNumber,
+					Integer.valueOf(se.seNumber),
 					currentPFN.pfn,
 					observedFileSize,
 					catalogueFileSize,
@@ -472,8 +470,7 @@ public class SEFileCrawler {
 					status.getCode().toString(),
 					status.getCode().getType().toString(),
 					status.getMessage(),
-					System.currentTimeMillis()
-			);
+					Long.valueOf(System.currentTimeMillis()));
 
 			// build the list of pfn data that will be written to disk as crawler output
 			pfnDataList.add(pfnData);
@@ -484,16 +481,17 @@ public class SEFileCrawler {
 
 	/**
 	 * Removes newlines and commas from a string so that it can be used in a CSV file
+	 *
 	 * @param error
 	 * @return String
 	 */
-	private static String formatError(String error) {
+	private static String formatError(final String error) {
 		if (outputFileType.equals(OUTPUT_FORMAT_CSV)) {
-			error = error.replaceAll("\\R", " ");
-			return error.replaceAll(",", " ");
+			final String errorNew = error.replaceAll("\\R", " ");
+			return errorNew.replaceAll(",", " ");
 		}
-		else
-			return error;
+
+		return error;
 	}
 
 	/**
@@ -503,22 +501,22 @@ public class SEFileCrawler {
 	 * @return PFN to read
 	 * @throws Exception
 	 */
-	private static PFN getPFNWithAccessToken(PFN pfn) throws Exception {
-		GUID guid = pfn.getGuid();
+	private static PFN getPFNWithAccessToken(final PFN pfn) throws Exception {
+		final GUID guid = pfn.getGuid();
 
 		if (guid == null)
 			throw new Exception("PFN " + pfn.pfn + " has a null GUID");
 
-		List<String> ses = new ArrayList<>();
-		List<String> exses = new ArrayList<>();
+		final List<String> ses = new ArrayList<>();
+		final List<String> exses = new ArrayList<>();
 		ses.add(se.seName);
 
-		Collection<PFN> pfnsToRead = commander.c_api.getPFNsToRead(guid, ses, exses);
+		final Collection<PFN> pfnsToRead = commander.c_api.getPFNsToRead(guid, ses, exses);
 
 		if (pfnsToRead == null)
 			throw new Exception("Cannot get PFNs to read for " + pfn.pfn);
 
-		Iterator<PFN> pfnIterator = pfnsToRead.iterator();
+		final Iterator<PFN> pfnIterator = pfnsToRead.iterator();
 
 		if (!pfnIterator.hasNext())
 			throw new Exception("Cannot get PFNs to read for " + pfn.pfn);
@@ -531,42 +529,42 @@ public class SEFileCrawler {
 	 *
 	 * @param fileType
 	 */
-	private static void writeJobOutputToDisk(List<PFNData> pfnDataList, String fileType) {
+	private static void writeJobOutputToDisk(final List<PFNData> dataList, final String fileType) {
 		try {
 			String jobOutput;
 
-			logger.info("Getting job output from data list of size " + pfnDataList.size());
-			logger.info("Values " + pfnDataList);
+			logger.info("Getting job output from data list of size " + dataList.size());
+			logger.info("Values " + dataList);
 
 			if (fileType.toLowerCase().equals(OUTPUT_FORMAT_JSON))
-				jobOutput = getOutputAsJSON(pfnDataList);
+				jobOutput = getOutputAsJSON(dataList);
 			else
-				jobOutput = getOutputAsCSV(pfnDataList);
+				jobOutput = getOutputAsCSV(dataList);
 
 			logger.info("Got job output with value " + jobOutput);
 
 			CrawlerUtils.uploadToGrid(commander, jobOutput, OUTPUT_FILE_NAME, getJobOutputPath());
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "Cannot write output to disk " + e.getMessage());
 		}
 	}
 
 	/**
-	 * @param pfnDataList A list of PFN data gathered during the crawling process
+	 * @param dataList A list of PFN data gathered during the crawling process
 	 * @return The job output as JSON
 	 */
 	@SuppressWarnings("unchecked")
-	private static String getOutputAsJSON(List<PFNData> pfnDataList) {
-		JSONObject result = new JSONObject();
+	private static String getOutputAsJSON(final List<PFNData> dataList) {
+		final JSONObject result = new JSONObject();
 		result.put(se.seName, new JSONArray());
-		JSONArray pfns = (JSONArray) result.get(se.seName);
+		final JSONArray pfns = (JSONArray) result.get(se.seName);
 
-		for (PFNData pfnData : pfnDataList) {
+		for (final PFNData pfnData : dataList) {
 			try {
 				pfns.add(pfnData.toJSON());
 			}
-			catch (Exception e) {
+			catch (final Exception e) {
 				logger.info("Cannot convert to CSV " + e.getMessage());
 				e.printStackTrace();
 			}
@@ -576,16 +574,16 @@ public class SEFileCrawler {
 	}
 
 	/**
-	 * @param pfnDataList A list of PFN data gathered during the crawling process
+	 * @param dataList A list of PFN data gathered during the crawling process
 	 * @return The crawling output as CSV
 	 */
-	private static String getOutputAsCSV(List<PFNData> pfnDataList) {
-		StringBuilder builder = new StringBuilder();
+	private static String getOutputAsCSV(final List<PFNData> dataList) {
+		final StringBuilder builder = new StringBuilder();
 		logger.info("Before for loop");
 
-		for (int i = 0; i < pfnDataList.size(); i++) {
+		for (int i = 0; i < dataList.size(); i++) {
 			try {
-				PFNData pfnData = pfnDataList.get(i);
+				final PFNData pfnData = dataList.get(i);
 
 				if (i == 0) {
 					logger.info("Adding header");
@@ -596,7 +594,7 @@ public class SEFileCrawler {
 
 				builder.append(pfnData.toCSV()).append("\n");
 			}
-			catch (Exception e) {
+			catch (final Exception e) {
 				logger.info("Cannot convert to CSV " + e.getMessage());
 				e.printStackTrace();
 			}

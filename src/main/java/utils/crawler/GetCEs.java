@@ -1,9 +1,9 @@
 package utils.crawler;
 
-import alien.user.LDAPHelper;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import alien.user.LDAPHelper;
 
 /**
  * @author costing
@@ -18,7 +18,7 @@ public class GetCEs {
 	 */
 	public static void main(final String[] args) {
 
-		for (final String se : new String[]{" ALICE::UPB::EOS"}) {
+		for (final String se : new String[] { " ALICE::UPB::EOS" }) {
 			final Set<String> siteNames = getCloseSites(se);
 			System.err.println(siteNames);
 
@@ -71,7 +71,7 @@ public class GetCEs {
 	 * @param se
 	 * @return JDL requirement for closest site to storage element
 	 */
-	public static StringBuilder getSiteJDLRequirement(String se) {
+	public static StringBuilder getSiteJDLRequirement(final String se) {
 		final Set<String> siteNames = GetCEs.getCloseSites(se);
 
 		final Set<String> matchingCEs = new LinkedHashSet<>();

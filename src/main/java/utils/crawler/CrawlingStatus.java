@@ -12,14 +12,18 @@ public class CrawlingStatus {
 	/**
 	 * Crawling status code
 	 */
-	private StatusCode code;
+	private final StatusCode code;
 
 	/**
 	 * Default error message
 	 */
 	private final String message;
 
-	public CrawlingStatus(StatusCode code, final String message) {
+	/**
+	 * @param code
+	 * @param message
+	 */
+	public CrawlingStatus(final StatusCode code, final String message) {
 		this.code = code;
 		this.message = message;
 	}
@@ -37,7 +41,6 @@ public class CrawlingStatus {
 	public String getMessage() {
 		return message;
 	}
-
 
 	@Override
 	public String toString() {

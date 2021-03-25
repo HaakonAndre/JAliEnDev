@@ -5,6 +5,10 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 
+/**
+ * @author sweisz
+ * @since Mar 25, 2021
+ */
 public class JobRunner extends JobAgent {
 
 	/**
@@ -12,14 +16,14 @@ public class JobRunner extends JobAgent {
 	 */
 	final Logger logger = ConfigUtils.getLogger(JobRunner.class.getCanonicalName());
 
+	@Override
 	public void run() {
-		long timestamp = System.currentTimeMillis()/1000;
-		long ttlEnd = timestamp + JobAgent.origTtl;
+		long timestamp = System.currentTimeMillis() / 1000;
+		final long ttlEnd = timestamp + JobAgent.origTtl;
 		Thread jaThread;
 		int i = 0;
-		Integer maxRetries = 5;
 
-		maxRetries = Integer.valueOf(System.getenv().getOrDefault("MAX_RETRIES", maxRetries.toString()));
+		final int maxRetries = Integer.parseInt(System.getenv().getOrDefault("MAX_RETRIES", "5"));
 
 		while (timestamp < ttlEnd) {
 			synchronized (JobAgent.requestSync) {
@@ -29,14 +33,16 @@ public class JobRunner extends JobAgent {
 						jaThread = new Thread(new JobAgent());
 						jaThread.start();
 						i++;
-					} else {
+					}
+					else {
 						logger.log(Level.INFO, "No new thread");
 					}
 
 					JobAgent.requestSync.wait(5 * 60 * 1000);
 
-				} catch (InterruptedException e) {
-					logger.log(Level.WARNING, "JobRunner interrupted");
+				}
+				catch (final InterruptedException e) {
+					logger.log(Level.WARNING, "JobRunner interrupted", e);
 				}
 
 				timestamp = System.currentTimeMillis() / 1000;
@@ -53,7 +59,7 @@ public class JobRunner extends JobAgent {
 	public static void main(final String[] args) {
 		ConfigUtils.setApplicationName("JobRunner");
 		ConfigUtils.switchToForkProcessLaunching();
-		JobRunner jr = new JobRunner();
+		final JobRunner jr = new JobRunner();
 		jr.run();
 	}
 }
