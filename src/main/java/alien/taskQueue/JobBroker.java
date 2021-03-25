@@ -417,7 +417,7 @@ public class JobBroker {
 			}
 
 			// Checks that if whole node scheduling, no constraint on CPUCores is added from the CE
-			if (matchRequest.containsKey("CPUCores") && ((Number) matchRequest.get("CPUCores")).intValue() != 0) {
+			if (matchRequest.containsKey("CPUCores") && Integer.parseInt(matchRequest.get("CPUCores").toString()) != 0) {
 				where += "and cpucores <= ? ";
 				bindValues.add(matchRequest.get("CPUCores"));
 			}
