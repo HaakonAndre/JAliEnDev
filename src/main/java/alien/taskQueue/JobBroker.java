@@ -417,9 +417,9 @@ public class JobBroker {
 			}
 
 			// Checks that if whole node scheduling, no constraint on CPUCores is added from the CE
-			if (matchRequest.containsKey("CPUCores") && !matchRequest.get("CPUCores").equals("0")) {
+			if (matchRequest.containsKey("CPUCores") && !matchRequest.get("CPUCores").equals(Long.valueOf(0))) {
 				where += "and cpucores <= ? ";
-				bindValues.add(Integer.valueOf((String)matchRequest.get("CPUCores")));
+				bindValues.add(matchRequest.get("CPUCores"));
 			}
 
 			if (matchRequest.containsKey("Site")) {
@@ -500,7 +500,7 @@ public class JobBroker {
 
 			if (matchRequest.containsKey("RequiredCpusCe")) {
 				final Pattern pat = Pattern.compile("\\s*(>=|<=|>|<|==|=|!=)\\s*([0-9]+)");
-				Matcher m = pat.matcher((String)matchRequest.get("RequiredCpusCe"));
+				Matcher m = pat.matcher((String) matchRequest.get("RequiredCpusCe"));
 				if (m.matches()) {
 					String operator = m.group(1).equals("==") ? "=" : m.group(1);
 					where += " and cpucores " + operator + " ? ";
