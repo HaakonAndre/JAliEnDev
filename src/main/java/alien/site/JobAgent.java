@@ -190,9 +190,9 @@ public class JobAgent implements Runnable {
 		if (siteMap == null) {
 			siteMap = (new SiteMap()).getSiteParameters(env);
 
-			MAX_CPU = ((Number) siteMap.getOrDefault("CPUCores", 1)).longValue();
-			RUNNING_CPU = new Long(MAX_CPU);
-			RUNNING_DISK = ((Number) siteMap.getOrDefault("Disk", 10 * 1024)).longValue();
+			MAX_CPU = Long.valueOf(((Number) siteMap.getOrDefault("CPUCores", Integer.valueOf(1))).longValue());
+			RUNNING_CPU = MAX_CPU;
+			RUNNING_DISK = Long.valueOf(((Number) siteMap.getOrDefault("Disk", Integer.valueOf(10 * 1024))).longValue());
 			origTtl = ((Integer) siteMap.get("TTL")).intValue();
 		}
 
@@ -236,6 +236,7 @@ public class JobAgent implements Runnable {
 		}
 	}
 
+	@SuppressWarnings("boxing")
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting JobAgent in " + hostName);
@@ -245,14 +246,14 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, "Resources available CPU DISK: " + RUNNING_CPU + " " + RUNNING_DISK);
 			synchronized (requestSync) {
 				if (!updateDynamicParameters()) {
-					//requestSync.notify();
+					// requestSync.notify();
 					return;
 				}
 
 				monitor.sendParameter("ja_status", Integer.valueOf(jaStatus.REQUESTING_JOB.getValue()));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 
-				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+				final GetMatchJob jobMatch = commander.q_api.getMatchJob(new HashMap<>(siteMap));
 
 				matchedJob = jobMatch.getMatchJob();
 
@@ -286,7 +287,6 @@ public class JobAgent implements Runnable {
 				reqDisk = ((Number) matchedJob.getOrDefault("reqDisk", 10 * 1024)).longValue();
 				logger.log(Level.INFO, "Job requested CPU Disk: " + reqCPU + " " + reqDisk);
 
-
 				RUNNING_CPU -= reqCPU;
 				RUNNING_DISK -= reqDisk;
 				logger.log(Level.INFO, "Currently available CPUCores: " + RUNNING_CPU);
@@ -316,9 +316,9 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, "Error getting a matching job: ", e);
 			if (RUNNING_CPU.equals(MAX_CPU))
 				retries.getAndIncrement();
-			//synchronized (requestSync) {
-			//	requestSync.notify();
-			//}
+			// synchronized (requestSync) {
+			// requestSync.notify();
+			// }
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs.get());
@@ -336,7 +336,6 @@ public class JobAgent implements Runnable {
 			jobWrapperLogDir = jobWorkdir + "/" + jobWrapperLogName;
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
-
 
 			final String version = !Version.getTagFromEnv().isEmpty() ? Version.getTagFromEnv() : "/Git: " + Version.getGitHash() + ". Builddate: " + Version.getCompilationTimestamp();
 			commander.q_api.putJobLog(queueId, "trace", "Running JAliEn JobAgent" + version);
@@ -424,7 +423,7 @@ public class JobAgent implements Runnable {
 				}
 			}
 			catch (IOException | InterruptedException ioe) {
-				System.out.println("Could not extract the space information from `df`");
+				System.out.println("Could not extract the space information from `df`: " + ioe.getMessage());
 			}
 		}
 
@@ -443,14 +442,14 @@ public class JobAgent implements Runnable {
 
 		if (timeleft <= 0)
 			return false;
-		if (RUNNING_DISK <= 10 * 1024) {
+		if (RUNNING_DISK.longValue() <= 10 * 1024) {
 			logger.log(Level.INFO, "There is not enough space left: " + RUNNING_DISK);
 			if (!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")) {
 				return false;
 			}
 			return false;
 		}
-		if (RUNNING_CPU <= 0)
+		if (RUNNING_CPU.longValue() <= 0)
 			return false;
 
 		return true;
@@ -477,14 +476,13 @@ public class JobAgent implements Runnable {
 		timeleft -= 600;
 
 		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
-					MachineJobFeatures.FeatureType.MACHINEFEATURE);
+				MachineJobFeatures.FeatureType.MACHINEFEATURE);
 		if (shutdownTime != null) {
 			shutdownTime = shutdownTime - System.currentTimeMillis() / 1000;
 			logger.log(Level.INFO, "Shutdown is" + shutdownTime);
 
 			timeleft = Integer.min(timeleft, shutdownTime.intValue());
 		}
-
 
 		if (checkParameters() == false)
 			return false;
@@ -664,7 +662,7 @@ public class JobAgent implements Runnable {
 				stdinObj.writeObject(siteMap);
 				stdinObj.writeObject(defaultOutputDirPrefix);
 				stdinObj.writeObject(legacyToken);
-				stdinObj.writeObject(ttl);
+				stdinObj.writeObject(Long.valueOf(ttl));
 
 				stdinObj.flush();
 			}
@@ -1015,7 +1013,7 @@ public class JobAgent implements Runnable {
 
 	/**
 	 *
-	 * Identifies the JobWrapper in list of child PIDs 
+	 * Identifies the JobWrapper in list of child PIDs
 	 * (these may be shifted when using containers)
 	 *
 	 * @param childPIDs
