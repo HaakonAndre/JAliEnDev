@@ -107,7 +107,8 @@ public class ComputingElement extends Thread {
 		try {
 			Files.writeString(Paths.get(host_logdir_resolved + "/CE.pid"),
 					Integer.toString(MonitorFactory.getSelfProcessID()));
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			logger.log(Level.WARNING, "Could not create a pidfile in: " + host_logdir_resolved + "/CE.pid", e);
 		}
 
@@ -135,7 +136,8 @@ public class ComputingElement extends Thread {
 			try {
 				Thread.sleep(
 						System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 				logger.severe("Unable to sleep: " + e.toString());
 			}
 
@@ -353,10 +355,10 @@ public class ComputingElement extends Thread {
 			before += "export TMPDIR=\"" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "\"\n";
 		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
 			before += "export WORKDIR=\"" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "\"\n";
-		//if (System.getenv().containsKey("cerequirements"))
-		//	before += "export cerequirements=\'" + System.getenv().get("cerequirements") + "\'\n";
-		//if (System.getenv().containsKey("partition"))
-		//	before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
+		// if (System.getenv().containsKey("cerequirements"))
+		// before += "export cerequirements=\'" + System.getenv().get("cerequirements") + "\'\n";
+		// if (System.getenv().containsKey("partition"))
+		// before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
 		if (siteMap.containsKey("RequiredCpusCe"))
 			before += "export RequiredCpusCe=\"" + siteMap.get("RequiredCpusCe") + "\"\n";
 		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
@@ -371,7 +373,7 @@ public class ComputingElement extends Thread {
 		if (config.containsKey("monalisa_host"))
 			before += "export APMON_CONFIG=\"" + config.get("monalisa_host") + "\"\n";
 		else if (config.containsKey("APMON_CONFIG"))
-			before += "export APMON_CONFIG='" + config.get("APMON_CONFIG") +"'\n";
+			before += "export APMON_CONFIG='" + config.get("APMON_CONFIG") + "'\n";
 		else
 			before += "export APMON_CONFIG='" + ConfigUtils.getLocalHostname() + "'\n";
 		if (config.containsKey("ce_installationmethod"))
@@ -510,9 +512,9 @@ public class ComputingElement extends Thread {
 
 		smenv.put("Disk", "100000000"); // TODO: df
 
-		//if (System.getenv().containsKey("cerequirements"))
-		//	smenv.put("cerequirements", System.getenv().get("cerequirements")); //Local overrides value in LDAP if present
-		//else
+		// if (System.getenv().containsKey("cerequirements"))
+		// smenv.put("cerequirements", System.getenv().get("cerequirements")); //Local overrides value in LDAP if present
+		// else
 		if (config.containsKey("ce_cerequirements"))
 			smenv.put("cerequirements", config.get("ce_cerequirements").toString());
 
@@ -539,7 +541,7 @@ public class ComputingElement extends Thread {
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
 
 		if (config.containsKey("ce_matcharg") && getValuesFromLDAPField(config.get("ce_matcharg")).containsKey("cpucores")) {
-			siteMap.put("CPUCores", getValuesFromLDAPField(config.get("ce_matcharg")).get("cpucores"));
+			siteMap.put("CPUCores", Integer.valueOf(getValuesFromLDAPField(config.get("ce_matcharg")).get("cpucores")));
 		}
 
 	}
