@@ -664,6 +664,16 @@ public class ConfigUtils {
 			// TODO: check to which partitions it belongs
 		}
 
+		HashMap<String, Object> monaLisaConfig = null;
+		String MLName = null;
+		if (hostConfig.containsKey("host_monalisa")) {
+			MLName = (String) hostConfig.get("host_monalisa");
+			logger.log(Level.INFO, "MLName: " + MLName);
+			monaLisaConfig = LDAPHelper.checkLdapTree("(&(name=" + MLName + "))", "ou=MonaLisa,ou=Services,ou=" + site + ",ou=Sites,", "monalisa");
+			logger.log(Level.INFO, "MLConfig: " + monaLisaConfig);
+			configuration.putAll(monaLisaConfig);
+		}
+
 		final HashMap<String, Object> siteConfig = getSiteConfigFromLdap(checkContent, site);
 		if (siteConfig == null || siteConfig.size() == 0)
 			return null;

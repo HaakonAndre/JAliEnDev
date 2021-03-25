@@ -28,8 +28,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,16 +64,15 @@ import lia.util.process.ExternalProcesses;
 public class JobAgent implements Runnable {
 
 	// Variables passed through VoBox environment
-	private final Map<String, String> env = System.getenv();
+	private final static Map<String, String> env = System.getenv();
 	private final String ce;
-	private final int origTtl;
 
 	// Folders and files
 	private File tempDir;
 	private static final String defaultOutputDirPrefix = "/alien-job-";
 	private static final String jobWrapperLogName = "jalien-jobwrapper.log";
 	private String jobWorkdir;
-	private final String jobWrapperLogDir;
+	private String jobWrapperLogDir;
 
 	// Job variables
 	private JDL jdl;
@@ -82,7 +84,7 @@ public class JobAgent implements Runnable {
 	private final String workdir;
 	private String legacyToken;
 	private HashMap<String, Object> matchedJob;
-	private HashMap<String, Object> siteMap = new HashMap<>();
+	private static HashMap<String, Object> siteMap = null;
 	private int workdirMaxSizeMB;
 	private int jobMaxMemoryMB;
 	private MonitoredJob mj;
@@ -90,8 +92,8 @@ public class JobAgent implements Runnable {
 	private long prevTime = 0;
 	private int cpuCores = 1;
 
-	private int totalJobs;
-	private final long jobAgentStartTime = System.currentTimeMillis();
+	private static AtomicInteger totalJobs = new AtomicInteger(0);
+	private int jobNumber = -1;
 
 	// Other
 	private final String hostName;
@@ -100,6 +102,7 @@ public class JobAgent implements Runnable {
 	private String jarName;
 	private int wrapperPID;
 	private static float lhcbMarks = -1;
+	private final static float LHCB_DEFAULT_FACTOR = 9f;
 
 	private enum jaStatus {
 		REQUESTING_JOB(1), INSTALLING_PKGS(2), JOB_STARTED(3), RUNNING_JOB(4), DONE(5), ERROR_HC(-1), // error in getting host
@@ -120,12 +123,10 @@ public class JobAgent implements Runnable {
 		}
 	}
 
-	private final int jobagent_requests = 5;
-
 	/**
 	 * logger object
 	 */
-	static final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	/**
 	 * ML monitor object
@@ -155,6 +156,23 @@ public class JobAgent implements Runnable {
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
 
+	// Resource management vars
+
+	public static int origTtl;
+	public static final long jobAgentStartTime = System.currentTimeMillis();
+
+	public static Long RUNNING_CPU;
+	public static Long RUNNING_DISK;
+
+	public static Long MAX_CPU;
+
+	public Long reqCPU = 0l;
+	public Long reqDisk = 0l;
+
+	public static Integer requestSync = 1;
+
+	public static AtomicInteger retries = new AtomicInteger(0);
+
 	/**
 	 */
 	public JobAgent() {
@@ -163,15 +181,20 @@ public class JobAgent implements Runnable {
 
 		ce = env.get("CE");
 
-		jobWrapperLogDir = Functions.resolvePathWithEnv(env.getOrDefault("TMPDIR", "/tmp") + "/" + jobWrapperLogName);
+		jobNumber = totalJobs.incrementAndGet();
 
 		final String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
 		logger.log(Level.INFO, "We have the following DN :" + DN);
 
-		totalJobs = 0;
+		if (siteMap == null) {
+			siteMap = (new SiteMap()).getSiteParameters(env);
 
-		siteMap = (new SiteMap()).getSiteParameters(env);
+			MAX_CPU = ((Number) siteMap.getOrDefault("CPUCores", 1)).longValue();
+			RUNNING_CPU = new Long(MAX_CPU);
+			RUNNING_DISK = ((Number) siteMap.getOrDefault("Disk", 10 * 1024)).longValue();
+			origTtl = ((Integer) siteMap.get("TTL")).intValue();
+		}
 
 		hostName = (String) siteMap.get("Localhost");
 		// alienCm = (String) siteMap.get("alienCm");
@@ -182,8 +205,6 @@ public class JobAgent implements Runnable {
 			jobAgentId = Request.getVMID().toString();
 
 		workdir = Functions.resolvePathWithEnv((String) siteMap.get("workdir"));
-
-		origTtl = ((Integer) siteMap.get("TTL")).intValue();
 
 		Hashtable<Long, String> cpuinfo;
 
@@ -219,15 +240,14 @@ public class JobAgent implements Runnable {
 	public void run() {
 		logger.log(Level.INFO, "Starting JobAgent in " + hostName);
 
-		int count = jobagent_requests;
-		while (count > 0) {
-			if (!updateDynamicParameters())
-
-				break;
-
-			logger.log(Level.INFO, siteMap.toString());
-			try {
-				logger.log(Level.INFO, "Trying to get a match...");
+		logger.log(Level.INFO, siteMap.toString());
+		try {
+			logger.log(Level.INFO, "Resources available CPU DISK: " + RUNNING_CPU + " " + RUNNING_DISK);
+			synchronized (requestSync) {
+				if (!updateDynamicParameters()) {
+					//requestSync.notify();
+					return;
+				}
 
 				monitor.sendParameter("ja_status", Integer.valueOf(jaStatus.REQUESTING_JOB.getValue()));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
@@ -237,61 +257,75 @@ public class JobAgent implements Runnable {
 				matchedJob = jobMatch.getMatchJob();
 
 				// TODELETE
-				if (matchedJob != null)
-					logger.log(Level.INFO, matchedJob.toString());
-
-				if (matchedJob != null && !matchedJob.containsKey("Error")) {
-					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
-					queueId = ((Long) matchedJob.get("queueId")).longValue();
-					username = (String) matchedJob.get("User");
-					tokenCert = (String) matchedJob.get("TokenCertificate");
-					tokenKey = (String) matchedJob.get("TokenKey");
-					legacyToken = (String) matchedJob.get("LegacyToken");
-
-					matchedJob.entrySet().forEach(entry -> {
-						System.err.println(entry.getKey() + " " + entry.getValue());
-					});
-
-					// TODO: commander.setUser(username);
-					// commander.setSite(site);
-
-					logger.log(Level.INFO, jdl.getExecutable());
-					logger.log(Level.INFO, username);
-					logger.log(Level.INFO, Long.toString(queueId));
-					sendBatchInfo();
-
-					// process payload
-					handleJob();
-
-					cleanup();
+				if (matchedJob.containsKey("Error") || matchedJob == null) {
+					logger.log(Level.INFO,
+							"We didn't get anything back. Nothing to run right now.");
+					throw new Exception();
 				}
-				else { // TODO: Handle matchedJob.containsKey("Error") after all?
-					logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now.");
-				}
+
+				retries.set(0);
+
+				jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
+
+				queueId = ((Long) matchedJob.get("queueId")).longValue();
+				username = (String) matchedJob.get("User");
+				tokenCert = (String) matchedJob.get("TokenCertificate");
+				tokenKey = (String) matchedJob.get("TokenKey");
+				legacyToken = (String) matchedJob.get("LegacyToken");
+
+				matchedJob.entrySet().forEach(entry -> {
+					logger.log(Level.INFO, entry.getKey() + " " + entry.getValue());
+				});
+
+				logger.log(Level.INFO, jdl.getExecutable());
+				logger.log(Level.INFO, username);
+				logger.log(Level.INFO, Long.toString(queueId));
+				sendBatchInfo();
+
+				reqCPU = ((Number) jdl.getLong("CPUCores")).longValue();
+				reqDisk = ((Number) matchedJob.getOrDefault("reqDisk", 10 * 1024)).longValue();
+				logger.log(Level.INFO, "Job requested CPU Disk: " + reqCPU + " " + reqDisk);
+
+
+				RUNNING_CPU -= reqCPU;
+				RUNNING_DISK -= reqDisk;
+				logger.log(Level.INFO, "Currently available CPUCores: " + RUNNING_CPU);
+				requestSync.notifyAll();
 			}
-			catch (final Exception e) {
-				logger.log(Level.INFO, "Error getting a matching job: ", e);
-			}
-			count--;
-			if (count != 0) {
-				logger.log(Level.INFO, "Idling 20secs zZz...");
-				try {
-					// TODO?: monitor.sendBgMonitoring
-					Thread.sleep(20 * 1000);
-				}
-				catch (final InterruptedException e) {
-					logger.log(Level.WARNING, "Interrupt received", e);
-				}
+
+			// TODO: commander.setUser(username);
+			// commander.setSite(site);
+
+			logger.log(Level.INFO, jdl.getExecutable());
+			logger.log(Level.INFO, username);
+			logger.log(Level.INFO, Long.toString(queueId));
+
+			// process payload
+			handleJob();
+
+			cleanup();
+
+			synchronized (requestSync) {
+				RUNNING_CPU += reqCPU;
+				RUNNING_DISK += reqDisk;
+
+				requestSync.notifyAll();
 			}
 		}
+		catch (final Exception e) {
+			logger.log(Level.INFO, "Error getting a matching job: ", e);
+			if (RUNNING_CPU.equals(MAX_CPU))
+				retries.getAndIncrement();
+			//synchronized (requestSync) {
+			//	requestSync.notify();
+			//}
+		}
 
-		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
-		System.exit(0);
+		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs.get());
 	}
 
 	private void handleJob() {
 
-		totalJobs++;
 		try {
 
 			if (!createWorkDir()) {
@@ -299,6 +333,7 @@ public class JobAgent implements Runnable {
 				logger.log(Level.INFO, "Error. Workdir for job could not be created");
 				return;
 			}
+			jobWrapperLogDir = jobWorkdir + "/" + jobWrapperLogName;
 
 			logger.log(Level.INFO, "Started JA with: " + jdl);
 
@@ -389,7 +424,7 @@ public class JobAgent implements Runnable {
 				}
 			}
 			catch (IOException | InterruptedException ioe) {
-				logger.log(Level.WARNING, "Could not extract the space information from `df`", ioe);
+				System.out.println("Could not extract the space information from `df`");
 			}
 		}
 
@@ -401,16 +436,34 @@ public class JobAgent implements Runnable {
 	 *
 	 * @return false if we can't run because of current conditions, true if positive
 	 */
+	public boolean checkParameters() {
+		final long jobAgentCurrentTime = System.currentTimeMillis();
+		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
+		int timeleft = origTtl - time_subs;
+
+		if (timeleft <= 0)
+			return false;
+		if (RUNNING_DISK <= 10 * 1024) {
+			logger.log(Level.INFO, "There is not enough space left: " + RUNNING_DISK);
+			if (!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")) {
+				return false;
+			}
+			return false;
+		}
+		if (RUNNING_CPU <= 0)
+			return false;
+
+		return true;
+	}
+
 	private boolean updateDynamicParameters() {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
-
-		// free disk recalculation
-		final long space = getFreeSpace(workdir) / 1024;
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = System.currentTimeMillis();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
 		int timeleft = origTtl - time_subs;
+		int timeleftAdjusted = 0;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
@@ -423,21 +476,27 @@ public class JobAgent implements Runnable {
 		// safety time for saving, etc
 		timeleft -= 600;
 
-		// what is the minimum we want to run with? (100MB?)
-		if (space <= 100 * 1024 * 1024) {
-			logger.log(Level.INFO, "There is not enough space left: " + space);
-			if (!System.getenv().containsKey("JALIEN_IGNORE_STORAGE")) {
-				return false;
-			}
+		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
+					MachineJobFeatures.FeatureType.MACHINEFEATURE);
+		if (shutdownTime != null) {
+			shutdownTime = shutdownTime - System.currentTimeMillis() / 1000;
+			logger.log(Level.INFO, "Shutdown is" + shutdownTime);
+
+			timeleft = Integer.min(timeleft, shutdownTime.intValue());
 		}
 
-		if (timeleft <= 0) {
-			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
+
+		if (checkParameters() == false)
 			return false;
-		}
 
-		siteMap.put("Disk", Long.valueOf(space));
-		siteMap.put("TTL", Integer.valueOf(timeleft));
+		if (getLhcbMarks() != null)
+			timeleftAdjusted = (int) (((float) timeleft) * Math.max(1f, getLhcbMarks() / LHCB_DEFAULT_FACTOR));
+		else
+			timeleftAdjusted = timeleft;
+
+		siteMap.put("TTL", Integer.valueOf(timeleftAdjusted));
+		siteMap.put("CPUCores", RUNNING_CPU);
+		siteMap.put("Disk", RUNNING_DISK);
 
 		return true;
 	}
@@ -543,6 +602,7 @@ public class JobAgent implements Runnable {
 						case "-cp":
 							cmdScanner.next();
 							break;
+						case "alien.site.JobRunner":
 						case "alien.site.JobAgent":
 							launchCmd.add("-Djobagent.vmid=" + queueId);
 							launchCmd.add("-DAliEnConfig=" + jobWorkdir);
@@ -930,7 +990,7 @@ public class JobAgent implements Runnable {
 	 *
 	 * @return script output, or null in case of error
 	 */
-	public static Float getLhcbMarks() {
+	public Float getLhcbMarks() {
 		if (lhcbMarks > 0)
 			return Float.valueOf(lhcbMarks);
 

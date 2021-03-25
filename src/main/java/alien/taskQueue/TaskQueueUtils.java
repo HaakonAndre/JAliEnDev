@@ -3596,6 +3596,11 @@ public class TaskQueueUtils {
 		if (m.find())
 			params.put("revision", Integer.valueOf(m.group(1)));
 
+		// parse CPU cores
+		final Integer cpuCores = jdl.getInteger("CPUCores");
+
+		params.put("cpucores", cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1) : cpuCores);
+
 		if (logger.isLoggable(Level.FINER))
 			logger.log(Level.FINER, "extracted params: " + params.toString());
 

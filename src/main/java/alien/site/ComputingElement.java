@@ -71,7 +71,7 @@ public class ComputingElement extends Thread {
 			config = ConfigUtils.getConfigFromLdap();
 			site = (String) config.get("site_accountname");
 			getSiteMap();
-			
+
 			ExtProperties ep = ConfigUtils.getConfiguration("ce-logging");
 			if (ep != null) {
 				ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -357,14 +357,33 @@ public class ComputingElement extends Thread {
 		//	before += "export cerequirements=\'" + System.getenv().get("cerequirements") + "\'\n";
 		//if (System.getenv().containsKey("partition"))
 		//	before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
+		if (siteMap.containsKey("RequiredCpusCe"))
+			before += "export RequiredCpusCe=\"" + siteMap.get("RequiredCpusCe") + "\"\n";
 		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
 		before += "export site=\"" + site + "\"\n";
 		before += "export CE=\"" + siteMap.get("CE") + "\"\n";
 		before += "export CEhost=\"" + siteMap.get("Localhost") + "\"\n";
 		before += "export TTL=\"" + siteMap.get("TTL") + "\"\n";
-		before += "export APMON_CONFIG=\"" + ConfigUtils.getLocalHostname() + "\"\n";
+		/*
+		 * If the admin wants to use another ML instance, on the same
+		 * site, we should enable them to do so
+		 */
+		if (config.containsKey("monalisa_host"))
+			before += "export APMON_CONFIG=\"" + config.get("monalisa_host") + "\"\n";
+		else if (config.containsKey("APMON_CONFIG"))
+			before += "export APMON_CONFIG='" + config.get("APMON_CONFIG") +"'\n";
+		else
+			before += "export APMON_CONFIG='" + ConfigUtils.getLocalHostname() + "'\n";
 		if (config.containsKey("ce_installationmethod"))
 			before += "export installationMethod=\"" + config.get("ce_installationmethod") + "\"\n";
+		if (config.containsKey("RESERVED_DISK"))
+			before += "export RESERVED_DISK='" + config.get("RESERVED_DISK") + "'\n";
+		if (config.containsKey("RESERVED_RAM"))
+			before += "export RESERVED_RAM='" + config.get("RESERVED_RAM") + "'\n";
+		if (config.containsKey("MAX_RETRIES"))
+			before += "export MAX_RETRIES='" + config.get("MAX_RETRIES") + "'\n";
+		if (config.containsKey("ce_matcharg") && getValuesFromLDAPField(config.get("ce_matcharg")).containsKey("cpucores"))
+			before += "export CPUCores=\"" + getValuesFromLDAPField(config.get("ce_matcharg")).get("cpucores") + "\"\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE=\"" + siteMap.get("closeSE") + "\"\n";
 		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
@@ -418,7 +437,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=vfork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
+		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=vfork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobRunner";
 	}
 
 	/**
@@ -518,6 +537,11 @@ public class ComputingElement extends Thread {
 			config.putAll(ce_environment);
 
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
+
+		if (config.containsKey("ce_matcharg") && getValuesFromLDAPField(config.get("ce_matcharg")).containsKey("cpucores")) {
+			siteMap.put("CPUCores", getValuesFromLDAPField(config.get("ce_matcharg")).get("cpucores"));
+		}
+
 	}
 
 	/**
@@ -531,19 +555,19 @@ public class ComputingElement extends Thread {
 			final Set<String> host_env_set = (Set<String>) field;
 			for (final String env_entry : host_env_set) {
 				final String[] host_env_str = env_entry.split("=");
-				map.put(host_env_str[0], host_env_str[1]);
+				map.put(host_env_str[0].toLowerCase(), host_env_str[1]);
 			}
 		}
 		else {
 			final String[] host_env_str = ((String) field).split("=");
-			map.put(host_env_str[0], host_env_str[1]);
+			map.put(host_env_str[0].toLowerCase(), host_env_str[1]);
 		}
 		return map;
 	}
 
 	/**
 	 * Get queue class with reflection
-	 * 
+	 *
 	 * @param type batch queue base class name
 	 * @return an instance of that class, if found
 	 */

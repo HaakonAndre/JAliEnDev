@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import alien.api.Dispatcher;
 import alien.api.token.GetTokenCertificate;
@@ -414,6 +416,12 @@ public class JobBroker {
 				bindValues.add(matchRequest.get("Disk"));
 			}
 
+			// Checks that if whole node scheduling, no constraint on CPUCores is added from the CE
+			if (matchRequest.containsKey("CPUCores") && !matchRequest.get("CPUCores").equals("0")) {
+				where += "and cpucores <= ? ";
+				bindValues.add(Integer.valueOf((String)matchRequest.get("CPUCores")));
+			}
+
 			if (matchRequest.containsKey("Site")) {
 				where += "and (site='' or site like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("Site"));
@@ -487,6 +495,16 @@ public class JobBroker {
 						where += " and userId != ? ";
 						bindValues.add(userId);
 					}
+				}
+			}
+
+			if (matchRequest.containsKey("RequiredCpusCe")) {
+				final Pattern pat = Pattern.compile("\\s*(>=|<=|>|<|==|=|!=)\\s*([0-9]+)");
+				Matcher m = pat.matcher((String)matchRequest.get("RequiredCpusCe"));
+				if (m.matches()) {
+					String operator = m.group(1).equals("==") ? "=" : m.group(1);
+					where += " and cpucores " + operator + " ? ";
+					bindValues.add(Integer.valueOf(m.group(2)));
 				}
 			}
 
