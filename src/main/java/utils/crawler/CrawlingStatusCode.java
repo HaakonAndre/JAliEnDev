@@ -83,11 +83,19 @@ public enum CrawlingStatusCode implements StatusCode {
 		this.type = type;
 	}
 
+	/**
+	 * The description of the crawling status code
+	 * @return
+	 */
 	@Override
 	public String getDescription() {
 		return description;
 	}
 
+	/**
+	 * The type of the crawling status
+	 * @return
+	 */
 	@Override
 	public StatusType getType() {
 		return type;

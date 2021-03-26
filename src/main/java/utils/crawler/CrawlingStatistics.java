@@ -152,6 +152,7 @@ public class CrawlingStatistics {
 	}
 
 	/**
+	 * Convert CrawlingStatistics object to JSONObject
 	 * @param stats
 	 * @return
 	 */
@@ -182,6 +183,7 @@ public class CrawlingStatistics {
 	}
 
 	/**
+	 * Get the average statistics from a list of CrawlingStatistics objects
 	 * @param statsList
 	 * @return
 	 */
