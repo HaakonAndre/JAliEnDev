@@ -1,5 +1,8 @@
 package utils;
 
+/**
+ * @author anegru
+ */
 public interface StatusCode {
 
 	/**

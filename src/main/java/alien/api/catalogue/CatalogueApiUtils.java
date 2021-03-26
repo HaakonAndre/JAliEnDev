@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -247,6 +248,27 @@ public class CatalogueApiUtils {
 		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get GUID: " + sguid);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get GUID from String
+	 *
+	 * @param uuids
+	 *            UUIDs to retrieve from the database
+	 * @param resolveLFNs
+	 *            populate the LFN cache of the GUID object
+	 * @return the GUID object, or <code>null</code> if failed to get it
+	 */
+	public Collection<GUID> getGUIDs(final Collection<UUID> uuids, final boolean resolveLFNs) {
+		try {
+			return Dispatcher.execute(new GUIDfromUUID(commander.getUser(), uuids, resolveLFNs)).getGUIDs();
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get GUID: " + uuids);
 			e.getCause().printStackTrace();
 		}
 
@@ -1058,7 +1080,8 @@ public class CatalogueApiUtils {
 	public void setLFNExpireTime(final List<String> paths, ExpireTime expireTime, boolean extend) {
 		try {
 			Dispatcher.execute(new LFNExpireTime(commander.getUser(), paths, expireTime, extend));
-		} catch (ServerException e) {
+		}
+		catch (ServerException e) {
 			e.printStackTrace();
 		}
 

@@ -1,5 +1,6 @@
 package alien.site;
 
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,6 +16,7 @@ import alien.config.ConfigUtils;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.user.UserFactory;
+import apmon.BkThread;
 
 /**
  * @author mmmartin
@@ -73,17 +75,30 @@ public class SiteMap {
 		cehost = env.get("CEhost");
 
 		// TTL
+		origTtl = 12 * 3600;
+
+		// get value from env
 		if (env.containsKey("TTL"))
 			origTtl = Integer.parseInt(env.get("TTL"));
-		else
-			origTtl = 12 * 3600;
+
+		// check if there will be a shutdown
+		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
+				MachineJobFeatures.FeatureType.MACHINEFEATURE);
+		if (shutdownTime != null) {
+			shutdownTime = Long.valueOf(shutdownTime.longValue() - System.currentTimeMillis() / 1000);
+			logger.log(Level.INFO, "Shutdown is in " + shutdownTime + "s");
+
+			origTtl = Integer.min(origTtl, shutdownTime.intValue());
+		}
+
+		logger.log(Level.INFO, "TTL is" + origTtl);
 
 		siteMap.put("TTL", Integer.valueOf(origTtl));
 
 		// CE Requirements
 		if (env.containsKey("cerequirements"))
 			ceRequirements = env.get("cerequirements");
-
+		logger.log(Level.INFO, "CE requirements are " + ceRequirements);
 		// Partition
 		if (env.containsKey("partition"))
 			partition = env.get("partition");
@@ -103,6 +118,9 @@ public class SiteMap {
 		// Get nousers from cerequirements field
 		final ArrayList<String> nousers = getFieldContentsFromCerequirements(ceRequirements, CE_FIELD.NoUsers);
 
+		// Get required cpu cores from cerequirements field
+		final ArrayList<String> requiredCpus = getFieldContentsFromCerequirements(ceRequirements, CE_FIELD.CpuCores);
+
 		// Workdir
 		String workdir = UserFactory.getUserHome();
 		if (env.containsKey("WORKDIR"))
@@ -111,6 +129,55 @@ public class SiteMap {
 			workdir = env.get("TMPBATCH");
 
 		siteMap.put("workdir", workdir);
+
+		long space = JobAgent.getFreeSpace(workdir) / 1024;
+
+		// This is measured in MB
+		if (env.containsKey("RESERVED_DISK"))
+			space -= Long.parseLong(env.get("RESERVED_DISK"));
+
+		logger.log(Level.INFO, "Disk space available " + space);
+
+		// Used for multi-core job scheduling
+		siteMap.put("Disk", Long.valueOf(space));
+
+		// Get RAM
+		long memorySize = ((com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean()).getTotalPhysicalMemorySize();
+
+		// get from env or LDAP to cap number of CPUs
+		if (env.containsKey("RESERVED_RAM"))
+			memorySize -= Long.parseLong(env.get("RESERVED_RAM"));
+
+		logger.log(Level.INFO, "Actual RAM: " + memorySize);
+
+		// Get NRCPUs
+		long potentialCpus, mjfCpus, numCpus = 1;
+
+		// get from env or LDAP to cap number of CPUs
+		if (env.containsKey("CPUCores")) {
+			numCpus = Long.parseLong(env.get("CPUCores"));
+			if (numCpus == 0) {
+				try {
+					// get from system
+					numCpus = BkThread.getNumCPUs();
+
+					potentialCpus = memorySize / (2 * 1024 * 1024 * 1024l);
+					if (numCpus > potentialCpus)
+						numCpus = potentialCpus;
+				}
+				catch (final Exception e) {
+					logger.log(Level.WARNING, "Problem with getting CPUs from environment: " + e.toString());
+				}
+
+				mjfCpus = MachineJobFeatures.getFeatureNumberOrDefault("log_cores",
+						MachineJobFeatures.FeatureType.MACHINEFEATURE, Long.valueOf(numCpus)).longValue();
+				if (numCpus > mjfCpus)
+					numCpus = mjfCpus;
+			}
+		}
+
+		logger.log(Level.INFO, "CPU cores available " + numCpus);
+		siteMap.put("CPUCores", Long.valueOf(numCpus));
 
 		// Setting values of the map
 		final String platform = ConfigUtils.getPlatform();
@@ -148,6 +215,8 @@ public class SiteMap {
 			siteMap.put("Users", users);
 		if (nousers.size() > 0)
 			siteMap.put("NoUsers", nousers);
+		if (requiredCpus.size() == 1 || env.containsKey("RequiredCpusCe"))
+			siteMap.put("RequiredCpusCe", requiredCpus.size() > 0 ? requiredCpus.get(0) : env.get("RequiredCpusCe"));
 		if (extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 
@@ -179,7 +248,7 @@ public class SiteMap {
 	/**
 	 * The two options that can be extracted from the CE requirements (allowed or denied account names)
 	 */
-	public static enum CE_FIELD {
+	public enum CE_FIELD {
 		/**
 		 * Allowed account pattern
 		 */
@@ -188,11 +257,16 @@ public class SiteMap {
 		/**
 		 * Denied account pattern
 		 */
-		NoUsers(Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\""));
+		NoUsers(Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\"")),
+
+		/**
+		 * CPU Cores pattern
+		 */
+		CpuCores(Pattern.compile("\\s*other.cpucores\\s*(>=|<=|>|<|==|=|!=)\\s*([0-9]+)"));
 
 		private final Pattern pattern;
 
-		private CE_FIELD(final Pattern pattern) {
+		CE_FIELD(final Pattern pattern) {
 			this.pattern = pattern;
 		}
 	}
@@ -209,7 +283,10 @@ public class SiteMap {
 			final Matcher m = field.pattern.matcher(cereqs);
 
 			while (m.find())
-				fieldContents.add(m.group(1));
+				if (field == CE_FIELD.CpuCores)
+					fieldContents.add(m.group(1) + m.group(2));
+				else
+					fieldContents.add(m.group(1));
 		}
 
 		return fieldContents;

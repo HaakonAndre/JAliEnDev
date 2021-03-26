@@ -79,4 +79,54 @@ public class ExpireTime implements Serializable {
 	public int getYears() {
 		return this.years;
 	}
+
+	/**
+	 * @return number of days
+	 */
+	public int toDays() {
+		return days + weeks * 7 + months * 31 + years * 365;
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder sb = new StringBuilder();
+
+		if (years > 0) {
+			sb.append(years).append(" year");
+			if (years > 1)
+				sb.append('s');
+		}
+
+		if (months > 0) {
+			if (sb.length() > 0)
+				sb.append(", ");
+
+			sb.append(months).append(" month");
+			if (months > 1)
+				sb.append('s');
+		}
+
+		if (weeks > 0) {
+			if (sb.length() > 0)
+				sb.append(", ");
+
+			sb.append(weeks).append(" weeks");
+			if (weeks > 1)
+				sb.append('s');
+		}
+
+		if (days > 0) {
+			if (sb.length() > 0)
+				sb.append(", ");
+
+			sb.append(days).append(" day");
+			if (days > 1)
+				sb.append('s');
+		}
+
+		if (sb.length() == 0)
+			return "no time";
+
+		return sb.toString();
+	}
 }

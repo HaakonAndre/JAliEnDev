@@ -1,8 +1,8 @@
 package utils.crawler;
 
-import org.json.simple.JSONObject;
-
 import java.util.List;
+
+import org.json.simple.JSONObject;
 
 /**
  * Class that models the crawling statistics that are gathered in each iteration.
@@ -69,8 +69,8 @@ public class CrawlingStatistics {
 	public long xrdfsTotalDurationMillis;
 
 	/**
-	* Total number of PFNs that were tested with xrdfs
- 	*/
+	 * Total number of PFNs that were tested with xrdfs
+	 */
 	public long xrdfsPFNsTotalCount;
 
 	/**
@@ -97,9 +97,24 @@ public class CrawlingStatistics {
 		this.statGeneratedUnixTimestamp = NULL_VALUE;
 	}
 
-	public CrawlingStatistics(long pfnCount, long pfnOkCount, long pfnInaccessibleCount, long pfnCorruptCount, long pfnUnknownStatusCount,
-			long crawlingAvgDurationMillis, long crawlingTotalDurationMillis, long fileSizeTotalBytes,
-			long downloadedPFNsTotalCount, long downloadTotalDurationMillis, long xrdfsPFNsTotalCount, long xrdfsTotalDurationMillis, long statGeneratedUnixTimestamp) {
+	/**
+	 * @param pfnCount
+	 * @param pfnOkCount
+	 * @param pfnInaccessibleCount
+	 * @param pfnCorruptCount
+	 * @param pfnUnknownStatusCount
+	 * @param crawlingAvgDurationMillis
+	 * @param crawlingTotalDurationMillis
+	 * @param fileSizeTotalBytes
+	 * @param downloadedPFNsTotalCount
+	 * @param downloadTotalDurationMillis
+	 * @param xrdfsPFNsTotalCount
+	 * @param xrdfsTotalDurationMillis
+	 * @param statGeneratedUnixTimestamp
+	 */
+	public CrawlingStatistics(final long pfnCount, final long pfnOkCount, final long pfnInaccessibleCount, final long pfnCorruptCount, final long pfnUnknownStatusCount,
+			final long crawlingAvgDurationMillis, final long crawlingTotalDurationMillis, final long fileSizeTotalBytes,
+			final long downloadedPFNsTotalCount, final long downloadTotalDurationMillis, final long xrdfsPFNsTotalCount, final long xrdfsTotalDurationMillis, final long statGeneratedUnixTimestamp) {
 		this.pfnCount = pfnCount;
 		this.pfnOkCount = pfnOkCount;
 		this.pfnInaccessibleCount = pfnInaccessibleCount;
@@ -115,7 +130,11 @@ public class CrawlingStatistics {
 		this.statGeneratedUnixTimestamp = statGeneratedUnixTimestamp;
 	}
 
-	public static CrawlingStatistics fromJSON(JSONObject jsonObject) {
+	/**
+	 * @param jsonObject
+	 * @return
+	 */
+	public static CrawlingStatistics fromJSON(final JSONObject jsonObject) {
 		return new CrawlingStatistics(
 				getLongFromJSON(jsonObject, "pfnCount"),
 				getLongFromJSON(jsonObject, "pfnOkCount"),
@@ -129,19 +148,17 @@ public class CrawlingStatistics {
 				getLongFromJSON(jsonObject, "downloadTotalDurationMillis"),
 				getLongFromJSON(jsonObject, "xrdfsPFNsTotalCount"),
 				getLongFromJSON(jsonObject, "xrdfsTotalDurationMillis"),
-				getLongFromJSON(jsonObject, "statGeneratedUnixTimestamp")
-		);
+				getLongFromJSON(jsonObject, "statGeneratedUnixTimestamp"));
 	}
 
 	/**
-	 * Convert CrawlingStatistics object to JSONObject
 	 * @param stats
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public static JSONObject toJSON(CrawlingStatistics stats) {
+	public static JSONObject toJSON(final CrawlingStatistics stats) {
 
-		JSONObject json = new JSONObject();
+		final JSONObject json = new JSONObject();
 
 		json.put("pfnCount", getValueForJSON(stats.pfnCount));
 		json.put("pfnOkCount", getValueForJSON(stats.pfnOkCount));
@@ -160,24 +177,23 @@ public class CrawlingStatistics {
 		return json;
 	}
 
-	private static Long getValueForJSON(long value) {
-		return  value != NULL_VALUE ? Long.valueOf(value) : null;
+	private static Long getValueForJSON(final long value) {
+		return value != NULL_VALUE ? Long.valueOf(value) : null;
 	}
 
 	/**
-	 * Average a list of CrawlingStatistics
 	 * @param statsList
 	 * @return
 	 */
-	public static CrawlingStatistics getAveragedStats(List<CrawlingStatistics> statsList) {
+	public static CrawlingStatistics getAveragedStats(final List<CrawlingStatistics> statsList) {
 
 		if (statsList == null || statsList.size() == 0)
 			return null;
 
-		CrawlingStatistics averagedStats = new CrawlingStatistics();
+		final CrawlingStatistics averagedStats = new CrawlingStatistics();
 		int crawlingAvgDurationCount = 0;
 
-		for (CrawlingStatistics stats : statsList) {
+		for (final CrawlingStatistics stats : statsList) {
 
 			if (stats.pfnOkCount != NULL_VALUE) {
 				averagedStats.pfnOkCount = initializeIfNull(averagedStats.pfnOkCount);
@@ -247,15 +263,15 @@ public class CrawlingStatistics {
 		return averagedStats;
 	}
 
-	private static long initializeIfNull(long value) {
+	private static long initializeIfNull(final long value) {
 		return value == NULL_VALUE ? DEFAULT_VALUE : value;
 	}
 
-	private static long getLongFromJSON(JSONObject json, String key) {
+	private static long getLongFromJSON(final JSONObject json, final String key) {
 		try {
 			return ((Long) json.get(key)).longValue();
 		}
-		catch (Exception e) {
+		catch (final Exception e) {
 			e.printStackTrace();
 			return NULL_VALUE;
 		}

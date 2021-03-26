@@ -23,7 +23,6 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
-import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.api.token.GetTokenCertificate;
@@ -98,25 +97,45 @@ public class ComputingElement extends Thread {
 		}
 	}
 
+	private static final long LDAP_REFRESH_INTERVAL = 5 * 60 * 1000L;
+	private long lastLdapRefresh = 0;
+
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
+
 		try {
-			logger.info("Trying to start JBox");
-			JBoxServer.startJBoxService();
-			port = JBoxServer.getPort();
-			Files.writeString(Paths.get(host_logdir_resolved + "/CE.pid"), Integer.toString(MonitorFactory.getSelfProcessID()));
+			Files.writeString(Paths.get(host_logdir_resolved + "/CE.pid"),
+					Integer.toString(MonitorFactory.getSelfProcessID()));
 		}
-		catch (final Exception e) {
-			logger.severe("Unable to start JBox: " + e.toString());
+		catch (IOException e) {
+			logger.log(Level.WARNING, "Could not create a pidfile in: " + host_logdir_resolved + "/CE.pid", e);
 		}
 
 		logger.info("Looping");
 		while (true) {
+			if (System.currentTimeMillis() - lastLdapRefresh > LDAP_REFRESH_INTERVAL) {
+				logger.info("Time to sync with LDAP");
+				logger.info("Building new SiteMap.");
+
+				config = ConfigUtils.getConfigFromLdap();
+				site = (String) config.get("site_accountname");
+				getSiteMap();
+
+				logger.info("New sitemap: ");
+
+				siteMap.forEach((field, entry) -> {
+					logger.info("[" + field + ": " + entry + "]");
+				});
+
+				lastLdapRefresh = System.currentTimeMillis();
+			}
+
 			offerAgent();
 
 			try {
-				Thread.sleep(System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
+				Thread.sleep(
+						System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
 			}
 			catch (InterruptedException e) {
 				logger.severe("Unable to sleep: " + e.toString());
@@ -336,18 +355,37 @@ public class ComputingElement extends Thread {
 			before += "export TMPDIR=\"" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "\"\n";
 		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
 			before += "export WORKDIR=\"" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "\"\n";
-		if (System.getenv().containsKey("cerequirements"))
-			before += "export cerequirements=\'" + System.getenv().get("cerequirements") + "\'\n";
-		if (System.getenv().containsKey("partition"))
-			before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
+		// if (System.getenv().containsKey("cerequirements"))
+		// before += "export cerequirements=\'" + System.getenv().get("cerequirements") + "\'\n";
+		// if (System.getenv().containsKey("partition"))
+		// before += "export partition=\"" + System.getenv().get("partition") + "\"\n";
+		if (siteMap.containsKey("RequiredCpusCe"))
+			before += "export RequiredCpusCe=\"" + siteMap.get("RequiredCpusCe") + "\"\n";
 		before += "export ALIEN_CM_AS_LDAP_PROXY=\"" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "\"\n";
 		before += "export site=\"" + site + "\"\n";
 		before += "export CE=\"" + siteMap.get("CE") + "\"\n";
 		before += "export CEhost=\"" + siteMap.get("Localhost") + "\"\n";
 		before += "export TTL=\"" + siteMap.get("TTL") + "\"\n";
-		before += "export APMON_CONFIG=\"" + ConfigUtils.getLocalHostname() + "\"\n";
+		/*
+		 * If the admin wants to use another ML instance, on the same
+		 * site, we should enable them to do so
+		 */
+		if (config.containsKey("monalisa_host"))
+			before += "export APMON_CONFIG=\"" + config.get("monalisa_host") + "\"\n";
+		else if (config.containsKey("APMON_CONFIG"))
+			before += "export APMON_CONFIG='" + config.get("APMON_CONFIG") + "'\n";
+		else
+			before += "export APMON_CONFIG='" + ConfigUtils.getLocalHostname() + "'\n";
 		if (config.containsKey("ce_installationmethod"))
 			before += "export installationMethod=\"" + config.get("ce_installationmethod") + "\"\n";
+		if (config.containsKey("RESERVED_DISK"))
+			before += "export RESERVED_DISK='" + config.get("RESERVED_DISK") + "'\n";
+		if (config.containsKey("RESERVED_RAM"))
+			before += "export RESERVED_RAM='" + config.get("RESERVED_RAM") + "'\n";
+		if (config.containsKey("MAX_RETRIES"))
+			before += "export MAX_RETRIES='" + config.get("MAX_RETRIES") + "'\n";
+		if (config.containsKey("ce_matcharg") && getValuesFromLDAPField(config.get("ce_matcharg")).containsKey("cpucores"))
+			before += "export CPUCores=\"" + getValuesFromLDAPField(config.get("ce_matcharg")).get("cpucores") + "\"\n";
 		if (siteMap.containsKey("closeSE"))
 			before += "export closeSE=\"" + siteMap.get("closeSE") + "\"\n";
 		before += "source <( " + CVMFS.getAlienvPrint() + " ); " + "\n";
@@ -401,7 +439,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private static String getStartup() {
-		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=vfork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobAgent";
+		return CVMFS.getJava32Dir() + "/java -Djdk.lang.Process.launchMechanism=vfork -cp $(dirname $(which jalien))/../lib/alien-users.jar alien.site.JobRunner";
 	}
 
 	/**
@@ -474,9 +512,10 @@ public class ComputingElement extends Thread {
 
 		smenv.put("Disk", "100000000"); // TODO: df
 
-		if (System.getenv().containsKey("cerequirements"))
-			smenv.put("cerequirements", System.getenv().get("cerequirements")); //Local overrides value in LDAP if present
-		else if (config.containsKey("ce_cerequirements"))
+		// if (System.getenv().containsKey("cerequirements"))
+		// smenv.put("cerequirements", System.getenv().get("cerequirements")); //Local overrides value in LDAP if present
+		// else
+		if (config.containsKey("ce_cerequirements"))
 			smenv.put("cerequirements", config.get("ce_cerequirements").toString());
 
 		if (config.containsKey("ce_partition"))
@@ -500,6 +539,11 @@ public class ComputingElement extends Thread {
 			config.putAll(ce_environment);
 
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
+
+		if (config.containsKey("ce_matcharg") && getValuesFromLDAPField(config.get("ce_matcharg")).containsKey("cpucores")) {
+			siteMap.put("CPUCores", Integer.valueOf(getValuesFromLDAPField(config.get("ce_matcharg")).get("cpucores")));
+		}
+
 	}
 
 	/**
@@ -513,19 +557,19 @@ public class ComputingElement extends Thread {
 			final Set<String> host_env_set = (Set<String>) field;
 			for (final String env_entry : host_env_set) {
 				final String[] host_env_str = env_entry.split("=");
-				map.put(host_env_str[0], host_env_str[1]);
+				map.put(host_env_str[0].toLowerCase(), host_env_str[1]);
 			}
 		}
 		else {
 			final String[] host_env_str = ((String) field).split("=");
-			map.put(host_env_str[0], host_env_str[1]);
+			map.put(host_env_str[0].toLowerCase(), host_env_str[1]);
 		}
 		return map;
 	}
 
 	/**
 	 * Get queue class with reflection
-	 * 
+	 *
 	 * @param type batch queue base class name
 	 * @return an instance of that class, if found
 	 */

@@ -235,6 +235,11 @@ public class Job implements Comparable<Job>, Serializable {
 	public Date mtime;
 
 	/**
+	 * Number of cores needed by this job to run
+	 */
+	public int cpucores;
+
+	/**
 	 * Load one row from a G*L table
 	 *
 	 * @param db
@@ -286,6 +291,7 @@ public class Job implements Comparable<Job>, Serializable {
 		chargeStatus = StringFactory.get(db.gets("chargeStatus", null));
 		optimized = db.getb("optimized", false);
 		mtime = db.getDate("mtime", null);
+		cpucores = db.geti("cpucores", 1);
 
 		if (loadJDL) {
 			jdl = db.gets("jdl");
@@ -361,7 +367,7 @@ public class Job implements Comparable<Job>, Serializable {
 				+ " submitHost\t\t: " + submitHost + "\n" + " siteId\t\t\t: " + siteid + "\n" + " started\t\t: " + started + "\n" + " expires\t\t: " + expires + "\n"
 				+ " finalPrice\t\t: " + finalPrice + "\n" + " price\t\t\t: " + price + "\n"
 				+ " agentid\t\t: " + agentid + "\n" + " notify\t\t\t: " + notify + "\n" + " chargeStatus\t\t: " + chargeStatus + "\n" + " optimized\t\t: " + optimized + "\n"
-				+ " mtime\t\t\t: " + mtime + "\n" + " jdl\t\t\t: " + jdl + "\n path\t\t\t: " + path;
+				+ " mtime\t\t\t: " + mtime + "\n" + " jdl\t\t\t: " + jdl + "\n path\t\t\t: " + path + "\n CPU cores\t\t: " + cpucores;
 	}
 
 	/**

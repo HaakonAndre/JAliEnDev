@@ -361,7 +361,7 @@ public class WebsocketEndpoint extends Endpoint {
 		monitor.incrementCounter("closed_sessions");
 
 		if (logger.isLoggable(Level.FINE))
-			logger.log(Level.FINE, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason+", session = "+session+", was opened: "+session.isOpen());
+			logger.log(Level.FINE, "Closing session of commander ID " + commander.commanderId + ", reason is " + closeReason + ", session = " + session + ", was opened: " + session.isOpen());
 
 		commander.shutdown();
 
@@ -386,7 +386,7 @@ public class WebsocketEndpoint extends Endpoint {
 				while (it.hasNext()) {
 					final SessionContext sc = it.next();
 
-					if (sc.session.equals(session)){
+					if (sc.session.equals(session)) {
 						it.remove();
 						removedCount++;
 					}
@@ -396,7 +396,8 @@ public class WebsocketEndpoint extends Endpoint {
 			}
 
 			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Removed "+removedCount+" queued entries for commander ID " + commander.commanderId + ", reason is " + closeReason+", session = "+session+", now is opened: "+session.isOpen());
+				logger.log(Level.FINE, "Removed " + removedCount + " queued entries for commander ID " + commander.commanderId + ", reason is " + closeReason + ", session = " + session
+						+ (session != null ? ", now is opened: " + session.isOpen() : ""));
 		}
 		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Exception closing session", e);

@@ -1666,7 +1666,7 @@ public class TaskQueueUtils {
 			values.put("price", price);
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 
-			Integer masterjobID = j.getInteger("MasterJobID");
+			Long masterjobID = j.getLong("MasterJobID");
 
 			if (jobStatus.equals(JobStatus.SPLIT) || j.get("Split") != null) {
 				values.put("masterjob", Integer.valueOf(1));
@@ -1680,6 +1680,10 @@ public class TaskQueueUtils {
 			else
 				values.put("split", Integer.valueOf(0));
 
+			final Integer cpuCores = j.getInteger("CPUCores");
+
+			values.put("cpucores", cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1) : cpuCores);
+
 			final String insert = DBFunctions.composeInsert("QUEUE", values);
 
 			db.setLastGeneratedKey(true);
@@ -1687,7 +1691,6 @@ public class TaskQueueUtils {
 			if (!db.query(insert))
 				throw new IOException("Could not insert the job in the queue");
 
-			// TODO : change this to long!
 			final Long pid = db.getLastGeneratedKeyLong();
 
 			if (pid == null)
@@ -3592,6 +3595,11 @@ public class TaskQueueUtils {
 		m = pat.matcher(reqs);
 		if (m.find())
 			params.put("revision", Integer.valueOf(m.group(1)));
+
+		// parse CPU cores
+		final Integer cpuCores = jdl.getInteger("CPUCores");
+
+		params.put("cpucores", cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1) : cpuCores);
 
 		if (logger.isLoggable(Level.FINER))
 			logger.log(Level.FINER, "extracted params: " + params.toString());

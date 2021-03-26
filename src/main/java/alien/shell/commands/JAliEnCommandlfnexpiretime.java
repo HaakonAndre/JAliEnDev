@@ -43,9 +43,25 @@ public class JAliEnCommandlfnexpiretime extends JAliEnBaseCommand {
 		}
 
 		if (this.remove) {
+			commander.printOutln("Removing expiration time");
 			commander.c_api.setLFNExpireTime(absolutePaths, null, false);
 		}
 		else {
+			if (extend) {
+				if (expireTime.toDays() == 0) {
+					commander.printOutln("No amount of time specified for extension");
+					return;
+				}
+
+				commander.printOutln("Extending the expiration time with " + extend);
+			}
+			else {
+				if (expireTime.toDays() <= 0)
+					commander.printOutln("Marking the targets as expired");
+				else
+					commander.printOutln("Setting the expiration time to " + expireTime + " from now");
+			}
+
 			commander.c_api.setLFNExpireTime(absolutePaths, expireTime, extend);
 		}
 	}
@@ -104,11 +120,6 @@ public class JAliEnCommandlfnexpiretime extends JAliEnBaseCommand {
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			this.files = optionToString(options.nonOptionArguments());
-
-			if (this.files.isEmpty()) {
-				commander.setReturnCode(ErrNo.ENOENT);
-				return;
-			}
 
 			this.expireTime = new ExpireTime();
 
