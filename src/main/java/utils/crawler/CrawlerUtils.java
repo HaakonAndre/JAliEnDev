@@ -34,6 +34,9 @@ public class CrawlerUtils {
 
 	}
 
+	/**
+	 * @return list of StatusCode objects that represent all possible statuses returned by the crawler
+	 */
 	public static final List<StatusCode> getStatuses() {
 		List<StatusCode> crawlingStatuses = new ArrayList<>();
 		crawlingStatuses.addAll(Arrays.asList(SourceExceptionCode.values()));
@@ -41,14 +44,29 @@ public class CrawlerUtils {
 		return Collections.unmodifiableList(crawlingStatuses);
 	}
 
+	/**
+	 * @return list of all possible status types returned by the crawler
+	 */
 	public static final List<String> getStatusTypes() {
 		return Arrays.stream(StatusType.values()).map(Enum::toString).collect(Collectors.toUnmodifiableList());
 	}
 
+	/**
+	 * Return the storage element name to be used in a Grid path
+	 * @param se
+	 * @return String
+	 */
 	public static String getSEName(SE se) {
 		return se.seName.replace("::", "_");
 	}
 
+	/**
+	 * Upload a file f to the Grid at the remoteFullPath
+	 * @param commander
+	 * @param f
+	 * @param remoteFullPath
+	 * @throws IOException
+	 */
 	public static void uploadToGrid(JAliEnCOMMander commander, File f, String remoteFullPath) throws IOException {
 
 		logger.log(Level.INFO, "Uploading " + remoteFullPath);

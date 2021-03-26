@@ -43,6 +43,10 @@ public class GetCEs {
 		}
 	}
 
+	/**
+	 * @param storageName
+	 * @return a list of sites extracted from LDAP that are closest to a specific storage element
+	 */
 	private static Set<String> getCloseSites(final String storageName) {
 		final Set<String> dns = LDAPHelper.checkLdapInformation("closese=" + storageName, "ou=Sites,", "dn");
 
@@ -95,6 +99,10 @@ public class GetCEs {
 		return requirements;
 	}
 
+	/**
+	 * @param siteName
+	 * @return a set of computing elements from a specific site, extracted from LDAP
+	 */
 	private static Set<String> getCEs(final String siteName) {
 		return LDAPHelper.checkLdapInformation("(objectClass=AliEnCE)", "ou=CE,ou=Services,ou=" + siteName + ",ou=Sites,", "name");
 	}

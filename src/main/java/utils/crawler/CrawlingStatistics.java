@@ -133,6 +133,11 @@ public class CrawlingStatistics {
 		);
 	}
 
+	/**
+	 * Convert CrawlingStatistics object to JSONObject
+	 * @param stats
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	public static JSONObject toJSON(CrawlingStatistics stats) {
 
@@ -159,6 +164,11 @@ public class CrawlingStatistics {
 		return  value != NULL_VALUE ? Long.valueOf(value) : null;
 	}
 
+	/**
+	 * Average a list of CrawlingStatistics
+	 * @param statsList
+	 * @return
+	 */
 	public static CrawlingStatistics getAveragedStats(List<CrawlingStatistics> statsList) {
 
 		if (statsList == null || statsList.size() == 0)
