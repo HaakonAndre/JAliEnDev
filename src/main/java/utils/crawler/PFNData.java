@@ -52,12 +52,16 @@ public class PFNData {
 	private PFNData() {
 	}
 
+	/**
+	 * Set a map holding crawling data for a PFN analysed
+	 * @param data
+	 */
 	private void setData(final Map<String, Object> data) {
 		this.data = data;
 	}
 
 	/**
-	 * @return
+	 * @return format PFNData object as string in CSV format
 	 */
 	public String toCSV() {
 		final Collection<Object> values = data.values();
@@ -65,7 +69,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return comma separated list of all property names extracted during crawling (eg. catalogueMD5)
 	 */
 	public String getCsvHeader() {
 		final Set<String> keys = data.keySet();
@@ -73,21 +77,22 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return all property values computed during crawling
 	 */
 	public Collection<Object> getValues() {
 		return data.values();
 	}
 
 	/**
-	 * @return
+	 *
+	 * @return the map that is used internally to hold crawling data
 	 */
 	public Map<String, Object> getData() {
 		return Collections.unmodifiableMap(data);
 	}
 
 	/**
-	 * @return
+	 * @return the status code of the PFN
 	 */
 	public String getStatusCode() {
 		try {
@@ -99,7 +104,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the SE number on which the PFN analysed resides
 	 */
 	public String getSeNumber() {
 		try {
@@ -111,7 +116,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the status type of the PFN
 	 */
 	public String getStatusType() {
 		try {
@@ -123,7 +128,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the status message of the PFN
 	 */
 	public String getStatusMessage() {
 		try {
@@ -135,7 +140,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the PFN as string
 	 */
 	public String getPfn() {
 		try {
@@ -147,7 +152,8 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 *
+	 * @return the GUID of the PFN
 	 */
 	public String getGuid() {
 		try {
@@ -159,7 +165,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the size in bytes of the PFN after download
 	 */
 	public Long getObservedSize() {
 		try {
@@ -171,7 +177,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the size in bytes of the PFN registered in the catalogue
 	 */
 	public Long getCatalogueSize() {
 		try {
@@ -183,7 +189,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the MD5 of the PFN recomputed after download
 	 */
 	public String getObservedMD5() {
 		try {
@@ -195,7 +201,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the MD5 of the PFN registered in the catalogue
 	 */
 	public String getCatalogueMD5() {
 		try {
@@ -207,7 +213,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the total duration in milliseconds of the PFN download
 	 */
 	public Long getDownloadDurationMillis() {
 		try {
@@ -219,7 +225,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the total duration in milliseconds of the xrdfs call
 	 */
 	public Long getXrdfsDurationMillis() {
 		try {
@@ -231,7 +237,7 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * @return the output generation timestamp
 	 */
 	public Long getOutputGeneratedTimestamp() {
 		try {
@@ -243,7 +249,8 @@ public class PFNData {
 	}
 
 	/**
-	 * @return
+	 * Convert from PFNData to JSONObject
+	 * @return JSONObject
 	 */
 	@SuppressWarnings("unchecked")
 	public JSONObject toJSON() {
@@ -253,8 +260,9 @@ public class PFNData {
 	}
 
 	/**
+	 * Convert from JSONObject to PFNData
 	 * @param jsonObject
-	 * @return
+	 * @return PFNData
 	 */
 	public static PFNData fromJSON(final JSONObject jsonObject) {
 		final PFNData pfnData = new PFNData();
