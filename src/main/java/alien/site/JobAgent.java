@@ -290,7 +290,27 @@ public class JobAgent implements Runnable {
 				sendBatchInfo();
 
 				reqCPU = ((Number) jdl.getLong("CPUCores")).longValue();
-				reqDisk = ((Number) matchedJob.getOrDefault("reqDisk", 10 * 1024)).longValue();
+				reqDisk = 10 * 1024l;
+				String workdirMaxSize = jdl.gets("Workdirectorysize");
+
+				final Pattern p = Pattern.compile("\\p{L}");
+				if (workdirMaxSize != null) {
+					final Matcher m = p.matcher(workdirMaxSize);
+					try {
+						if (m.find()) {
+							final String number = workdirMaxSize.substring(0, m.start());
+							final String unit = workdirMaxSize.substring(m.start());
+
+							reqDisk = Long.valueOf(convertStringUnitToIntegerMB(unit, number));
+						}
+						else
+							reqDisk = Long.parseLong(workdirMaxSize);
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+						logger.log(Level.INFO, "Local disk space specs are invalid: '" + workdirMaxSize + "', using the default " + reqDisk + "MB");
+					}
+				}
+
 				logger.log(Level.INFO, "Job requested CPU Disk: " + reqCPU + " " + reqDisk);
 
 				RUNNING_CPU -= reqCPU;
