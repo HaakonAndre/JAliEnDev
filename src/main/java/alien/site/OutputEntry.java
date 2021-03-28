@@ -15,6 +15,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import alien.io.IOUtils;
+import alien.shell.commands.JAliEnCOMMander;
 
 /**
  * @author Miguel
@@ -192,10 +193,16 @@ public class OutputEntry implements Serializable {
 
 			for (final String file : this.filesIncluded) {
 				final File f = new File(path + file);
-				if (!f.exists() || !f.isFile() || !f.canRead() || f.length() <= 0) {
+				if (!f.exists() || !f.isFile() || !f.canRead()) {
 					// filesIncluded.remove(file);
-					System.err.println("File " + file + " doesn't exist, cannot be read or has 0 size!");
-					throw new NullPointerException("File " + file + " for archive " + this.name + " doesn't exist, cannot be read or has 0 size!");
+					System.err.println("File " + file + " doesn't exist or cannot be read!");
+					throw new NullPointerException("File " + file + " for archive " + this.name + " doesn't exist or cannot be read!");
+				}
+				if (f.length() <= 0){
+					System.err.println("File " + file + " has 0 size!");
+					JAliEnCOMMander.getInstance().q_api.putJobLog(queueId, "trace", "Error: File " + file + " has 0 size! Will be ignored");
+					filesIncluded.remove(file);
+					continue;
 				}
 				hasPhysicalFiles = true;
 
