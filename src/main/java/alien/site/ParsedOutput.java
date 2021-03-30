@@ -69,6 +69,8 @@ public class ParsedOutput {
 	public void parseOutput() {
 		final List<String> files = jdl.getOutputFiles(this.tag);
 
+		System.err.println("Listing getOutputFiles");
+
 		if (files.size() == 0)
 			// Create default archive
 			files.add("jalien_defarchNOSPEC." + this.queueId + ":stdout,stderr,resources");
@@ -121,7 +123,8 @@ public class ParsedOutput {
 			for (final String file : files) {
 				System.err.println("Going to parse: " + file);
 				if (file.contains("*")) {
-					final String[] parts = SystemCommand.bash("ls " + pwd + file).stdout.split("\n");
+					final String[] parts = SystemCommand.bash("find " + pwd + " ! -type d -name \"" + file + "\"").stdout.split("\n");
+				//	final String[] parts = SystemCommand.bash("ls " + pwd + file).stdout.split("\n");
 					if (parts.length > 0)
 						for (String f : parts) {
 							f = f.trim();
@@ -144,7 +147,12 @@ public class ParsedOutput {
 						alreadySeen.add(file);
 					}
 					else
-						System.err.println("Ignoring duplicate file: " + file);
+					System.err.println("Ignoring duplicate file: " + file);
+					
+					File fsFile = new File(file);
+					if(!fsFile.exists())
+						throw new NullPointerException("File " + file + " for archive " + "?" + " doesn't exist or cannot be read!");
+
 				}
 			}
 
