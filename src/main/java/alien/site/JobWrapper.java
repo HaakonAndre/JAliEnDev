@@ -412,6 +412,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		processEnv.put("JALIEN_TOKEN_KEY", tokenKey);
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); // add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
+		processEnv.put("ALIEN_SITE", siteMap.get("Site").toString());
 		processEnv.put("TMPDIR", currentDir.getAbsolutePath() + "/tmp");
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
@@ -672,15 +673,15 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		ArrayList<String> outputTags = getOutputTags(exitStatus);
 		for (String tag : outputTags) {
-			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
-			for (OutputEntry entry : filesTable.getEntries()) {
-				if (entry.isArchive()) {
-					logger.log(Level.INFO, "This is an archive: " + entry.getName());
-					try {
+			try {
+				final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
+				for (OutputEntry entry : filesTable.getEntries()) {
+					if (entry.isArchive()) {
+						logger.log(Level.INFO, "This is an archive: " + entry.getName());
 						final ArrayList<String> archiveEntries = entry.createZip(currentDir.getAbsolutePath());
 						if (archiveEntries.size() == 0) {
 							logger.log(Level.WARNING, "Ignoring empty archive: " + entry.getName());
-							commander.q_api.putJobLog(queueId, "trace",  "Ignoring empty archive: " + entry.getName());
+							commander.q_api.putJobLog(queueId, "trace", "Ignoring empty archive: " + entry.getName());
 						} else {
 							for (final String archiveEntry : archiveEntries) {
 								allArchiveEntries.add(archiveEntry);
@@ -688,26 +689,32 @@ public class JobWrapper implements MonitoringObject, Runnable {
 							}
 							archivesToUpload.add(entry);
 						}
-					} catch (NullPointerException ex) {
-						logger.log(Level.SEVERE, "A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
-						commander.q_api.putJobLog(queueId, "trace", "Error: A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
-						changeStatus(JobStatus.ERROR_SV);
-						return false;
-					}
-				} else {
-					logger.log(Level.INFO, "This is not an archive: " + entry.getName());
-					logger.log(Level.INFO, "Verifying if file exists at: " + currentDir.getAbsolutePath() + "/" + entry.getName());
-					File entryFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
-					if (entryFile.exists()) {
-						standaloneFilesToUpload.add(entry);
-						logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
+
 					} else {
-						logger.log(Level.SEVERE, "A required outputfile was NOT found! Aborting. File: " + entry.getName());
-						commander.q_api.putJobLog(queueId, "trace", "A required outputfile was NOT found! Aborting. File: " + entry.getName());
-						changeStatus(JobStatus.ERROR_SV);
-						return false;
+						logger.log(Level.INFO, "This is not an archive: " + entry.getName());
+						logger.log(Level.INFO,
+								"Verifying if file exists at: " + currentDir.getAbsolutePath() + "/" + entry.getName());
+						File entryFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
+						if (entryFile.exists()) {
+							standaloneFilesToUpload.add(entry);
+							logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
+						} else {
+							logger.log(Level.SEVERE,
+									"A required outputfile was NOT found! Aborting. File: " + entry.getName());
+							commander.q_api.putJobLog(queueId, "trace",
+									"A required outputfile was NOT found! Aborting. File: " + entry.getName());
+							changeStatus(JobStatus.ERROR_SV);
+							return false;
+						}
 					}
 				}
+			} catch (NullPointerException ex) {
+				logger.log(Level.SEVERE,
+						"A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
+				commander.q_api.putJobLog(queueId, "trace",
+						"Error: A required outputfile for an archive was NOT found! Aborting: " + ex.getMessage());
+				changeStatus(JobStatus.ERROR_SV);
+				return false;
 			}
 		}
 		
