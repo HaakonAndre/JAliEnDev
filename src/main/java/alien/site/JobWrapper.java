@@ -231,6 +231,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		statusSenderThread.start();
 
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
+
+		monitor.addMonitoring("JobWrapper", this);
 	}
 
 	@Override
