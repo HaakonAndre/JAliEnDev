@@ -413,6 +413,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		processEnv.put("JALIEN_TOKEN_KEY", tokenKey);
 		processEnv.put("ALIEN_JOB_TOKEN", legacyToken); // add legacy token
 		processEnv.put("ALIEN_PROC_ID", String.valueOf(queueId));
+		processEnv.put("ALIEN_SITE", siteMap.get("Site").toString());
 		processEnv.put("TMPDIR", currentDir.getAbsolutePath() + "/tmp");
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
