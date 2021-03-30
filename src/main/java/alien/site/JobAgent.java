@@ -691,7 +691,7 @@ public class JobAgent implements Runnable {
 		if (monitorJob) {
 			final String process_res_format = "FRUNTIME | RUNTIME | CPUUSAGE | MEMUSAGE | CPUTIME | RMEM | VMEM | NOCPUS | CPUFAMILY | CPUMHZ | RESOURCEUSAGE | RMEMMAX | VMEMMAX";
 			logger.log(Level.INFO, process_res_format);
-			commander.q_api.putJobLog(queueId, "proc", process_res_format);
+			commander.q_api.putJobLog(queueId, "procfmt", process_res_format);
 
 			wrapperPID = (int) p.pid();
 
