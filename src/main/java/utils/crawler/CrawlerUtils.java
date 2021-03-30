@@ -68,7 +68,7 @@ public class CrawlerUtils {
 
 		logger.log(Level.INFO, "Uploading " + remoteFullPath);
 
-		final LFN lfnUploaded = commander.c_api.uploadFile(f, remoteFullPath);
+		final LFN lfnUploaded = commander.c_api.uploadFile(f, remoteFullPath, "-w", "-T", "2", "-d");
 
 		if (lfnUploaded == null)
 			logger.log(Level.WARNING, "Uploading " + remoteFullPath + " failed");

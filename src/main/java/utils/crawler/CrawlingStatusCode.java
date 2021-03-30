@@ -76,6 +76,9 @@ public enum CrawlingStatusCode implements StatusCode {
 	 */
 	private final String description;
 
+	/**
+	 * Status type
+	 */
 	private final StatusType type;
 
 	CrawlingStatusCode(final String description, final StatusType type) {
