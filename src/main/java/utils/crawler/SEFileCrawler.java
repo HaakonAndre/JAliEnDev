@@ -306,7 +306,7 @@ public class SEFileCrawler {
 
 		try (
 				FileInputStream fileInputStream = new FileInputStream(new File(fileName));
-				ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);) {
+				ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
 			final Collection<?> pfnsContainer = (Collection<?>) objectInputStream.readObject();
 
 			for (final Object pfn : pfnsContainer)
