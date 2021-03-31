@@ -7,6 +7,7 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.shell.ErrNo;
 import alien.user.AuthorizationChecker;
+import alien.user.UsersHelper;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -22,12 +23,27 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		for (final String path : alPaths) {
+		final String username = commander.user.getName();
 
-			final LFN dir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), false);
+		final String cwd = commander.getCurrentDirName();
+
+		final String homeDir = UsersHelper.getHomeDir(username);
+
+		for (final String path : alPaths) {
+			final LFN dir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(username, cwd, path), false);
 
 			if (dir != null && dir.exists) {
 				if (dir.isDirectory()) {
+					if (cwd.startsWith(dir.getCanonicalName())) {
+						commander.setReturnCode(ErrNo.EINVAL, "Cannot delete the directory you are in");
+						continue;
+					}
+
+					if (homeDir.startsWith(dir.getCanonicalName())) {
+						commander.setReturnCode(ErrNo.EINVAL, "Cannot delete your home dir");
+						continue;
+					}
+
 					if (AuthorizationChecker.canWrite(dir, commander.user)) {
 						if (bP) {
 							commander.printOutln("Inside Parent Directory");
@@ -90,7 +106,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandrmdir(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
-		
+
 		try {
 			final OptionParser parser = new OptionParser();
 

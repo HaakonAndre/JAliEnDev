@@ -9,6 +9,7 @@ import alien.api.ServerException;
 import alien.api.catalogue.RemoveLFNfromString;
 import alien.catalogue.FileSystemUtils;
 import alien.shell.ErrNo;
+import alien.user.UsersHelper;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -43,13 +44,17 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 	public void run() {
 		final List<String> expandedPaths = new ArrayList<>(alPaths.size());
 
+		final String username = commander.user.getName();
+
+		final String cwd = commander.getCurrentDirName();
+
 		for (final String path : alPaths) {
 			if (path == null) {
 				logger.log(Level.WARNING, "Could not get LFN: " + path);
 				return;
 			}
 
-			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
+			final String absolutePath = FileSystemUtils.getAbsolutePath(username, cwd, path);
 			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 			if (sources != null && !sources.isEmpty())
@@ -58,8 +63,20 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 				commander.setReturnCode(ErrNo.ENOENT, path);
 		}
 
+		final String homeDir = UsersHelper.getHomeDir(username);
+
 		for (final String sPath : expandedPaths) {
-			final String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath);
+			final String fullPath = FileSystemUtils.getAbsolutePath(username, cwd, sPath);
+
+			if (cwd.startsWith(fullPath + "/")) {
+				commander.setReturnCode(ErrNo.EINVAL, "Cannot delete the directory you are in");
+				continue;
+			}
+
+			if (homeDir.startsWith(fullPath + "/")) {
+				commander.setReturnCode(ErrNo.EINVAL, "Cannot delete your home dir");
+				continue;
+			}
 
 			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), fullPath, bR);
 
