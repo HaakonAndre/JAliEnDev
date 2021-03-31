@@ -689,22 +689,21 @@ public class JobWrapper implements MonitoringObject, Runnable {
 							}
 							archivesToUpload.add(entry);
 						}
-
 					} else {
 						logger.log(Level.INFO, "This is not an archive: " + entry.getName());
-						logger.log(Level.INFO,
-								"Verifying if file exists at: " + currentDir.getAbsolutePath() + "/" + entry.getName());
+						logger.log(Level.INFO, "Verifying if file exists at: " + currentDir.getAbsolutePath() + "/" + entry.getName());
 						File entryFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
-						if (entryFile.exists()) {
-							standaloneFilesToUpload.add(entry);
-							logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
-						} else {
-							logger.log(Level.SEVERE,
-									"A required outputfile was NOT found! Aborting. File: " + entry.getName());
-							commander.q_api.putJobLog(queueId, "trace",
-									"A required outputfile was NOT found! Aborting. File: " + entry.getName());
+						if (!entryFile.exists()) { //probably not required anymore (being checked during parsing)
+							logger.log(Level.SEVERE,"A required outputfile was NOT found! Aborting. File: " + entry.getName());
+							commander.q_api.putJobLog(queueId, "trace", "A required outputfile was NOT found! Aborting. File: " + entry.getName());
 							changeStatus(JobStatus.ERROR_SV);
 							return false;
+						} else if (entryFile.length() <= 0) { //archive files are checked for this during createZip, but standalone files still need to be checked
+							logger.log(Level.WARNING, "The following file has size 0 and will be ignored: " + entry.getName());
+							commander.q_api.putJobLog(queueId, "trace", "The following file has size 0 and will be ignored: " + entry.getName());
+						} else {
+							standaloneFilesToUpload.add(entry);
+							logger.log(Level.INFO, "Adding to standalone: " + entry.getName());
 						}
 					}
 				}
