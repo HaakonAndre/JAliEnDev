@@ -36,50 +36,65 @@ public class CrawlingStatistics {
 	/**
 	 * The number of PFNs whose status is unknown from the total number of PFNs crawled
 	 */
-	public Long pfnUnknownStatusCount;
+	public long pfnUnknownStatusCount;
 
 	/**
 	 * Average duration in milliseconds of the crawling process
 	 */
-	public Long crawlingAvgDurationMillis;
+	public long crawlingAvgDurationMillis;
 
 	/**
 	 * Total duration in milliseconds of the crawling process
 	 */
-	public Long crawlingTotalDurationMillis;
+	public long crawlingTotalDurationMillis;
 
 	/**
 	 * Total size of files in bytes downloaded during the crawling process
 	 */
-	public Long fileSizeTotalBytes;
+	public long fileSizeTotalBytes;
 
 	/**
 	 * Total duration of file download in milliseconds
 	 */
-	public Long downloadTotalDurationMillis;
+	public long downloadTotalDurationMillis;
 
 	/**
 	 * Total number of PFNs that could be downloaded
 	 */
-	public Long downloadedPFNsTotalCount;
+	public long downloadedPFNsTotalCount;
 
 	/**
 	 * Total duration of xrdfs in milliseconds
 	 */
-	public Long xrdfsTotalDurationMillis;
+	public long xrdfsTotalDurationMillis;
 
 	/**
 	 * Total number of PFNs that were tested with xrdfs
 	 */
-	public Long xrdfsPFNsTotalCount;
+	public long xrdfsPFNsTotalCount;
 
 	/**
 	 * The Unix timestamp when these statistics are written to disk
 	 */
-	public Long statGeneratedUnixTimestamp;
+	public long statGeneratedUnixTimestamp;
+
+	private static final int NULL_VALUE = -1;
+	private static final int DEFAULT_VALUE = 0;
 
 	private CrawlingStatistics() {
-
+		this.pfnCount = NULL_VALUE;
+		this.pfnOkCount = NULL_VALUE;
+		this.pfnInaccessibleCount = NULL_VALUE;
+		this.pfnCorruptCount = NULL_VALUE;
+		this.pfnUnknownStatusCount = NULL_VALUE;
+		this.crawlingAvgDurationMillis = NULL_VALUE;
+		this.crawlingTotalDurationMillis = NULL_VALUE;
+		this.fileSizeTotalBytes = NULL_VALUE;
+		this.downloadTotalDurationMillis = NULL_VALUE;
+		this.downloadedPFNsTotalCount = NULL_VALUE;
+		this.xrdfsTotalDurationMillis = NULL_VALUE;
+		this.xrdfsPFNsTotalCount = NULL_VALUE;
+		this.statGeneratedUnixTimestamp = NULL_VALUE;
 	}
 
 	/**
@@ -97,9 +112,9 @@ public class CrawlingStatistics {
 	 * @param xrdfsTotalDurationMillis
 	 * @param statGeneratedUnixTimestamp
 	 */
-	public CrawlingStatistics(final Long pfnCount, final Long pfnOkCount, final Long pfnInaccessibleCount, final Long pfnCorruptCount, final Long pfnUnknownStatusCount,
-			final Long crawlingAvgDurationMillis, final Long crawlingTotalDurationMillis, final Long fileSizeTotalBytes,
-			final Long downloadedPFNsTotalCount, final Long downloadTotalDurationMillis, final Long xrdfsPFNsTotalCount, final Long xrdfsTotalDurationMillis, final Long statGeneratedUnixTimestamp) {
+	public CrawlingStatistics(final long pfnCount, final long pfnOkCount, final long pfnInaccessibleCount, final long pfnCorruptCount, final long pfnUnknownStatusCount,
+			final long crawlingAvgDurationMillis, final long crawlingTotalDurationMillis, final long fileSizeTotalBytes,
+			final long downloadedPFNsTotalCount, final long downloadTotalDurationMillis, final long xrdfsPFNsTotalCount, final long xrdfsTotalDurationMillis, final long statGeneratedUnixTimestamp) {
 		this.pfnCount = pfnCount;
 		this.pfnOkCount = pfnOkCount;
 		this.pfnInaccessibleCount = pfnInaccessibleCount;
@@ -146,21 +161,25 @@ public class CrawlingStatistics {
 
 		final JSONObject json = new JSONObject();
 
-		json.put("pfnCount", stats.pfnCount);
-		json.put("pfnOkCount", stats.pfnOkCount);
-		json.put("pfnInaccessibleCount", stats.pfnInaccessibleCount);
-		json.put("pfnCorruptCount", stats.pfnCorruptCount);
-		json.put("pfnUnknownStatusCount", stats.pfnUnknownStatusCount);
-		json.put("crawlingAvgDurationMillis", stats.crawlingAvgDurationMillis);
-		json.put("crawlingTotalDurationMillis", stats.crawlingTotalDurationMillis);
-		json.put("fileSizeTotalBytes", stats.fileSizeTotalBytes);
-		json.put("downloadedPFNsTotalCount", stats.downloadedPFNsTotalCount);
-		json.put("downloadTotalDurationMillis", stats.downloadTotalDurationMillis);
-		json.put("xrdfsPFNsTotalCount", stats.xrdfsPFNsTotalCount);
-		json.put("xrdfsTotalDurationMillis", stats.xrdfsTotalDurationMillis);
-		json.put("statGeneratedUnixTimestamp", stats.statGeneratedUnixTimestamp);
+		json.put("pfnCount", getValueForJSON(stats.pfnCount));
+		json.put("pfnOkCount", getValueForJSON(stats.pfnOkCount));
+		json.put("pfnInaccessibleCount", getValueForJSON(stats.pfnInaccessibleCount));
+		json.put("pfnCorruptCount", getValueForJSON(stats.pfnCorruptCount));
+		json.put("pfnUnknownStatusCount", getValueForJSON(stats.pfnUnknownStatusCount));
+		json.put("crawlingAvgDurationMillis", getValueForJSON(stats.crawlingAvgDurationMillis));
+		json.put("crawlingTotalDurationMillis", getValueForJSON(stats.crawlingTotalDurationMillis));
+		json.put("fileSizeTotalBytes", getValueForJSON(stats.fileSizeTotalBytes));
+		json.put("downloadedPFNsTotalCount", getValueForJSON(stats.downloadedPFNsTotalCount));
+		json.put("downloadTotalDurationMillis", getValueForJSON(stats.downloadTotalDurationMillis));
+		json.put("xrdfsPFNsTotalCount", getValueForJSON(stats.xrdfsPFNsTotalCount));
+		json.put("xrdfsTotalDurationMillis", getValueForJSON(stats.xrdfsTotalDurationMillis));
+		json.put("statGeneratedUnixTimestamp", getValueForJSON(stats.statGeneratedUnixTimestamp));
 
 		return json;
+	}
+
+	private static Long getValueForJSON(final long value) {
+		return value != NULL_VALUE ? Long.valueOf(value) : null;
 	}
 
 	/**
@@ -178,92 +197,86 @@ public class CrawlingStatistics {
 
 		for (final CrawlingStatistics stats : statsList) {
 
-			if (stats.pfnOkCount != null) {
+			if (stats.pfnOkCount != NULL_VALUE) {
 				averagedStats.pfnOkCount = initializeIfNull(averagedStats.pfnOkCount);
 				averagedStats.pfnOkCount += stats.pfnOkCount;
 			}
 
-			if (stats.pfnInaccessibleCount != null) {
+			if (stats.pfnInaccessibleCount != NULL_VALUE) {
 				averagedStats.pfnInaccessibleCount = initializeIfNull(averagedStats.pfnInaccessibleCount);
 				averagedStats.pfnInaccessibleCount += stats.pfnInaccessibleCount;
 			}
 
-			if (stats.pfnCorruptCount != null) {
+			if (stats.pfnCorruptCount != NULL_VALUE) {
 				averagedStats.pfnCorruptCount = initializeIfNull(averagedStats.pfnCorruptCount);
 				averagedStats.pfnCorruptCount += stats.pfnCorruptCount;
 			}
 
-			if (stats.pfnUnknownStatusCount != null) {
+			if (stats.pfnUnknownStatusCount != NULL_VALUE) {
 				averagedStats.pfnUnknownStatusCount = initializeIfNull(averagedStats.pfnUnknownStatusCount);
 				averagedStats.pfnUnknownStatusCount += stats.pfnUnknownStatusCount;
 			}
 
-			if (stats.fileSizeTotalBytes != null) {
+			if (stats.fileSizeTotalBytes != NULL_VALUE) {
 				averagedStats.fileSizeTotalBytes = initializeIfNull(averagedStats.fileSizeTotalBytes);
 				averagedStats.fileSizeTotalBytes += stats.fileSizeTotalBytes;
 			}
 
-			if (stats.crawlingAvgDurationMillis != null) {
+			if (stats.crawlingAvgDurationMillis != NULL_VALUE) {
 				averagedStats.crawlingAvgDurationMillis = initializeIfNull(averagedStats.crawlingAvgDurationMillis);
 				averagedStats.crawlingAvgDurationMillis += stats.crawlingAvgDurationMillis;
 				crawlingAvgDurationCount += 1;
 			}
 
-			if (stats.pfnCount != null) {
+			if (stats.pfnCount != NULL_VALUE) {
 				averagedStats.pfnCount = initializeIfNull(averagedStats.pfnCount);
 				averagedStats.pfnCount += stats.pfnCount;
 			}
 
-			if (stats.crawlingTotalDurationMillis != null) {
+			if (stats.crawlingTotalDurationMillis != NULL_VALUE) {
 				averagedStats.crawlingTotalDurationMillis = initializeIfNull(averagedStats.crawlingTotalDurationMillis);
 				averagedStats.crawlingTotalDurationMillis += stats.crawlingTotalDurationMillis;
 			}
 
-			if (stats.downloadedPFNsTotalCount != null) {
+			if (stats.downloadedPFNsTotalCount != NULL_VALUE) {
 				averagedStats.downloadedPFNsTotalCount = initializeIfNull(averagedStats.downloadedPFNsTotalCount);
 				averagedStats.downloadedPFNsTotalCount += stats.downloadedPFNsTotalCount;
 			}
 
-			if (stats.downloadTotalDurationMillis != null) {
+			if (stats.downloadTotalDurationMillis != NULL_VALUE) {
 				averagedStats.downloadTotalDurationMillis = initializeIfNull(averagedStats.downloadTotalDurationMillis);
 				averagedStats.downloadTotalDurationMillis += stats.downloadTotalDurationMillis;
 			}
 
-			if (stats.xrdfsPFNsTotalCount != null) {
+			if (stats.xrdfsPFNsTotalCount != NULL_VALUE) {
 				averagedStats.xrdfsPFNsTotalCount = initializeIfNull(averagedStats.xrdfsPFNsTotalCount);
 				averagedStats.xrdfsPFNsTotalCount += stats.xrdfsPFNsTotalCount;
 			}
 
-			if (stats.xrdfsTotalDurationMillis != null) {
+			if (stats.xrdfsTotalDurationMillis != NULL_VALUE) {
 				averagedStats.xrdfsTotalDurationMillis = initializeIfNull(averagedStats.xrdfsTotalDurationMillis);
 				averagedStats.xrdfsTotalDurationMillis += stats.xrdfsTotalDurationMillis;
 			}
 		}
 
-		averagedStats.crawlingAvgDurationMillis = crawlingAvgDurationCount == 0 ? null : averagedStats.crawlingAvgDurationMillis / crawlingAvgDurationCount;
+		averagedStats.crawlingAvgDurationMillis = crawlingAvgDurationCount == 0 ? NULL_VALUE : averagedStats.crawlingAvgDurationMillis / crawlingAvgDurationCount;
 		averagedStats.statGeneratedUnixTimestamp = System.currentTimeMillis();
 
 		return averagedStats;
 	}
 
-	/**
-	 * @param value
-	 * @return the value provided if it is not null, 0 otherwise
-	 */
-	private static Long initializeIfNull(final Long value) {
-		return value == null ? 0L : value;
+	private static long initializeIfNull(final long value) {
+		return value == NULL_VALUE ? DEFAULT_VALUE : value;
 	}
 
-	/**
-	 * @param json
-	 * @param key
-	 * @return the value associated with the key from the json or null if the key is not found
-	 */
-	private static Long getLongFromJSON(final JSONObject json, final String key) {
-		if (json.get(key) != null)
-			return (Long) json.get(key);
-		else
-			return null;
+	private static long getLongFromJSON(final JSONObject json, final String key) {
+		try {
+			return ((Long) json.get(key)).longValue();
+		}
+		catch (final Exception e) {
+			e.printStackTrace();
+			return NULL_VALUE;
+		}
 	}
 
 	@Override

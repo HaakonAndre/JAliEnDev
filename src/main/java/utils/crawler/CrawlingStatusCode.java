@@ -87,8 +87,7 @@ public enum CrawlingStatusCode implements StatusCode {
 	}
 
 	/**
-	 * The description of the crawling status code
-	 * @return
+	 * @return the description of the crawling status code
 	 */
 	@Override
 	public String getDescription() {
@@ -96,8 +95,7 @@ public enum CrawlingStatusCode implements StatusCode {
 	}
 
 	/**
-	 * The type of the crawling status
-	 * @return
+	 * @return the type of the crawling status
 	 */
 	@Override
 	public StatusType getType() {
