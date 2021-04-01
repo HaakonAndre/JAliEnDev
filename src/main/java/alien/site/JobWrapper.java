@@ -777,10 +777,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 					uploadedAllOutFiles = false;
 				}
 			}
-			if (exitStatus == JobStatus.DONE)
-				registerEntries(toUpload, outputDir);
-		
-
 		createAndAddResultsJDL(null); // Not really used. Set to null for now.
 
 		if (!uploadedAllOutFiles) {
@@ -789,6 +785,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		} // else
 			// changeStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 		if (exitStatus == JobStatus.DONE) {
+			registerEntries(toUpload, outputDir);
+
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
 			else
