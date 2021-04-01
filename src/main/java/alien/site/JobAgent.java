@@ -167,10 +167,12 @@ public class JobAgent implements Runnable {
 	protected static int origTtl;
 	private static final long jobAgentStartTime = System.currentTimeMillis();
 
-	private static Long RUNNING_CPU;
-	private static Long RUNNING_DISK;
+	static Long RUNNING_CPU;
+	static Long RUNNING_DISK;
 
-	private static Long MAX_CPU;
+	static Long MAX_CPU;
+
+	static Long RUNNING_JOBAGENTS;
 
 	private Long reqCPU = Long.valueOf(0);
 	private Long reqDisk = Long.valueOf(0);
@@ -248,6 +250,7 @@ public class JobAgent implements Runnable {
 			RUNNING_CPU = MAX_CPU;
 			RUNNING_DISK = Long.valueOf(((Number) siteMap.getOrDefault("Disk", Integer.valueOf(10 * 1024))).longValue());
 			origTtl = ((Integer) siteMap.get("TTL")).intValue();
+			RUNNING_JOBAGENTS = Long.valueOf(0);
 		}
 
 		hostName = (String) siteMap.get("Localhost");
@@ -299,6 +302,7 @@ public class JobAgent implements Runnable {
 		try {
 			logger.log(Level.INFO, "Resources available CPU DISK: " + RUNNING_CPU + " " + RUNNING_DISK);
 			synchronized (requestSync) {
+				RUNNING_JOBAGENTS += 1;
 				if (!updateDynamicParameters()) {
 					// requestSync.notify();
 					return;
@@ -306,6 +310,7 @@ public class JobAgent implements Runnable {
 
 				monitor.sendParameter("ja_status", Integer.valueOf(jaStatus.REQUESTING_JOB.getValue()));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
+				monitor.incrementCounter("requestedjobs");
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(new HashMap<>(siteMap));
 
@@ -315,6 +320,7 @@ public class JobAgent implements Runnable {
 				if (matchedJob.containsKey("Error") || matchedJob == null) {
 					logger.log(Level.INFO,
 							"We didn't get anything back. Nothing to run right now.");
+					RUNNING_JOBAGENTS -= 1;
 					throw new Exception();
 				}
 
@@ -382,6 +388,7 @@ public class JobAgent implements Runnable {
 			synchronized (requestSync) {
 				RUNNING_CPU += reqCPU;
 				RUNNING_DISK += reqDisk;
+				RUNNING_JOBAGENTS -= 1;
 
 				requestSync.notifyAll();
 			}

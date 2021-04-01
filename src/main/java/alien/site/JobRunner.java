@@ -4,6 +4,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 /**
  * @author sweisz
@@ -15,6 +17,32 @@ public class JobRunner extends JobAgent {
 	 * logger object
 	 */
 	final Logger logger = ConfigUtils.getLogger(JobRunner.class.getCanonicalName());
+
+	/**
+	 * ML monitor object
+	 */
+	static final Monitor monitor = MonitorFactory.getMonitor(JobRunner.class.getCanonicalName());
+
+    static {
+        monitor.addMonitoring("resource_status", (names, values) -> {
+        	names.add("totalcpu");
+            values.add(Long.valueOf(JobAgent.MAX_CPU));
+
+            names.add("availablecpu");
+            values.add(Long.valueOf(JobAgent.RUNNING_CPU));
+
+            names.add("allocatedcpu");
+            values.add(Long.valueOf(JobAgent.MAX_CPU-JobAgent.RUNNING_CPU));
+
+            names.add("runningja");
+            values.add(Long.valueOf(JobAgent.RUNNING_JOBAGENTS));
+
+            names.add("slotlength");
+            values.add(Long.valueOf(JobAgent.origTtl));
+
+        });
+    }
+
 
 	@Override
 	public void run() {
@@ -32,9 +60,13 @@ public class JobRunner extends JobAgent {
 						logger.log(Level.INFO, "Spawned thread nr " + i);
 						jaThread = new Thread(new JobAgent());
 						jaThread.start();
+						monitor.sendParameter("state", "Waiting for JA to get a job");
+						monitor.sendParameter("statenumeric", Long.valueOf(1));
 						i++;
 					}
 					else {
+						monitor.sendParameter("state", "All slots busy");
+						monitor.sendParameter("statenumeric", Long.valueOf(3));
 						logger.log(Level.INFO, "No new thread");
 					}
 
@@ -47,7 +79,16 @@ public class JobRunner extends JobAgent {
 
 				timestamp = System.currentTimeMillis() / 1000;
 
+				monitor.incrementCounter("startedja");
+				//monitor.sendParameter("startedja", Integer.valueOf(i+1)); //change to increment
+
+				monitor.sendParameter("retries", Long.valueOf(JobAgent.retries.get()));
+
+				monitor.sendParameter("remainingttl", Long.valueOf(ttlEnd - timestamp));
+
 				if (JobAgent.retries.get() == maxRetries) {
+					monitor.sendParameter("state", "Last JA cannot get job");
+					monitor.sendParameter("statenumeric", Long.valueOf(2));
 					logger.log(Level.INFO, "JobRunner going to exit from lack of jobs");
 					break;
 				}
