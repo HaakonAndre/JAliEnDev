@@ -79,9 +79,10 @@ public class Monitor implements Runnable {
 
 		clusterName = MonitorFactory.getConfigString(component, "cluster_name", cluster);
 
-		final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}");
+		final String pattern = MonitorFactory.getConfigString(component, "node_name", component.startsWith("alien.site.") ? "${hostname}:${pid}" : "${hostname}");
 
-		nodeName = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
+		String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
+		nodeName = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
 	}
 
 	/**

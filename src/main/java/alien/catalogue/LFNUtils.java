@@ -1373,7 +1373,7 @@ public class LFNUtils {
 
 		final LFN parentDir = archive.getParentDir();
 		if (parentDir.exists) {
-			final Collection<LFN> allJobFiles = find(parentDir.getCanonicalName(), "*", "", 0, null, "", Long.valueOf(archive.jobid), 0);
+			final Collection<LFN> allJobFiles = find(parentDir.getCanonicalName(), "*", "", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(archive.jobid), 0);
 
 			if (allJobFiles == null || allJobFiles.size() == 0)
 				return null;
