@@ -183,7 +183,7 @@ public class CrawlingStatistics {
 
 	/**
 	 * @param statsList
-	 * @return get the average statistics from a list of CrawlingStatistics objects
+	 * @return the average statistics from a list of CrawlingStatistics objects
 	 */
 	public static CrawlingStatistics getAveragedStats(final List<CrawlingStatistics> statsList) {
 
