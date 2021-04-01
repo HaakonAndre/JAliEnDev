@@ -16,22 +16,22 @@ public class CrawlingStatistics {
 	/**
 	 * The total number of PFNs analysed.
 	 */
-	public Long pfnCount;
+	public long pfnCount;
 
 	/**
 	 * The number of PFNs that are ok from the total number of PFNs crawled
 	 */
-	public Long pfnOkCount;
+	public long pfnOkCount;
 
 	/**
 	 * The number of PFNs that are inaccessible from the total number of PFNs crawled
 	 */
-	public Long pfnInaccessibleCount;
+	public long pfnInaccessibleCount;
 
 	/**
 	 * The number of PFNs that are corrupt from the total number of PFNs crawled
 	 */
-	public Long pfnCorruptCount;
+	public long pfnCorruptCount;
 
 	/**
 	 * The number of PFNs whose status is unknown from the total number of PFNs crawled
