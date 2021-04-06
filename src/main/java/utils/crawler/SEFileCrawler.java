@@ -358,7 +358,7 @@ public class SEFileCrawler {
 		// check if file exists
 		if (pfnToRead != null) {
 			try {
-				guid = commander.c_api.getGUID(pfnToRead.getGuid().guid.toString(), false, true);
+				guid = commander.c_api.getGUID(pfnToRead.getGuid().guid.toString(), false, false);
 
 				if (guid == null)
 					status = new CrawlingStatus(E_GUID_NOT_FOUND, "Cannot get GUID from PFN");
