@@ -69,19 +69,21 @@ public class ParsedOutput {
 	public void parseOutput() {
 		final List<String> files = jdl.getOutputFiles(this.tag);
 
+		System.err.println("Listing getOutputFiles");
+
 		if (files.size() == 0)
 			// Create default archive
 			files.add("jalien_defarchNOSPEC." + this.queueId + ":stdout,stderr,resources");
-		System.out.println(files); // TODELETE
+		System.err.println(files); // TODELETE
 
 		final Set<String> processedFiles = new HashSet<>();
 
 		for (final String line : files) {
-			System.out.println("Line: " + line);
+			System.err.println("Line: " + line);
 
 			final String[] parts = line.split("@");
 
-			// System.out.println("Parts: "+parts[0]+" "+parts[1]);
+			// System.err.println("Parts: "+parts[0]+" "+parts[1]);
 
 			final String options = parts.length > 1 ? parts[1] : "";
 
@@ -89,39 +91,40 @@ public class ParsedOutput {
 				// archive
 				final String[] archparts = parts[0].split(":");
 
-				System.out.println("Archparts: " + archparts[0] + " " + archparts[1]);
+				System.err.println("Archparts: " + archparts[0] + " " + archparts[1]);
 
 				final ArrayList<String> filesincluded = parsePatternFiles(archparts[1].split(","), processedFiles);
 
-				System.out.println("Adding archive: " + archparts[0] + " and opt: " + options);
-				jobOutput.add(new OutputEntry(archparts[0], filesincluded, options, Long.valueOf(queueId)));
+				System.err.println("Adding archive: " + archparts[0] + " and opt: " + options);
+				jobOutput.add(new OutputEntry(archparts[0], filesincluded, options, Long.valueOf(queueId), true));
 			}
 			else {
 				// file(s)
-				System.out.println("Single file: " + parts[0]);
+				System.err.println("Single file: " + parts[0]);
 				final ArrayList<String> filesincluded = parsePatternFiles(parts[0].split(","), processedFiles);
 				for (final String f : filesincluded) {
-					System.out.println("Adding single: [" + f + "] and opt: [" + options + "]");
-					jobOutput.add(new OutputEntry(f, null, options, Long.valueOf(queueId)));
+					System.err.println("Adding single: [" + f + "] and opt: [" + options + "]");
+					jobOutput.add(new OutputEntry(f, null, options, Long.valueOf(queueId), false));
 				}
 			}
 		}
 
-		System.out.println(jobOutput.toString());
+		System.err.println(jobOutput.toString());
 
 		return;
 	}
 
 	private ArrayList<String> parsePatternFiles(final String[] files, final Set<String> alreadySeen) {
-		System.out.println("Files to parse patterns: " + Arrays.asList(files).toString());
+		System.err.println("Files to parse patterns: " + Arrays.asList(files).toString());
 
 		final ArrayList<String> filesFound = new ArrayList<>();
 
 		if (!pwd.equals(""))
 			for (final String file : files) {
-				System.out.println("Going to parse: " + file);
+				System.err.println("Going to parse: " + file);
 				if (file.contains("*")) {
-					final String[] parts = SystemCommand.bash("ls " + pwd + file).stdout.split("\n");
+					final String[] parts = SystemCommand.bash("find " + pwd + " ! -type d -name \"" + file + "\"").stdout.split("\n");
+				//	final String[] parts = SystemCommand.bash("ls " + pwd + file).stdout.split("\n");
 					if (parts.length > 0)
 						for (String f : parts) {
 							f = f.trim();
@@ -129,12 +132,12 @@ public class ParsedOutput {
 								final String fname = new File(f).getName();
 
 								if (!alreadySeen.contains(fname)) {
-									System.out.println("Adding file from ls: " + fname);
+									System.err.println("Adding file from ls: " + fname);
 									filesFound.add(fname);
 									alreadySeen.add(fname);
 								}
 								else
-									System.out.println("Ignoring duplicate file: " + fname);
+									System.err.println("Ignoring duplicate file: " + fname);
 							}
 						}
 				}
@@ -144,11 +147,16 @@ public class ParsedOutput {
 						alreadySeen.add(file);
 					}
 					else
-						System.out.println("Ignoring duplicate file: " + file);
+					System.err.println("Ignoring duplicate file: " + file);
+					
+					File fsFile = new File(file);
+					if(!fsFile.exists())
+						throw new NullPointerException("File " + file + " for archive " + "?" + " doesn't exist or cannot be read!");
+
 				}
 			}
 
-		System.out.println("Returned parsed array: " + filesFound.toString());
+		System.err.println("Returned parsed array: " + filesFound.toString());
 
 		return filesFound;
 	}
