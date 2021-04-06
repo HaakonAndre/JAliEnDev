@@ -15,7 +15,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import alien.io.IOUtils;
-import alien.shell.commands.JAliEnCOMMander;
 
 /**
  * @author Miguel
@@ -58,6 +57,7 @@ public class OutputEntry implements Serializable {
 	 * @param filesIncluded
 	 * @param options
 	 * @param jobid
+	 * @param isArchive 
 	 */
 	public OutputEntry(final String name, final ArrayList<String> filesIncluded, final String options, final Long jobid, final boolean isArchive) {
 		this.name = name;
@@ -152,7 +152,7 @@ public class OutputEntry implements Serializable {
 	 * @return list of included files in this archive, or empty list if a file
 	 */
 	public ArrayList<String> getFilesIncluded() {
-		return isArchive() ? this.filesIncluded : new ArrayList<String>();
+		return isArchive() ? this.filesIncluded : new ArrayList<>();
 	}
 
 	/**

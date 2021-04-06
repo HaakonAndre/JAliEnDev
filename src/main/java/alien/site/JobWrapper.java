@@ -667,9 +667,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return false;
 		}
 
-		ArrayList<OutputEntry> archivesToUpload = new ArrayList<OutputEntry>();
-		ArrayList<OutputEntry> standaloneFilesToUpload = new ArrayList<OutputEntry>();
-		ArrayList<String> allArchiveEntries = new ArrayList<String>();
+		ArrayList<OutputEntry> archivesToUpload = new ArrayList<>();
+		ArrayList<OutputEntry> standaloneFilesToUpload = new ArrayList<>();
+		ArrayList<String> allArchiveEntries = new ArrayList<>();
 
 		ArrayList<String> outputTags = getOutputTags(exitStatus);
 		for (String tag : outputTags) {
@@ -1022,7 +1022,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return tags;
 	}
 
-	private ArrayList<OutputEntry> mergeAndRemoveDuplicateEntries(ArrayList<OutputEntry> filesToMerge, ArrayList<OutputEntry> fileList, ArrayList<String> allArchiveEntries) {
+	private static ArrayList<OutputEntry> mergeAndRemoveDuplicateEntries(ArrayList<OutputEntry> filesToMerge, ArrayList<OutputEntry> fileList, ArrayList<String> allArchiveEntries) {
 		for (final OutputEntry file : filesToMerge) {
 			if (!allArchiveEntries.contains(file.getName())) {
 				logger.log(Level.INFO, "Standalone file not in any archive. To be uploaded separately: " + file.getName());
