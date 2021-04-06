@@ -750,9 +750,11 @@ public class Xrootd extends Protocol {
 			else
 				command.add("-np");
 
+			/**
 			// explicitly ask to create intermediate paths
 			if (xrootdNewerThan4)
 				command.add("--path");
+			*/
 
 			command.add("--verbose"); // display summary output
 			command.add("--force"); // re-create a file if already present
@@ -1296,7 +1298,7 @@ public class Xrootd extends Protocol {
 			}
 
 			command.add("--force");
-			command.add("--path");
+			//command.add("--path");
 			command.add("--posc");
 			command.add("--nopbar");
 
