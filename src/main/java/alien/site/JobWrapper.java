@@ -691,7 +691,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						}
 					} else {
 						logger.log(Level.INFO, "This is not an archive: " + entry.getName());
-						logger.log(Level.INFO, "Verifying if file exists at: " + currentDir.getAbsolutePath() + "/" + entry.getName());
 						File entryFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 						if (entryFile.length() <= 0) { //archive files are checked for this during createZip, but standalone files still need to be checked
 							logger.log(Level.WARNING, "The following file has size 0 and will be ignored: " + entry.getName());
