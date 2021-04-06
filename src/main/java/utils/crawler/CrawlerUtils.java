@@ -34,7 +34,7 @@ public class CrawlerUtils {
 	/**
 	 * @return list of StatusCode objects that represent all possible statuses returned by the crawler
 	 */
-	public static final List<StatusCode> getStatuses() {
+	public static List<StatusCode> getStatuses() {
 		final List<StatusCode> crawlingStatuses = new ArrayList<>();
 		crawlingStatuses.addAll(Arrays.asList(SourceExceptionCode.values()));
 		crawlingStatuses.addAll(Arrays.asList(CrawlingStatusCode.values()));
@@ -44,7 +44,7 @@ public class CrawlerUtils {
 	/**
 	 * @return list of all possible status types returned by the crawler
 	 */
-	public static final List<String> getStatusTypes() {
+	public static List<String> getStatusTypes() {
 		return Arrays.stream(StatusType.values()).map(Enum::toString).collect(Collectors.toUnmodifiableList());
 	}
 
@@ -68,7 +68,7 @@ public class CrawlerUtils {
 
 		logger.log(Level.INFO, "Uploading " + remoteFullPath);
 
-		final LFN lfnUploaded = commander.c_api.uploadFile(f, remoteFullPath);
+		final LFN lfnUploaded = commander.c_api.uploadFile(f, remoteFullPath, "-w", "-T", "2", "-d");
 
 		if (lfnUploaded == null)
 			logger.log(Level.WARNING, "Uploading " + remoteFullPath + " failed");

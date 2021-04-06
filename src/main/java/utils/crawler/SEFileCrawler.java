@@ -206,7 +206,7 @@ public class SEFileCrawler {
 
 			final long[] timestamps = new long[pfnsToCrawl.size()];
 
-			int totalPFNCount = 0, inaccessiblePFNs = 0, corruptPFNs = 0, okPFNs = 0, unknownStatusPFNs = 0;
+			long totalPFNCount = 0, inaccessiblePFNs = 0, corruptPFNs = 0, okPFNs = 0, unknownStatusPFNs = 0;
 			long fileSizeBytes = 0, downloadTotalDurationMillis = 0, downloadedPFNsTotalCount = 0;
 			long xrdfsTotalDurationMillis = 0, xrdfsPFNsTotalCount = 0;
 
@@ -306,7 +306,7 @@ public class SEFileCrawler {
 
 		try (
 				FileInputStream fileInputStream = new FileInputStream(new File(fileName));
-				ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);) {
+				ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)) {
 			final Collection<?> pfnsContainer = (Collection<?>) objectInputStream.readObject();
 
 			for (final Object pfn : pfnsContainer)

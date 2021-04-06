@@ -132,7 +132,7 @@ public class CrawlingStatistics {
 
 	/**
 	 * @param jsonObject
-	 * @return
+	 * @return CrawlingStatistics from JSONObject
 	 */
 	public static CrawlingStatistics fromJSON(final JSONObject jsonObject) {
 		return new CrawlingStatistics(
@@ -152,9 +152,8 @@ public class CrawlingStatistics {
 	}
 
 	/**
-	 * Convert CrawlingStatistics object to JSONObject
 	 * @param stats
-	 * @return
+	 * @return JSONObject from CrawlingStatistics
 	 */
 	@SuppressWarnings("unchecked")
 	public static JSONObject toJSON(final CrawlingStatistics stats) {
@@ -183,9 +182,8 @@ public class CrawlingStatistics {
 	}
 
 	/**
-	 * Get the average statistics from a list of CrawlingStatistics objects
 	 * @param statsList
-	 * @return
+	 * @return the average statistics from a list of CrawlingStatistics objects
 	 */
 	public static CrawlingStatistics getAveragedStats(final List<CrawlingStatistics> statsList) {
 
