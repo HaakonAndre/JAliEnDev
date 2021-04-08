@@ -505,7 +505,6 @@ public class JobAgent implements Runnable {
 		final long jobAgentCurrentTime = System.currentTimeMillis();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
 		int timeleft = origTtl - time_subs;
-		int timeleftAdjusted = 0;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
@@ -530,12 +529,7 @@ public class JobAgent implements Runnable {
 		if (checkParameters() == false)
 			return false;
 
-		if (getLhcbMarks() != null)
-			timeleftAdjusted = (int) (timeleft * Math.max(1f, getLhcbMarks().floatValue() / LHCB_DEFAULT_FACTOR));
-		else
-			timeleftAdjusted = timeleft;
-
-		siteMap.put("TTL", Integer.valueOf(timeleftAdjusted));
+		siteMap.put("TTL", Integer.valueOf(timeleft));
 		siteMap.put("CPUCores", RUNNING_CPU);
 		siteMap.put("Disk", RUNNING_DISK);
 
