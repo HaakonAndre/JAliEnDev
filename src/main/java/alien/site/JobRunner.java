@@ -80,7 +80,6 @@ public class JobRunner extends JobAgent {
 				timestamp = System.currentTimeMillis() / 1000;
 
 				monitor.incrementCounter("startedja");
-				//monitor.sendParameter("startedja", Integer.valueOf(i+1)); //change to increment
 
 				monitor.sendParameter("retries", Long.valueOf(JobAgent.retries.get()));
 
