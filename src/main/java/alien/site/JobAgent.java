@@ -464,7 +464,24 @@ public class JobAgent implements Runnable {
 	public boolean checkParameters() {
 		final long jobAgentCurrentTime = System.currentTimeMillis();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
-		final int timeleft = origTtl - time_subs;
+		final int certTime = getCertTime();
+		int timeleft = origTtl - time_subs;
+
+		logger.log(Level.INFO, "Certificate timeleft is " + certTime);
+		if (certTime > 0 && certTime < timeleft)
+			timeleft = certTime - 900; // (-15min)
+
+		// safety time for saving, etc
+		timeleft -= 600;
+
+		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
+				MachineJobFeatures.FeatureType.MACHINEFEATURE);
+		if (shutdownTime != null) {
+			shutdownTime = Long.valueOf(shutdownTime.longValue() - System.currentTimeMillis() / 1000);
+			logger.log(Level.INFO, "Shutdown is" + shutdownTime);
+
+			timeleft = Integer.min(timeleft, shutdownTime.intValue());
+		}
 
 		if (timeleft <= 0)
 			return false;
