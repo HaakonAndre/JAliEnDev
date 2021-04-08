@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -16,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -28,8 +31,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -123,7 +129,7 @@ public class JobAgent implements Runnable {
 	/**
 	 * logger object
 	 */
-	private final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	private Logger logger;
 
 	/**
 	 * ML monitor object
@@ -188,10 +194,52 @@ public class JobAgent implements Runnable {
 		ce = env.get("CE");
 
 		jobNumber = totalJobs.incrementAndGet();
+		logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName() + " " + jobNumber);
+		FileHandler handler = null;
+		try {
+			handler = new FileHandler("job-agent-" + jobNumber + ".log");
+			handler.setFormatter(new SimpleFormatter() {
+				private String format = "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s JobNumber: " + jobNumber + "%n%4$s: %5$s%n";
+
+				@Override
+				public synchronized String format(LogRecord record) {
+					String source;
+					if (record.getSourceClassName() != null) {
+						source = record.getSourceClassName();
+						if (record.getSourceMethodName() != null) {
+							source += " " + record.getSourceMethodName();
+						}
+					} else {
+						source = record.getLoggerName();
+					}
+					String message = formatMessage(record);
+					String throwable = "";
+					if (record.getThrown() != null) {
+						StringWriter sw = new StringWriter();
+						PrintWriter pw = new PrintWriter(sw);
+						pw.println();
+						record.getThrown().printStackTrace(pw);
+						pw.close();
+						throwable = sw.toString();
+					}
+					return String.format(format,
+							new Date(record.getMillis()),
+							source,
+							record.getLoggerName(),
+							record.getLevel().getLocalizedName(),
+							message,
+							throwable);
+				}
+			});
+		} catch (IOException ie) {
+			logger.log(Level.WARNING, "Problem with getting logger: " + ie.toString());
+			ie.printStackTrace();
+		}
+		logger.addHandler(handler);
 
 		final String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
-		logger.log(Level.INFO, jobNumber + ". We have the following DN :" + DN);
+		logger.log(Level.INFO, "We have the following DN :" + DN);
 
 		if (siteMap == null) {
 			siteMap = (new SiteMap()).getSiteParameters(env);
