@@ -23,26 +23,25 @@ public class JobRunner extends JobAgent {
 	 */
 	static final Monitor monitor = MonitorFactory.getMonitor(JobRunner.class.getCanonicalName());
 
-    static {
-        monitor.addMonitoring("resource_status", (names, values) -> {
-        	names.add("totalcpu");
-            values.add(Long.valueOf(JobAgent.MAX_CPU));
+	static {
+		monitor.addMonitoring("resource_status", (names, values) -> {
+			names.add("totalcpu");
+			values.add(JobAgent.MAX_CPU);
 
-            names.add("availablecpu");
-            values.add(Long.valueOf(JobAgent.RUNNING_CPU));
+			names.add("availablecpu");
+			values.add(JobAgent.RUNNING_CPU);
 
-            names.add("allocatedcpu");
-            values.add(Long.valueOf(JobAgent.MAX_CPU-JobAgent.RUNNING_CPU));
+			names.add("allocatedcpu");
+			values.add(Long.valueOf(JobAgent.MAX_CPU.longValue() - JobAgent.RUNNING_CPU.longValue()));
 
-            names.add("runningja");
-            values.add(Long.valueOf(JobAgent.RUNNING_JOBAGENTS));
+			names.add("runningja");
+			values.add(Long.valueOf(JobAgent.RUNNING_JOBAGENTS));
 
-            names.add("slotlength");
-            values.add(Long.valueOf(JobAgent.origTtl));
+			names.add("slotlength");
+			values.add(Integer.valueOf(JobAgent.origTtl));
 
-        });
-    }
-
+		});
+	}
 
 	@Override
 	public void run() {
@@ -63,8 +62,7 @@ public class JobRunner extends JobAgent {
 						monitor.sendParameter("state", "Waiting for JA to get a job");
 						monitor.sendParameter("statenumeric", Long.valueOf(1));
 						i++;
-					}
-					else {
+					} else {
 						monitor.sendParameter("state", "All slots busy");
 						monitor.sendParameter("statenumeric", Long.valueOf(3));
 						logger.log(Level.INFO, "No new thread");
@@ -72,8 +70,7 @@ public class JobRunner extends JobAgent {
 
 					JobAgent.requestSync.wait(5 * 60 * 1000);
 
-				}
-				catch (final InterruptedException e) {
+				} catch (final InterruptedException e) {
 					logger.log(Level.WARNING, "JobRunner interrupted", e);
 				}
 

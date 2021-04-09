@@ -134,7 +134,8 @@ public class JobAgent implements Runnable {
 	/**
 	 * ML monitor object
 	 */
-	static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+	private static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+
 	/**
 	 * ApMon sender
 	 */
@@ -167,12 +168,12 @@ public class JobAgent implements Runnable {
 	protected static int origTtl;
 	private static final long jobAgentStartTime = System.currentTimeMillis();
 
-	static Long RUNNING_CPU;
-	static Long RUNNING_DISK;
+	protected static Long RUNNING_CPU;
+	protected static Long RUNNING_DISK;
 
-	static Long MAX_CPU;
+	protected static Long MAX_CPU;
 
-	static Long RUNNING_JOBAGENTS;
+	protected static long RUNNING_JOBAGENTS;
 
 	private Long reqCPU = Long.valueOf(0);
 	private Long reqDisk = Long.valueOf(0);
@@ -250,7 +251,7 @@ public class JobAgent implements Runnable {
 			RUNNING_CPU = MAX_CPU;
 			RUNNING_DISK = Long.valueOf(((Number) siteMap.getOrDefault("Disk", Integer.valueOf(10 * 1024))).longValue());
 			origTtl = ((Integer) siteMap.get("TTL")).intValue();
-			RUNNING_JOBAGENTS = Long.valueOf(0);
+			RUNNING_JOBAGENTS = 0;
 		}
 
 		hostName = (String) siteMap.get("Localhost");
