@@ -105,7 +105,6 @@ public class JobAgent implements Runnable {
 	private String jarName;
 	private int wrapperPID;
 	private static float lhcbMarks = -1;
-	private final static float LHCB_DEFAULT_FACTOR = 9f;
 
 	private enum jaStatus {
 		REQUESTING_JOB(1), INSTALLING_PKGS(2), JOB_STARTED(3), RUNNING_JOB(4), DONE(5), ERROR_HC(-1), // error in getting host
@@ -168,11 +167,24 @@ public class JobAgent implements Runnable {
 	protected static int origTtl;
 	private static final long jobAgentStartTime = System.currentTimeMillis();
 
+	/**
+	 * Number of remaining CPU cores to advertise
+	 */
 	protected static Long RUNNING_CPU;
+	
+	/**
+	 * Amount of free disk space in the scratch area to advertise
+	 */
 	protected static Long RUNNING_DISK;
 
+	/**
+	 * Number of CPU cores assigned to this slot 
+	 */
 	protected static Long MAX_CPU;
 
+	/**
+	 * Number of currently active JobAgent instances
+	 */
 	protected static long RUNNING_JOBAGENTS;
 
 	private Long reqCPU = Long.valueOf(0);
@@ -212,17 +224,18 @@ public class JobAgent implements Runnable {
 						if (record.getSourceMethodName() != null) {
 							source += " " + record.getSourceMethodName();
 						}
-					} else {
+					}
+					else {
 						source = record.getLoggerName();
 					}
 					String message = formatMessage(record);
 					String throwable = "";
 					if (record.getThrown() != null) {
 						StringWriter sw = new StringWriter();
-						PrintWriter pw = new PrintWriter(sw);
-						pw.println();
-						record.getThrown().printStackTrace(pw);
-						pw.close();
+						try (PrintWriter pw = new PrintWriter(sw)) {
+							pw.println();
+							record.getThrown().printStackTrace(pw);
+						}
 						throwable = sw.toString();
 					}
 					return String.format(format,
@@ -234,7 +247,8 @@ public class JobAgent implements Runnable {
 							throwable);
 				}
 			});
-		} catch (IOException ie) {
+		}
+		catch (IOException ie) {
 			logger.log(Level.WARNING, "Problem with getting logger: " + ie.toString());
 			ie.printStackTrace();
 		}
@@ -1108,7 +1122,8 @@ public class JobAgent implements Runnable {
 					wrapperProcs.add(Integer.valueOf(cmdScanner.next()));
 				}
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "Could not get JobWrapper PID", e);
 			return 0;
 		}
@@ -1141,7 +1156,8 @@ public class JobAgent implements Runnable {
 				Runtime.getRuntime().exec("kill " + jobWrapperPid);
 			else
 				logger.log(Level.INFO, "Could not kill JobWrapper: not found. Already done?");
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.INFO, "Unable to kill the JobWrapper", e);
 		}
 
@@ -1152,7 +1168,8 @@ public class JobAgent implements Runnable {
 			while (p.isAlive() && System.currentTimeMillis() < deadLine) {
 				try {
 					notificationEndpoint.wait(1000 * 5);
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					logger.log(Level.WARNING, "I was interrupted while waiting for the payload to clean up", e);
 					break;
 				}
