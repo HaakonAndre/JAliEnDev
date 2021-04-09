@@ -129,7 +129,7 @@ public class JobAgent implements Runnable {
 	/**
 	 * logger object
 	 */
-	private Logger logger;
+	private final Logger logger;
 
 	/**
 	 * ML monitor object
