@@ -462,27 +462,7 @@ public class JobAgent implements Runnable {
 	 * @return false if we can't run because of current conditions, true if positive
 	 */
 	public boolean checkParameters() {
-		final long jobAgentCurrentTime = System.currentTimeMillis();
-		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
-		final int certTime = getCertTime();
-		int timeleft = origTtl - time_subs;
-
-		logger.log(Level.INFO, "Certificate timeleft is " + certTime);
-		if (certTime > 0 && certTime < timeleft)
-			timeleft = certTime - 900; // (-15min)
-
-		// safety time for saving, etc
-		timeleft -= 600;
-
-		Long shutdownTime = MachineJobFeatures.getFeatureNumber("shutdowntime",
-				MachineJobFeatures.FeatureType.MACHINEFEATURE);
-		if (shutdownTime != null) {
-			shutdownTime = Long.valueOf(shutdownTime.longValue() - System.currentTimeMillis() / 1000);
-			logger.log(Level.INFO, "Shutdown is" + shutdownTime);
-
-			timeleft = Integer.min(timeleft, shutdownTime.intValue());
-		}
-
+		int timeleft = computeTimeLeft();
 		if (timeleft <= 0)
 			return false;
 		if (RUNNING_DISK.longValue() <= 10 * 1024) {
@@ -498,10 +478,7 @@ public class JobAgent implements Runnable {
 		return true;
 	}
 
-	private boolean updateDynamicParameters() {
-		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
-
-		// ttl recalculation
+	private int computeTimeLeft() {
 		final long jobAgentCurrentTime = System.currentTimeMillis();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime) / 1000; // convert to seconds
 		int timeleft = origTtl - time_subs;
@@ -511,8 +488,7 @@ public class JobAgent implements Runnable {
 		// we check if the cert timeleft is smaller than the ttl itself
 		final int certTime = getCertTime();
 		logger.log(Level.INFO, "Certificate timeleft is " + certTime);
-		if (certTime > 0 && certTime < timeleft)
-			timeleft = certTime - 900; // (-15min)
+		timeleft = Math.min(timeleft, certTime - 900); // (-15min)
 
 		// safety time for saving, etc
 		timeleft -= 600;
@@ -525,6 +501,15 @@ public class JobAgent implements Runnable {
 
 			timeleft = Integer.min(timeleft, shutdownTime.intValue());
 		}
+
+		return timeleft;
+	}
+
+	private boolean updateDynamicParameters() {
+		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
+
+		// ttl recalculation
+		int timeleft = computeTimeLeft();
 
 		if (checkParameters() == false)
 			return false;
