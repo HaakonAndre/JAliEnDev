@@ -112,43 +112,38 @@ public class SLURM extends BatchQueue {
 
 		DateFormat date_format = new SimpleDateFormat("yyyy-MM-dd");
 		String current_date_str = date_format.format(new Date());
-
-		// Create log directory
-		String host_logdir = (environment.get("SLURM_LOG_PATH") != null ? environment.get("SLURM_LOG_PATH") : (String) config.get("host_logdir"));
-		String log_folder_path = String.format("%s/%s", host_logdir, current_date_str);
-		File log_folder = new File(log_folder_path);
-		if (!(log_folder.exists()) || !(log_folder.isDirectory())) {
-			try {
-				log_folder.mkdir();
-			}
-			catch (SecurityException e) {
-				this.logger.info(String.format("[SLURM] Couldn't create log folder: %s", log_folder_path));
-				e.printStackTrace();
-			}
-		}
-
-		// Generate name for SLURM output files
 		Long timestamp = Long.valueOf(System.currentTimeMillis());
-		String file_base_name = String.format("%s/jobagent_%s_%d",
-				Functions.resolvePathWithEnv(log_folder_path), config.get("host_host"),
-				timestamp);
 
-		// Put generate output options
-		String out_cmd = "";
-		String err_cmd = "";
-		String name = String.format("jobagent_%s_%d", this.config.get("host_host"),
-				timestamp);
-		File enable_sandbox_file = new File(environment.get("TMP") + "/enable-sandbox");
-		// if (enable_sandbox_file.exists() || (this.logger.getLevel() != null)) {
-		// out_cmd = String.format("#SBATCH -o %s.out", file_base_name);
-		// err_cmd = String.format("#SBATCH -e %s.err", file_base_name);
-		// }
-		// else {
-		// out_cmd = "#SBATCH -o /dev/null";
-		// err_cmd = "#SBATCH -e /dev/null";
-		// }
-		out_cmd = "#SBATCH -o /dev/null";
-		err_cmd = "#SBATCH -e /dev/null";
+		// Logging setup
+		String out_cmd = "#SBATCH -o /dev/null";
+		String err_cmd = "#SBATCH -e /dev/null";
+		String name = String.format("jobagent_%s_%d", this.config.get("host_host"), timestamp);
+
+		//Check if we can use SLURM_LOG_PATH instead of sending to /dev/null
+		String host_logdir = environment.get("SLURM_LOG_PATH");
+		if (host_logdir != null) {
+			String log_folder_path = String.format("%s/%s", host_logdir, current_date_str);
+			File log_folder = new File(log_folder_path);
+			if (!(log_folder.exists()) || !(log_folder.isDirectory())) {
+				try {
+					log_folder.mkdir();
+				} catch (SecurityException e) {
+					this.logger.info(String.format("[SLURM] Couldn't create log folder: %s", log_folder_path));
+					e.printStackTrace();
+				}
+			}
+
+			// Generate name for SLURM output files
+			String file_base_name = String.format("%s/jobagent_%s_%d", Functions.resolvePathWithEnv(log_folder_path),
+					config.get("host_host"), timestamp);
+
+			// Put generate output options
+			File enable_sandbox_file = new File(environment.get("TMP") + "/enable-sandbox");
+			if (enable_sandbox_file.exists() || (this.logger.getLevel() != null)) {
+				out_cmd = String.format("#SBATCH -o %s.out", file_base_name);
+				err_cmd = String.format("#SBATCH -e %s.err", file_base_name);
+			} 
+		} 
 
 		// Build SLURM script
 		String submit_cmd = "#!/bin/bash\n";
