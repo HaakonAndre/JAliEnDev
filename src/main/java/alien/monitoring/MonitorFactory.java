@@ -123,6 +123,35 @@ public final class MonitorFactory {
 	}
 
 	/**
+	 * Get the monitor for this component
+	 *
+	 * @param component
+	 * @return the monitor
+	 */
+	public static Monitor getMonitor(final String component, final int jobNumber) {
+		Monitor m;
+
+		synchronized (monitors) {
+			m = monitors.get(component + "_" + jobNumber);
+
+			if (m == null && getConfigBoolean(component, "enabled", true)) {
+				m = new Monitor(component, jobNumber);
+
+				final int interval = getConfigInt(component, "period", isJob() ? 120 : 60);
+
+				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, random.nextInt(interval), interval, TimeUnit.SECONDS);
+
+				m.future = future;
+				m.interval = interval;
+
+				monitors.put(component + "_" + jobNumber, m);
+			}
+		}
+
+		return m;
+	}
+
+	/**
 	 * Enable periodic sending of background host monitoring
 	 */
 	public static synchronized void enableSystemMonitoring() {

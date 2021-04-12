@@ -79,10 +79,42 @@ public class Monitor implements Runnable {
 
 		clusterName = MonitorFactory.getConfigString(component, "cluster_name", cluster);
 
-		final String pattern = MonitorFactory.getConfigString(component, "node_name", component.startsWith("alien.site.") ? "${hostname}:${pid}" : "${hostname}");
+		final String pattern = MonitorFactory.getConfigString(component, "node_name",
+				component.startsWith("alien.site.") ? "${hostname}:${pid}" : "${hostname}");
 
 		String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
 		nodeName = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
+	}
+
+	/**
+	 * @param component
+	 * @param jobNumber
+	 */
+	Monitor(final String component, final int jobNumber) {
+		this.component = component;
+
+		this.modules = new HashSet<>();
+
+		final String clusterPrefix = MonitorFactory.getConfigString(component, "cluster_prefix", "ALIEN");
+		final String clusterSuffix = MonitorFactory.getConfigString(component, "cluster_suffix", "Nodes");
+
+		String cluster = "";
+
+		if (clusterPrefix != null && clusterPrefix.length() > 0)
+			cluster = clusterPrefix + "_";
+
+		cluster += component;
+
+		if (clusterSuffix != null && clusterSuffix.length() > 0)
+			cluster += "_" + clusterSuffix;
+
+		clusterName = MonitorFactory.getConfigString(component, "cluster_name", cluster);
+
+		final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}:${pid}:${jobnumber}");
+
+		String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
+		temp = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
+		nodeName = Format.replace(temp, "${jobnumber}", String.valueOf(jobNumber));
 	}
 
 	/**
@@ -169,11 +201,11 @@ public class Monitor implements Runnable {
 	}
 
 	/**
-	 * Add a measurement value. This can be the time (recommended in seconds) that took a command to executed, a file size (in bytes) and so on.
+	 * Add a measurement value. This can be the time (recommended in seconds) that
+	 * took a command to executed, a file size (in bytes) and so on.
 	 *
 	 * @param key
-	 * @param quantity
-	 *            how much to add to the previous value
+	 * @param quantity how much to add to the previous value
 	 * @return accumulated so far, or <code>-1</code> if there was any error
 	 */
 	public double addMeasurement(final String key, final double quantity) {
@@ -200,7 +232,8 @@ public class Monitor implements Runnable {
 	 * Get the CacheMonitor for this key.
 	 *
 	 * @param key
-	 * @return the existing, or newly created, object, or <code>null</code> if a different type of object was already associated to this key
+	 * @return the existing, or newly created, object, or <code>null</code> if a
+	 *         different type of object was already associated to this key
 	 */
 	public CacheMonitor getCacheMonitor(final String key) {
 		final MonitoringObject mo = monitoringObjects.computeIfAbsent(key, (k) -> new CacheMonitor(k));
@@ -334,17 +367,16 @@ public class Monitor implements Runnable {
 	/**
 	 * Send these parameters
 	 *
-	 * @param paramNames
-	 *            the names
-	 * @param paramValues
-	 *            values associated to the names, Strings or Numbers
+	 * @param paramNames the names
+	 * @param paramValues values associated to the names, Strings or Numbers
 	 */
 	public void sendParameters(final Vector<String> paramNames, final Vector<Object> paramValues) {
 		if (paramNames == null || paramValues == null || (paramNames.size() == 0 && paramValues.size() == 0))
 			return;
 
 		if (paramValues.size() != paramNames.size()) {
-			logger.log(Level.WARNING, "The names and the values arrays have different sizes (" + paramNames.size() + " vs " + paramValues.size() + ")");
+			logger.log(Level.WARNING, "The names and the values arrays have different sizes (" + paramNames.size()
+					+ " vs " + paramValues.size() + ")");
 			return;
 		}
 
@@ -352,12 +384,12 @@ public class Monitor implements Runnable {
 	}
 
 	/**
-	 * Send only one parameter. This method of sending is less efficient than {@link #sendParameters(Vector, Vector)} and so it should only be used when there is exactly one parameter to be sent.
+	 * Send only one parameter. This method of sending is less efficient than
+	 * {@link #sendParameters(Vector, Vector)} and so it should only be used when
+	 * there is exactly one parameter to be sent.
 	 *
-	 * @param parameterName
-	 *            parameter name
-	 * @param parameterValue
-	 *            the value, should be either a String or a Number
+	 * @param parameterName parameter name
+	 * @param parameterValue the value, should be either a String or a Number
 	 * @see #sendParameters(Vector, Vector)
 	 */
 	public void sendParameter(final String parameterName, final Object parameterValue) {

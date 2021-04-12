@@ -133,7 +133,7 @@ public class JobAgent implements Runnable {
 	/**
 	 * ML monitor object
 	 */
-	private static final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+	private Monitor monitor;
 
 	/**
 	 * ApMon sender
@@ -209,7 +209,13 @@ public class JobAgent implements Runnable {
 		ce = env.get("CE");
 
 		jobNumber = totalJobs.incrementAndGet();
+
+		monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName(), jobNumber);
+		monitor.sendParameter("state", "JA number " + jobNumber + ". Starting Job Agent");
+		monitor.sendParameter("statenumeric", Long.valueOf(1));
+
 		logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName() + " " + jobNumber);
+
 		FileHandler handler = null;
 		try {
 			handler = new FileHandler("job-agent-" + jobNumber + ".log");
@@ -317,6 +323,7 @@ public class JobAgent implements Runnable {
 		logger.log(Level.INFO, "Starting JobAgent " + jobNumber + " in " + hostName);
 
 		logger.log(Level.INFO, siteMap.toString());
+
 		try {
 			logger.log(Level.INFO, "Resources available CPU DISK: " + RUNNING_CPU + " " + RUNNING_DISK);
 			synchronized (requestSync) {
@@ -329,6 +336,9 @@ public class JobAgent implements Runnable {
 				monitor.sendParameter("ja_status", Integer.valueOf(jaStatus.REQUESTING_JOB.getValue()));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 				monitor.incrementCounter("requestedjobs");
+
+				monitor.sendParameter("state", "JA number " + jobNumber + ". Asking for a job");
+				monitor.sendParameter("statenumeric", Long.valueOf(3));
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(new HashMap<>(siteMap));
 
@@ -398,10 +408,16 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, username);
 			logger.log(Level.INFO, Long.toString(queueId));
 
+			monitor.sendParameter("state", "JA number " + jobNumber + ". Starting running job " + queueId);
+			monitor.sendParameter("statenumeric", Long.valueOf(4));
+
 			// process payload
 			handleJob();
 
 			cleanup();
+
+			monitor.sendParameter("state", "JA number " + jobNumber + ". Finished running job " + queueId);
+			monitor.sendParameter("statenumeric", Long.valueOf(5));
 
 			synchronized (requestSync) {
 				RUNNING_CPU += reqCPU;
@@ -419,6 +435,9 @@ public class JobAgent implements Runnable {
 			// requestSync.notify();
 			// }
 		}
+
+		monitor.sendParameter("state", "JA number " + jobNumber + ". Finished running Job Agent");
+		monitor.sendParameter("statenumeric", Long.valueOf(6));
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs.get());
 	}
@@ -583,6 +602,12 @@ public class JobAgent implements Runnable {
 
 		// ttl recalculation
 		int timeleft = computeTimeLeft();
+
+		final long jobAgentCurrentTime = System.currentTimeMillis();
+		final long jobAgentEndTime = jobAgentCurrentTime + timeleft;
+		monitor.sendParameter("state", "JA number " + jobNumber + ". Started to run in timestamp " + jobAgentCurrentTime +
+				" and will be allowed to run until timestamp " + jobAgentEndTime);
+		monitor.sendParameter("statenumeric", Long.valueOf(2));
 
 		if (checkParameters() == false)
 			return false;
