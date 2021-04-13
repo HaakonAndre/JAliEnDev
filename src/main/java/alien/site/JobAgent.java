@@ -107,9 +107,9 @@ public class JobAgent implements Runnable {
 	private static float lhcbMarks = -1;
 
 	private enum jaStatus {
-		STARTING_JA(0, "Starting running Job Agent"), REQUESTING_JOB(1, "Asking for a job"), INSTALLING_PKGS(2, "Found matching job"), JOB_STARTED(3, "Starting processing job's payload"), RUNNING_JOB(
-			4, "Running job's payload"), DONE(5, "Finished running job"), FINISHING_JA(6, "Job Agent finished"), ERROR_IP(-1, "Error getting AliEn jar path"), ERROR_GET_JDL(-2,
-			"Error getting jdl"), ERROR_DIRS(-3, "Error creating directories, not enough free space in workdir"), ERROR_START(-4, "Error launching Job Wrapper to start job");
+		STARTING_JA(0, "Starting running Job Agent"), REQUESTING_JOB(1, "Asking for a job"), INSTALLING_PKGS(2, "Found a matching job"), JOB_STARTED(3, "Starting processing job's payload"), RUNNING_JOB(
+			4, "Running job's payload"), DONE(5, "Finished running job"), FINISHING_JA(6, "Finished running Job Agent"), ERROR_IP(-1, "Error getting AliEn jar path"), ERROR_GET_JDL(-2,
+			"Error getting jdl"), ERROR_DIRS(-3, "Error creating working directories"), ERROR_START(-4, "Error launching Job Wrapper to start job");
 
 		private final int value;
 		private final String value_string;
@@ -232,7 +232,6 @@ public class JobAgent implements Runnable {
 		monitorStatusChange();
 
 		logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName() + " " + jobNumber);
-
 		FileHandler handler = null;
 		try {
 			handler = new FileHandler("job-agent-" + jobNumber + ".log");
@@ -344,7 +343,6 @@ public class JobAgent implements Runnable {
 		logger.log(Level.INFO, "Starting JobAgent " + jobNumber + " in " + hostName);
 
 		logger.log(Level.INFO, siteMap.toString());
-
 		try {
 			logger.log(Level.INFO, "Resources available CPU DISK: " + RUNNING_CPU + " " + RUNNING_DISK);
 			synchronized (requestSync) {
@@ -478,7 +476,6 @@ public class JobAgent implements Runnable {
 			if (!createWorkDir()) {
 				// changeStatus(JobStatus.ERROR_IB);
 				logger.log(Level.INFO, "Error. Workdir for job could not be created");
-
 				return;
 			}
 			jobWrapperLogDir = jobWorkdir + "/" + jobWrapperLogName;
@@ -634,9 +631,6 @@ public class JobAgent implements Runnable {
 
 		// ttl recalculation
 		int timeleft = computeTimeLeft();
-
-		final long jobAgentCurrentTime = System.currentTimeMillis();
-		final long jobAgentEndTime = jobAgentCurrentTime + timeleft;
 
 		if (checkParameters() == false)
 			return false;
