@@ -65,7 +65,7 @@ public class PFNData {
 	 */
 	public String toCSV() {
 		final Collection<Object> values = data.values();
-		return values.stream().map(Object::toString).collect(Collectors.joining(","));
+		return values.stream().map(value -> value == null ? "null" : value.toString()).collect(Collectors.joining(","));
 	}
 
 	/**

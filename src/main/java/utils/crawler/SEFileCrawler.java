@@ -565,7 +565,7 @@ public class SEFileCrawler {
 				pfns.add(pfnData.toJSON());
 			}
 			catch (final Exception e) {
-				logger.info("Cannot convert to CSV " + e.getMessage());
+				logger.info("Cannot convert to JSON " + e.getMessage());
 				e.printStackTrace();
 			}
 		}
