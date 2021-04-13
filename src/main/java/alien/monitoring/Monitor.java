@@ -58,36 +58,6 @@ public class Monitor implements Runnable {
 
 	/**
 	 * @param component
-	 */
-	Monitor(final String component) {
-		this.component = component;
-
-		this.modules = new HashSet<>();
-
-		final String clusterPrefix = MonitorFactory.getConfigString(component, "cluster_prefix", "ALIEN");
-		final String clusterSuffix = MonitorFactory.getConfigString(component, "cluster_suffix", "Nodes");
-
-		String cluster = "";
-
-		if (clusterPrefix != null && clusterPrefix.length() > 0)
-			cluster = clusterPrefix + "_";
-
-		cluster += component;
-
-		if (clusterSuffix != null && clusterSuffix.length() > 0)
-			cluster += "_" + clusterSuffix;
-
-		clusterName = MonitorFactory.getConfigString(component, "cluster_name", cluster);
-
-		final String pattern = MonitorFactory.getConfigString(component, "node_name",
-				component.startsWith("alien.site.") ? "${hostname}:${pid}" : "${hostname}");
-
-		String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
-		nodeName = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
-	}
-
-	/**
-	 * @param component
 	 * @param jobNumber
 	 */
 	Monitor(final String component, final int jobNumber) {
@@ -110,11 +80,17 @@ public class Monitor implements Runnable {
 
 		clusterName = MonitorFactory.getConfigString(component, "cluster_name", cluster);
 
-		final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}:${pid}:${jobnumber}");
-
-		String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
-		temp = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
-		nodeName = Format.replace(temp, "${jobnumber}", String.valueOf(jobNumber));
+		if (jobNumber < 0) {
+			final String pattern = MonitorFactory.getConfigString(component, "node_name",
+					component.startsWith("alien.site.") ? "${hostname}:${pid}" : "${hostname}");
+			String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
+			nodeName = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
+		} else {
+			final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}:${pid}:${jobnumber}");
+			String temp = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
+			temp = Format.replace(temp, "${pid}", String.valueOf(MonitorFactory.getSelfProcessID()));
+			nodeName = Format.replace(temp, "${jobnumber}", String.valueOf(jobNumber));
+		}
 	}
 
 	/**

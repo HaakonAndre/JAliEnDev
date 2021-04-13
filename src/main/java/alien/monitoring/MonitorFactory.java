@@ -100,32 +100,14 @@ public final class MonitorFactory {
 	 * @return the monitor
 	 */
 	public static Monitor getMonitor(final String component) {
-		Monitor m;
-
-		synchronized (monitors) {
-			m = monitors.get(component);
-
-			if (m == null && getConfigBoolean(component, "enabled", true)) {
-				m = new Monitor(component);
-
-				final int interval = getConfigInt(component, "period", isJob() ? 120 : 60);
-
-				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, random.nextInt(interval), interval, TimeUnit.SECONDS);
-
-				m.future = future;
-				m.interval = interval;
-
-				monitors.put(component, m);
-			}
-		}
-
-		return m;
+		return getMonitor(component, -1);
 	}
 
 	/**
 	 * Get the monitor for this component
 	 *
 	 * @param component
+	 * @param jobNumber
 	 * @return the monitor
 	 */
 	public static Monitor getMonitor(final String component, final int jobNumber) {
