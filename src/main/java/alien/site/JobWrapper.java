@@ -48,7 +48,7 @@ import apmon.ApMon;
 /**
  * Job execution wrapper, running an embedded Tomcat server for in/out-bound communications
  */
-public class JobWrapper implements MonitoringObject, Runnable {
+public final class JobWrapper implements MonitoringObject, Runnable {
 
 	// Folders and files
 	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
