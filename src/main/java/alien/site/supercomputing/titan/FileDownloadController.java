@@ -25,7 +25,7 @@ public class FileDownloadController extends Thread {
 	private final HashMap<LFN, LinkedList<FileDownloadApplication>> lfnRequested;
 	// private Set<LFN> lfnQueueInProcess;
 
-	private BlockingQueue<LFN> lfnToServe;
+	private final BlockingQueue<LFN> lfnToServe;
 
 	private static String cacheFolder;
 	private final int maxDownloaderSleep = 10000;
@@ -104,7 +104,7 @@ public class FileDownloadController extends Thread {
 				System.out.println("Could not download " + l.getCanonicalName() + " to " + dstFilename + ", due to:\n" + errorMessage);
 				return null;
 			}
-			
+
 			// return f.getName();
 			return dstFilename;
 		}
@@ -207,7 +207,7 @@ public class FileDownloadController extends Thread {
 
 	private static void notifyCompletedFDA(final FileDownloadApplication fda) {
 		synchronized (fda) {
-			fda.notify();
+			fda.notifyAll();
 		}
 	}
 

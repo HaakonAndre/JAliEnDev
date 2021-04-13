@@ -50,7 +50,7 @@ import apmon.ApMon;
  * @author psvirin
  */
 public class JobDownloader extends Thread {
-	private TitanJobStatus js;
+	private final TitanJobStatus js;
 	private String dbname;
 	private JDL jdl;
 	private Long queueId;
@@ -607,7 +607,8 @@ public class JobDownloader extends Thread {
 
 		try {
 			synchronized (fda) {
-				fda.wait();
+				while (!fda.isCompleted())
+					fda.wait(1000 * 10);
 			}
 		}
 		catch (@SuppressWarnings("unused") final InterruptedException e) {
