@@ -41,7 +41,7 @@ import lazyj.ExtProperties;
  * @author mmmartin
  *
  */
-public class ComputingElement extends Thread {
+public final class ComputingElement extends Thread {
 
 	/**
 	 * ApMon sender
@@ -152,7 +152,7 @@ public class ComputingElement extends Thread {
 		ConfigUtils.setApplicationName("CE");
 
 		final ComputingElement CE = new ComputingElement();
-		CE.run();
+		CE.start();
 	}
 
 	private int getNumberFreeSlots() {
