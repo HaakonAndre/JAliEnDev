@@ -617,7 +617,8 @@ public class JAliEnCOMMander implements Runnable {
 		event.arguments = new ArrayList<>(args);
 
 		// Set default return code and error message
-		out.setReturnCode(0, "");
+		if (out != null)
+			out.setReturnCode(0, "");
 
 		for (int i = 1; i < arg.length; i++)
 			if (arg[i].startsWith("-pwd=")) {
@@ -654,9 +655,9 @@ public class JAliEnCOMMander implements Runnable {
 		// ( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) &&
 				!Arrays.asList(jAliEnAdminCommandList).contains(comm) /* ) */) {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
-				if ("blackwhite".equals(comm))
+				if ("blackwhite".equals(comm) && out != null)
 					out.blackwhitemode();
-				else if ("color".equals(comm))
+				else if ("color".equals(comm) && out != null)
 					out.colourmode();
 				// else if ("shutdown".equals(comm))
 				// jbox.shutdown();
@@ -665,7 +666,8 @@ public class JAliEnCOMMander implements Runnable {
 			else {
 				event.errorMessage = "Command [" + comm + "] not found!";
 
-				out.setReturnCode(ErrNo.ENOENT, event.errorMessage);
+				if (out != null)
+					out.setReturnCode(ErrNo.ENOENT, event.errorMessage);
 			}
 			// }
 		}
@@ -680,22 +682,28 @@ public class JAliEnCOMMander implements Runnable {
 				if (e.getCause() instanceof OptionException || e.getCause() instanceof NumberFormatException) {
 					event.errorMessage = "Illegal command options";
 
-					out.setReturnCode(ErrNo.EINVAL, event.errorMessage);
+					if (out != null)
+						out.setReturnCode(ErrNo.EINVAL, event.errorMessage);
 				}
 				else {
 					event.exception = e;
 
 					e.printStackTrace();
-					out.setReturnCode(ErrNo.EREMOTEIO, "Error executing command [" + comm + "] : \n" + Format.stackTraceToString(e));
+					if (out != null)
+						out.setReturnCode(ErrNo.EREMOTEIO, "Error executing command [" + comm + "] : \n" + Format.stackTraceToString(e));
 				}
 
-				out.flush();
+				if (out != null)
+					out.flush();
+
 				return;
 			}
 
 			try {
-				if (jcommand == null)
-					out.setReturnCode(ErrNo.ENOENT.getErrorCode(), "Command not found or not implemented yet");
+				if (jcommand == null) {
+					if (out != null)
+						out.setReturnCode(ErrNo.ENOENT.getErrorCode(), "Command not found or not implemented yet");
+				}
 				else {
 					if (help) {
 						// Force enable stdout message
