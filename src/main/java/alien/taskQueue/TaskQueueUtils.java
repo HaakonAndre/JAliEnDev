@@ -795,14 +795,16 @@ public class TaskQueueUtils {
 			}
 
 			// lazy initialization of the ML service collecting job transitions
-			if (centralMLService == null) {
-				final Vector<String> targets = new Vector<>();
-				try {
-					targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
-					centralMLService = new ApMon(targets);
-				}
-				catch (final Exception e) {
-					logger.log(Level.WARNING, "Could not initialize apmon (" + targets + ")", e);
+			synchronized (fieldMap) {
+				if (centralMLService == null) {
+					final Vector<String> targets = new Vector<>();
+					try {
+						targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+						centralMLService = new ApMon(targets);
+					}
+					catch (final Exception e) {
+						logger.log(Level.WARNING, "Could not initialize apmon (" + targets + ")", e);
+					}
 				}
 			}
 

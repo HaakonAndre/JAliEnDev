@@ -171,10 +171,11 @@ public class WebsocketEndpoint extends Endpoint {
 		sessionCheckingThread.setDaemon(true);
 		sessionCheckingThread.start();
 
-		monitor.addMonitoring("sessions", (names, values) -> {
-			names.add("active_sessions");
-			values.add(Double.valueOf(sessionQueue.size()));
-		});
+		if (monitor != null)
+			monitor.addMonitoring("sessions", (names, values) -> {
+				names.add("active_sessions");
+				values.add(Double.valueOf(sessionQueue.size()));
+			});
 	}
 
 	/**

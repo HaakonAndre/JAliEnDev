@@ -171,14 +171,14 @@ public class JobAgent implements Runnable {
 	 * Number of remaining CPU cores to advertise
 	 */
 	protected static Long RUNNING_CPU;
-	
+
 	/**
 	 * Amount of free disk space in the scratch area to advertise
 	 */
 	protected static Long RUNNING_DISK;
 
 	/**
-	 * Number of CPU cores assigned to this slot 
+	 * Number of CPU cores assigned to this slot
 	 */
 	protected static Long MAX_CPU;
 
@@ -247,25 +247,28 @@ public class JobAgent implements Runnable {
 							throwable);
 				}
 			});
+
+			logger.addHandler(handler);
 		}
 		catch (IOException ie) {
 			logger.log(Level.WARNING, "Problem with getting logger: " + ie.toString());
 			ie.printStackTrace();
 		}
-		logger.addHandler(handler);
 
 		final String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
 		logger.log(Level.INFO, "We have the following DN :" + DN);
 
-		if (siteMap == null) {
-			siteMap = (new SiteMap()).getSiteParameters(env);
+		synchronized (env) {
+			if (siteMap == null) {
+				siteMap = (new SiteMap()).getSiteParameters(env);
 
-			MAX_CPU = Long.valueOf(((Number) siteMap.getOrDefault("CPUCores", Integer.valueOf(1))).longValue());
-			RUNNING_CPU = MAX_CPU;
-			RUNNING_DISK = Long.valueOf(((Number) siteMap.getOrDefault("Disk", Integer.valueOf(10 * 1024))).longValue());
-			origTtl = ((Integer) siteMap.get("TTL")).intValue();
-			RUNNING_JOBAGENTS = 0;
+				MAX_CPU = Long.valueOf(((Number) siteMap.getOrDefault("CPUCores", Integer.valueOf(1))).longValue());
+				RUNNING_CPU = MAX_CPU;
+				RUNNING_DISK = Long.valueOf(((Number) siteMap.getOrDefault("Disk", Integer.valueOf(10 * 1024))).longValue());
+				origTtl = ((Integer) siteMap.get("TTL")).intValue();
+				RUNNING_JOBAGENTS = 0;
+			}
 		}
 
 		hostName = (String) siteMap.get("Localhost");
@@ -332,7 +335,7 @@ public class JobAgent implements Runnable {
 				matchedJob = jobMatch.getMatchJob();
 
 				// TODELETE
-				if (matchedJob.containsKey("Error") || matchedJob == null) {
+				if (matchedJob == null || matchedJob.containsKey("Error")) {
 					logger.log(Level.INFO,
 							"We didn't get anything back. Nothing to run right now.");
 					RUNNING_JOBAGENTS -= 1;

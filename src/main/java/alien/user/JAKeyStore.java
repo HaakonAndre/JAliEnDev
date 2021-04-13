@@ -799,7 +799,7 @@ public class JAKeyStore {
 
 		new File(tokencertpath).delete();
 		new File(tokenkeypath).delete();
-		
+
 		try ( // Open files for writing
 				PrintWriter pwritercert = new PrintWriter(new File(tokencertpath));
 				PrintWriter pwriterkey = new PrintWriter(new File(tokenkeypath))) {
@@ -824,16 +824,20 @@ public class JAKeyStore {
 	 * @return <code>true</code> if the requested certificate has been successfully loaded
 	 */
 	public static boolean isLoaded(final String ksName) {
-		KeyStore ks = null;
+		final KeyStore ks;
 
-		if (ksName == "user") {
-			ks = clientCert;
-		}
-		else if (ksName == "host") {
-			ks = hostCert;
-		}
-		else if (ksName == "token") {
-			ks = tokenCert;
+		switch (ksName) {
+			case "user":
+				ks = clientCert;
+				break;
+			case "host":
+				ks = hostCert;
+				break;
+			case "token":
+				ks = tokenCert;
+				break;
+			default:
+				ks = null;
 		}
 
 		return isLoaded(ks);
