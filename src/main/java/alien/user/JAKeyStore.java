@@ -639,12 +639,13 @@ public class JAKeyStore {
 
 	private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
 
+	private static final Random ran = new Random(System.nanoTime());
+
 	/**
 	 * @return randomized char array of passLength length
 	 */
 	public static char[] getRandomString() {
-		final Random ran = new Random(System.nanoTime());
-		final StringBuffer s = new StringBuffer();
+		final StringBuffer s = new StringBuffer(passLength);
 		for (int i = 0; i < passLength; i++) {
 			final int pos = ran.nextInt(charString.length());
 
