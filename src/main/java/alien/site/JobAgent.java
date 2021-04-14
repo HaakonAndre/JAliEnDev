@@ -228,8 +228,7 @@ public class JobAgent implements Runnable {
 			values.add(Integer.valueOf(status.getValue()));
 		});
 
-		status = jaStatus.STARTING_JA;
-		monitorStatusChange();
+		setStatus(jaStatus.STARTING_JA);
 
 		logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName() + " " + jobNumber);
 		FileHandler handler = null;
@@ -332,8 +331,7 @@ public class JobAgent implements Runnable {
 		catch (final URISyntaxException e) {
 			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
 
-			status = jaStatus.ERROR_IP;
-			monitorStatusChange();
+			setStatus(jaStatus.ERROR_IP);
 		}
 	}
 
@@ -354,8 +352,7 @@ public class JobAgent implements Runnable {
 
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 
-				status = jaStatus.REQUESTING_JOB;
-				monitorStatusChange();
+				setStatus(jaStatus.REQUESTING_JOB);
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(new HashMap<>(siteMap));
 
@@ -367,8 +364,7 @@ public class JobAgent implements Runnable {
 							"We didn't get anything back. Nothing to run right now.");
 					RUNNING_JOBAGENTS -= 1;
 
-					status = jaStatus.ERROR_GET_JDL;
-					monitorStatusChange();
+					setStatus(jaStatus.ERROR_GET_JDL);
 
 					throw new Exception();
 				}
@@ -385,8 +381,7 @@ public class JobAgent implements Runnable {
 
 				monitor.sendParameter("job_id", Long.valueOf(queueId));
 
-				status = jaStatus.INSTALLING_PKGS;
-				monitorStatusChange();
+				setStatus(jaStatus.INSTALLING_PKGS);
 
 				matchedJob.entrySet().forEach(entry -> {
 					logger.log(Level.INFO, entry.getKey() + " " + entry.getValue());
@@ -434,8 +429,7 @@ public class JobAgent implements Runnable {
 			logger.log(Level.INFO, username);
 			logger.log(Level.INFO, Long.toString(queueId));
 
-			status = jaStatus.JOB_STARTED;
-			monitorStatusChange();
+			setStatus(jaStatus.JOB_STARTED);
 
 			// process payload
 			handleJob();
@@ -453,8 +447,7 @@ public class JobAgent implements Runnable {
 		catch (final Exception e) {
 			logger.log(Level.INFO, "Error getting a matching job: ", e);
 
-			status = jaStatus.ERROR_GET_JDL;
-			monitorStatusChange();
+			setStatus(jaStatus.ERROR_GET_JDL);
 
 			if (RUNNING_CPU.equals(MAX_CPU))
 				retries.getAndIncrement();
@@ -463,8 +456,7 @@ public class JobAgent implements Runnable {
 			// }
 		}
 
-		status = jaStatus.FINISHING_JA;
-		monitorStatusChange();
+		setStatus(jaStatus.FINISHING_JA);
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs.get());
 	}
@@ -506,8 +498,7 @@ public class JobAgent implements Runnable {
 	private void cleanup() {
 		logger.log(Level.INFO, "Sending monitoring values...");
 
-		status = jaStatus.DONE;
-		monitorStatusChange();
+		setStatus(jaStatus.DONE);
 
 		monitor.sendParameter("job_id", Integer.valueOf(0));
 
@@ -786,8 +777,7 @@ public class JobAgent implements Runnable {
 		pBuilder.redirectError(Redirect.INHERIT);
 		pBuilder.directory(tempDir);
 
-		status = jaStatus.RUNNING_JOB;
-		monitorStatusChange();
+		setStatus(jaStatus.RUNNING_JOB);
 
 		final Process p;
 
@@ -825,8 +815,7 @@ public class JobAgent implements Runnable {
 		catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
 
-			status = jaStatus.ERROR_START;
-			monitorStatusChange();
+			setStatus(jaStatus.ERROR_START);
 
 			return 1;
 		}
@@ -923,7 +912,8 @@ public class JobAgent implements Runnable {
 		}
 	}
 
-	private void monitorStatusChange() {
+	private void setStatus(jaStatus new_status) {
+		status = new_status;
 		monitor.sendParameter("ja_status_string", status.getStringValue());
 		monitor.sendParameter("ja_status", Integer.valueOf(status.getValue()));
 	}
@@ -1052,8 +1042,7 @@ public class JobAgent implements Runnable {
 			if (!created) {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
 
-				status = jaStatus.ERROR_DIRS;
-				monitorStatusChange();
+				setStatus(jaStatus.ERROR_DIRS);
 
 				return false;
 			}
