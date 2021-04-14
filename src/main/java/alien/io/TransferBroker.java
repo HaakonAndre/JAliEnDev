@@ -145,7 +145,7 @@ public class TransferBroker {
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
 
-			db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='" + Format.escSQL(seName) + "';");
+			db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename=?", false, seName);
 
 			if (db.moveNext())
 				ret = db.geti(1);
@@ -236,7 +236,7 @@ public class TransferBroker {
 					db.setReadOnly(true);
 					db.setQueryTimeout(60);
 
-					db.query("SELECT count(1) FROM active_transfers WHERE se_name='" + Format.escSQL(targetSE) + "';");
+					db.query("SELECT count(1) FROM active_transfers WHERE se_name=?", false, targetSE);
 
 					db.setReadOnly(false);
 

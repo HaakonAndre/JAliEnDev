@@ -1757,7 +1757,7 @@ public class TaskQueueUtils {
 							}
 
 					if (id > 0) {
-						if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES (" + id + ", '" + Format.escSQL(key) + "');", true))
+						if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES (?, ?);", true, Integer.valueOf(id), key))
 							return Integer.valueOf(id);
 
 						// did it fail because the user was inserted by somebody

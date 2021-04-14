@@ -1174,8 +1174,8 @@ public class LFNUtils {
 					}
 				}
 
-				if (db.query("INSERT INTO COLLECTIONS_ELEM (collectionId,origLFN,guid) VALUES (" + collectionId + ", '" + Format.escSQL(lfn.getCanonicalName()) + "', string2binary('"
-						+ lfn.guid.toString() + "'));")) {
+				if (db.query("INSERT INTO COLLECTIONS_ELEM (collectionId,origLFN,guid) VALUES (?, ?, string2binary(?));", false, Integer.valueOf(collectionId), lfn.getCanonicalName(),
+						lfn.guid.toString())) {
 					guid.size += lfn.size;
 					updated = true;
 				}

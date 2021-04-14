@@ -365,7 +365,7 @@ public class JobBroker {
 			db.setReadOnly(true);
 			db.setQueryTimeout(30);
 
-			if (db.query("select count(1) from SITEQUEUES where blocked='open' and site='" + ce + "'") && db.moveNext() && db.geti(1) > 0)
+			if (db.query("select count(1) from SITEQUEUES where blocked='open' and site=?", false, ce) && db.moveNext() && db.geti(1) > 0)
 				return 1;
 			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce,
 			// "closed-blocked");
@@ -539,8 +539,11 @@ public class JobBroker {
 			db.setReadOnly(true);
 
 			final String q = "select " + ret + " from JOBAGENT where 1=1 " + where + " order by priority desc, price desc, oldestQueueId asc limit 1";
-			logger.log(Level.INFO, "Going to select agents (" + q + ")");
-			logger.log(Level.INFO, "Bind values: " + bindValues.toString());
+
+			if (logger.isLoggable(Level.FINE)) {
+				logger.log(Level.FINE, "Going to select agents (" + q + ")");
+				logger.log(Level.FINE, "Bind values: " + bindValues.toString());
+			}
 
 			db.query(q, false, bindValues.toArray(new Object[0]));
 
