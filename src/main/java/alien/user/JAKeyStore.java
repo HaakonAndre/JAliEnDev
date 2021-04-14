@@ -107,6 +107,10 @@ public class JAKeyStore {
 	 */
 	public static KeyStore trustStore;
 
+	private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
+
+	private static final Random ran = new Random(System.nanoTime());
+	
 	/**
 	 *
 	 */
@@ -636,10 +640,6 @@ public class JAKeyStore {
 
 		return null;
 	}
-
-	private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
-
-	private static final Random ran = new Random(System.nanoTime());
 
 	/**
 	 * @return randomized char array of passLength length
