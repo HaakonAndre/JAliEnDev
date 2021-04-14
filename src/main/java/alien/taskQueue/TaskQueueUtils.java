@@ -1312,18 +1312,8 @@ public class TaskQueueUtils {
 
 		final JDL jdl = new JDL(jdlToSubmit);
 
-		if (arguments != null && arguments.length > 0) {
-			final StringBuilder sb = new StringBuilder();
-
-			for (final String s : arguments) {
-				if (sb.length() > 0)
-					sb.append(' ');
-
-				sb.append(s);
-			}
-
-			jdl.set("JDLArguments", sb.toString());
-		}
+		if (arguments != null && arguments.length > 0)
+			jdl.set("JDLArguments", String.join(" ", arguments));
 
 		return jdl;
 	}
@@ -1359,7 +1349,7 @@ public class TaskQueueUtils {
 			final String executable = jdl.gets(jdlTag);
 
 			if (executable == null) {
-				if (jdlTag.equals("Executable"))
+				if ("Executable".equals(jdlTag))
 					throw new IOException("The JDL has to indicate an Executable");
 
 				continue;
@@ -1458,7 +1448,7 @@ public class TaskQueueUtils {
 		// remove any JDLVariable that doesn't have an associated value at this point
 		final Object o = jdl.get("JDLVariables");
 
-		if (o != null && o instanceof Collection) {
+		if (o instanceof Collection) {
 			final Collection<?> values = (Collection<?>) o;
 
 			final Iterator<?> it = values.iterator();
@@ -1670,7 +1660,7 @@ public class TaskQueueUtils {
 
 			Long masterjobID = j.getLong("MasterJobID");
 
-			if (jobStatus.equals(JobStatus.SPLIT) || j.get("Split") != null) {
+			if (JobStatus.SPLIT.equals(jobStatus) || j.get("Split") != null) {
 				values.put("masterjob", Integer.valueOf(1));
 				masterjobID = null;
 			}
@@ -2185,7 +2175,7 @@ public class TaskQueueUtils {
 			if (!deleteJobAgent(j.agentid))
 				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.agentid + "].");
 
-		if (j.notify != null && !j.notify.equals(""))
+		if (j.notify != null && !"".equals(j.notify))
 			sendNotificationMail(j);
 
 		if (j.split != 0)
@@ -2301,7 +2291,7 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
-			final String q = "INSERT INTO MESSAGES ( ID, TargetHost, TargetService, Message, MessageArgs, Expires)  VALUES (?, ?, ?, ?, ?, ?);";
+			final String q = "INSERT IGNORE INTO MESSAGES ( ID, TargetHost, TargetService, Message, MessageArgs, Expires)  VALUES (?, ?, ?, ?, ?, ?);";
 
 			db.setQueryTimeout(60);
 
@@ -2699,7 +2689,7 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 
-			if (host == null || host.equals("") || status == null || status.equals("")) {
+			if (host == null || "".equals(host) || status == null || "".equals(status)) {
 				logger.log(Level.INFO, "Host or status parameters are empty");
 				return false;
 			}
@@ -2819,7 +2809,7 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			final String domain = host.substring(host.indexOf(".") + 1, host.length());
+			final String domain = host.substring(host.indexOf(".") + 1);
 
 			final List<Integer> domains = getSitesByDomain(domain);
 
@@ -3245,7 +3235,7 @@ public class TaskQueueUtils {
 
 			logger.fine("Resubmit: cleanup of path and resultsJdl done: " + queueId);
 
-			if (j.status().equals(JobStatus.ERROR_I)) {
+			if (JobStatus.ERROR_I.equals(j.status())) {
 				// If it could not be inserted before, retry that operation, otherwise go directly to WAITING
 
 				targetStatus = JobStatus.INSERTING;
@@ -3401,7 +3391,7 @@ public class TaskQueueUtils {
 
 		final ArrayList<Object> bind = new ArrayList<>();
 		for (final String key : params.keySet()) {
-			if (key.equals("counter"))
+			if ("counter".equals(key))
 				continue;
 
 			reqs += " and " + key + " = ?";
@@ -3518,7 +3508,7 @@ public class TaskQueueUtils {
 			if (!noses.contains(tmpsite))
 				site += "," + tmpsite;
 		}
-		if (!site.equals(""))
+		if (!"".equals(site))
 			site += ",";
 
 		params.put("site", site);
@@ -3530,7 +3520,7 @@ public class TaskQueueUtils {
 		while (m.find()) {
 			noce += "," + m.group(1);
 		}
-		if (!noce.equals(""))
+		if (!"".equals(noce))
 			noce += ",";
 
 		params.put("noce", noce);
@@ -3541,7 +3531,7 @@ public class TaskQueueUtils {
 		while (m.find()) {
 			ce += "," + m.group(1);
 		}
-		if (!ce.equals(""))
+		if (!"".equals(ce))
 			ce += ",";
 
 		params.put("ce", ce);
