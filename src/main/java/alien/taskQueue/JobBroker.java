@@ -270,7 +270,7 @@ public class JobBroker {
 					stat.execute("SET @update_id := 0;", Statement.NO_GENERATED_KEYS);
 				}
 
-				String updateQuery = "UPDATE QUEUE SET statusId=6, siteid=?, exechostid=?, queueId = (SELECT @update_id := queueId) WHERE statusId=5 and agentId=?" + extra
+				final String updateQuery = "UPDATE QUEUE SET statusId=6, siteid=?, exechostid=?, queueId = (SELECT @update_id := queueId) WHERE statusId=5 and agentId=?" + extra
 						+ " ORDER BY queueId ASC LIMIT 1;";
 
 				try (PreparedStatement stat = conn.prepareStatement(updateQuery, Statement.NO_GENERATED_KEYS)) {
@@ -462,7 +462,7 @@ public class JobBroker {
 				bindValues.add(matchRequest.get("CE"));
 			}
 
-			if (matchRequest.containsKey("Partition") && !matchRequest.get("Partition").equals(",,")) {
+			if (matchRequest.containsKey("Partition") && !",,".equals(matchRequest.get("Partition"))) {
 				where += "and ? like concat('%,',`partition`, ',%') ";
 				bindValues.add(matchRequest.get("Partition"));
 			}
@@ -500,9 +500,9 @@ public class JobBroker {
 
 			if (matchRequest.containsKey("RequiredCpusCe")) {
 				final Pattern pat = Pattern.compile("\\s*(>=|<=|>|<|==|=|!=)\\s*([0-9]+)");
-				Matcher m = pat.matcher((String) matchRequest.get("RequiredCpusCe"));
+				final Matcher m = pat.matcher((String) matchRequest.get("RequiredCpusCe"));
 				if (m.matches()) {
-					String operator = m.group(1).equals("==") ? "=" : m.group(1);
+					final String operator = "==".equals(m.group(1)) ? "=" : m.group(1);
 					where += " and cpucores " + operator + " ? ";
 					bindValues.add(Integer.valueOf(m.group(2)));
 				}
@@ -516,18 +516,12 @@ public class JobBroker {
 				// TODO: ask cache for ns:jobbroker key:remoteagents
 				// $self->{CONFIG}->{CACHE_SERVICE_ADDRESS}?ns=jobbroker&key=remoteagents
 
-				db.query("select distinct agentId from QUEUE where agentId is not null and statusId=5 and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)");
+				db.query("select group_concat(distinct agentId) from QUEUE where agentId is not null and statusId=5 and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)");
 
-				if (db.moveNext()) {
-					where += " and entryId in (";
+				final String agents = db.gets(1);
 
-					do {
-						final int agentid = db.geti("agentId");
-						where += agentid + ",";
-					} while (db.moveNext());
-
-					where = where.substring(0, where.length() - 1);
-					where += ")";
+				if (agents != null && !agents.isBlank()) {
+					where += " and entryId in (" + agents + ")";
 
 					// TODO: store in cache
 					// $self->{CONFIG}->{CACHE_SERVICE_ADDRESS}?ns=jobbroker&key=remoteagents&timeout=300&value=".Dumper([@$agents])
@@ -592,10 +586,10 @@ public class JobBroker {
 				return code_and_slots;
 			}
 
-			if (!ceName.equals("")) {
+			if (!"".equals(ceName)) {
 				final String blocking = TaskQueueUtils.getSiteQueueBlocked(ceName);
 
-				if (blocking == null || !blocking.equals("open")) {
+				if (blocking == null || !"open".equals(blocking)) {
 					logger.info("The queue " + ceName + " is blocked in the master queue!");
 					TaskQueueUtils.setSiteQueueStatus(ceName, "closed-blocked");
 					code_and_slots.set(0, Integer.valueOf(-2));
@@ -619,7 +613,7 @@ public class JobBroker {
 	/**
 	 * @param matchRequest will be checked against LDAP if there's anything to add, if not already provided
 	 */
-	private static void updateWithValuesInLDAP(HashMap<String, Object> matchRequest) {
+	private static void updateWithValuesInLDAP(final HashMap<String, Object> matchRequest) {
 		if (!matchRequest.containsKey("CheckedLDAP")) {
 			if (matchRequest.containsKey("CE")) {
 				HashMap<String, Object> CeConfig = null;
@@ -636,8 +630,8 @@ public class JobBroker {
 				matchRequest.putIfAbsent("NoUsers", SiteMap.getFieldContentsFromCerequirements(CeRequirements, SiteMap.CE_FIELD.NoUsers));
 
 				if (!matchRequest.containsKey("Partition")) {
-					String partitions = ConfigUtils.getPartitions((String) matchRequest.get("CE"));
-					if (partitions != null && !partitions.equals(",,"))
+					final String partitions = ConfigUtils.getPartitions((String) matchRequest.get("CE"));
+					if (partitions != null && !",,".equals(partitions))
 						matchRequest.put("Partition", partitions);
 				}
 			}
