@@ -108,6 +108,8 @@ public class DispatchSSLClient {
 		// connect timeout in config should be given in seconds
 		final int connectTimeout = ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.ConnectTimeout", 10) * 1000;
 
+		DispatchSSLClient ret = null;
+
 		for (final InetAddress endpointToTry : allAddresses) {
 			try {
 				if (connectionState.get() != 0) {
@@ -151,7 +153,7 @@ public class DispatchSSLClient {
 						final DispatchSSLClient sc = new DispatchSSLClient(client);
 						System.out.println("Connection to JCentral (" + endpointToTry.getHostAddress() + ":" + targetPort + ") established.");
 
-						instance = sc;
+						ret = sc;
 					}
 					else {
 						// somebody beat us and connected faster on another socket, close this slow one
@@ -171,7 +173,15 @@ public class DispatchSSLClient {
 		}
 
 		synchronized (callback) {
-			callback.notifyAll();
+			if (ret != null) {
+				if (instance == null) {
+					instance = ret;
+					callback.notifyAll();
+				}
+				else {
+					ret.close();
+				}
+			}
 		}
 	}
 
