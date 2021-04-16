@@ -1,6 +1,6 @@
 package alien.taskQueue;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,7 +69,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * Create a new JobToken object
-	 * 
+	 *
 	 * @param queueId
 	 * @param username
 	 */
@@ -83,8 +83,6 @@ public class JobToken implements Comparable<JobToken> {
 		this.legacyToken = generateToken();
 	}
 
-	private static final Random ran = new Random(System.nanoTime());
-
 	/**
 	 * @return a new, hopefully unique, job token
 	 */
@@ -92,7 +90,7 @@ public class JobToken implements Comparable<JobToken> {
 		final char[] tok = new char[32];
 
 		for (int i = 0; i < 32; i++)
-			tok[i] = tokenStreet[ran.nextInt(tokenStreet.length)];
+			tok[i] = tokenStreet[ThreadLocalRandom.current().nextInt(tokenStreet.length)];
 
 		return new String(tok);
 	}
@@ -166,7 +164,7 @@ public class JobToken implements Comparable<JobToken> {
 
 		logger.log(Level.INFO, "Replace JobToken for: " + queueId + " and exists: " + exists);
 
-		int resubmission_queue = TaskQueueUtils.getResubmission(Long.valueOf(queueId));
+		final int resubmission_queue = TaskQueueUtils.getResubmission(Long.valueOf(queueId));
 
 		if (resubmission_queue < 0) { // problem getting resubmission from QUEUE
 			logger.info("JobToken updateOrInsert: cannot retrieve resubmision");

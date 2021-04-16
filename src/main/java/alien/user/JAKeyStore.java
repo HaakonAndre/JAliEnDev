@@ -30,10 +30,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -109,8 +109,6 @@ public class JAKeyStore {
 
 	private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
 
-	private static final Random ran = new Random(System.nanoTime());
-	
 	/**
 	 *
 	 */
@@ -489,16 +487,7 @@ public class JAKeyStore {
 				ks.store(fo, password);
 				f.deleteOnExit();
 			}
-			catch (final KeyStoreException e) {
-				e.printStackTrace();
-			}
-			catch (final NoSuchAlgorithmException e) {
-				e.printStackTrace();
-			}
-			catch (final CertificateException e) {
-				e.printStackTrace();
-			}
-			catch (final IOException e) {
+			catch (final KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 				e.printStackTrace();
 			}
 
@@ -647,7 +636,7 @@ public class JAKeyStore {
 	public static char[] getRandomString() {
 		final StringBuffer s = new StringBuffer(passLength);
 		for (int i = 0; i < passLength; i++) {
-			final int pos = ran.nextInt(charString.length());
+			final int pos = ThreadLocalRandom.current().nextInt(charString.length());
 
 			s.append(charString.charAt(pos));
 		}
@@ -690,10 +679,8 @@ public class JAKeyStore {
 		if (!keystore_loaded)
 			loadKeyStore();
 
-		if (System.getenv("JALIEN_TOKEN_CERT") != null || tokenCertString != null) {
-			if (JAKeyStore.tokenCert != null) {
-				return JAKeyStore.tokenCert;
-			}
+		if ((System.getenv("JALIEN_TOKEN_CERT") != null || tokenCertString != null) && (JAKeyStore.tokenCert != null)) {
+			return JAKeyStore.tokenCert;
 		}
 
 		if (JAKeyStore.clientCert != null) {
@@ -812,7 +799,7 @@ public class JAKeyStore {
 			pwritercert.write(tokReply.getCertificateAsString());
 			pwriterkey.write(tokReply.getPrivateKeyAsString());
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			logger.log(Level.SEVERE, "Exception writing token content to files", e);
 			return false;
 		}

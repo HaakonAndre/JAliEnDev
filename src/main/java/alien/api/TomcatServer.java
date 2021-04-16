@@ -4,8 +4,8 @@ import java.io.File;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.util.Random;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -235,9 +235,7 @@ public class TomcatServer {
 
 			final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
 
-			final Random rnd = new Random(System.nanoTime());
-
-			final int randomStartingPort = rnd.nextInt(1000);
+			final int randomStartingPort = ThreadLocalRandom.current().nextInt(1000);
 
 			final int portMin = ConfigUtils.getConfig().geti("port.range.start", 13150 + randomStartingPort);
 			final int portMax = ConfigUtils.getConfig().geti("port.range.end", portMin + (portAny ? 1 : 200));

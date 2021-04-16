@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -35,6 +34,7 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import apmon.ApMon;
+import io.netty.util.internal.ThreadLocalRandom;
 import lazyj.DBFunctions;
 import lazyj.DBFunctions.DBConnection;
 import lazyj.Format;
@@ -127,8 +127,6 @@ public class TransferBroker {
 
 	private long lastTimeNoWork = 0;
 
-	private final Random rnd = new Random(System.currentTimeMillis());
-
 	private DBFunctions dbCached = ConfigUtils.getDB("transfers");
 
 	private final ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>(1024);
@@ -204,7 +202,7 @@ public class TransferBroker {
 				if (!dbCached.moveNext()) {
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");
 
-					lastTimeNoWork = System.currentTimeMillis() + 30 * 1000 + rnd.nextInt(30 * 1000);
+					lastTimeNoWork = System.currentTimeMillis() + 30 * 1000 + ThreadLocalRandom.current().nextInt(30 * 1000);
 
 					return null;
 				}
@@ -621,11 +619,10 @@ public class TransferBroker {
 			if (db.getUpdateCount() <= 0)
 				return;
 
-			if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true))
-				if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
-					logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
-					return;
-				}
+			if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true) && !db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
+				logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
+				return;
+			}
 		}
 
 		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
@@ -743,7 +740,7 @@ public class TransferBroker {
 
 			final String prevStatus = db.gets(1);
 
-			if (db.moveNext() && prevStatus.equalsIgnoreCase("TRANSFERRING")) {
+			if (db.moveNext() && "TRANSFERRING".equalsIgnoreCase(prevStatus)) {
 				db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId=" + t.getTransferId() + " AND status!='TRANSFERRING';");
 
 				if (db.getUpdateCount() > 0)

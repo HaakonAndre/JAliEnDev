@@ -62,6 +62,8 @@ public class MirrorLFN extends Request {
 			throw new SecurityException("You do not own this file: " + c + ", requester: " + getEffectiveRequester());
 
 		this.results = LFNUtils.mirrorLFN(this.path, this.ses, this.exses, this.qos, this.useGUID, this.attempts);
+
+		this.success = this.results != null ? this.results.size() : -1;
 	}
 
 	/**

@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 import java.util.StringTokenizer;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -77,14 +77,12 @@ public class Xrd3cpGW extends Xrootd {
 		}
 	}
 
-	private static Random rand = new Random(System.currentTimeMillis());
-
 	private static synchronized String getTransferServerInstance() {
 		updateServerList();
 
 		serverIdx = (serverIdx + 1) % transferServers.size();
 
-		return rand.nextInt(100000000) + "@" + transferServers.get(serverIdx);
+		return ThreadLocalRandom.current().nextInt(100000000) + "@" + transferServers.get(serverIdx);
 	}
 
 	/*

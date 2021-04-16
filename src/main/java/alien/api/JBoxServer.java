@@ -10,8 +10,8 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -206,7 +206,7 @@ public class JBoxServer extends Thread {
 		private UIPrintWriter out = null;
 
 		private void setShellPrintWriter(final OutputStream os, final String shelltype) {
-			if (shelltype.equals("jaliensh"))
+			if ("jaliensh".equals(shelltype))
 				out = new JShPrintWriter(os);
 			else
 				out = new XMLPrintWriter(os);
@@ -271,7 +271,7 @@ public class JBoxServer extends Thread {
 									logger.info("Command options = " + optionNode.getTextContent());
 								}
 
-								if (sCmdValue != null && sCmdValue.equals("password")) {
+								if (sCmdValue != null && "password".equals(sCmdValue)) {
 
 									if (cmdOptions.get(0).equals(password)) {
 										os.write(passACK.getBytes());
@@ -452,9 +452,7 @@ public class JBoxServer extends Thread {
 		// Get port range from config
 		final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
 
-		final Random rnd = new Random(System.nanoTime());
-
-		final int randomStartingPort = rnd.nextInt(1000);
+		final int randomStartingPort = ThreadLocalRandom.current().nextInt(1000);
 
 		final int portMin = ConfigUtils.getConfig().geti("port.range.start", 10100 + randomStartingPort);
 		final int portMax = ConfigUtils.getConfig().geti("port.range.end", portAny ? portMin + 1 : 200);

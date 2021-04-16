@@ -4,13 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -45,19 +45,13 @@ public final class MonitorFactory {
 
 	private static Monitor systemMonitor = null;
 
-	private static final Random random = new Random(System.currentTimeMillis());
+	private static final ThreadFactory threadFactory = r -> {
+		final Thread t = new Thread(r);
 
-	private static final ThreadFactory threadFactory = new ThreadFactory() {
+		t.setName("alien.monitor.MonitorFactory - " + aiFactoryIndex.incrementAndGet());
+		t.setDaemon(true);
 
-		@Override
-		public Thread newThread(final Runnable r) {
-			final Thread t = new Thread(r);
-
-			t.setName("alien.monitor.MonitorFactory - " + aiFactoryIndex.incrementAndGet());
-			t.setDaemon(true);
-
-			return t;
-		}
+		return t;
 	};
 
 	private static final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, threadFactory);
@@ -121,7 +115,7 @@ public final class MonitorFactory {
 
 				final int interval = getConfigInt(component, "period", isJob() ? 120 : 60);
 
-				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, random.nextInt(interval), interval, TimeUnit.SECONDS);
+				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, ThreadLocalRandom.current().nextInt(interval), interval, TimeUnit.SECONDS);
 
 				m.future = future;
 				m.interval = interval;
@@ -422,7 +416,7 @@ public final class MonitorFactory {
 	 *
 	 * @return the process id, if it can be determined, or <code>-1</code> if not
 	 */
-	public static final int getSelfProcessID() {
+	public static int getSelfProcessID() {
 		if (selfProcessID != 0)
 			return selfProcessID;
 
