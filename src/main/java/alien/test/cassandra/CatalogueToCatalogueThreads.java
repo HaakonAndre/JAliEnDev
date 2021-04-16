@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,11 +87,6 @@ public class CatalogueToCatalogueThreads {
 	 * Suffix for log files
 	 */
 	static String logs_suffix = "";
-
-	/**
-	 * Random number generator
-	 */
-	static Random rdm = new Random();
 
 	/**
 	 * One SE
@@ -249,9 +244,9 @@ public class CatalogueToCatalogueThreads {
 				final LFN lfnc = LFNUtils.getLFN(lfn, true);
 				final GUID guid = GUIDUtils.createGuid();
 
-				lfnc.size = rdm.nextInt(100000);
+				lfnc.size = ThreadLocalRandom.current().nextInt(100000);
 				lfnc.guid = guid.guid;
-				lfnc.jobid = rdm.nextInt(1000000);
+				lfnc.jobid = ThreadLocalRandom.current().nextInt(1000000);
 				lfnc.md5 = "ee31e454013aa515f0bc806aa907ba51";
 				lfnc.type = 'f';
 				lfnc.perm = "755";

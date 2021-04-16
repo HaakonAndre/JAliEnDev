@@ -13,11 +13,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -127,10 +127,7 @@ public class CatalogueToCassandraThreads {
 	 * Counter stuck threads
 	 */
 	static int count_thread_stuck = 0;
-	/**
-	 * Random generator
-	 */
-	static final Random rdm = new Random();
+
 	/**
 	 * Default Cassandra consistency
 	 */
@@ -154,9 +151,9 @@ public class CatalogueToCassandraThreads {
 		for (int i = 1; i < args.length; i++)
 			newargs[i - 1] = args[i];
 
-		if (args[0].equals("real"))
+		if ("real".equals(args[0]))
 			main_real(newargs);
-		else if (args[0].equals("auto"))
+		else if ("auto".equals(args[0]))
 			main_auto(newargs);
 		else {
 			System.err.println("Usage: CatalogueToCassandraThreads real|auto ");
@@ -476,8 +473,8 @@ public class CatalogueToCassandraThreads {
 				}
 
 				final LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, "_auto", null, null);
-				lfnc.size = rdm.nextInt(100000);
-				lfnc.jobid = rdm.nextInt(1000000);
+				lfnc.size = ThreadLocalRandom.current().nextInt(100000);
+				lfnc.jobid = ThreadLocalRandom.current().nextInt(1000000);
 				lfnc.checksum = "ee31e454013aa515f0bc806aa907ba51";
 				lfnc.perm = "755";
 				lfnc.ctime = ctime_fixed;
@@ -488,8 +485,8 @@ public class CatalogueToCassandraThreads {
 				final HashMap<Integer, String> pfns = new HashMap<>();
 				if (i % 2 == 0) {
 					lfnc.type = 'f';
-					pfns.put(Integer.valueOf(rdm.nextInt(30)), "");
-					pfns.put(Integer.valueOf(rdm.nextInt(30)), "");
+					pfns.put(Integer.valueOf(ThreadLocalRandom.current().nextInt(30)), "");
+					pfns.put(Integer.valueOf(ThreadLocalRandom.current().nextInt(30)), "");
 				}
 				else {
 					lfnc.type = 'l';

@@ -7,10 +7,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -118,10 +118,6 @@ public class CatalogueTestWhereisGenerated {
 	 * Suffix for column family name
 	 */
 	static String lfntable = "_auto";
-	/**
-	 * Random number generator
-	 */
-	static final Random rdm = new Random();
 	/**
 	 * Monitoring component
 	 */
@@ -274,7 +270,7 @@ public class CatalogueTestWhereisGenerated {
 			}
 			else {
 				type_last_op = "read";
-				final long newValue = ((long) (rdm.nextGaussian() * stddev)) + (limit_minus_base / 2);
+				final long newValue = ((long) (ThreadLocalRandom.current().nextGaussian() * stddev)) + (limit_minus_base / 2);
 				if (newValue < base || newValue > limit)
 					continue;
 				last_value = newValue;
@@ -447,8 +443,8 @@ public class CatalogueTestWhereisGenerated {
 				}
 
 				final LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, lfntable, null, null);
-				lfnc.size = rdm.nextInt(100000);
-				lfnc.jobid = rdm.nextInt(1000000);
+				lfnc.size = ThreadLocalRandom.current().nextInt(100000);
+				lfnc.jobid = ThreadLocalRandom.current().nextInt(1000000);
 				lfnc.checksum = "ee31e454013aa515f0bc806aa907ba51";
 				lfnc.perm = "755";
 				lfnc.ctime = ctime_fixed;
@@ -459,8 +455,8 @@ public class CatalogueTestWhereisGenerated {
 				final HashMap<Integer, String> pfns = new HashMap<>();
 				if (i % 2 == 0) {
 					lfnc.type = 'f';
-					pfns.put(Integer.valueOf(rdm.nextInt(30)), "");
-					pfns.put(Integer.valueOf(rdm.nextInt(30)), "");
+					pfns.put(Integer.valueOf(ThreadLocalRandom.current().nextInt(30)), "");
+					pfns.put(Integer.valueOf(ThreadLocalRandom.current().nextInt(30)), "");
 				}
 				else {
 					lfnc.type = 'l';
@@ -510,8 +506,6 @@ public class CatalogueTestWhereisGenerated {
 		}
 
 		System.out.println("Ready to accept HTTP calls on " + tomcat.getAddress() + ":" + tomcat.getPort());
-
-		return;
 	}
 
 }
