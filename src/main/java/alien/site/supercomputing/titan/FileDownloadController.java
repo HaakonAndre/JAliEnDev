@@ -28,10 +28,7 @@ public class FileDownloadController extends Thread {
 	private final BlockingQueue<LFN> lfnToServe;
 
 	private static String cacheFolder;
-	private final int maxDownloaderSleep = 10000;
 	private final int maxParallelDownloads = 10;
-
-	private static final Object poolSyncObject = new Object();
 
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
@@ -56,9 +53,6 @@ public class FileDownloadController extends Thread {
 		public void run() {
 			while (true)
 				try {
-					synchronized (poolSyncObject) {
-						poolSyncObject.wait(60000);
-					}
 					// if something is present in the
 					final LFN l = lfnToServe.take();
 					String dlFilename;
@@ -127,7 +121,7 @@ public class FileDownloadController extends Thread {
 
 	// private FileDownloadController(String cacheFolder) throws IOException, FileNotFoundException{
 	private FileDownloadController() throws IOException, FileNotFoundException {
-		if (cacheFolder == null || cacheFolder.equals(""))
+		if (cacheFolder == null || "".equals(cacheFolder))
 			throw new IOException("Cache folder name can not be null");
 
 		lfnRequested = new HashMap<>();
@@ -155,36 +149,17 @@ public class FileDownloadController extends Thread {
 				final LinkedList<FileDownloadApplication> dlAppList = new LinkedList<>();
 				dlAppList.add(fda);
 				lfnRequested.put(l, dlAppList);
-				lfnToServe.add(l);
+				try {
+					lfnToServe.put(l);
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
+					break;
+				}
 			}
 			else
 				lfnRequested.get(l).add(fda);
 
 		return fda;
-	}
-
-	@Override
-	public void run() {
-		while (true) {
-			// if nothing in the lfnQueue -> sleep, continue
-			boolean emptyQueue;
-			synchronized (this) {
-				emptyQueue = lfnToServe.isEmpty();
-			}
-			if (emptyQueue) {
-				try {
-					Thread.sleep(maxDownloaderSleep);
-				}
-				catch (@SuppressWarnings("unused") final InterruptedException e) {
-					// ignore
-				}
-				continue;
-			}
-			// tell the pool we got something
-			synchronized (poolSyncObject) {
-				poolSyncObject.notifyAll();
-			}
-		}
 	}
 
 	private synchronized void notifyCompleted(final LFN l, final String filename) {
