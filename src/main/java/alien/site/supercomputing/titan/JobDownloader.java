@@ -308,8 +308,7 @@ public class JobDownloader extends Thread {
 
 				final String validationCommand = jdl.gets("ValidationCommand");
 				statement.executeUpdate(String.format(
-						"UPDATE alien_jobs SET queue_id=%d, " + "job_folder='%s', status='%s', executable='%s', " + "validation='%s', environment='%s'," + "user='%s', masterjob_id='%s'"
-								+ "WHERE rank=%d",
+						"UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s',user='%s', masterjob_id='%s' WHERE rank=%d",
 						queueId, tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "", username,
 						masterJobId, Integer.valueOf(current_rank)));
 
@@ -364,7 +363,7 @@ public class JobDownloader extends Thread {
 			for (final String s : arguments)
 				argString += " " + s;
 
-		return new String(fExe.getAbsolutePath() + argString);
+		return (fExe.getAbsolutePath() + argString);
 	}
 	// end EXPERIMENTAL
 
@@ -706,7 +705,7 @@ public class JobDownloader extends Thread {
 			System.out.println("Going to create XML: " + list);
 
 			final String format = jdl.gets("InputDataListFormat");
-			if (format == null || !format.equals("xml-single")) {
+			if (format == null || !"xml-single".equals(format)) {
 				System.out.println("XML format not understood");
 				return;
 			}
@@ -871,7 +870,6 @@ public class JobDownloader extends Thread {
 
 		// jobStatus = newStatus;
 
-		return;
 	}
 
 	/**
