@@ -20,7 +20,7 @@ public class JobRunner extends JobAgent {
 	/**
 	 * logger object
 	 */
-	final Logger logger = ConfigUtils.getLogger(JobRunner.class.getCanonicalName());
+	private static final Logger logger = ConfigUtils.getLogger(JobRunner.class.getCanonicalName());
 
 	/**
 	 * ML monitor object
@@ -115,6 +115,9 @@ public class JobRunner extends JobAgent {
 				if (p != null) {
 					final ProcessWithTimeout ptimeout = new ProcessWithTimeout(p, pBuilder);
 					ptimeout.waitFor(5, TimeUnit.MINUTES);
+
+					if (!ptimeout.exitedOk())
+						logger.log(Level.WARNING, "Sitesonar didn't finish in due time");
 				}
 			}
 			catch (@SuppressWarnings("unused") final IOException | InterruptedException e) {
