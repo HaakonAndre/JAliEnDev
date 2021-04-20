@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +35,6 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import apmon.ApMon;
-import io.netty.util.internal.ThreadLocalRandom;
 import lazyj.DBFunctions;
 import lazyj.DBFunctions.DBConnection;
 import lazyj.Format;
