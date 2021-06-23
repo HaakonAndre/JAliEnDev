@@ -1,0 +1,23 @@
+May 26, 2021 8:12:07 AM alien.monitoring.MonitorFactory enableSystemMonitoring
+WARNING: Cannot instantiate monProcIO
+lia.Monitor.modules.MLModuleInstantiationException: Cannot read /proc/net/dev
+	at lia.Monitor.modules.monProcIO.<init>(monProcIO.java:141)
+	at alien.monitoring.MonitorFactory.enableSystemMonitoring(MonitorFactory.java:143)
+	at alien.monitoring.MonitorFactory$1.run(MonitorFactory.java:75)
+
+May 26, 2021 8:12:07 AM alien.monitoring.MonitorFactory enableSystemMonitoring
+WARNING: Cannot instantiate monProcStat
+lia.Monitor.modules.MLModuleInstantiationException: Cannot read or parse /proc/stat and /proc/vmstat
+	at lia.Monitor.modules.monProcStat.<init>(monProcStat.java:212)
+	at alien.monitoring.MonitorFactory.enableSystemMonitoring(MonitorFactory.java:151)
+	at alien.monitoring.MonitorFactory$1.run(MonitorFactory.java:75)
+
+May 26, 2021 8:12:07 AM alien.monitoring.MonitorFactory enableSystemMonitoring
+WARNING: Cannot instantiate monProcLoad
+lia.Monitor.modules.MLModuleInstantiationException: Cannot read /proc/loadavg
+	at lia.Monitor.modules.monProcLoad.<init>(monProcLoad.java:65)
+	at alien.monitoring.MonitorFactory.enableSystemMonitoring(MonitorFactory.java:159)
+	at alien.monitoring.MonitorFactory$1.run(MonitorFactory.java:75)
+
+May 26, 2021 8:12:08 AM alien.user.JAKeyStore loadTrusts
+WARNING: Found 0 default trusted CAs in classpath

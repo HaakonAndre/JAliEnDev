@@ -1,0 +1,104 @@
+ User = "aliprod";
+
+ JobTag = {
+  "comment:p-Pb, 5.023 TeV - HIJING production for p-Pb@5.02 TeV anchored to pass5 LHC13b,c,f including ZDC with +10% material, ALIROOT-8664"
+ };
+
+ Packages = {
+  "VO_ALICE@AliDPG::prod-202012-01-1",
+  "VO_ALICE@AliPhysics::v5-08-03-01-1",
+  "VO_ALICE@jemalloc::latest"
+ };
+
+ Executable = "/alice/cern.ch/user/a/aliprod/bin/aliroot_dpgsim.sh";
+
+ InputFile = {
+  "LF:/alice/cern.ch/user/a/aliprod/LHC21c12/dpgsim.sh",
+  "LF:/alice/sim/2020/LHC20e1_patch/OCDB/195593/OCDBsim.root",
+  "LF:/alice/sim/2020/LHC20e1_patch/OCDB/195593/OCDBrec.root"
+ };
+
+ Split = "production:1-10";
+
+ SplitArguments = "--run 195593 --mode full --uid #alien_counter# --nevents 50 --generator PWGMM::Hijing_pPb_SNM --material 1.100 --ptHardMinHijing 2.9";
+
+ JDLPath = "/alice/cern.ch/user/a/aliprod/LHC21c12/JDLa";
+
+ JDLArguments = "195593 1 27464 0 0 0 0";
+
+ JDLProcessor = "alien.lpm.RunList";
+
+ ValidationCommand = "/alice/validation/validation.sh";
+
+ OutputDir = "/alice/sim/2021/LHC21c12a/195593/#alien_counter_03i#";
+
+ Output = {
+  "log_archive:stderr.log,stdout.log,tag.log,sim.log,rec.log,qa.log,aod.log,simwatch.log,recwatch.log,aodqa.log@disk=1",
+  "root_archive.zip:pyxsec.root,galice.root,Kinematics.root,TrackRefs.root,Trigger.root,AliESDs.root,AliESDfriends.root,Run*.root@disk=1",
+  "aod_archive.zip:pyxsec_hists.root,AODQA.root,AliAOD*.root,PtResHistograms.root,*.stat.aod@disk=2",
+  "QA_archive.zip:QAresults*.root,event_stat*.root,trending*.root,*.stat.qa*,EventStat_temp*.root@disk=2",
+  "FilterEvents_Trees*.root@disk=2"
+ };
+
+ OutputErrorE = {
+  "log_archive.zip:*.log@disk=1"
+ };
+
+ Requirements = ( member(other.Packages,"VO_ALICE@AliDPG::prod-202012-01-1") ) && ( member(other.Packages,"VO_ALICE@AliPhysics::v5-08-03-01-1") ) && ( member(other.Packages,"VO_ALICE@jemalloc::latest") ) && ( other.TTL > 72000 ) && ( other.Price <= 11 );
+
+ TTL = 72000;
+
+ Price = 11.0;
+
+ MemorySize = "8GB";
+
+ WorkDirectorySize = {
+  "10000MB"
+ };
+
+ LPMChainID = "221913";
+
+ LPMJobTypeID = "24563";
+
+ JDLVariables = {
+  "Packages",
+  "OutputDir",
+  "LPMAnchorPassName",
+  "LPMMetaData",
+  "LPMRunNumber",
+  "LPMProductionType",
+  "LPMProductionTag",
+  "LPMAnchorRun",
+  "LPMAnchorProduction",
+  "LPMAnchorYear",
+  "LPMJobTypeID",
+  "CPUCores"
+ };
+
+ LPMAnchorPassName = "pass5";
+
+ LPMMetaData = "Packages=[VO_ALICE@AliDPG::prod-202012-01-1, VO_ALICE@AliPhysics::v5-08-03-01-1, VO_ALICE@jemalloc::latest];OutputDir=/alice/sim/2021/LHC21c12a/195593/#alien_counter_03i#;LPMAnchorPassName=pass5;LPMRunNumber=195593;LPMProductionType=MC;LPMProductionTag=LHC21c12a;LPMAnchorRun=195593;LPMAnchorProduction=LHC13c;LPMAnchorYear=2013;LPMJobTypeID=24563";
+
+ LPMRunNumber = "195593";
+
+ LPMProductionType = "MC";
+
+ LPMProductionTag = "LHC21c12a";
+
+ LPMAnchorRun = "195593";
+
+ LPMAnchorProduction = "LHC13c";
+
+ LPMAnchorYear = "2013";
+
+ CPUCores = "1";
+
+ Type = "Job";
+
+ OCDBReferenceProduction = "21016";
+
+ PWG = "COMMON";
+
+ InputDataType = "NONE";
+
+ Activity = "SIM";

@@ -660,6 +660,10 @@ public class JDL implements Serializable {
 		return getInputList(false, "Arguments");
 	}
 
+	public List<String> getSplitArguments() {
+		return getInputList(false, "SplitArguments");
+	}
+
 	/**
 	 * Get the user name of the job
 	 *
@@ -1601,4 +1605,25 @@ public class JDL implements Serializable {
 
 		return false;
 	}
+	
+	public void setDeleteChanges (String var) {
+		set("Delete", var);
+	}
+	public void setChanges (String var, String value) {
+		set("Change", String.join(",", var, value));
+	}
+	
+	public JDL applyChanges (JDL j) {
+		Collection<String> deleteColl = getList("Delete");
+		for (Iterator<String> iterator = deleteColl.iterator(); iterator.hasNext();) {
+	        j.delete(iterator.next());
+	    }
+		Collection<String> changeColl = getList("Change");
+		for (Iterator<String> iterator = changeColl.iterator(); iterator.hasNext();) {
+			String[] splitS = iterator.next().split(",", 2);
+			j.set(splitS[0], splitS[1]);
+	    }
+		return j;
+	}
+	
 }

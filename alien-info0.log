@@ -1,0 +1,6 @@
+May 26, 2021 8:12:07 AM alien.config.ConfigUtils getLocalHostname
+INFO: Local hostname resolved as 192.168.10.168
+May 26, 2021 8:12:08 AM alien.user.JAKeyStore loadTrusts
+INFO: Loading trusts from C:\Users\Haakon Andre\git\jalien\C
+May 26, 2021 8:12:08 AM alien.user.JAKeyStore loadTrusts
+INFO: Loading trusts from C:\Users\Haakon Andre\.j\trusts

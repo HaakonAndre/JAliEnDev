@@ -9,6 +9,8 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +57,7 @@ import alien.user.LDAPHelper;
 import alien.user.UsersHelper;
 import apmon.ApMon;
 import lazyj.DBFunctions;
+import lazyj.DBFunctions.DBConnection;
 import lazyj.Format;
 import lazyj.StringFactory;
 import lazyj.Utils;
@@ -78,7 +81,9 @@ public class TaskQueueUtils {
 	static final Monitor monitor = MonitorFactory.getMonitor(TaskQueueUtils.class.getCanonicalName());
 
 	/**
-	 * Flag that tells if the QUEUE table is v2.20+ (JDL text in QUEUEJDL, using status, host, user, notification ids and so on instead of the string versions)
+	 * Flag that tells if the QUEUE table is v2.20+ (JDL text in QUEUEJDL, using
+	 * status, host, user, notification ids and so on instead of the string
+	 * versions)
 	 */
 	public static final boolean dbStructure2_20;
 
@@ -103,18 +108,17 @@ public class TaskQueueUtils {
 					db.setReadOnly(true);
 					db.setQueryTimeout(30);
 
-					db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
+					db.query(
+							"select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 
 					dbStructure2_20 = db.geti(1) == 1;
-				}
-				else {
+				} else {
 					logger.log(Level.WARNING, "There is no direct database connection to the task queue.");
 
 					dbStructure2_20 = false;
 				}
 			}
-		}
-		else
+		} else
 			dbStructure2_20 = false;
 	}
 
@@ -165,8 +169,7 @@ public class TaskQueueUtils {
 	 *
 	 * @param queueId
 	 * @param loadJDL
-	 * @param archiveYear
-	 *            queue archive year to query instead of the main queue
+	 * @param archiveYear queue archive year to query instead of the main queue
 	 * @return the job, or <code>null</code> if it cannot be located
 	 */
 	public static Job getJob(final long queueId, final boolean loadJDL, final int archiveYear) {
@@ -189,13 +192,11 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl as JDL, path FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
 					else
 						q = "SELECT * FROM QUEUE WHERE queueId=?";
-				}
-				else if (loadJDL)
+				} else if (loadJDL)
 					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 				else
 					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
-			}
-			else if (archiveYear < 2000)
+			} else if (archiveYear < 2000)
 				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
 			else
 				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
@@ -217,8 +218,8 @@ public class TaskQueueUtils {
 	/**
 	 * Get the list of active masterjobs
 	 *
-	 * @param account
-	 *            the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
+	 * @param account the account for which the masterjobs are needed, or
+	 *                <code>null</code> for all active masterjobs, of everybody
 	 * @return the list of active masterjobs for this account
 	 */
 	public static List<Job> getMasterjobs(final String account) {
@@ -228,8 +229,8 @@ public class TaskQueueUtils {
 	/**
 	 * Get the list of active masterjobs
 	 *
-	 * @param account
-	 *            the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
+	 * @param account the account for which the masterjobs are needed, or
+	 *                <code>null</code> for all active masterjobs, of everybody
 	 * @param loadJDL
 	 * @return the list of active masterjobs for this account
 	 */
@@ -240,11 +241,10 @@ public class TaskQueueUtils {
 	/**
 	 * Get the list of active masterjobs
 	 *
-	 * @param account
-	 *            the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
+	 * @param account     the account for which the masterjobs are needed, or
+	 *                    <code>null</code> for all active masterjobs, of everybody
 	 * @param loadJDL
-	 * @param archiveYear
-	 *            queue archive year to query instead of the main queue
+	 * @param archiveYear queue archive year to query instead of the main queue
 	 * @return the list of active masterjobs for this account
 	 */
 	public static List<Job> getMasterjobs(final String account, final boolean loadJDL, final int archiveYear) {
@@ -267,18 +267,17 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl as JDL, path FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
 					else
 						q = "SELECT * FROM QUEUE ";
-				}
-				else if (loadJDL)
+				} else if (loadJDL)
 					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
 				else
 					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
 
 				q += "WHERE split=0 AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ";
-			}
-			else if (archiveYear < 2000)
+			} else if (archiveYear < 2000)
 				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear
+						+ " WHERE split=0 AND status!='KILLED' ";
 
 			if (account != null && account.length() > 0)
 				if (dbStructure2_20)
@@ -306,8 +305,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * @param initial
-	 * @param maxAge
-	 *            the age in milliseconds
+	 * @param maxAge  the age in milliseconds
 	 * @return the jobs that are active or have finished since at most maxAge
 	 */
 	public static List<Job> filterMasterjobs(final List<Job> initial, final long maxAge) {
@@ -368,9 +366,11 @@ public class TaskQueueUtils {
 			final String q;
 
 			if (dbStructure2_20)
-				q = "select split,statusId,count(1) from QUEUE where split in (" + sb.toString() + ") AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " group by split,statusId order by 1;";
+				q = "select split,statusId,count(1) from QUEUE where split in (" + sb.toString() + ") AND statusId!="
+						+ JobStatus.KILLED.getAliEnLevel() + " group by split,statusId order by 1;";
 			else
-				q = "select split,status,count(1) from QUEUE where split in (" + sb.toString() + ") AND status!='KILLED' group by split,status order by 1;";
+				q = "select split,status,count(1) from QUEUE where split in (" + sb.toString()
+						+ ") AND status!='KILLED' group by split,status order by 1;";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
@@ -442,8 +442,7 @@ public class TaskQueueUtils {
 	 *
 	 * @param queueId
 	 * @param loadJDL
-	 * @param archiveYear
-	 *            archive year to query instead of the main queue table
+	 * @param archiveYear archive year to query instead of the main queue table
 	 * @return the subjobs, if any
 	 */
 	public static List<Job> getSubjobs(final long queueId, final boolean loadJDL, final int archiveYear) {
@@ -466,18 +465,17 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl AS jdl, path FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
 					else
 						q = "SELECT * FROM QUEUE";
-				}
-				else if (loadJDL)
+				} else if (loadJDL)
 					q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
 				else
 					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
 
 				q += " WHERE split=? AND statusId!=" + JobStatus.KILLED.getAliEnLevel();
-			}
-			else if (archiveYear < 2000)
+			} else if (archiveYear < 2000)
 				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED';";
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED';";
+				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear
+						+ " WHERE split=? AND status!='KILLED';";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(300);
@@ -505,7 +503,8 @@ public class TaskQueueUtils {
 	 * @param limit
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Long> id, final List<String> site, final int limit) {
+	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Long> id,
+			final List<String> site, final int limit) {
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -570,7 +569,8 @@ public class TaskQueueUtils {
 						first = false;
 
 					if (dbStructure2_20)
-						whe.append("ifnull(substring(exechost,POSITION('\\@' in exechost)+1),'')='").append(Format.escSQL(s)).append('\'');
+						whe.append("ifnull(substring(exechost,POSITION('\\@' in exechost)+1),'')='")
+								.append(Format.escSQL(s)).append('\'');
 					else
 						whe.append("execHostId=").append(getHostId(s));
 				}
@@ -590,9 +590,11 @@ public class TaskQueueUtils {
 			final String q;
 
 			if (dbStructure2_20)
-				q = "SELECT queueId,statusId,split,execHostId FROM QUEUE WHERE " + where + " ORDER BY queueId ASC limit " + lim + ";";
+				q = "SELECT queueId,statusId,split,execHostId FROM QUEUE WHERE " + where
+						+ " ORDER BY queueId ASC limit " + lim + ";";
 			else
-				q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE " + where + " ORDER BY queueId ASC limit " + lim + ";";
+				q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE " + where + " ORDER BY queueId ASC limit "
+						+ lim + ";";
 
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
@@ -657,8 +659,9 @@ public class TaskQueueUtils {
 	/**
 	 * @param job
 	 * @param newStatus
-	 * @param oldStatusConstraint
-	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
+	 * @param oldStatusConstraint change the status only if the job is still in this
+	 *                            state. Can be <code>null</code> to disable
+	 *                            checking the current status.
 	 * @return <code>true</code> if the job status was changed
 	 */
 	public static boolean setJobStatus(final long job, final JobStatus newStatus, final JobStatus oldStatusConstraint) {
@@ -672,13 +675,14 @@ public class TaskQueueUtils {
 	/**
 	 * @param job
 	 * @param newStatus
-	 * @param oldStatusConstraint
-	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
-	 * @param extrafields
-	 *            other fields to set at the same time
+	 * @param oldStatusConstraint change the status only if the job is still in this
+	 *                            state. Can be <code>null</code> to disable
+	 *                            checking the current status.
+	 * @param extrafields         other fields to set at the same time
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final long job, final JobStatus newStatus, final JobStatus oldStatusConstraint, final HashMap<String, Object> extrafields) {
+	public static boolean setJobStatus(final long job, final JobStatus newStatus, final JobStatus oldStatusConstraint,
+			final HashMap<String, Object> extrafields) {
 		if (job <= 0)
 			throw new IllegalArgumentException("Job ID " + job + " is illegal");
 
@@ -730,8 +734,8 @@ public class TaskQueueUtils {
 
 			if (oldStatusConstraint != null && oldStatus != oldStatusConstraint) {
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE,
-							"Refusing to do the update of " + job + " to state " + newStatus.name() + " because old status is not " + oldStatusConstraint.name() + " but " + oldStatus.name());
+					logger.log(Level.FINE, "Refusing to do the update of " + job + " to state " + newStatus.name()
+							+ " because old status is not " + oldStatusConstraint.name() + " but " + oldStatus.name());
 
 				return false;
 			}
@@ -745,8 +749,7 @@ public class TaskQueueUtils {
 
 				newstatus = Integer.valueOf(newStatus.getAliEnLevel());
 				q = "UPDATE QUEUE SET statusId=?" + extra + " WHERE queueId=?;";
-			}
-			else {
+			} else {
 				newstatus = newStatus.toSQL();
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
 			}
@@ -760,7 +763,8 @@ public class TaskQueueUtils {
 
 			putJobLog(job, "state", "Job state transition from " + oldStatus.name() + " to " + newStatus.name(), null);
 
-			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED)
+			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN
+					|| newStatus == JobStatus.SAVED)
 				deleteJobToken(job);
 
 			String execHost = "NO_SITE";
@@ -780,8 +784,7 @@ public class TaskQueueUtils {
 						if (key.contains("node") || key.contains("exechost")) {
 							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", value.toString());
 							map.put(fieldMap.get(key + "_field"), Integer.valueOf(hostId));
-						}
-						else
+						} else
 							map.put(fieldMap.get(key + "_field"), value);
 
 						map.put("queueId", Long.valueOf(job));
@@ -801,8 +804,7 @@ public class TaskQueueUtils {
 					try {
 						targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
 						centralMLService = new ApMon(targets);
-					}
-					catch (final Exception e) {
+					} catch (final Exception e) {
 						logger.log(Level.WARNING, "Could not initialize apmon (" + targets + ")", e);
 					}
 				}
@@ -820,9 +822,9 @@ public class TaskQueueUtils {
 				values.add(Integer.valueOf(newStatus.getAliEnLevel()));
 
 				try {
-					centralMLService.sendParameters("TaskQueue_Jobs_ALICE", execHost, parameters.size(), parameters, values);
-				}
-				catch (final Exception e) {
+					centralMLService.sendParameters("TaskQueue_Jobs_ALICE", execHost, parameters.size(), parameters,
+							values);
+				} catch (final Exception e) {
 					logger.log(Level.WARNING, "Failed to send job status update to central ML", e);
 				}
 			}
@@ -841,8 +843,10 @@ public class TaskQueueUtils {
 
 	/**
 	 * @param queueId
-	 * @param originalJDL
-	 *            if <code>true</code> then the original JDL will be returned, otherwise the processed JDL. Only possible for AliEn v2.20+, for older versions the only known JDL is returned.
+	 * @param originalJDL if <code>true</code> then the original JDL will be
+	 *                    returned, otherwise the processed JDL. Only possible for
+	 *                    AliEn v2.20+, for older versions the only known JDL is
+	 *                    returned.
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
 	@SuppressWarnings("deprecation")
@@ -869,10 +873,12 @@ public class TaskQueueUtils {
 
 			if (!db.query(q, false, Long.valueOf(queueId)) || !db.moveNext()) {
 				final Date d = new Date();
-				q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " as JDL FROM QUEUEARCHIVE" + (1900 + d.getYear()) + " WHERE queueId=?";
+				q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " as JDL FROM QUEUEARCHIVE"
+						+ (1900 + d.getYear()) + " WHERE queueId=?";
 
 				if (!db.query(q, false, Long.valueOf(queueId)) || !db.moveNext()) {
-					final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
+					final String jdlArchiveDir = ConfigUtils.getConfig()
+							.gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
 
 					if (jdlArchiveDir.length() > 0) {
 						File f = new File(jdlArchiveDir, queueId + ".txt");
@@ -910,8 +916,7 @@ public class TaskQueueUtils {
 
 										content = baos.toString();
 									}
-								}
-								catch (@SuppressWarnings("unused") final IOException e) {
+								} catch (@SuppressWarnings("unused") final IOException e) {
 									// ignore
 								}
 							}
@@ -957,7 +962,8 @@ public class TaskQueueUtils {
 	 * @param limit
 	 * @return the ps listing
 	 */
-	public static List<Job> getPS(final Collection<JobStatus> states, final Collection<String> users, final Collection<String> sites, final Collection<String> nodes, final Collection<Long> mjobs,
+	public static List<Job> getPS(final Collection<JobStatus> states, final Collection<String> users,
+			final Collection<String> sites, final Collection<String> nodes, final Collection<Long> mjobs,
 			final Collection<Long> jobids, final String orderByKey, final int limit) {
 
 		final List<Job> ret = new ArrayList<>();
@@ -1078,8 +1084,7 @@ public class TaskQueueUtils {
 
 					if (!first)
 						where += whe + ") ) and ";
-				}
-				else {
+				} else {
 					where += " ( split = 0 ) and ";
 				}
 			}
@@ -1118,7 +1123,8 @@ public class TaskQueueUtils {
 			final String q;
 
 			if (dbStructure2_20)
-				q = "SELECT * FROM (SELECT * FROM QUEUE " + where + " ORDER BY queueId DESC " + " limit " + lim + ") x " + orderBy;
+				q = "SELECT * FROM (SELECT * FROM QUEUE " + where + " ORDER BY queueId DESC " + " limit " + lim + ") x "
+						+ orderBy;
 			else
 				q = "SELECT " + ALL_BUT_JDL + " FROM QUEUE " + where + orderBy + " limit " + lim + ";";
 
@@ -1244,7 +1250,8 @@ public class TaskQueueUtils {
 			ret.put(entry.getKey(), Integer.valueOf(entry.getValue().intValue() + addToAll));
 
 		if (addToAll > 0) {
-			final Set<String> sites = LDAPHelper.checkLdapInformation("(objectClass=organizationalUnit)", "ou=Sites,", "ou", false);
+			final Set<String> sites = LDAPHelper.checkLdapInformation("(objectClass=organizationalUnit)", "ou=Sites,",
+					"ou", false);
 
 			if (sites != null)
 				for (final String site : sites)
@@ -1279,13 +1286,12 @@ public class TaskQueueUtils {
 	}
 
 	/**
-	 * @param jdlContents
-	 *            JDL specification
-	 * @param arguments
-	 *            arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
-	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
-	 * @throws IOException
-	 *             if there is any problem parsing the JDL content
+	 * @param jdlContents JDL specification
+	 * @param arguments   arguments to the JDL, should be at least as many as the
+	 *                    largest $N that shows up in the JDL
+	 * @return the parsed JDL, with all $N parameters replaced with the respective
+	 *         argument
+	 * @throws IOException if there is any problem parsing the JDL content
 	 */
 	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IOException {
 		if (jdlContents == null)
@@ -1319,17 +1325,14 @@ public class TaskQueueUtils {
 	}
 
 	/**
-	 * Check the Executable and ValidationCommand paths in the catalogue and expand the relative ones to the first file found in user's own folders, including the same directory from where the JDL was
-	 * submitted
+	 * Check the Executable and ValidationCommand paths in the catalogue and expand
+	 * the relative ones to the first file found in user's own folders, including
+	 * the same directory from where the JDL was submitted
 	 *
-	 * @param jdl
-	 *            JDL to check
-	 * @param account
-	 *            account that runs it
-	 * @param role
-	 *            the role (can be <code>null</code>)
-	 * @throws IOException
-	 *             if some file cannot be located
+	 * @param jdl     JDL to check
+	 * @param account account that runs it
+	 * @param role    the role (can be <code>null</code>)
+	 * @throws IOException if some file cannot be located
 	 */
 	private static final void expandExecutables(final JDL jdl, final AliEnPrincipal account) throws IOException {
 		final Set<String> pathsToCheck = new LinkedHashSet<>();
@@ -1376,30 +1379,29 @@ public class TaskQueueUtils {
 							found = true;
 							jdl.set(jdlTag, l.getCanonicalName());
 						}
-			}
-			catch (final ServerException se) {
+			} catch (final ServerException se) {
 				throw new IOException(se.getMessage(), se);
 			}
 
 			if (!found)
-				throw new IOException("The " + jdlTag + " name you indicated (" + executable + ") cannot be located in any standard PATH");
+				throw new IOException("The " + jdlTag + " name you indicated (" + executable
+						+ ") cannot be located in any standard PATH");
 		}
 	}
 
 	/**
 	 * Submit the JDL indicated by this file
 	 *
-	 * @param file
-	 *            the catalogue name of the JDL to be submitted
-	 * @param account
-	 *            account from where the submit command was received
-	 * @param arguments
-	 *            arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
+	 * @param file      the catalogue name of the JDL to be submitted
+	 * @param account   account from where the submit command was received
+	 * @param arguments arguments to the JDL, should be at least as many as the
+	 *                  largest $N that shows up in the JDL
 	 * @return the job ID
-	 * @throws IOException
-	 *             in case of problems like downloading the respective JDL or not enough arguments provided to it
+	 * @throws IOException in case of problems like downloading the respective JDL
+	 *                     or not enough arguments provided to it
 	 */
-	public static long submit(final LFN file, final AliEnPrincipal account, final String... arguments) throws IOException {
+	public static long submit(final LFN file, final AliEnPrincipal account, final String... arguments)
+			throws IOException {
 		if (file == null || !file.exists || !file.isFile())
 			throw new IllegalArgumentException("The LFN is not a valid file");
 
@@ -1543,7 +1545,8 @@ public class TaskQueueUtils {
 				final LFN l = LFNUtils.getLFN(fileName);
 
 				if (l == null || (!l.isFile() && !l.isCollection()))
-					throw new IOException(tag + " tag required " + fileName + " which is not valid: " + (l == null ? "not in the catalogue" : "not a file or collection"));
+					throw new IOException(tag + " tag required " + fileName + " which is not valid: "
+							+ (l == null ? "not in the catalogue" : "not a file or collection"));
 			}
 		}
 	}
@@ -1551,13 +1554,11 @@ public class TaskQueueUtils {
 	/**
 	 * Submit this JDL body
 	 *
-	 * @param j
-	 *            job description, in plain text
-	 * @param account
-	 *            account from where the submit command was received
+	 * @param j       job description, in plain text
+	 * @param account account from where the submit command was received
 	 * @return the job ID
-	 * @throws IOException
-	 *             in case of problems such as the number of provided arguments is not enough
+	 * @throws IOException in case of problems such as the number of provided
+	 *                     arguments is not enough
 	 * @see #applyJDLArguments(String, String...)
 	 */
 	public static long submit(final JDL j, final AliEnPrincipal account) throws IOException {
@@ -1566,19 +1567,19 @@ public class TaskQueueUtils {
 		final FileQuota quota = QuotaUtilities.getFileQuota(owner);
 
 		if (quota != null && !quota.canUpload(1, 1))
-			throw new IOException("User " + owner + " has exceeded the file quota and is not allowed to write any more files");
+			throw new IOException(
+					"User " + owner + " has exceeded the file quota and is not allowed to write any more files");
 
 		return insertJob(j, account, owner, null);
 	}
 
 	/**
-	 * Check the validity of the JDL (package versions, existing critical input files etc) and if the indicated account has access to the indicated role. Will also decorate the JDL with various helper
-	 * tags.
+	 * Check the validity of the JDL (package versions, existing critical input
+	 * files etc) and if the indicated account has access to the indicated role.
+	 * Will also decorate the JDL with various helper tags.
 	 *
-	 * @param j
-	 *            JDL to submit
-	 * @param account
-	 *            AliEn account that requests the submission
+	 * @param j       JDL to submit
+	 * @param account AliEn account that requests the submission
 	 * @return the AliEn account name that will own the job
 	 * @throws IOException
 	 */
@@ -1598,18 +1599,18 @@ public class TaskQueueUtils {
 	/**
 	 * Insert a job in the given status. N
 	 *
-	 * @param j
-	 *            full JDL
-	 * @param account
-	 *            AliEn account
-	 * @param owner
-	 *            AliEn account name that the indicated account has access to
-	 * @param targetStatus
-	 *            job status. Can be <code>null</code> to have the default behavior of putting it to <code>INSERTING</code> and letting AliEn process it.
+	 * @param j            full JDL
+	 * @param account      AliEn account
+	 * @param owner        AliEn account name that the indicated account has access
+	 *                     to
+	 * @param targetStatus job status. Can be <code>null</code> to have the default
+	 *                     behavior of putting it to <code>INSERTING</code> and
+	 *                     letting AliEn process it.
 	 * @return the just inserted job ID
 	 * @throws IOException
 	 */
-	public static long insertJob(final JDL j, final AliEnPrincipal account, final String owner, final JobStatus targetStatus) throws IOException {
+	public static long insertJob(final JDL j, final AliEnPrincipal account, final String owner,
+			final JobStatus targetStatus) throws IOException {
 		final String clientAddress;
 
 		final InetAddress addr = account.getRemoteEndpoint();
@@ -1645,8 +1646,7 @@ public class TaskQueueUtils {
 
 				if (notify != null && notify.length() > 0)
 					values.put("notifyId", getNotifyId(notify));
-			}
-			else {
+			} else {
 				values.put("status", jobStatus.toSQL());
 				values.put("jdl", "\n    [\n" + j.toString() + "\n    ]");
 				values.put("submitHost", owner + "@" + clientAddress);
@@ -1659,13 +1659,15 @@ public class TaskQueueUtils {
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 
 			Long masterjobID = j.getLong("MasterJobID");
+			boolean splitjob = false;
 
 			if (JobStatus.SPLIT.equals(jobStatus) || j.get("Split") != null) {
+				splitjob = true;
 				values.put("masterjob", Integer.valueOf(1));
+			} else {
+				values.put("masterjob", Integer.valueOf(0));
 				masterjobID = null;
 			}
-			else
-				values.put("masterjob", Integer.valueOf(0));
 
 			if (masterjobID != null)
 				values.put("split", masterjobID);
@@ -1674,7 +1676,9 @@ public class TaskQueueUtils {
 
 			final Integer cpuCores = j.getInteger("CPUCores");
 
-			values.put("cpucores", cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1) : cpuCores);
+			values.put("cpucores",
+					cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1)
+							: cpuCores);
 
 			final String insert = DBFunctions.composeInsert("QUEUE", values);
 
@@ -1704,9 +1708,128 @@ public class TaskQueueUtils {
 			setAction(jobStatus);
 
 			putJobLog(pid.longValue(), "state", "Job state transition to " + jobStatus.toString(), null);
+			
+			if (splitjob) {
+				JobOptimizer split = new JobOptimizer();
+				split.OptimizeJob(j, account, owner, pid.longValue());
+			}
 
 			return pid.longValue();
 		}
+	}
+
+	public static long insertSubJob(final AliEnPrincipal account, long masterId, List<JDL> jdls) throws IOException, SQLException {
+
+		JDL origJ = jdls.get(0);
+		final String clientAddress;
+
+		final InetAddress addr = account.getRemoteEndpoint();
+
+		if (addr != null)
+			clientAddress = Utils.getHostName(addr.getHostAddress());
+		else
+			clientAddress = ConfigUtils.getLocalHostname();
+
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				throw new IOException("This service has no direct database connection");
+
+			db.setQueryTimeout(300);
+
+			final Map<String, Object> values = new HashMap<>();
+
+			final String executable = origJ.getExecutable();
+
+			final Float price = origJ.getFloat("Price");
+
+			values.put("priority", Integer.valueOf(0));
+
+			final String notify = origJ.gets("email");
+
+			if (dbStructure2_20) {
+				values.put("statusId", Integer.valueOf(JobStatus.WAITING.getAliEnLevel()));
+				// values.put("userId", getUserId(account.));
+				values.put("submitHostId", getHostId(clientAddress));
+				values.put("commandId", getCommandId(executable));
+
+				if (notify != null && notify.length() > 0)
+					values.put("notifyId", getNotifyId(notify));
+			} else {
+				values.put("status", JobStatus.WAITING.toSQL());
+				// values.put("jdl", "\n [\n" + j.toString() + "\n ]");
+				// values.put("submitHost", owner + "@" + clientAddress);
+				values.put("notify", notify);
+				values.put("name", executable);
+			}
+
+			values.put("chargeStatus", Integer.valueOf(0));
+			values.put("price", price);
+			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
+
+			values.put("masterjob", Integer.valueOf(0));
+			values.put("split", masterId);
+
+			final Integer cpuCores = origJ.getInteger("CPUCores");
+
+			values.put("cpucores",
+					cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1)
+							: cpuCores);
+			Long pid;
+
+			DBConnection conn = db.getConnection();
+			Connection con = conn.getConnection();
+			
+			try {
+				con.setAutoCommit(false);
+
+			for (int i = 1; i <= jdls.size(); i++) {
+
+				JDL j = jdls.get(i).applyChanges(origJ);
+
+				if (!dbStructure2_20) {
+					values.put("jdl", "\n    [\n" + j.toString() + "\n    ]");
+				} else if (dbStructure2_20 && values.containsKey("jdl")){
+					values.remove("jdl");
+				}
+
+				final String insert = DBFunctions.composeInsert("QUEUE", values);
+
+				db.setLastGeneratedKey(true);
+
+				if (!db.query(insert))
+					throw new IOException("Could not insert the job in the queue");
+
+				pid = db.getLastGeneratedKeyLong();
+
+				if (pid == null)
+					throw new IOException("Last generated key is unknown");
+
+				db.query("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
+
+				if (dbStructure2_20) {
+					final Map<String, Object> valuesJDL = new HashMap<>();
+
+					valuesJDL.put("queueId", pid);
+					valuesJDL.put("origJdl", "\n    [\n" + j.toString() + "\n    ]");
+
+					final String insertJDL = DBFunctions.composeInsert("QUEUEJDL", valuesJDL);
+
+					db.query(insertJDL);
+				}
+
+				setAction(JobStatus.WAITING);
+
+				putJobLog(pid.longValue(), "state", "Job state transition to " + JobStatus.WAITING.toString(), null);
+			}
+			}
+			catch(SQLException e){
+				con.rollback();
+			}
+			finally {
+				conn.close();
+			}
+		}
+			return masterId;
 	}
 
 	private static final GenericLastValuesCache<String, Integer> userIdCache = new GenericLastValuesCache<>() {
@@ -1741,13 +1864,13 @@ public class TaskQueueUtils {
 							try {
 								id = Integer.parseInt(s);
 								break;
-							}
-							catch (@SuppressWarnings("unused") final Throwable t) {
+							} catch (@SuppressWarnings("unused") final Throwable t) {
 								// ignore
 							}
 
 					if (id > 0) {
-						if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES (?, ?);", true, Integer.valueOf(id), key))
+						if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES (?, ?);", true, Integer.valueOf(id),
+								key))
 							return Integer.valueOf(id);
 
 						// did it fail because the user was inserted by somebody
@@ -1760,7 +1883,8 @@ public class TaskQueueUtils {
 						// if it gets here it means there is a duplicate CCID in
 						// LDAP
 
-						logger.log(Level.WARNING, "Duplicate CCID " + id + " in LDAP, failed to correctly insert user " + key
+						logger.log(Level.WARNING, "Duplicate CCID " + id + " in LDAP, failed to correctly insert user "
+								+ key
 								+ " because of it. Will generate a new userid for this guy, but the consistency with LDAP is lost now!");
 					}
 
@@ -1772,8 +1896,7 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				}
-				else
+				} else
 					return Integer.valueOf(db.geti(1));
 
 				return null;
@@ -1826,8 +1949,7 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				}
-				else
+				} else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1874,8 +1996,7 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				}
-				else
+				} else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1922,8 +2043,7 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				}
-				else
+				} else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -2118,7 +2238,8 @@ public class TaskQueueUtils {
 			return killJob(j);
 		}
 
-		System.out.println("Job kill authorization failed for [" + j.queueId + "] by user/role [" + user.getName() + "].");
+		System.out.println(
+				"Job kill authorization failed for [" + j.queueId + "] by user/role [" + user.getName() + "].");
 		return false;
 	}
 
@@ -2168,7 +2289,8 @@ public class TaskQueueUtils {
 
 	// status and jdl
 	private static boolean updateJob(final Job j, final JobStatus newStatus) {
-		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE || j.status() == JobStatus.INTERACTIV) && j.isMaster())
+		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE
+				|| j.status() == JobStatus.INTERACTIV) && j.isMaster())
 			return false;
 
 		if (j.status() == JobStatus.WAITING && j.agentid > 0)
@@ -2183,7 +2305,8 @@ public class TaskQueueUtils {
 
 		if (j.status() != newStatus) {
 			try (DBFunctions db = getQueueDB()) {
-				if (!db.query("UPDATE QUEUE SET statusId=? WHERE queueId=? and statusId=?;", false, Integer.valueOf(newStatus.getAliEnLevel()), Long.valueOf(j.queueId),
+				if (!db.query("UPDATE QUEUE SET statusId=? WHERE queueId=? and statusId=?;", false,
+						Integer.valueOf(newStatus.getAliEnLevel()), Long.valueOf(j.queueId),
 						Integer.valueOf(j.status().getAliEnLevel())))
 					return false;
 
@@ -2194,18 +2317,17 @@ public class TaskQueueUtils {
 						final int siteId = getSiteId(j.site);
 
 						if (siteId > 0)
-							db.query(
-									"UPDATE SITEQUEUES SET " + j.status().toSQL() + "=GREATEST(" + j.status().toSQL() + "-1,0), " + newStatus.toSQL() + "=GREATEST(" + newStatus
-											+ ",0)+1 WHERE siteId=?",
+							db.query("UPDATE SITEQUEUES SET " + j.status().toSQL() + "=GREATEST(" + j.status().toSQL()
+									+ "-1,0), " + newStatus.toSQL() + "=GREATEST(" + newStatus + ",0)+1 WHERE siteId=?",
 									false, Integer.valueOf(siteId));
 					}
-				}
-				else
+				} else
 					return false;
 			}
 		}
 
-		if (newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.STAGING)
+		if (newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED || newStatus == JobStatus.SAVED_WARN
+				|| newStatus == JobStatus.STAGING)
 			setAction(newStatus);
 
 		// if the state already was the desired one, return <code>true</code>
@@ -2221,7 +2343,8 @@ public class TaskQueueUtils {
 	 * @param node
 	 * @return <code>true</code> if the status was successfully changed
 	 */
-	public static boolean setJobStatus(final Job j, final JobStatus newStatus, final String arg, final String site, final String spyurl, final String node) {
+	public static boolean setJobStatus(final Job j, final JobStatus newStatus, final String arg, final String site,
+			final String spyurl, final String node) {
 		final String time = String.valueOf(System.currentTimeMillis() / 1000);
 
 		final HashMap<String, String> jdltags = new HashMap<>();
@@ -2242,14 +2365,15 @@ public class TaskQueueUtils {
 		else if (newStatus == JobStatus.STARTED) {
 			jdltags.put("started", time);
 			jdltags.put("batchid", arg);
-		}
-		else if (newStatus == JobStatus.SAVING)
+		} else if (newStatus == JobStatus.SAVING)
 			jdltags.put("error", arg);
-		else if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
+		else if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V
+				|| newStatus == JobStatus.STAGING)
 			jdltags.put("jdl", arg);
 		else if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN)
 			jdltags.put("finished", time);
-		else if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
+		else if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN
+				|| newStatus == JobStatus.SAVED) {
 			jdltags.put("spyurl", "");
 			jdltags.put("finished", time);
 			deleteJobToken(j.queueId);
@@ -2286,7 +2410,8 @@ public class TaskQueueUtils {
 		return success;
 	}
 
-	private static boolean insertMessage(final long queueId, final String target, final String service, final String message, final String messageArgs, final int expires) {
+	private static boolean insertMessage(final long queueId, final String target, final String service,
+			final String message, final String messageArgs, final int expires) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -2295,7 +2420,8 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 
-			if (db.query(q, false, Long.valueOf(queueId), target, service, message, messageArgs, Integer.valueOf(expires))) {
+			if (db.query(q, false, Long.valueOf(queueId), target, service, message, messageArgs,
+					Integer.valueOf(expires))) {
 				if (monitor != null)
 					monitor.incrementCounter("Message_db_insert");
 
@@ -2343,7 +2469,8 @@ public class TaskQueueUtils {
 	// if (!db.query(q, false, Long.valueOf(jobId)))
 	// return null;
 	//
-	// monitor.addMeasurement("TQ_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
+	// monitor.addMeasurement("TQ_jobtokendetails_time", (System.currentTimeMillis()
+	// - lQueryStart) / 1000d);
 	//
 	// if (!db.moveNext())
 	// return null;
@@ -2369,7 +2496,8 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 			db.setReadOnly(false);
-			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Long.valueOf(queueId))) { // TODO: delete after full migration
+			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Long.valueOf(queueId))) { // TODO: delete after
+																									// full migration
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
 				return false;
 			}
@@ -2386,7 +2514,8 @@ public class TaskQueueUtils {
 	 * @param joblogtags
 	 * @return <code>true</code> if the log was successfully added
 	 */
-	public static boolean putJobLog(final long queueId, final String action, final String message, final HashMap<String, String> joblogtags) {
+	public static boolean putJobLog(final long queueId, final String action, final String message,
+			final HashMap<String, String> joblogtags) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -2448,9 +2577,11 @@ public class TaskQueueUtils {
 	private static boolean setSubJobMerges(final Job j) {
 
 		// if ($info->{split}) {
-		// $self->info("We have to check if all the subjobs of $info->{split} have finished");
+		// $self->info("We have to check if all the subjobs of $info->{split} have
+		// finished");
 		// $self->do(
-		// "insert into JOBSTOMERGE (masterId) select ? from DUAL where not exists (select masterid from JOBSTOMERGE where masterid = ?)",
+		// "insert into JOBSTOMERGE (masterId) select ? from DUAL where not exists
+		// (select masterid from JOBSTOMERGE where masterid = ?)",
 		// {bind_values => [ $info->{split}, $info->{split} ]}
 		// );
 		// $self->do("update ACTIONS set todo=1 where action='MERGING'");
@@ -2466,7 +2597,9 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 
-			final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT " + j.split + " FROM DUAL WHERE NOT EXISTS (SELECT masterid FROM JOBSTOMERGE WHERE masterid = " + j.split + ");";
+			final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT " + j.split
+					+ " FROM DUAL WHERE NOT EXISTS (SELECT masterid FROM JOBSTOMERGE WHERE masterid = " + j.split
+					+ ");";
 
 			if (!db.query(q))
 				return false;
@@ -2557,7 +2690,8 @@ public class TaskQueueUtils {
 			String q;
 
 			if (dbStructure2_20)
-				q = "SELECT user,count(1) FROM QUEUE INNER JOIN QUEUE_USER using(userId) WHERE statusId IN (" + sb + ")";
+				q = "SELECT user,count(1) FROM QUEUE INNER JOIN QUEUE_USER using(userId) WHERE statusId IN (" + sb
+						+ ")";
 			else
 				q = "SELECT substring_index(submithost,'@',1),count(1) FROM QUEUE WHERE status IN (" + sb + ")";
 
@@ -2589,7 +2723,8 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(30);
 
-			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status, ce);
+			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status,
+					ce);
 
 			if (db.getUpdateCount() == 0) {
 				logger.log(Level.FINE, "Inserting the site " + ce);
@@ -2608,7 +2743,8 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 
-			if (!db.query("insert into SITEQUEUES (siteid, site) select ifnull(max(siteid)+1,1), ? from SITEQUEUES", false, ce)) {
+			if (!db.query("insert into SITEQUEUES (siteid, site) select ifnull(max(siteid)+1,1), ? from SITEQUEUES",
+					false, ce)) {
 				logger.log(Level.INFO, "Couldn't insert queue " + ce);
 				return;
 			}
@@ -2697,7 +2833,8 @@ public class TaskQueueUtils {
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "Updating host " + host + " to status " + status);
 
-			if (!db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?", false, status, host)) {
+			if (!db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?", false, status,
+					host)) {
 				logger.log(Level.WARNING, "Update HOSTS failed: " + host + " and " + status);
 				return false;
 			}
@@ -2788,8 +2925,7 @@ public class TaskQueueUtils {
 					logger.log(Level.FINE, "The HOST exists");
 
 				hostId = db.geti(1);
-			}
-			else { // we insert the host
+			} else { // we insert the host
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "The host doesn't exist. Inserting " + host + ":" + port + ":" + version);
 
@@ -2820,14 +2956,14 @@ public class TaskQueueUtils {
 					logger.severe("Error (insertHost): couldn't insert into sites!");
 					return 0;
 				}
-			}
-			else
+			} else
 				siteId = domains.get(0).intValue();
 
 			final String qi = "insert into HOSTS (hostId, hostName, siteId, hostPort, Version) values (?,?,?,?,?);";
 			db.setReadOnly(false);
 			db.setLastGeneratedKey(true);
-			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), Integer.valueOf(port), version);
+			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId),
+					Integer.valueOf(port), version);
 
 			if (logger.isLoggable(Level.FINER))
 				logger.log(Level.FINER, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
@@ -2863,9 +2999,12 @@ public class TaskQueueUtils {
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "insertIntoSites: " + qi + " with domain: " + domain);
 
-			final boolean ret = db.query(qi, false, domainInfo.get("ou"), Integer.valueOf(0), Integer.valueOf(0), domainInfo.containsKey("adminsitrator") ? domainInfo.get("administrator") : "",
-					domainInfo.containsKey("location") ? domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? domainInfo.get("longitude") : Double.valueOf(0),
-					domainInfo.containsKey("latitude") ? domainInfo.get("latitude") : Double.valueOf(0.0), domainInfo.containsKey("record") ? domainInfo.get("record") : "",
+			final boolean ret = db.query(qi, false, domainInfo.get("ou"), Integer.valueOf(0), Integer.valueOf(0),
+					domainInfo.containsKey("adminsitrator") ? domainInfo.get("administrator") : "",
+					domainInfo.containsKey("location") ? domainInfo.get("location") : "", domain,
+					domainInfo.containsKey("longitude") ? domainInfo.get("longitude") : Double.valueOf(0),
+					domainInfo.containsKey("latitude") ? domainInfo.get("latitude") : Double.valueOf(0.0),
+					domainInfo.containsKey("record") ? domainInfo.get("record") : "",
 					domainInfo.containsKey("url") ? domainInfo.get("url") : "");
 
 			if (ret) {
@@ -3040,7 +3179,8 @@ public class TaskQueueUtils {
 	/**
 	 * @param agentId
 	 * @param queueId
-	 * @return 0 if no action was taken, 1 if the query succeeded (though this is no guarantee that anything was actually deleted)
+	 * @return 0 if no action was taken, 1 if the query succeeded (though this is no
+	 *         guarantee that anything was actually deleted)
 	 */
 	public static int deleteJobAgent(final long agentId, final long queueId) {
 		try (DBFunctions db = getQueueDB()) {
@@ -3059,7 +3199,8 @@ public class TaskQueueUtils {
 
 			bindValues.add(Long.valueOf(agentId));
 
-			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?", false, bindValues.toArray(new Object[0]));
+			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?", false,
+					bindValues.toArray(new Object[0]));
 
 			db.query("delete from JOBAGENT where counter<1", false);
 		}
@@ -3074,9 +3215,11 @@ public class TaskQueueUtils {
 	 * @param port
 	 * @param version
 	 * @param ceName
-	 * @return <code>true</code> if the host existed and was successfully updated in the database
+	 * @return <code>true</code> if the host existed and was successfully updated in
+	 *         the database
 	 */
-	public static boolean updateHost(final String host, final String status, final Integer connected, final int port, final String version, final String ceName) {
+	public static boolean updateHost(final String host, final String status, final Integer connected, final int port,
+			final String version, final String ceName) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -3086,7 +3229,8 @@ public class TaskQueueUtils {
 			if (logger.isLoggable(Level.FINER))
 				logger.log(Level.FINER, "Going to updateHost for: " + host + " status: " + status);
 
-			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
+			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false,
+					status, connected, Integer.valueOf(port), version, ceName, host))
 				return false;
 
 			return db.getUpdateCount() > 0;
@@ -3119,7 +3263,8 @@ public class TaskQueueUtils {
 	/**
 	 * @param host
 	 * @param ceName
-	 * @return a 2 element array with the max number of jobs as the first value and the limit of queued jobs as the second one
+	 * @return a 2 element array with the max number of jobs as the first value and
+	 *         the limit of queued jobs as the second one
 	 */
 	public static ArrayList<Integer> getNumberMaxAndQueuedCE(final String host, final String ceName) {
 		try (DBFunctions db = getQueueDB()) {
@@ -3134,7 +3279,9 @@ public class TaskQueueUtils {
 
 			final ArrayList<Integer> slots = new ArrayList<>(2);
 
-			if (db.query("select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null", false, host, ceName) && db.moveNext()) {
+			if (db.query(
+					"select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null",
+					false, host, ceName) && db.moveNext()) {
 				slots.add(Integer.valueOf(db.geti(1)));
 				slots.add(Integer.valueOf(db.geti(2)));
 			}
@@ -3180,13 +3327,15 @@ public class TaskQueueUtils {
 
 		if (AuthorizationChecker.canModifyJob(j, user)) {
 			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
+				logger.log(Level.FINE,
+						"Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
 
 			// check job quotas to see if we are allowed to submit
 			final Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(user.getName(), 1);
 			final Integer code = quota.getKey();
 			if (code.intValue() != 0) {
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()), "Resubmit: job quota problem: " + quota.getValue());
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()),
+						"Resubmit: job quota problem: " + quota.getValue());
 			}
 
 			if (logger.isLoggable(Level.FINE))
@@ -3195,7 +3344,8 @@ public class TaskQueueUtils {
 			// cleanup active jobtoken
 			if (!deleteJobToken(queueId)) {
 				logger.info("Cannot cleanup job token: " + queueId);
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.ENOKEY.getErrorCode()), "Resubmit: cannot cleanup job token: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.ENOKEY.getErrorCode()),
+						"Resubmit: cannot cleanup job token: " + queueId);
 			}
 
 			logger.fine("Resubmit: token deleted for: " + queueId);
@@ -3204,10 +3354,10 @@ public class TaskQueueUtils {
 			JDL jdl;
 			try {
 				jdl = new JDL(j.getJDL());
-			}
-			catch (final IOException e) {
+			} catch (final IOException e) {
 				logger.severe("Resubmit: cannot create JDL for job: " + queueId + " Exception: " + e);
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EILSEQ.getErrorCode()), "Resubmit: cannot create JDL for job: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EILSEQ.getErrorCode()),
+						"Resubmit: cannot create JDL for job: " + queueId);
 			}
 
 			JobStatus targetStatus = JobStatus.WAITING;
@@ -3216,13 +3366,15 @@ public class TaskQueueUtils {
 				if (j.status().isERROR_()) {
 					// If the masterjob could not be split previously then it's worth trying again
 					targetStatus = JobStatus.INSERTING;
-				}
-				else {
-					// Cannot resubmit a masterjob if it has already split, what has to happen is resubmitting its subjobs
-					// but that's a different command that would iterate through the subjobs and act on each of them
+				} else {
+					// Cannot resubmit a masterjob if it has already split, what has to happen is
+					// resubmitting its subjobs
+					// but that's a different command that would iterate through the subjobs and act
+					// on each of them
 
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()),
-							"Resubmit: masterjob is not in an error state itself, will not split it again: " + queueId + " / " + j.status().name());
+							"Resubmit: masterjob is not in an error state itself, will not split it again: " + queueId
+									+ " / " + j.status().name());
 				}
 			}
 
@@ -3230,13 +3382,15 @@ public class TaskQueueUtils {
 
 			if (!clearPathAndResultsJDL(Long.valueOf(queueId))) {
 				logger.info("Cannot cleanup path and resultsJdl: " + queueId);
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()), "Resubmit: cannot cleanup path and resultsJdl: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
+						"Resubmit: cannot cleanup path and resultsJdl: " + queueId);
 			}
 
 			logger.fine("Resubmit: cleanup of path and resultsJdl done: " + queueId);
 
 			if (JobStatus.ERROR_I.equals(j.status())) {
-				// If it could not be inserted before, retry that operation, otherwise go directly to WAITING
+				// If it could not be inserted before, retry that operation, otherwise go
+				// directly to WAITING
 
 				targetStatus = JobStatus.INSERTING;
 			}
@@ -3245,7 +3399,8 @@ public class TaskQueueUtils {
 
 			try (DBFunctions db = getQueueDB()) {
 				if (db == null)
-					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EAGAIN.getErrorCode()), "Resubmit: cannot get DB to finalise resubmission: " + queueId);
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EAGAIN.getErrorCode()),
+							"Resubmit: cannot get DB to finalise resubmission: " + queueId);
 
 				db.setReadOnly(false);
 				db.setQueryTimeout(60);
@@ -3253,21 +3408,26 @@ public class TaskQueueUtils {
 				logger.fine("Resubmit: updating status to WAITING and initialize fields of " + queueId);
 
 				// job back to resubmitted status, restore fields
-				if (!db.query("UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started=null, finished=null, exechostid=null, siteid=? where queueId=?", false,
-						Integer.valueOf(targetStatus.getAliEnLevel()), Integer.valueOf(unassignedId), Long.valueOf(queueId))) {
+				if (!db.query(
+						"UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started=null, finished=null, exechostid=null, siteid=? where queueId=?",
+						false, Integer.valueOf(targetStatus.getAliEnLevel()), Integer.valueOf(unassignedId),
+						Long.valueOf(queueId))) {
 					logger.severe("Resubmit: cannot update job to WAITING: " + queueId);
-					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot update job to WAITING: " + queueId);
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()),
+							"Resubmit: cannot update job to WAITING: " + queueId);
 				}
 
 				logger.fine("Resubmit: update SITEQUEUES of " + queueId);
 
 				// update queue counters
 				db.query(
-						"UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0), " + targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
+						"UPDATE SITEQUEUES set " + j.getStatusName() + "=GREATEST(" + j.getStatusName() + "-1,0), "
+								+ targetStatus.name() + "=GREATEST(" + targetStatus.name() + ",0)+1 where siteid=?",
 						false, Integer.valueOf(j.siteid));
 
 				// if the job was attached to a node, we tell him to hara-kiri
-				if (j.node != null && (js == JobStatus.STARTED || js == JobStatus.RUNNING || js == JobStatus.ASSIGNED || js == JobStatus.ZOMBIE || js == JobStatus.SAVING)) {
+				if (j.node != null && (js == JobStatus.STARTED || js == JobStatus.RUNNING || js == JobStatus.ASSIGNED
+						|| js == JobStatus.ZOMBIE || js == JobStatus.SAVING)) {
 					logger.fine("Resubmit: sending kill message to job " + queueId);
 
 					final String target = j.node + "-" + queueId + "-" + j.resubmission;
@@ -3284,19 +3444,22 @@ public class TaskQueueUtils {
 					final int agentId = updateOrInsertJobAgent(j, jdl);
 					if (agentId == 0) {
 						logger.severe("Resubmit: could not update jobagent: " + queueId);
-						return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot updateOrInsert jobagent: " + queueId);
-					}
-					else if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
+						return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()),
+								"Resubmit: cannot updateOrInsert jobagent: " + queueId);
+					} else if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
 						db.setReadOnly(false);
 						db.setQueryTimeout(60);
 
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Resubmit: update agentId and statusId in QUEUE");
 
-						if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
+						if (!db.query("update QUEUE set agentId=?, statusId=" + targetStatus.getAliEnLevel()
+								+ " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
 								|| db.getUpdateCount() == 0) {
-							logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
-							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
+							logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId
+									+ " - " + agentId);
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()),
+									"Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
 						}
 					}
 
@@ -3305,32 +3468,41 @@ public class TaskQueueUtils {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Resubmit: put masterjob of the resubmited subjob to SPLIT");
 
-						if (!db.query("UPDATE QUEUE set statusId=? where queueId=? and statusId!=?", false, Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split),
+						if (!db.query("UPDATE QUEUE set statusId=? where queueId=? and statusId!=?", false,
+								Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split),
 								Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()))) {
 							logger.severe("Resubmit: cannot put masterjob back to SPLIT: " + queueId);
-							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()), "Resubmit: cannot put masterjob back to SPLIT: " + queueId);
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EBADFD.getErrorCode()),
+									"Resubmit: cannot put masterjob back to SPLIT: " + queueId);
 						}
 					}
 
 					// we need to clean up the previous output
 					if (pathFromJDL != null || j.path != null) {
-						final Collection<LFN> list = LFNUtils.find(pathFromJDL != null ? pathFromJDL : j.path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
+						final Collection<LFN> list = LFNUtils.find(pathFromJDL != null ? pathFromJDL : j.path, "*",
+								LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
 						if (list != null)
 							for (final LFN l : list) {
 								if (l.jobid == queueId) {
 									logger.info("Resubmit: removing output file: " + l.getCanonicalName());
-									putJobLog(queueId, "trace", "Resubmit: removing output file: " + l.getCanonicalName(), null);
+									putJobLog(queueId, "trace",
+											"Resubmit: removing output file: " + l.getCanonicalName(), null);
 									if (!LFNUtils.rmLFN(user, l, false)) {
-										logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
-										putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
+										logger.severe(
+												"Resubmit: could not remove output file: " + l.getCanonicalName());
+										putJobLog(queueId, "trace",
+												"Resubmit: could not remove output file: " + l.getCanonicalName(),
+												null);
 										return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
-												"Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+												"Resubmit: could not remove output file: " + l.getCanonicalName()
+														+ " for " + queueId);
 									}
 								}
 							}
 					}
 
-					if (js == JobStatus.SAVING || js == JobStatus.SAVED || js == JobStatus.ERROR_E || js == JobStatus.ERROR_V || js == JobStatus.ZOMBIE) {
+					if (js == JobStatus.SAVING || js == JobStatus.SAVED || js == JobStatus.ERROR_E
+							|| js == JobStatus.ERROR_V || js == JobStatus.ZOMBIE) {
 						CatalogueUtils.cleanLfnBookedForJob(queueId);
 					}
 
@@ -3343,11 +3515,13 @@ public class TaskQueueUtils {
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Resubmit: job is a masterJob, ignore: " + queueId);
 
-				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: job is a masterJob, ignore: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0),
+						"Resubmit: job is a masterJob, ignore: " + queueId);
 			}
 		}
 
-		return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EPERM.getErrorCode()), "Resubmit: not authorized for : " + queueId);
+		return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EPERM.getErrorCode()),
+				"Resubmit: not authorized for : " + queueId);
 	}
 
 	private static int updateOrInsertJobAgent(final Job j, final JDL jdl) {
@@ -3361,13 +3535,16 @@ public class TaskQueueUtils {
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
 
-			if (!db.query("update JOBAGENT join QUEUE on (agentid=entryid) set counter=counter+1 where queueid=?", false, Long.valueOf(j.queueId)))
+			if (!db.query("update JOBAGENT join QUEUE on (agentid=entryid) set counter=counter+1 where queueid=?",
+					false, Long.valueOf(j.queueId)))
 				return 0;
 
 			// the jobagent doesn't exist anymore, reinsert
 			if (db.getUpdateCount() == 0) {
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
+					logger.log(Level.FINE,
+							"updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : "
+									+ j.queueId);
 
 				final HashMap<String, Object> params = extractJAParametersFromJDL(jdl);
 				final int agentId = insertJobAgent(params);
@@ -3424,7 +3601,8 @@ public class TaskQueueUtils {
 					db.setReadOnly(true);
 					db.setQueryTimeout(60);
 
-					if (db.query("select computedPriority from PRIORITY where userid=?", false, params.get("userid")) && db.moveNext()) {
+					if (db.query("select computedPriority from PRIORITY where userid=?", false, params.get("userid"))
+							&& db.moveNext()) {
 						params.put("priority", Integer.toString(db.geti(1)));
 					}
 				}
@@ -3448,7 +3626,8 @@ public class TaskQueueUtils {
 				db.setQueryTimeout(60);
 				db.setLastGeneratedKey(true);
 				if (!db.query("INSERT INTO JOBAGENT " + insert_fields + insert_values, false, bind.toArray())) {
-					logger.severe("insertJobAgent: failed to insert! fields:" + insert_fields + " values " + bind.toString());
+					logger.severe(
+							"insertJobAgent: failed to insert! fields:" + insert_fields + " values " + bind.toString());
 					return 0;
 				}
 
@@ -3591,7 +3770,9 @@ public class TaskQueueUtils {
 		// parse CPU cores
 		final Integer cpuCores = jdl.getInteger("CPUCores");
 
-		params.put("cpucores", cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1) : cpuCores);
+		params.put("cpucores",
+				cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1)
+						: cpuCores);
 
 		if (logger.isLoggable(Level.FINER))
 			logger.log(Level.FINER, "extracted params: " + params.toString());

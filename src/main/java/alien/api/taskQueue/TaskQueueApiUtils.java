@@ -231,6 +231,16 @@ public class TaskQueueApiUtils {
 		return response.getJobID();
 
 	}
+	
+	public long submitSubJob(AliEnPrincipal account, long masterId, List<JDL> jdls) throws ServerException {
+
+
+		final SubmitSubJob j = new SubmitSubJob(commander.getUser(), masterId, jdls);
+
+		final SubmitSubJob response = Dispatcher.execute(j);
+
+		return response.getJobID();
+	}
 
 	/**
 	 * Kill a job

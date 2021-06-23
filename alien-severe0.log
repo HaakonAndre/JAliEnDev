@@ -1,0 +1,4 @@
+May 26, 2021 8:12:08 AM alien.user.JAKeyStore loadTokenKeyStorage
+SEVERE: Cannot get the current user's ID
+May 26, 2021 8:12:08 AM alien.user.JAKeyStore loadKeyStore
+SEVERE: Failed to load any certificate, tried: user, host and token
