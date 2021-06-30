@@ -1615,7 +1615,7 @@ public class JDL implements Serializable {
 				set("Change", String.join(",", var, s));
 		}
 		else
-			set("Change", String.join(",", var, value));
+			set("Change", String.join(",", var, value.toString()));
 	}
 	
 	public JDL applyChanges (JDL j) {
