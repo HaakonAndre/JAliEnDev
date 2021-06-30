@@ -1795,9 +1795,9 @@ public class TaskQueueUtils {
 				final String insert = DBFunctions.composeInsert("QUEUE", values);
 
 				db.setLastGeneratedKey(true);
-				Statement stmt = con.createStatement()
+				Statement stmt = con.createStatement();
 						
-				int a = stmt.executeUpdate(insert)
+				int a = stmt.executeUpdate(insert);
 				System.out.println("Inserted:" + a);
 
 				pid = db.getLastGeneratedKeyLong();

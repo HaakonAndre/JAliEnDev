@@ -55,6 +55,11 @@ elif [ "$1" == "ComputingElement" ]; then
     shift
     RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true"
     ENTRYPOINT="alien.site.ComputingElement"
+    
+elif [ "$1" == "testjob" ]; then
+    shift
+    RUNSH_OPTS="-DAliEnConfig=${JALIEN_CONF_DIR} -Djava.net.preferIPv4Stack=true"
+    ENTRYPOINT="alien.taskQueue.SplitTest"
 
 elif [ "$1" == "TitanJobService" ]; then
     shift

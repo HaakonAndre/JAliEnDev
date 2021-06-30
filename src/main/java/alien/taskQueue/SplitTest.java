@@ -13,7 +13,7 @@ public class SplitTest {
 	
 		public static void main(final String[] args) throws IOException {
 			String jdl = "";
-			try(BufferedReader br = new BufferedReader(new FileReader("productionTest.txt"))) {
+			try(BufferedReader br = new BufferedReader(new FileReader("./src/main/java/alien/taskQueue/productionTest.txt"))) {
 			    StringBuilder sb = new StringBuilder();
 			    String line = br.readLine();
 
@@ -36,10 +36,6 @@ public class SplitTest {
 			JobOptimizer jo = new JobOptimizer();
 			
 			List<JDL> results = jo.OptimizeJob(j, user, "haakon", 133334);
-			
-			for (JDL result:results) {
-			System.out.println(result.toString());
-			}
 			
 		}
 
