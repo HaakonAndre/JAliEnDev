@@ -1806,7 +1806,7 @@ public class TaskQueueUtils {
 				if (pid == null)
 					throw new IOException("Last generated key is unknown");
 
-				a = stmt.executeUpdate("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
+				a = stmt.executeUpdate(String.format("INSERT INTO QUEUEPROC (queueId) VALUES (%d);",pid);
 				System.out.println("Inserted:" + a);
 
 				if (dbStructure2_20) {

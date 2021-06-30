@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import alien.api.taskQueue;
+import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
 import alien.config.ConfigUtils;
 

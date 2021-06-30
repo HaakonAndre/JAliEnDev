@@ -1611,7 +1611,7 @@ public class JDL implements Serializable {
 	}
 	public void setChanges (String var, Object value) {
 		if (value instanceof Collection) {
-			for (final Object o : (Collection<?>) value)
+			for (final String o : (Collection<String>) value)
 				set("Change", String.join(",", var, o));
 		}
 		else
