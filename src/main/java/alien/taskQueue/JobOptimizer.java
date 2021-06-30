@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.IOException;
+import java.sql.SQLException;
 
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
