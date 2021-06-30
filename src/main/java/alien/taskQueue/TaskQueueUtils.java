@@ -1794,17 +1794,19 @@ public class TaskQueueUtils {
 
 				final String insert = DBFunctions.composeInsert("QUEUE", values);
 
-				con.setLastGeneratedKey(true);
+				db.setLastGeneratedKey(true);
+				Statement stmt = con.createStatement()
+						
+				int a = stmt.executeUpdate(insert)
+				System.out.println("Inserted:" + a);
 
-				if (!con.query(insert))
-					throw new IOException("Could not insert the job in the queue");
-
-				pid = con.getLastGeneratedKeyLong();
+				pid = db.getLastGeneratedKeyLong();
 
 				if (pid == null)
 					throw new IOException("Last generated key is unknown");
 
-				con.query("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
+				a = stmt.executeUpdate("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
+				System.out.println("Inserted:" + a);
 
 				if (dbStructure2_20) {
 					final Map<String, Object> valuesJDL = new HashMap<>();
@@ -1814,7 +1816,8 @@ public class TaskQueueUtils {
 
 					final String insertJDL = DBFunctions.composeInsert("QUEUEJDL", valuesJDL);
 
-					con.query(insertJDL);
+					a = stmt.executeUpdate(insertJDL);
+					System.out.println("Inserted:" + a);
 				}
 
 				setAction(JobStatus.WAITING);
