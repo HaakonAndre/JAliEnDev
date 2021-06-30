@@ -1609,8 +1609,13 @@ public class JDL implements Serializable {
 	public void setDeleteChanges (String var) {
 		set("Delete", var);
 	}
-	public void setChanges (String var, String value) {
-		set("Change", String.join(",", var, value));
+	public void setChanges (String var, Object value) {
+		if (value instanceof Collection) {
+			for (final Object o : (Collection<?>) value)
+				set("Change", String.join(",", var, o));
+		}
+		else
+			set("Change", String.join(",", var, value));
 	}
 	
 	public JDL applyChanges (JDL j) {
@@ -1618,10 +1623,19 @@ public class JDL implements Serializable {
 		for (Iterator<String> iterator = deleteColl.iterator(); iterator.hasNext();) {
 	        j.delete(iterator.next());
 	    }
+		
+		String lastValue = "";
+		
 		Collection<String> changeColl = getList("Change");
 		for (Iterator<String> iterator = changeColl.iterator(); iterator.hasNext();) {
 			String[] splitS = iterator.next().split(",", 2);
-			j.set(splitS[0], splitS[1]);
+			
+			if (lastValue != splitS[0]) {
+				j.delete(splitS[0]);
+			}
+				
+			j.append(splitS[0], splitS[1]);
+			lastValue = splitS[0];
 	    }
 		return j;
 	}

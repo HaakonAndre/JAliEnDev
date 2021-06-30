@@ -13,7 +13,7 @@ public class SplitTest {
 	
 		public static void main(final String[] args) throws IOException {
 			String jdl = "";
-			try(BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\Haakon Andre\\git\\jalien\\src\\main\\java\\alien\\taskQueue\\productionTest.txt"))) {
+			try(BufferedReader br = new BufferedReader(new FileReader("productionTest.txt"))) {
 			    StringBuilder sb = new StringBuilder();
 			    String line = br.readLine();
 

@@ -33,7 +33,9 @@ public class JobOptimizer {
 				subjobs = SplitJobs(j, strategy);
 			}
 		}
-
+		TaskQueueApiUtils insertJobs = new TaskQueueApiUtils();
+		insertJobs.submitSubJobs(account, queueId, subjobs);
+		
 		return subjobs;
 	}
 
