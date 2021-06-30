@@ -34,8 +34,12 @@ public class JobOptimizer {
 				subjobs = SplitJobs(j, strategy);
 			}
 		}
-		
+		try {
 		TaskQueueUtils.insertSubJob(account, queueId, subjobs);
+		}
+		catch (final IOException | SQLException ioe) {
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 		
 		return subjobs;
 	}
