@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.sql.Statement;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
