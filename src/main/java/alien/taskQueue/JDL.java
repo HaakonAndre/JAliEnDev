@@ -1612,10 +1612,10 @@ public class JDL implements Serializable {
 	public void setChanges (String var, Object value) {
 		if (value instanceof Collection) {
 			for (final String s : (Collection<String>) value)
-				set("Change", String.join(",", var, s));
+				set("Change", String.format("(%s) (%s)", var, s));
 		}
 		else
-			set("Change", String.join(",", var, value.toString()));
+			set("Change", String.format("(%s) (%s)", var, value.toString()));
 	}
 	
 	public JDL applyChanges (JDL j) {
@@ -1628,14 +1628,17 @@ public class JDL implements Serializable {
 		
 		Collection<String> changeColl = getList("Change");
 		for (Iterator<String> iterator = changeColl.iterator(); iterator.hasNext();) {
-			String[] splitS = iterator.next().split(",", 2);
-			
-			if (lastValue != splitS[0]) {
-				j.delete(splitS[0]);
-			}
+			Pattern p = Pattern.compile("(\\((?>[^()]+|(?1))*\\))", Pattern.CASE_INSENSITIVE);
+			Matcher m = p.matcher(s);
+			if (m.find()) {
 				
-			j.append(splitS[0], splitS[1]);
-			lastValue = splitS[0];
+				if (lastValue != m.group(0)) {
+				j.delete(m.group(0));
+				}
+				
+				j.append(m.group(0), m.group(1));
+				lastValue = m.group(0);
+			}
 	    }
 		return j;
 	}

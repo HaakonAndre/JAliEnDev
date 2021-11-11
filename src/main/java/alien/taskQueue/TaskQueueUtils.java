@@ -1780,6 +1780,8 @@ public class TaskQueueUtils {
 			DBConnection conn = db.getConnection();
 			Connection con = conn.getConnection();
 			
+			HashMap<String, Object> jaParam = new HashMap<>(); 
+			
 			try {
 				con.setAutoCommit(false);
 
@@ -1824,6 +1826,15 @@ public class TaskQueueUtils {
 				setAction(JobStatus.WAITING);
 
 				putJobLog(pid.longValue(), "state", "Job state transition to " + JobStatus.WAITING.toString(), null);
+				
+				HashMap<String, Object> jaParamTmp = extractJAParametersFromJDL(j)
+				if (!(jaParamTmp.equals(jaParamTmp))) {
+					
+					UpdateOrInsertJobAgent(GetJob(pid));
+					jaParam = jaParamTmp;
+				}
+				
+				
 			}
 			}
 			catch(SQLException e){

@@ -37,12 +37,11 @@ public class JobOptimizer {
 			}
 		}
 		try {
-		TaskQueueUtils.insertSubJob(account, queueId, subjobs);
-		}
-		catch (final IOException | SQLException ioe) {
+			TaskQueueUtils.insertSubJob(account, queueId, subjobs);
+		} catch (final IOException | SQLException ioe) {
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
-		
+
 		return subjobs;
 	}
 
@@ -103,12 +102,12 @@ public class JobOptimizer {
 			temp = new JDL();
 		}
 		long queueid = 13336;
-		subjobs = prepareSubJobJDL(j,subjobs,queueid,0);
-		
+		subjobs = prepareSubJobJDL(j, subjobs, queueid, 0);
+
 		return subjobs;
 	}
 
-	public List<String> getInputData(String inputData) {
+	public Collection<LFN> getInputData(String inputData) {
 		List<String> files = new ArrayList<String>();
 		if (inputData.matches("\\*")) {
 			Pattern r = Pattern.compile("^([^\\*]*)\\*(.*)$");
@@ -118,25 +117,27 @@ public class JobOptimizer {
 				r = Pattern.compile("/LF:/");
 				r.matcher(dir).replaceAll("");
 				String name = m.group(1);
-				/*
-				 * if (name.matches("(.*)\\[(\\d*)\\-(\\d*)\\]")){ r =
-				 * Pattern.compile("(.*)\\[(\\d*)\\-(\\d*)\\]"); name = m.group(0); int start =
-				 * Integer.parseInt(m.group(1)); int stop = Integer.parseInt(m.group(2));
-				 * 
-				 * Collection<LFN> inputCollection = commander.c_api.find(dir, name, 0); for(LFN
-				 * lfnFile : inputCollection ) {
-				 * 
-				 * if (start > stop) { break; } start++; } } else { Collection<LFN>
-				 * inputCollection = commander.c_api.find(dir, name, 0); for(LFN lfnFile :
-				 * inputCollection ) {
-				 * 
-				 * } }
-				 */
+
+				Collection<LFN> inputCollection;
+				
+				if (name.matches("(.*)\\[(\\d*)\\-(\\d*)\\]")) {
+					r = Pattern.compile("(.*)\\[(\\d*)\\-(\\d*)\\]");
+					name = m.group(0);
+					int start = Integer.parseInt(m.group(1));
+					int stop = Integer.parseInt(m.group(2));
+					inputCollection = commander.c_api.find(dir, name, 0);
+					
+					
+				} else {
+					Collection<LFN> inputCollection = commander.c_api.find(dir, name, 0);
+
+				}
+
 			}
 
 		}
 
-		return files;
+		return inputCollection;
 	}
 
 	public List<JDL> productionSplit(JDL j, final long queueId) { // Use already existing, rewrite
@@ -159,41 +160,40 @@ public class JobOptimizer {
 			System.out.println("No Capturing group");
 			return null;
 		}
-		
-		List<JDL> jdls = Collections.nCopies(end-start, new JDL());
-		
-		List<JDL> jdlsFinal = prepareSubJobJDL(j,jdls,queueId,0);
-		
+
+		List<JDL> jdls = Collections.nCopies(end - start, new JDL());
+
+		List<JDL> jdlsFinal = prepareSubJobJDL(j, jdls, queueId, 0);
+
 		return jdlsFinal;
 	}
-	
+
 	List<JDL> prepareSubJobJDL(JDL orig, List<JDL> subjobs, final long queueId, int filesize) {
-		
+
 		int i = 0;
-		for (JDL j:subjobs) {
-		
-		String outPutDir = orig.gets("OutputDir");
-		String outPutFile = orig.gets("OutputFile");
-		String outPutA = orig.gets("OutputArchive");
-		List<String> newArg = new ArrayList<String>();
-		if (j.getArguments() != null) {
-			newArg.addAll(j.getArguments());
-		}
-		if (j.getSplitArguments() != null) {
-			newArg.addAll(j.getSplitArguments());
-		}
-		j.setDeleteChanges("SplitArguments");
-		j.setDeleteChanges("Split");
-		j.setChanges("MasterJobId", Long.toString(queueId));
-		String newArgs = "";
-			for (String arg : newArg) {
-				newArgs = String.format("%s%s ",newArgs,checkEntryPattern(arg, i, j));			
+		for (JDL j : subjobs) {
+
+			String outPutDir = orig.gets("OutputDir");
+			String outPutFile = orig.gets("OutputFile");
+			String outPutA = orig.gets("OutputArchive");
+			List<String> newArg = new ArrayList<String>();
+			if (j.getArguments() != null) {
+				newArg.addAll(j.getArguments());
 			}
-			j.setChanges("Requirements", newArgs +  sizeRequirements(filesize, j.gets("WorkDirectorySize")));
+			if (j.getSplitArguments() != null) {
+				newArg.addAll(j.getSplitArguments());
+			}
+			j.setDeleteChanges("SplitArguments");
+			j.setDeleteChanges("Split");
+			j.setChanges("MasterJobId", Long.toString(queueId));
+			String newArgs = "";
+			for (String arg : newArg) {
+				newArgs = String.format("%s%s ", newArgs, checkEntryPattern(arg, i, j));
+			}
+			j.setChanges("Requirements", newArgs + sizeRequirements(filesize, j.gets("WorkDirectorySize")));
 			j.setChanges("OutputDir", checkEntryPattern(outPutDir, i, j));
 			j.setChanges("OutputFile", checkEntryPattern(outPutFile, i, j));
-			j.setChanges("OutputArchive", checkEntryPattern(outPutA, i,j));
-
+			j.setChanges("OutputArchive", checkEntryPattern(outPutA, i, j));
 
 		}
 		return subjobs;
