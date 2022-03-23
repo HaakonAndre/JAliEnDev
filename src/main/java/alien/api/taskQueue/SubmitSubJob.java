@@ -19,15 +19,17 @@ public class SubmitSubJob extends Request {
 	private final long masterId;
 	private final List<JDL> jdls;
 	private long jobID = 0;
+	private final JDL masterJDL;
 
 	/**
 	 * @param user
 	 * @param jdl
 	 */
-	public SubmitSubJob(final AliEnPrincipal account,long masterId, List<JDL> jdls) {
+	public SubmitSubJob(final AliEnPrincipal account,long masterId, List<JDL> jdls, JDL masterJDL) {
 		setRequestUser(account);
 		this.masterId = masterId;
 		this.jdls = jdls;
+		this.masterJDL = masterJDL;
 	}
 
 	@Override
@@ -39,7 +41,7 @@ public class SubmitSubJob extends Request {
 	@Override
 	public void run() {
 		try {
-			jobID = TaskQueueUtils.insertSubJob(getEffectiveRequester(),masterId, jdls);
+			jobID = TaskQueueUtils.insertSubJob(getEffectiveRequester(),masterId, jdls, masterJDL);
 		}
 		catch (final IOException | SQLException ioe) {
 			throw new IllegalArgumentException(ioe.getMessage());

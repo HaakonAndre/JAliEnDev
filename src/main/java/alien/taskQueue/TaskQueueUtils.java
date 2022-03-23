@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -52,6 +53,12 @@ import alien.monitoring.Timing;
 import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
 import alien.shell.ErrNo;
+import alien.taskQueue.jobsplit.JobSplitter;
+import alien.taskQueue.jobsplit.JobSplitHelper;
+import alien.taskQueue.jobsplit.SplitCustom;
+import alien.taskQueue.jobsplit.SplitParse;
+import alien.taskQueue.jobsplit.SplitProduction;
+import alien.taskQueue.jobsplit.SplitSE;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
@@ -1498,8 +1505,8 @@ public class TaskQueueUtils {
 
 				final LFN l = LFNUtils.getLFN(lfn);
 
-				if (l == null || !l.isFile())
-					throw new IOException("InputFile " + lfn + " doesn't exist in the catalogue");
+				/*if (l == null || !l.isFile())
+					throw new IOException("InputFile " + lfn + " doesn't exist in the catalogue");*/
 			}
 
 		final Collection<String> inputData = jdl.getList("InputData");
@@ -1522,8 +1529,8 @@ public class TaskQueueUtils {
 
 				final LFN l = LFNUtils.getLFN(lfn);
 
-				if (l == null || !l.isFile())
-					throw new IOException("InputData " + lfn + " doesn't exist in the catalogue");
+				/*if (l == null || !l.isFile())
+					throw new IOException("InputData " + lfn + " doesn't exist in the catalogue");*/
 			}
 
 		// sanity check of other tags
@@ -1564,10 +1571,17 @@ public class TaskQueueUtils {
 	 */
 	public static long submit(final JDL j, final AliEnPrincipal account) throws IOException {
 		final String owner = prepareSubmission(j, account);
+		
+		final Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(owner, 1);
+		final Integer code = quota.getKey();
+		if (code.intValue() != 0) {
+			throw new IOException("Error inserting, job quota problem: " + quota.getValue());
 
-		final FileQuota quota = QuotaUtilities.getFileQuota(owner);
+		}
 
-		if (quota != null && !quota.canUpload(1, 1))
+		final FileQuota fquota = QuotaUtilities.getFileQuota(owner);
+
+		if (fquota != null && !fquota.canUpload(1, 1))
 			throw new IOException(
 					"User " + owner + " has exceeded the file quota and is not allowed to write any more files");
 
@@ -1613,6 +1627,8 @@ public class TaskQueueUtils {
 	public static long insertJob(final JDL j, final AliEnPrincipal account, final String owner,
 			final JobStatus targetStatus) throws IOException {
 		final String clientAddress;
+		
+		logger.log(Level.FINE, "Trying to insert a job into the taskqueue");
 
 		final InetAddress addr = account.getRemoteEndpoint();
 
@@ -1637,7 +1653,20 @@ public class TaskQueueUtils {
 
 			final String notify = j.gets("email");
 
-			final JobStatus jobStatus = targetStatus != null ? targetStatus : JobStatus.INSERTING;
+			JobStatus jobStatus = targetStatus != null ? targetStatus : JobStatus.INSERTING;
+			
+			Long masterjobID = j.getLong("MasterJobID");
+			boolean splitjob = false;
+			
+			if (j.get("Split") != null) {
+				jobStatus = JobStatus.SPLITTING;
+				splitjob = true;
+				values.put("masterjob", Integer.valueOf(1));
+			} else {
+				values.put("masterjob", Integer.valueOf(0));
+				masterjobID = null;
+			}
+
 
 			if (dbStructure2_20) {
 				values.put("statusId", Integer.valueOf(jobStatus.getAliEnLevel()));
@@ -1659,17 +1688,6 @@ public class TaskQueueUtils {
 			values.put("price", price);
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 
-			Long masterjobID = j.getLong("MasterJobID");
-			boolean splitjob = false;
-
-			if (JobStatus.SPLIT.equals(jobStatus) || j.get("Split") != null) {
-				splitjob = true;
-				values.put("masterjob", Integer.valueOf(1));
-			} else {
-				values.put("masterjob", Integer.valueOf(0));
-				masterjobID = null;
-			}
-
 			if (masterjobID != null)
 				values.put("split", masterjobID);
 			else
@@ -1680,7 +1698,8 @@ public class TaskQueueUtils {
 			values.put("cpucores",
 					cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1)
 							: cpuCores);
-
+			int agentId;
+						
 			final String insert = DBFunctions.composeInsert("QUEUE", values);
 
 			db.setLastGeneratedKey(true);
@@ -1710,18 +1729,45 @@ public class TaskQueueUtils {
 
 			putJobLog(pid.longValue(), "state", "Job state transition to " + jobStatus.toString(), null);
 			
-			if (splitjob) {
-				JobOptimizer split = new JobOptimizer();
-				split.OptimizeJob(j, account, owner, pid.longValue());
-			}
 
+			logger.log(Level.FINE, "Ready to split job!");
+			if (splitjob) {
+			
+				JobSplitHelper.OptimizeJob(j, account, owner, pid.longValue());
+			}
+			else {
+					HashMap<String, Object> jaParam = extractJAParametersFromJDL(j);
+					agentId = insertJobAgent(jaParam);
+					if (agentId != 0) {
+					if (db.query("UPDATE QUEUE SET agentId=? WHERE queueId=?",false,Integer.valueOf(agentId), Long.valueOf(pid))) {
+						setJobStatus(pid,JobStatus.WAITING);
+					}
+					}
+			}
+			logger.log(Level.FINE, "Done splitting the job");
 			return pid.longValue();
 		}
 	}
 
-	public static long insertSubJob(final AliEnPrincipal account, long masterId, List<JDL> jdls) throws IOException, SQLException {
+	public static long insertSubJob(final AliEnPrincipal account, long masterId, List<JDL> jdls, JDL masterJDL) throws IOException, SQLException {
 
-		JDL origJ = jdls.get(0);
+		logger.log(Level.FINE, "Inserting subjobs into DB, number: " + jdls.size());
+		
+		final Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(account.getName(), jdls.size());
+		final Integer code = quota.getKey();
+		if (code.intValue() != 0) {
+			setJobStatus(masterId,JobStatus.ERROR_SPLT);
+			throw new IOException("Inserting subjobs failed: " + quota.getValue());
+		}
+		
+		final FileQuota fquota = QuotaUtilities.getFileQuota(account.getName());
+
+		if (fquota != null && !fquota.canUpload(1, 1)) {
+			setJobStatus(masterId,JobStatus.ERROR_SPLT);
+			throw new IOException(
+					"User " + account.getName() + " has exceeded the file quota and is not allowed to write any more files");
+		}
+		
 		final String clientAddress;
 
 		final InetAddress addr = account.getRemoteEndpoint();
@@ -1739,13 +1785,13 @@ public class TaskQueueUtils {
 
 			final Map<String, Object> values = new HashMap<>();
 
-			final String executable = origJ.getExecutable();
+			final String executable = masterJDL.getExecutable();
 
-			final Float price = origJ.getFloat("Price");
+			final Float price = masterJDL.getFloat("Price");
 
 			values.put("priority", Integer.valueOf(0));
 
-			final String notify = origJ.gets("email");
+			final String notify = masterJDL.gets("email");
 
 			if (dbStructure2_20) {
 				values.put("statusId", Integer.valueOf(JobStatus.WAITING.getAliEnLevel()));
@@ -1770,24 +1816,24 @@ public class TaskQueueUtils {
 			values.put("masterjob", Integer.valueOf(0));
 			values.put("split", masterId);
 
-			final Integer cpuCores = origJ.getInteger("CPUCores");
+			final Integer cpuCores = masterJDL.getInteger("CPUCores");
 
 			values.put("cpucores",
 					cpuCores == null || cpuCores.intValue() < 0 || cpuCores.intValue() > 100 ? Integer.valueOf(1)
 							: cpuCores);
-			Long pid;
+			Long pid = null;
 
 			DBConnection conn = db.getConnection();
 			Connection con = conn.getConnection();
 			
-			HashMap<String, Object> jaParam = new HashMap<>(); 
+			HashMap<String, Object> jaParamOld = new HashMap<>(); 
 			
 			try {
 				con.setAutoCommit(false);
 
-			for (int i = 1; i <= jdls.size(); i++) {
+			for (int i = 0; i < jdls.size(); i++) {
 
-				JDL j = jdls.get(i).applyChanges(origJ);
+				JDL j = jdls.get(i).applyChanges(masterJDL);
 
 				if (!dbStructure2_20) {
 					values.put("jdl", "\n    [\n" + j.toString() + "\n    ]");
@@ -1800,16 +1846,19 @@ public class TaskQueueUtils {
 				db.setLastGeneratedKey(true);
 				Statement stmt = con.createStatement();
 						
-				int a = stmt.executeUpdate(insert);
-				System.out.println("Inserted:" + a);
+				int a = stmt.executeUpdate(insert, Statement.RETURN_GENERATED_KEYS);
+				logger.log(Level.FINE, "Inserted into QUEUE: " + a);
 
-				pid = db.getLastGeneratedKeyLong();
+				ResultSet genKeys = stmt.getGeneratedKeys();
+				
+				if (genKeys != null && genKeys.next())
+					pid = genKeys.getLong(1);
 
 				if (pid == null)
 					throw new IOException("Last generated key is unknown");
 
 				a = stmt.executeUpdate(String.format("INSERT INTO QUEUEPROC (queueId) VALUES (%d);",pid));
-				System.out.println("Inserted:" + a);
+				logger.log(Level.FINE, "Inserted into QUEUEPROC: " + a);
 
 				if (dbStructure2_20) {
 					final Map<String, Object> valuesJDL = new HashMap<>();
@@ -1827,22 +1876,30 @@ public class TaskQueueUtils {
 
 				putJobLog(pid.longValue(), "state", "Job state transition to " + JobStatus.WAITING.toString(), null);
 				
-				HashMap<String, Object> jaParamTmp = extractJAParametersFromJDL(j)
-				if (!(jaParamTmp.equals(jaParamTmp))) {
+				int agentId = 0;
+				HashMap<String, Object> jaParamCurrent = extractJAParametersFromJDL(j);
+				if (!(jaParamOld.equals(jaParamCurrent))) {
 					
-					UpdateOrInsertJobAgent(GetJob(pid));
-					jaParam = jaParamTmp;
+					agentId = insertJobAgent(jaParamCurrent);
+					jaParamOld = jaParamCurrent;
 				}
-				
-				
+				stmt.executeUpdate(String.format("UPDATE QUEUE SET agentId = (%d) WHERE queueId= (%d)", Integer.valueOf(agentId), Long.valueOf(pid)));
 			}
 			}
-			catch(SQLException e){
+			catch(Exception e){
 				con.rollback();
+				setJobStatus(masterId,JobStatus.ERROR_SPLT);
+				throw new IOException("Error inserting subjobs: " + e.getMessage());
 			}
 			finally {
+				setJobStatus(masterId, JobStatus.SPLIT);
+				con.commit();
 				conn.close();
 			}
+		}
+		catch(SQLException e){
+			setJobStatus(masterId,JobStatus.ERROR_SPLT);
+			throw new IOException("Error inserting subjobs: " + e.getMessage());
 		}
 			return masterId;
 	}
@@ -3352,6 +3409,13 @@ public class TaskQueueUtils {
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()),
 						"Resubmit: job quota problem: " + quota.getValue());
 			}
+			
+			final FileQuota fquota = QuotaUtilities.getFileQuota(user.getName());
+
+			if (quota != null && !fquota.canUpload(1, 1))
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EDQUOT.getErrorCode()),
+						"Resubmit: User " + user.getName() + " has exceeded the file quota and is not allowed to write any more files");
+
 
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "Resubmit: quotas approved: " + queueId);
@@ -3380,7 +3444,7 @@ public class TaskQueueUtils {
 			if (j.masterjob) {
 				if (j.status().isERROR_()) {
 					// If the masterjob could not be split previously then it's worth trying again
-					targetStatus = JobStatus.INSERTING;
+					targetStatus = JobStatus.SPLITTING;
 				} else {
 					// Cannot resubmit a masterjob if it has already split, what has to happen is
 					// resubmitting its subjobs
@@ -3525,8 +3589,44 @@ public class TaskQueueUtils {
 					putJobLog(queueId, "state", "Job resubmitted (back to WAITING)", null);
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: back to WAITING: " + queueId);
 				}
+				if(targetStatus == JobStatus.SPLITTING) {
+					JobSplitter split;
+					String strategy = jdl.gets("Split");
+					switch (strategy) {
+					case "parentdirectory":
+						split = new SplitParse ("\\/[^\\/]*\\/?[^\\/]*$");
+						break;
+					case "directory":
+						split = new SplitParse ("\\/[^\\/]*$");
+						break;
+					case "file":
+						split = new SplitParse (".^");
+						break;
+					case "SE":
+						split = new SplitSE ();
+						break;
+					case "Custom":
+						split = new SplitCustom();
+					default:
+						if (strategy.startsWith("production:")) {
+							split= new SplitProduction();
+						} 
+						else
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
+									"Resubmit: Cant find split strategy");
+					}
 
-				// TODO: masterjob
+					
+					try {
+						JobSplitHelper.OptimizeJob(jdl, user, getUser((Integer) jdl.get("userId")), queueId);
+					} catch (IOException e) {
+						return new AbstractMap.SimpleEntry<>(Integer.valueOf(ErrNo.EIO.getErrorCode()),
+								"Resubmit: " + e.getMessage());
+					}
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: back to WAITING: " + queueId);
+				
+				}
+
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Resubmit: job is a masterJob, ignore: " + queueId);
 

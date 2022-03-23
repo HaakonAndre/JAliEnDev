@@ -52,7 +52,8 @@ public class JDL implements Serializable {
 	private final Map<String, Object> jdlContent = new LinkedHashMap<>();
 
 	/**
-	 * Empty constructor. The values can be populated with {@link #set(String, Object)} and {@link #append(String, String...)}
+	 * Empty constructor. The values can be populated with
+	 * {@link #set(String, Object)} and {@link #append(String, String...)}
 	 */
 	public JDL() {
 		// empty
@@ -102,8 +103,8 @@ public class JDL implements Serializable {
 	 * a job ID
 	 *
 	 * @param jobID
-	 * @param originalJDL
-	 *            whether to load the original JDL (submitted by the user) or the processed one (if available)
+	 * @param originalJDL whether to load the original JDL (submitted by the user)
+	 *                    or the processed one (if available)
 	 * @throws IOException
 	 */
 	public JDL(final long jobID, final boolean originalJDL) throws IOException {
@@ -131,8 +132,7 @@ public class JDL implements Serializable {
 
 				sb.append(line).append('\n');
 			}
-		}
-		catch (@SuppressWarnings("unused") final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			// cannot be
 		}
 
@@ -166,46 +166,48 @@ public class JDL implements Serializable {
 			boolean bQuote = false;
 			boolean bClean = false;
 
-			outer:
-			while (idxEnd < content.length()) {
+			outer: while (idxEnd < content.length()) {
 				final char c = content.charAt(idxEnd);
 
 				switch (c) {
-					case '\\':
-						bEsc = !bEsc;
+				case '\\':
+					bEsc = !bEsc;
 
-						break;
-					case '"':
-						if (!bEsc)
-							bQuote = !bQuote;
+					break;
+				case '"':
+					if (!bEsc)
+						bQuote = !bQuote;
 
-						bEsc = false;
+					bEsc = false;
 
-						break;
-					case ';':
-						if (!bEsc && !bQuote) {
-							bClean = true;
-							break outer;
-						}
+					break;
+				case ';':
+					if (!bEsc && !bQuote) {
+						bClean = true;
+						break outer;
+					}
 
-						bEsc = false;
+					bEsc = false;
 
-						break;
-					default:
-						bEsc = false;
+					break;
+				default:
+					bEsc = false;
 				}
 
 				idxEnd++;
 			}
 
 			if (bEsc || bQuote)
-				throw new IOException("JDL syntax error: unfinished " + (bQuote ? "quotes" : "escape") + " in the value of tag " + sKey);
+				throw new IOException("JDL syntax error: unfinished " + (bQuote ? "quotes" : "escape")
+						+ " in the value of tag " + sKey);
 
 			if (!bClean)
 				// throw new
-				// IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
+				// IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a
+				// semicolumn");
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "JDL syntax error: Tag " + sKey + " doesn't finish with a semicolumn, full text is\n" + content);
+					logger.log(Level.FINE, "JDL syntax error: Tag " + sKey
+							+ " doesn't finish with a semicolumn, full text is\n" + content);
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
 
@@ -289,7 +291,8 @@ public class JDL implements Serializable {
 	 *
 	 * @param key
 	 *
-	 * @return the single value if this was a String, the first entry of a Collection (based on the iterator)...
+	 * @return the single value if this was a String, the first entry of a
+	 *         Collection (based on the iterator)...
 	 */
 	public String gets(final String key) {
 		final Object o = get(key);
@@ -299,7 +302,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the integer value, or <code>null</code> if the key is not defined or is not a number
+	 * @return the integer value, or <code>null</code> if the key is not defined or
+	 *         is not a number
 	 */
 	public Integer getInteger(final String key) {
 		final Object o = get(key);
@@ -315,8 +319,7 @@ public class JDL implements Serializable {
 
 		try {
 			return Integer.valueOf(getString(o));
-		}
-		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -325,7 +328,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the long value, or <code>null</code> if the key is not defined or is not a Number or a valid representation of one
+	 * @return the long value, or <code>null</code> if the key is not defined or is
+	 *         not a Number or a valid representation of one
 	 */
 	public Long getLong(final String key) {
 		final Object o = get(key);
@@ -342,16 +346,13 @@ public class JDL implements Serializable {
 		if (o instanceof CharSequence) {
 			try {
 				return Long.valueOf(((CharSequence) o).toString());
-			}
-			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
-		}
-		else
+		} else
 			try {
 				return Long.valueOf(getString(o));
-			}
-			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -360,7 +361,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the float value, or <code>null</code> if the key is not defined or is not a number
+	 * @return the float value, or <code>null</code> if the key is not defined or is
+	 *         not a number
 	 */
 	public Float getFloat(final String key) {
 		final Object o = get(key);
@@ -376,8 +378,7 @@ public class JDL implements Serializable {
 
 		try {
 			return Float.valueOf(getString(o));
-		}
-		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -433,15 +434,13 @@ public class JDL implements Serializable {
 			if (value.length() <= 10)
 				try {
 					return Integer.valueOf(value);
-				}
-				catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 					// ignore
 				}
 
 			try {
 				return Long.valueOf(value);
-			}
-			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 		}
@@ -449,8 +448,7 @@ public class JDL implements Serializable {
 		if (possibleDouble)
 			try {
 				return Double.valueOf(value);
-			}
-			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -498,8 +496,7 @@ public class JDL implements Serializable {
 
 					try {
 						return Integer.parseInt(run);
-					}
-					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						return -1;
 					}
 				}
@@ -512,7 +509,8 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Get the number of jobs this masterjob will split into. Only works for productions that split in a fixed number of jobs.
+	 * Get the number of jobs this masterjob will split into. Only works for
+	 * productions that split in a fixed number of jobs.
 	 *
 	 * @return the number of subjobs
 	 */
@@ -525,8 +523,7 @@ public class JDL implements Serializable {
 		if (split.startsWith("production:"))
 			try {
 				return Integer.parseInt(split.substring(split.lastIndexOf('-') + 1));
-			}
-			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -534,7 +531,8 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * @return the InputFile tag, as LFNs. If the InputFile is an XML collection, return the entire content of that collection.
+	 * @return the InputFile tag, as LFNs. If the InputFile is an XML collection,
+	 *         return the entire content of that collection.
 	 */
 	public Collection<LFN> getInputLFNs() {
 		final List<String> dataFiles = getInputData();
@@ -550,8 +548,7 @@ public class JDL implements Serializable {
 						final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
 
 						return x;
-					}
-					catch (@SuppressWarnings("unused") final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore
 					}
 
@@ -586,8 +583,8 @@ public class JDL implements Serializable {
 	/**
 	 * Get the list of input data
 	 *
-	 * @param bNodownloadIncluded
-	 *            include or not the files with the ",nodownload" option
+	 * @param bNodownloadIncluded include or not the files with the ",nodownload"
+	 *                            option
 	 *
 	 * @return list of input data to the job
 	 */
@@ -603,8 +600,8 @@ public class JDL implements Serializable {
 	/**
 	 * Get the list of input files
 	 *
-	 * @param bNodownloadIncluded
-	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
+	 * @param bNodownloadIncluded flag to include/exclude the files for which
+	 *                            ",nodownload" is indicated in the JDL
 	 * @return list of input files
 	 */
 	public List<String> getInputFiles(final boolean bNodownloadIncluded) {
@@ -638,8 +635,7 @@ public class JDL implements Serializable {
 	/**
 	 * Get the list of output files
 	 *
-	 * @param tag
-	 *            JDL tag to take the list from
+	 * @param tag JDL tag to take the list from
 	 *
 	 * @return list of output files
 	 */
@@ -695,10 +691,9 @@ public class JDL implements Serializable {
 	/**
 	 * Get the list of input files for a given tag
 	 *
-	 * @param bNodownloadIncluded
-	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
-	 * @param sTag
-	 *            tag to extract the list from
+	 * @param bNodownloadIncluded flag to include/exclude the files for which
+	 *                            ",nodownload" is indicated in the JDL
+	 * @param sTag                tag to extract the list from
 	 * @return input list
 	 */
 	public List<String> getInputList(final boolean bNodownloadIncluded, final String sTag) {
@@ -825,7 +820,8 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT -> v5-26-00b-6) }
+	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT ->
+	 * v5-26-00b-6) }
 	 *
 	 * @return packages
 	 */
@@ -853,8 +849,7 @@ public class JDL implements Serializable {
 				final String sVersion = s.substring(idx2 + 2);
 
 				ret.put(sPackage, sVersion);
-			}
-			catch (final Throwable t) {
+			} catch (final Throwable t) {
 				System.err.println("Exception parsing package definition: " + s + " : " + t.getMessage());
 			}
 		}
@@ -882,8 +877,7 @@ public class JDL implements Serializable {
 			final String s = it.next();
 			try {
 				ret.put(s, get(s));
-			}
-			catch (final Throwable t) {
+			} catch (final Throwable t) {
 				System.err.println("Exception parsing JDL variable definition: " + s + " : " + t.getMessage());
 			}
 		}
@@ -979,9 +973,9 @@ public class JDL implements Serializable {
 				if (st.nextToken().equals("--nevents") && st.hasMoreTokens())
 					try {
 						return Integer.parseInt(st.nextToken());
-					}
-					catch (final NumberFormatException nfe) {
-						System.err.println("Could not parse the number of events from this line: " + splitarguments + " : " + nfe.getMessage());
+					} catch (final NumberFormatException nfe) {
+						System.err.println("Could not parse the number of events from this line: " + splitarguments
+								+ " : " + nfe.getMessage());
 					}
 		}
 
@@ -1030,8 +1024,7 @@ public class JDL implements Serializable {
 				if (m.matches())
 					return Integer.parseInt(m.group(2));
 			}
-		}
-		catch (@SuppressWarnings("unused") final IOException ioe) {
+		} catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -1080,8 +1073,7 @@ public class JDL implements Serializable {
 			}
 
 			sb.append("\n").append(tab).append("}");
-		}
-		else
+		} else
 			sb.append('"').append(o.toString()).append('"');
 	}
 
@@ -1110,16 +1102,16 @@ public class JDL implements Serializable {
 	 * Set the value of a key. As value you can pass either:<br>
 	 * <ul>
 	 * <li>a String object, the value of which is to be put in quotes</li>
-	 * <li>a StringBuilder object, then the content is set in the JDL without quotes (for example the Requirements field)</li>
-	 * <li>a Collection, the values of which will be saved as an array of strings in the JDL</li>
+	 * <li>a StringBuilder object, then the content is set in the JDL without quotes
+	 * (for example the Requirements field)</li>
+	 * <li>a Collection, the values of which will be saved as an array of strings in
+	 * the JDL</li>
 	 * <li>a Number object, which will be saved without quotes</li>
 	 * <li>any other Object, for which toString() will be called</li>
 	 * </ul>
 	 *
-	 * @param key
-	 *            JDL key name
-	 * @param value
-	 *            (new) value
+	 * @param key   JDL key name
+	 * @param value (new) value
 	 * @return the previously set value, if any
 	 */
 	public Object set(final String key, final Object value) {
@@ -1137,8 +1129,7 @@ public class JDL implements Serializable {
 				localCopy.add(StringFactory.get(o.toString()));
 
 			newValue = localCopy;
-		}
-		else if (value instanceof String)
+		} else if (value instanceof String)
 			newValue = StringFactory.get((String) value);
 		else if (value instanceof StringBuilder)
 			newValue = new StringBuilder(((StringBuilder) value).toString());
@@ -1151,15 +1142,16 @@ public class JDL implements Serializable {
 					entry.setValue(newValue);
 					break;
 				}
-		}
-		else
+		} else
 			jdlContent.put(key, newValue);
 
 		return old;
 	}
 
 	/**
-	 * Append some String values to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry of it.
+	 * Append some String values to an array. If there is a previously set single
+	 * value then it is transformed in an array and the previously set value is kept
+	 * as the first entry of it.
 	 *
 	 * @param key
 	 * @param value
@@ -1176,8 +1168,7 @@ public class JDL implements Serializable {
 		if (old == null) {
 			values = new LinkedHashSet<>();
 			jdlContent.put(key, values);
-		}
-		else if (old instanceof Collection)
+		} else if (old instanceof Collection)
 			values = (Collection<String>) old;
 		else {
 			values = new LinkedHashSet<>();
@@ -1201,8 +1192,7 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * @param requirement
-	 *            extra constraint to add to the job
+	 * @param requirement extra constraint to add to the job
 	 * @return <code>true</code> if this extra requirement was added
 	 */
 	public final boolean addRequirement(final String requirement) {
@@ -1228,8 +1218,7 @@ public class JDL implements Serializable {
 
 			if (newValue.length() > 0)
 				newValue.append(" && ");
-		}
-		else {
+		} else {
 			newValue = new StringBuilder();
 
 			set("Requirements", newValue);
@@ -1270,8 +1259,7 @@ public class JDL implements Serializable {
 				sb.append("<font color=darkgreen>").append(o).append("</font>");
 			else
 				sb.append(formatExpression(o.toString()));
-		}
-		else if (o instanceof Collection) {
+		} else if (o instanceof Collection) {
 			sb.append("{<br><div style='padding-left:20px'>");
 
 			final Collection<?> c = (Collection<?>) o;
@@ -1299,8 +1287,7 @@ public class JDL implements Serializable {
 			}
 
 			sb.append("</div>}");
-		}
-		else
+		} else
 			sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
 	}
 
@@ -1308,7 +1295,8 @@ public class JDL implements Serializable {
 		final int idx = text.indexOf("comment:");
 
 		if (idx >= 0)
-			return "<font color=navy>" + Format.escHtml(text.substring(0, idx + 8)) + "</font><font color=red><i>" + Format.escHtml(text.substring(8)) + "</i></font>";
+			return "<font color=navy>" + Format.escHtml(text.substring(0, idx + 8)) + "</font><font color=red><i>"
+					+ Format.escHtml(text.substring(8)) + "</i></font>";
 
 		return text;
 	}
@@ -1324,7 +1312,8 @@ public class JDL implements Serializable {
 	 * @param sSuffix
 	 * @return formatted pattern
 	 */
-	public static String highlightPattern(final String sLine, final Pattern p, final String sPreffix, final String sSuffix) {
+	public static String highlightPattern(final String sLine, final Pattern p, final String sPreffix,
+			final String sSuffix) {
 		final StringBuilder sb = new StringBuilder(sLine.length());
 
 		final Matcher m = p.matcher(sLine);
@@ -1373,8 +1362,7 @@ public class JDL implements Serializable {
 
 				old = idx2 + 1;
 				idx = arg.indexOf('"', old);
-			}
-			else
+			} else
 				break;
 		}
 
@@ -1398,7 +1386,9 @@ public class JDL implements Serializable {
 		idx = text.indexOf("::");
 
 		if (idx > 0)
-			sb.append("<font color=green>").append(Format.escHtml(text.substring(0, idx))).append("</font>::<font color=orange>").append(Format.escHtml(text.substring(idx + 2))).append("</font>");
+			sb.append("<font color=green>").append(Format.escHtml(text.substring(0, idx)))
+					.append("</font>::<font color=orange>").append(Format.escHtml(text.substring(idx + 2)))
+					.append("</font>");
 		else
 			sb.append(Format.escHtml(text));
 
@@ -1422,24 +1412,32 @@ public class JDL implements Serializable {
 		}
 
 		if (idx2 >= 0)
-			sb.append(Format.escHtml(text.substring(0, idx2 + 1))).append("<font color=green>").append(Format.escHtml(text.substring(idx2 + 1))).append("</font>");
+			sb.append(Format.escHtml(text.substring(0, idx2 + 1))).append("<font color=green>")
+					.append(Format.escHtml(text.substring(idx2 + 1))).append("</font>");
 		else
 			sb.append(Format.escHtml(text));
 
 		return sb.toString();
 	}
 
-	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", "InputDataListFormat",
-			"InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables", "JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements",
-			"Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User", "ValidationCommand", "WorkDirectorySize",
-			"Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies",
-			"RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag",
+	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox",
+			"InputData", "InputDataCollection", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile",
+			"JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables", "JobLogOnClusterMonitor", "JobTag",
+			"LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir",
+			"OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User",
+			"ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "SplitMaxInputFileNumber",
+			"MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction",
+			"LegoResubmitZombies", "RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData",
+			"JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag",
 			"LPMAnchorYear", "LPMInteractionType", "FilesToCheck", "OutputErrorE");
 
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "executable", "arguments", "inputfile", "inputdata", "inputdatalist", "inputdatalistformat",
-			"inputdatacollection", "split", "splitmaxinputfilenumber", "splitarguments", "jdlpath", "jdlarguments", "jdlprocessor", "validationcommand", "outputdir", "output", "outputerrore",
-			"outputarchive", "outputfile", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmjobtypeid",
-			"lpmactivity", "maxwaitingtime", "maxfailfraction", "maxresubmitfraction", "runonaods", "legodatasettype", "jdlvariables");
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "executable",
+			"arguments", "inputfile", "inputdata", "inputdatalist", "inputdatalistformat", "inputdatacollection",
+			"split", "splitmaxinputfilenumber", "splitarguments", "jdlpath", "jdlarguments", "jdlprocessor",
+			"validationcommand", "outputdir", "output", "outputerrore", "outputarchive", "outputfile", "requirements",
+			"origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid",
+			"lpmchainid", "lpmjobtypeid", "lpmactivity", "maxwaitingtime", "maxfailfraction", "maxresubmitfraction",
+			"runonaods", "legodatasettype", "jdlvariables");
 
 	private static final Map<String, String> correctedTags = new HashMap<>(correctTags.size());
 
@@ -1449,8 +1447,7 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * @param tag
-	 *            tag name, in lowercase!
+	 * @param tag tag name, in lowercase!
 	 */
 	private static final String getCorrectedTag(final String tag, final String defaultValue) {
 		final String s = correctedTags.get(tag);
@@ -1502,10 +1499,10 @@ public class JDL implements Serializable {
 	/**
 	 * Get the set of files (and patterns!) that the job is expected to register
 	 *
-	 * @param includeArchiveMembers
-	 *            if <code>true</code> then archive member (patterns) are included
-	 * @param excludeArchives
-	 *            if <code>true</code> then archives will be skipped
+	 * @param includeArchiveMembers if <code>true</code> then archive member
+	 *                              (patterns) are included
+	 * @param excludeArchives       if <code>true</code> then archives will be
+	 *                              skipped
 	 * @return the set of files
 	 */
 	public Set<String> getOutputFileSet(final boolean includeArchiveMembers, final boolean excludeArchives) {
@@ -1515,15 +1512,18 @@ public class JDL implements Serializable {
 	/**
 	 * Get the set of files (and patterns!) that the job is expected to register
 	 * 
-	 * @param tag if indicated then parse the given tag name instead of the default tag set (Output, OutputArchive, OutputFile)
+	 * @param tag                   if indicated then parse the given tag name
+	 *                              instead of the default tag set (Output,
+	 *                              OutputArchive, OutputFile)
 	 *
-	 * @param includeArchiveMembers
-	 *            if <code>true</code> then archive member (patterns) are included
-	 * @param excludeArchives
-	 *            if <code>true</code> then archives will be skipped
+	 * @param includeArchiveMembers if <code>true</code> then archive member
+	 *                              (patterns) are included
+	 * @param excludeArchives       if <code>true</code> then archives will be
+	 *                              skipped
 	 * @return the set of files
 	 */
-	public Set<String> getOutputFileSet(final String tag, final boolean includeArchiveMembers, final boolean excludeArchives) {
+	public Set<String> getOutputFileSet(final String tag, final boolean includeArchiveMembers,
+			final boolean excludeArchives) {
 		final List<String> outputFiles = tag != null ? getOutputFiles(tag) : getOutputFiles();
 
 		final Set<String> ret = new TreeSet<>();
@@ -1563,10 +1563,11 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Remove the file patterns from outputFiles and add them as patterns to the outputPatterns object
+	 * Remove the file patterns from outputFiles and add them as patterns to the
+	 * outputPatterns object
 	 *
-	 * @param outputFiles
-	 *            input, all file names and patterns, which is going to be altered by removing patterns from them
+	 * @param outputFiles    input, all file names and patterns, which is going to
+	 *                       be altered by removing patterns from them
 	 * @param outputPatterns
 	 */
 	public static void moveFilePatterns(final Set<String> outputFiles, final Set<Pattern> outputPatterns) {
@@ -1594,7 +1595,8 @@ public class JDL implements Serializable {
 	 * @param fileName
 	 * @return <code>true</code> if the indicated file name belongs to the output
 	 */
-	public static boolean fileBelongsToOutput(final Set<String> outputFiles, final Set<Pattern> outputPatterns, final String fileName) {
+	public static boolean fileBelongsToOutput(final Set<String> outputFiles, final Set<Pattern> outputPatterns,
+			final String fileName) {
 		if (outputFiles != null && outputFiles.contains(fileName))
 			return true;
 
@@ -1606,41 +1608,48 @@ public class JDL implements Serializable {
 		return false;
 	}
 	
-	public void setDeleteChanges (String var) {
-		set("Delete", var);
-	}
-	public void setChanges (String var, Object value) {
+	public void setChanges(String var, Object value, String action) {
 		if (value instanceof Collection) {
-			for (final String s : (Collection<String>) value)
-				set("Change", String.format("(%s) (%s)", var, s));
-		}
-		else
-			set("Change", String.format("(%s) (%s)", var, value.toString()));
-	}
-	
-	public JDL applyChanges (JDL j) {
-		Collection<String> deleteColl = getList("Delete");
-		for (Iterator<String> iterator = deleteColl.iterator(); iterator.hasNext();) {
-	        j.delete(iterator.next());
-	    }
-		
-		String lastValue = "";
-		
-		Collection<String> changeColl = getList("Change");
-		for (Iterator<String> iterator = changeColl.iterator(); iterator.hasNext();) {
-			Pattern p = Pattern.compile("(\\((?>[^()]+|(?1))*\\))", Pattern.CASE_INSENSITIVE);
-			Matcher m = p.matcher(s);
-			if (m.find()) {
-				
-				if (lastValue != m.group(0)) {
-				j.delete(m.group(0));
-				}
-				
-				j.append(m.group(0), m.group(1));
-				lastValue = m.group(0);
+			for (final String s : (Collection<String>) value) {
+				append(action, String.format("%s#%s", var, s));
 			}
-	    }
+		} else {
+			append(action, String.format("%s#%s", var, value.toString()));
+		}
+	}
+
+	public JDL applyChanges(JDL j) {
+		List<String> deleteColl = getInputList(false, "Delete");
+		if (deleteColl != null) {
+			for (String del : deleteColl) {
+				j.delete(del);
+			}
+
+		}
+
+		Collection<String> changeColl = getInputList(false, "Change");
+		if (changeColl != null) {
+			for (String change : changeColl) {
+				String[] value = change.split("#", 2);
+				System.out.println(value[0] + " - " + value[1] + " - " + change);
+				j.set(value[0], value[1]);
+			}
+		}
+		
+		Collection<String> appendColl = getInputList(false, "Append");
+		if (appendColl != null) {
+			for (String append : appendColl) {
+				String[] value = append.split("#", 2);
+				System.out.println(value[0] + " - " + value[1] + " - " + append);
+				j.append(value[0], value[1]);
+			}
+		}
+		
+		j.delete("Append");
+		j.delete("Delete");
+		j.delete("Change");
+		
 		return j;
 	}
-	
+
 }

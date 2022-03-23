@@ -232,10 +232,10 @@ public class TaskQueueApiUtils {
 
 	}
 	
-	public long submitSubJob(AliEnPrincipal account, long masterId, List<JDL> jdls) throws ServerException {
+	public long submitSubJob(AliEnPrincipal account, long masterId, List<JDL> jdls, JDL masterJDL) throws ServerException {
 
 
-		final SubmitSubJob j = new SubmitSubJob(commander.getUser(), masterId, jdls);
+		final SubmitSubJob j = new SubmitSubJob(commander.getUser(), masterId, jdls, masterJDL);
 
 		final SubmitSubJob response = Dispatcher.execute(j);
 

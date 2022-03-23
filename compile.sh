@@ -89,6 +89,7 @@ generate_cs () {
 
   # create common jar files with the specified dependencies
   jar cf ${JALIEN_HOME}/alien-cs.jar *
+  /bin/cp ${JALIEN_HOME}/alien-cs.jar ~/Jaliensplit/sharedv/alien-cs.jar
 }
 
 
